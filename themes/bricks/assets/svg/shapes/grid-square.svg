@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 76 76" class="bricks-shape-svg">
+  <g fill-rule="evenodd">
+    <g transform="translate(0 8)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <rect width="4" height="4"/>
+    <rect width="4" height="4" x="8"/>
+    <rect width="4" height="4" x="16"/>
+    <rect width="4" height="4" x="24"/>
+    <rect width="4" height="4" x="32"/>
+    <rect width="4" height="4" x="40"/>
+    <rect width="4" height="4" x="48"/>
+    <rect width="4" height="4" x="56"/>
+    <rect width="4" height="4" x="64"/>
+    <rect width="4" height="4" x="72"/>
+    <g transform="translate(0 24)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 16)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 40)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 32)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 56)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 48)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 72)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+    <g transform="translate(0 64)">
+      <rect width="4" height="4"/>
+      <rect width="4" height="4" x="8"/>
+      <rect width="4" height="4" x="16"/>
+      <rect width="4" height="4" x="24"/>
+      <rect width="4" height="4" x="32"/>
+      <rect width="4" height="4" x="40"/>
+      <rect width="4" height="4" x="48"/>
+      <rect width="4" height="4" x="56"/>
+      <rect width="4" height="4" x="64"/>
+      <rect width="4" height="4" x="72"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <g fill="none" fill-rule="evenodd">
+    <path fill="#23282D" d="M0 60H24V68H0z" transform="matrix(1 0 0 -1 0 128)"/>
+    <path fill="#23282D" d="M104 60H128V68H104zM28 16H60V112H28zM68 16H100V112H68z"/>
+  </g>
+</svg>

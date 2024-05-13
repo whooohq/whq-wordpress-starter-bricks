@@ -1,0 +1,3 @@
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 200 75" class="bricks-shape-svg">
+  <path fill-rule="evenodd" d="M600,125 C575,125 575,150 550,175 C533.333333,191.666667 516.666667,200 500,200 L700,200 C682,200 665,191.666667 649,175 C625,150 625,125 600,125 Z" transform="translate(-500 -125)"/>
+</svg>

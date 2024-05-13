@@ -1,0 +1,1 @@
+:where(.brxe-heading).has-separator{align-items:center;display:inline-flex;gap:20px}:where(.brxe-heading)>[contenteditable]{display:inline-block;text-decoration:inherit}:where(.brxe-heading) .separator{border-top:1px solid;flex-grow:1;flex-shrink:0;height:1px}

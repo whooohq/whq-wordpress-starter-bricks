@@ -1,0 +1,18 @@
+{
+   "domain": "messages",
+   "locale_data": {
+      "messages": {
+         "": {
+            "domain": "messages",
+            "plural_forms": "nplurals=2; plural=(n != 1);",
+            "lang": "en"
+         },
+         "But...": [
+            "Όμως..."
+         ],
+         "Wait to translate any content that contains media until we're finished configuring it. It will be just a moment.": [
+            "Περιμένετε πριν μεταφράσετε τυχόν περιεχόμενο που περιέχει πολυμέσα, μέχρι να ολοκληρώσουμε τη ρύθμισή του. Θα χρειαστεί πολύ λίγος χρόνος."
+         ]
+      }
+   }
+}

@@ -1,0 +1,1 @@
+.brxe-tabs-nested{display:flex;flex-direction:column;width:100%}.brxe-tabs-nested .tab-title{cursor:pointer;width:auto}.brxe-tabs-nested .tab-pane{display:none}.brxe-tabs-nested .tab-pane:empty{display:none!important}.brxe-tabs-nested .tab-pane.brx-open{display:block}

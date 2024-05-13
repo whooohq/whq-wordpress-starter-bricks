@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 16 1200" class="bricks-shape-svg">
+  <g fill-rule="evenodd" transform="rotate(90 8 8)">
+    <rect width="22" height="22" x="4.556" y="4.556" transform="rotate(45 15.556 15.556)"/>
+    <rect width="22" height="22" x="35.556" y="4.556" transform="rotate(45 46.556 15.556)"/>
+    <rect width="22" height="22" x="66.556" y="4.556" transform="rotate(45 77.556 15.556)"/>
+    <rect width="22" height="22" x="97.556" y="4.556" transform="rotate(45 108.556 15.556)"/>
+    <rect width="22" height="22" x="127.556" y="4.556" transform="rotate(45 138.556 15.556)"/>
+    <rect width="22" height="22" x="157.556" y="4.556" transform="rotate(45 168.556 15.556)"/>
+    <rect width="22" height="22" x="187.556" y="4.556" transform="rotate(45 198.556 15.556)"/>
+    <rect width="22" height="22" x="218.556" y="4.556" transform="rotate(45 229.556 15.556)"/>
+    <rect width="22" height="22" x="249.556" y="4.556" transform="rotate(45 260.556 15.556)"/>
+    <rect width="22" height="22" x="280.556" y="4.556" transform="rotate(45 291.556 15.556)"/>
+    <rect width="22" height="22" x="311.556" y="4.556" transform="rotate(45 322.556 15.556)"/>
+    <rect width="22" height="22" x="342.556" y="4.556" transform="rotate(45 353.556 15.556)"/>
+    <rect width="22" height="22" x="373.556" y="4.556" transform="rotate(45 384.556 15.556)"/>
+    <rect width="22" height="22" x="404.556" y="4.556" transform="rotate(45 415.556 15.556)"/>
+    <rect width="22" height="22" x="435.556" y="4.556" transform="rotate(45 446.556 15.556)"/>
+    <rect width="22" height="22" x="465.556" y="4.556" transform="rotate(45 476.556 15.556)"/>
+    <rect width="22" height="22" x="496.556" y="4.556" transform="rotate(45 507.556 15.556)"/>
+    <rect width="22" height="22" x="526.556" y="4.556" transform="rotate(45 537.556 15.556)"/>
+    <rect width="22" height="22" x="557.556" y="4.556" transform="rotate(45 568.556 15.556)"/>
+    <rect width="22" height="22" x="588.556" y="4.556" transform="rotate(45 599.556 15.556)"/>
+    <rect width="22" height="22" x="588.556" y="4.556" transform="rotate(45 599.556 15.556)"/>
+    <rect width="22" height="22" x="618.556" y="4.556" transform="rotate(45 629.556 15.556)"/>
+    <rect width="22" height="22" x="649.556" y="4.556" transform="rotate(45 660.556 15.556)"/>
+    <rect width="22" height="22" x="680.556" y="4.556" transform="rotate(45 691.556 15.556)"/>
+    <rect width="22" height="22" x="710.556" y="4.556" transform="rotate(45 721.556 15.556)"/>
+    <rect width="22" height="22" x="740.556" y="4.556" transform="rotate(45 751.556 15.556)"/>
+    <rect width="22" height="22" x="770.556" y="4.556" transform="rotate(45 781.556 15.556)"/>
+    <rect width="22" height="22" x="801.556" y="4.556" transform="rotate(45 812.556 15.556)"/>
+    <rect width="22" height="22" x="832.556" y="4.556" transform="rotate(45 843.556 15.556)"/>
+    <rect width="22" height="22" x="863.556" y="4.556" transform="rotate(45 874.556 15.556)"/>
+    <rect width="22" height="22" x="894.556" y="4.556" transform="rotate(45 905.556 15.556)"/>
+    <rect width="22" height="22" x="925.556" y="4.556" transform="rotate(45 936.556 15.556)"/>
+    <rect width="22" height="22" x="956.556" y="4.556" transform="rotate(45 967.556 15.556)"/>
+    <rect width="22" height="22" x="987.556" y="4.556" transform="rotate(45 998.556 15.556)"/>
+    <rect width="22" height="22" x="1018.556" y="4.556" transform="rotate(45 1029.556 15.556)"/>
+    <rect width="22" height="22" x="1048.556" y="4.556" transform="rotate(45 1059.556 15.556)"/>
+    <rect width="22" height="22" x="1079.556" y="4.556" transform="rotate(45 1090.556 15.556)"/>
+    <rect width="22" height="22" x="1109.556" y="4.556" transform="rotate(45 1120.556 15.556)"/>
+    <rect width="22" height="22" x="1140.556" y="4.556" transform="rotate(45 1151.556 15.556)"/>
+    <rect width="22" height="22" x="1172.556" y="4.556" transform="rotate(45 1183.556 15.556)"/>
+  </g>
+</svg>

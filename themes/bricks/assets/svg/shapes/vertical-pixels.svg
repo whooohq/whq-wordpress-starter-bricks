@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 197 1200" class="bricks-shape-svg">
+  <g fill-rule="evenodd" transform="rotate(90 98.5 98.5)">
+    <rect width="600" height="25" y="175"/>
+    <rect width="600" height="25" x="93" y="150" opacity=".75"/>
+    <rect width="500" height="42" x="400" y="162"/>
+    <rect width="500" height="30" x="700" y="170"/>
+    <rect width="50" height="175" x="575" y="25" opacity=".25"/>
+    <rect width="225" height="100" x="775" y="100" opacity=".5"/>
+    <rect width="117" height="148" x="350" y="50" opacity=".25"/>
+    <rect width="150" height="88" x="400" y="38" opacity=".25"/>
+    <rect width="59" height="87" x="426" y="13" opacity=".25"/>
+    <rect width="91" height="29" x="376" y="71" opacity=".25"/>
+    <rect width="165" height="129" x="485" y="71" opacity=".5"/>
+    <rect width="62" height="100" x="650" y="71" opacity=".5"/>
+    <rect width="136" height="100" x="975" y="85" opacity=".5"/>
+    <rect width="50" height="100" x="975" y="50" opacity=".5"/>
+    <rect width="233" height="65" x="930" y="135" opacity=".5"/>
+    <rect width="83" height="62" x="734" y="76" opacity=".25"/>
+    <rect width="83" height="87" x="671" y="25" opacity=".25"/>
+    <rect width="90" height="50" x="712" y="50" opacity=".25"/>
+    <rect width="83" height="65" x="651" y="100" opacity=".25"/>
+    <rect width="92" height="87" x="600" y="50" opacity=".25"/>
+    <rect width="50" height="160" x="850" y="38" opacity=".25"/>
+    <rect width="50" height="77" x="875" y="25" opacity=".25"/>
+    <rect width="50" height="122" x="900" y="76" opacity=".25"/>
+    <rect width="50" height="42" x="1086" y="108" opacity=".25"/>
+    <rect width="50" height="162" x="550" opacity=".5"/>
+    <rect width="194" height="62" x="156" y="71" opacity=".5"/>
+    <rect width="43" height="62" x="179" y="113" opacity=".25"/>
+    <rect width="229" height="38" x="671" y="124" opacity=".5"/>
+    <rect width="92" height="62" x="601" y="50" opacity=".25"/>
+    <rect width="150" height="100" x="400" y="100" opacity=".5"/>
+    <rect width="100" height="100" x="200" y="100" opacity=".25"/>
+    <rect width="176" height="127" x="250" y="71" opacity=".5"/>
+    <rect width="83" height="87" x="57" y="113" opacity=".5"/>
+    <rect width="83" height="148" x="117" y="50" opacity=".5"/>
+    <rect width="50" height="173" x="250" y="25" opacity=".5"/>
+    <rect width="215" height="52" x="35" y="133" opacity=".5"/>
+  </g>
+</svg>
