@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Plugins Core\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-05-14 09:27+0000\n"
+"PO-Revision-Date: 2023-05-23 17:37+0200\n"
+"Last-Translator: \n"
+"Language-Team: Dutch\n"
+"Language: nl_NL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Poedit 3.3.1\n"
+"X-Loco-Version: 2.6.3; wp-6.1.1\n"
+"X-Domain: tmm-wp-plugins-core\n"
+
+#. %s is a plugin name.
+#: src/class-required-php-extensions.php:83
+#, fuzzy, php-format
+msgid "%s error:"
+msgstr "Abonnement #%1$s fout met opslaan. Abonnements Data: %2$s"
+
+#. Description of the plugin
+msgid "A core library for TMM WordPress plugins which contains common APIs."
+msgstr "Een kernbibliotheek voor TMM WordPress-plug-ins die algemene API's bevat."
+
+#. %s is the plugin name.
+#: src/class-changelog.php:100
+#, php-format
+msgid "Changelog (%s)"
+msgstr "Wijzigingslog (%s)"
+
+#: src/class-setting-fields.php:62
+msgid "Day(s)"
+msgstr "Dag(en)"
+
+#: src/assets/class-admin-assets.php:78
+msgid "Error"
+msgstr "Fout"
+
+#: src/class-setting-fields.php:64
+msgid "Month(s)"
+msgstr "Maand(en)"
+
+#: src/assets/class-admin-assets.php:79
+msgid "Something went wrong."
+msgstr "Er ging iets mis."
+
+#: src/class-options.php:96
+msgid "Unknown option name:"
+msgstr "Onbekende optienaam:"
+
+#: src/class-setting-fields.php:63
+msgid "Week(s)"
+msgstr "Week/weken"
+
+#. Name of the plugin
+msgid "WP Plugins Core"
+msgstr "WP-plug-ins Core"
+
+#: src/class-setting-fields.php:65
+msgid "Year(s)"
+msgstr "Jaar/jaren"

@@ -1,0 +1,18 @@
+{
+  "name": "tmmtech/wp-plugins-core",
+  "require": {
+    "automattic/jetpack-autoloader": "^2.11",
+    "erusev/parsedown": "^1.7",
+    "symfony/polyfill-mbstring": "*"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "platform": {
+      "php": "7.4"
+    },
+    "allow-plugins": {
+      "automattic/jetpack-autoloader": true
+    }
+  }
+}

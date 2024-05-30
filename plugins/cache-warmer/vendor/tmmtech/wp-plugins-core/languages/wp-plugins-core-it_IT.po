@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Plugins Core\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-05-14 09:27+0000\n"
+"PO-Revision-Date: 2023-05-23 17:36+0200\n"
+"Last-Translator: \n"
+"Language-Team: Italian\n"
+"Language: it_IT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Poedit 3.3.1\n"
+"X-Loco-Version: 2.6.3; wp-6.1.1\n"
+"X-Domain: tmm-wp-plugins-core\n"
+
+#. %s is a plugin name.
+#: src/class-required-php-extensions.php:83
+#, php-format
+msgid "%s error:"
+msgstr "%s errore:"
+
+#. Description of the plugin
+msgid "A core library for TMM WordPress plugins which contains common APIs."
+msgstr "Una libreria di base per i plugin TMM WordPress che contiene API comuni."
+
+#. %s is the plugin name.
+#: src/class-changelog.php:100
+#, php-format
+msgid "Changelog (%s)"
+msgstr "Changelog (%s)"
+
+#: src/class-setting-fields.php:62
+msgid "Day(s)"
+msgstr "Giorno(i)"
+
+#: src/assets/class-admin-assets.php:78
+msgid "Error"
+msgstr "Errore"
+
+#: src/class-setting-fields.php:64
+msgid "Month(s)"
+msgstr "Mese(i)"
+
+#: src/assets/class-admin-assets.php:79
+msgid "Something went wrong."
+msgstr "Qualcosa è andato storto."
+
+#: src/class-options.php:96
+msgid "Unknown option name:"
+msgstr "Nome opzione sconosciuto:"
+
+#: src/class-setting-fields.php:63
+msgid "Week(s)"
+msgstr "Settimane"
+
+#. Name of the plugin
+msgid "WP Plugins Core"
+msgstr "WP Plugin Core"
+
+#: src/class-setting-fields.php:65
+msgid "Year(s)"
+msgstr "Anno(i)"

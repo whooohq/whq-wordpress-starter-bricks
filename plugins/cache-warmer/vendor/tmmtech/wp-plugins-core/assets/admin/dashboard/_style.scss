@@ -1,0 +1,30 @@
+div[id^="dashboard_tmm_wp_plugins_core_changelog_"] {
+  .inside {
+    > div {
+      margin-bottom: -15px;
+
+      h2 {
+        font-size: .8rem;
+        font-weight: 600;
+        letter-spacing: .05rem;
+        text-transform: uppercase;
+        margin: 1em 0;
+      }
+
+      .tmm-wp-plugins-core-version-changelog {
+        ul {
+          list-style: square;
+          margin: 0 0 1.5em 1.5em;
+        }
+
+        > *:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      hr {
+        margin: 15px 0;
+      }
+    }
+  }
+}

@@ -1,0 +1,181 @@
+/**
+ * Admin common styles (used on all admin screens).
+ */
+
+.wp-plugins-core-notification.drip {
+    display: none;
+}
+
+.wp-plugins-core-drip-notifications-container {
+    overflow: hidden;
+
+    .swiper-wrapper {
+        .wp-plugins-core-notification.drip {
+            display: flex;
+            min-width: 100%;
+        }
+    }
+
+    .wp-plugins-core-drip-pagination {
+        display: flex;
+        margin-top: 5px;
+        margin-bottom: 10px;
+
+        .wp-plugins-core-drip-button-prev,
+        .wp-plugins-core-drip-button-next {
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
+            user-select: none;
+            transform: scaleY(1.2);
+            transition: 0.3s;
+
+            &:hover {
+                color: #808080;
+            }
+        }
+
+        .wp-plugins-core-drip-button-next {
+            margin-left: 10px;
+        }
+
+        .swiper-button-disabled {
+            visibility: hidden;
+            pointer-events: none;
+        }
+    }
+}
+
+/*
+ * Tabs
+ */
+
+.wp-plugins-core-tab-content:not(#_weight) {
+    position: absolute;
+    visibility: hidden;
+    z-index: -999;
+    margin-top: -99999vh;
+    margin-left: -99999vw;
+
+    margin-bottom: auto;
+    align-self: center;
+    width: 100%;
+    padding: 40px 20px 30px;
+
+    &.selected {
+        position: relative;
+        visibility: visible;
+        z-index: initial;
+        margin-top: auto;
+        margin-left: 0;
+    }
+
+    .wp-plugins-core-tab-heading {
+        display: none;
+    }
+
+    .wp-plugins-core-input[type="text"] {
+        max-width: 140px;
+        text-align: center;
+    }
+
+    .wp-plugins-core-comment {
+        margin-top: 40px;
+        margin-bottom: -20px;
+        font-style: italic;
+    }
+}
+
+.wp-plugins-core-tabs-container {
+    width: calc(100% - 40px);
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+    margin-right: auto;
+
+    $mobile-breakpoint: 580px;
+
+    .next-child-expand-button {
+        display: block;
+        width: 100%;
+        font-size: 40px;
+        cursor: pointer;
+        height: fit-content;
+        transition: none;
+
+        &:hover {
+            color: #727272;
+        }
+
+        &.expanded {
+            color: #cfcfcf;
+        }
+
+        @media (min-width: $mobile-breakpoint + 1) {
+            display: none;
+        }
+
+        @media (max-width: $mobile-breakpoint) {
+            &:not(.expanded) {
+                + * {
+                    display: none !important;
+                }
+            }
+        }
+    }
+
+    ul.wp-plugins-core-tabs {
+        display: flex;
+        margin: 0 auto;
+        width: 1030px;
+        max-width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        @media (max-width: $mobile-breakpoint) {
+            flex-direction: column;
+            margin-top: 30px;
+        }
+
+        .wp-plugins-core-single-tab {
+            padding: 14px 16px;
+            background: #fff;
+            cursor: pointer;
+            user-select: none;
+            width: min-content;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px solid #ccc;
+            margin-left: -1px;
+            margin-right: -1px;
+            margin-bottom: -1px;
+            flex-grow: 1;
+
+            &:only-child {
+                display: none;
+            }
+
+            @media (max-width: $mobile-breakpoint) {
+                border-left: 1px solid #ccc;
+                border-right: 1px solid #ccc;
+                border-bottom: 1px solid #ccc;
+                border-top: none;
+                width: auto;
+                margin-left: 0;
+                margin-right: 0;
+                margin-bottom: 0;
+
+                &:first-child {
+                    border-top: 1px solid #ccc;
+                }
+            }
+
+            &.selected,
+            &:hover {
+                background: #eee;
+            }
+        }
+    }
+}

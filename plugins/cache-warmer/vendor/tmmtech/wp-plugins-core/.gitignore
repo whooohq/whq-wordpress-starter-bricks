@@ -1,0 +1,27 @@
+# Editors
+project.xml
+project.properties
+/nbproject/private/
+.buildpath
+.project
+.settings*
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+.sublimelinterrc
+
+# Composer
+vendor
+
+# OS X metadata
+.DS_Store
+
+# Windows thumbs
+Thumbs.db
+
+# wp-prod
+
+node_modules
+/cdn-libs/node_modules
+/assets/.cache/
