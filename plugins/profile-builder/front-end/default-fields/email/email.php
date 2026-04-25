@@ -13,8 +13,9 @@ function wppb_email_handler( $output, $form_location, $field, $user_id, $field_c
 		$input_value = $field['default-value'];
 		
 	$input_value = ( isset( $request_data['email'] ) ? trim( $request_data['email'] ) : $input_value );
-	// filter must be applied on the $input_value so that the value returned to the form can be corrected too
-	$input_value = apply_filters( 'wppb_before_processing_email_from_forms' , $input_value );
+    $input_value = apply_filters( 'wppb_form_email_field_value', $input_value, $field, $form_location );
+
+	$input_value = apply_filters( 'wppb_before_processing_email_from_forms' , stripslashes( $input_value ) );
 
 	if ( $form_location != 'back_end' ){
 		$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );
@@ -34,7 +35,7 @@ function wppb_email_handler( $output, $form_location, $field, $user_id, $field_c
 
         if( $form_location == 'edit_profile' && is_user_logged_in() ) {
             if ( $email_input_status == 'enabled' ) {
-                $output .= '<span class="wppb-description-delimiter">' . __('If you change this, we will send you an email at your new address to confirm it. <br /><strong>The new address will not become active until confirmed.</strong>', 'profile-builder') . '</span>';
+                $output .= '<span class="wppb-description-delimiter">' . __('If you change this, we will send you an email at your new address to confirm it.', 'profile-builder') . '<br><strong>' . __('The new address will not become active until confirmed.', 'profile-builder') . '</strong></span>';
             }
             else if ( $email_input_status == 'disabled' ) {
                 $current_url = wppb_curpageurl();
@@ -59,9 +60,11 @@ add_filter( 'wppb_output_form_field_default-e-mail', 'wppb_email_handler', 10, 6
 /* handle field validation */
 function wppb_check_email_value( $message, $field, $request_data, $form_location ){
 	global $wpdb;
-	// apply filter to allow stripping slashes if necessary
+
     if ( isset( $request_data['email'] ) ) {
-        $request_data['email'] = apply_filters('wppb_before_processing_email_from_forms', $request_data['email']);
+
+        $request_data['email'] = apply_filters('wppb_before_processing_email_from_forms', stripslashes( $request_data['email'] ) );
+
         if ((isset($request_data['email']) && (trim($request_data['email']) == '')) && ($field['required'] == 'Yes'))
             return wppb_required_field_error($field["field-title"]);
 
@@ -75,7 +78,7 @@ function wppb_check_email_value( $message, $field, $request_data, $form_location
 
         $wppb_generalSettings = get_option('wppb_general_settings');
         if (isset($wppb_generalSettings['emailConfirmation']) && ($wppb_generalSettings['emailConfirmation'] == 'yes')) {
-            $user_signup = $wpdb->get_results($wpdb->prepare("SELECT * FROM " . $wpdb->base_prefix . "signups WHERE user_email = %s AND active=0", $request_data['email']));
+            $user_signup = $wpdb->get_results($wpdb->prepare("SELECT * FROM " . $wpdb->base_prefix . "signups WHERE user_email = %s AND active=0", trim( $request_data['email'] ) ) );
 
             if (!empty($user_signup)) {
                 if ($form_location == 'register') {
@@ -83,15 +86,15 @@ function wppb_check_email_value( $message, $field, $request_data, $form_location
                 } else if ($form_location == 'edit_profile') {
                     $current_user = wp_get_current_user();
 
-                    if (!current_user_can('edit_users')) {
-                        if ($current_user->user_email != $request_data['email'])
+                    if ( !current_user_can('edit_users') ) {
+                        if ( $current_user->user_email != trim( $request_data['email'] ) )
                             return __('This email is already reserved to be used soon.', 'profile-builder') . '<br/>' . __('Please try a different one!', 'profile-builder');
                     }
                 }
             }
         }
 
-        $users = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->users} WHERE user_email = %s", $request_data['email']));
+        $users = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->users} WHERE user_email = %s", trim( $request_data['email'] ) ) );
 
         if (!empty($users)) {
             if ($form_location == 'register')
@@ -127,9 +130,8 @@ add_filter( 'wppb_check_form_field_default-e-mail', 'wppb_check_email_value', 10
 /* handle field save */
 function wppb_userdata_add_email( $userdata, $global_request, $form_args ){
     if( wppb_field_exists_in_form( 'Default - E-mail', $form_args ) ) {
-        // apply filter to allow stripping slashes if necessary
         if (isset($global_request['email'])) {
-            $global_request['email'] = apply_filters('wppb_before_processing_email_from_forms', $global_request['email']);
+            $global_request['email'] = apply_filters('wppb_before_processing_email_from_forms', stripslashes( $global_request['email'] ) );
             $userdata['user_email'] = sanitize_text_field(trim($global_request['email']));
         }
     }

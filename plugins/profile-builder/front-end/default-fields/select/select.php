@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* handle field output */
 function wppb_select_handler( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){
 	if ( $field['field'] == 'Select' ){
@@ -17,8 +20,9 @@ function wppb_select_handler( $output, $form_location, $field, $user_id, $field_
             $input_value = ( isset( $field['default-option'] ) ? trim( $field['default-option'] ) : '' );
 
         $input_value = ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ? stripslashes( trim( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ) : $input_value );
+		$input_value = apply_filters( 'wppb_form_select_field_value', $input_value, $field, $form_location );
 
-		if ( $form_location != 'back_end' ){
+	if ( $form_location != 'back_end' ){
 			$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );
 						
 			if ( array_key_exists( $field['id'], $field_check_errors ) )
@@ -83,7 +87,7 @@ add_filter( 'wppb_admin_output_form_field_select', 'wppb_select_handler', 10, 6 
 function wppb_save_select_value( $field, $user_id, $request_data, $form_location ){
 	if( $field['field'] == 'Select' ){
 		if ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) )
-			update_user_meta( $user_id, $field['meta-name'], $request_data[wppb_handle_meta_name( $field['meta-name'] )] );
+			update_user_meta( $user_id, $field['meta-name'], sanitize_text_field( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) );
 	}
 }
 add_action( 'wppb_save_form_field', 'wppb_save_select_value', 10, 4 );

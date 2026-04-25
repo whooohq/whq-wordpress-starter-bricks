@@ -15,6 +15,10 @@ class Check_Email_Nonce_Checker implements Loadie {
 	}
 
 	public function check_nonce() {
+		if ( ! current_user_can('manage_options') ) {
+      		return false;
+    	}
+		
 		if ( ! isset( $_POST['check-email-action'] ) && ! isset( $_REQUEST['action'] ) && ! isset( $_REQUEST['action2'] ) ) {
 			return;
 		}
@@ -46,9 +50,18 @@ class Check_Email_Nonce_Checker implements Loadie {
 				$action = sanitize_text_field( wp_unslash($_REQUEST['action2']) );
 			}
 
+			$is_right_page = false;
+
 			// $action is sanitize on line 39 or 46
 			// phpcs:ignore
-			if ( strpos( $action, 'check-email-log-list-' ) !== 0 ) {
+			if ( strpos( $action, 'check-email-log-list-' ) === 0  ) {
+				$is_right_page = true;
+			}
+			if ( strpos( $action, 'check-email-error-tracker-' ) === 0  ) {
+				$is_right_page = true;
+			}
+
+			if (!$is_right_page) {
 				return;
 			}
 
@@ -61,8 +74,9 @@ class Check_Email_Nonce_Checker implements Loadie {
 				return;
 			}
 		}
-
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		do_action( 'check_email_action', $action, $_REQUEST );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 		do_action( $action, $_REQUEST );
 	}
 }

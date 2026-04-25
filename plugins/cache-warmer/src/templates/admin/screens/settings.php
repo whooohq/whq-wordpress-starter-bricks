@@ -6,6 +6,7 @@
  */
 
 use Cache_Warmer\Cache_Warmer;
+use Cache_Warmer\Utils;
 use WP_Plugins_Core\Setting_Fields;
 
 ?>
@@ -401,6 +402,14 @@ use WP_Plugins_Core\Setting_Fields;
                                 <a class="cache-warmer-link cache-warmer-reset-settings-link mt-15"><?php esc_html_e( 'Reset All Settings', 'cache-warmer' ); ?></a>
                             </div>
                         </div>
+
+                        <div class="cache-warmer-container">
+                            <div class="cache-warmer-row">
+                                <a class="cache-warmer-link cache-warmer-reschedule-intervals-link mt-15">
+                                    <?php esc_html_e( 'Fix background tasks', 'cache-warmer' ); ?>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -510,6 +519,8 @@ use WP_Plugins_Core\Setting_Fields;
                     <h2 class="wp-plugins-core-tab-heading"><?php esc_html_e( 'External Warmer', 'cache-warmer' ); ?></h2>
 
                     <?php
+                    $use_external_warmer_servers_during_the_warming = Cache_Warmer::$options->get( 'setting-use-external-warmer-servers-during-the-warming' );
+
                     $settings = [
                         [
                             'title' => __( 'External Warmer', 'cache-warmer' ),
@@ -517,10 +528,11 @@ use WP_Plugins_Core\Setting_Fields;
                             'id'    => 'external-warmer',
                         ],
                         [
-                            'id'    => 'external-warmer-license-key',
-                            'title' => __( 'License Key', 'cache-warmer' ),
-                            'value' => Cache_Warmer::$options->get( 'cache-warmer-setting-external-warmer-license-key' ),
-                            'type'  => 'text',
+                            'id'       => 'use-external-warmer-servers-during-the-warming',
+                            'title'    => __( 'Use External Warmer servers during the warming (in addition to this server)', 'cache-warmer' ),
+                            'desc_tip' => __( 'This will slow down the warming, as extra requests will be made from the external warming servers in addition to the standard visits.<br><br>Or you can keep this off, and just use the warming on interval (configurable below).' ),
+                            'type'     => 'checkbox',
+                            'default'  => '1' === $use_external_warmer_servers_during_the_warming ? 'yes' : 'no',
                         ],
                         [
                             'type' => 'sectionend',
@@ -529,6 +541,118 @@ use WP_Plugins_Core\Setting_Fields;
                     ];
 
                     Setting_Fields::output_fields( $settings );
+
+                    // Returns entry points unique links.
+
+                    foreach ( Utils::get_unique_domains_from_entry_points() as $unique_domain ) {
+                        $last_response_code = (int) get_option(
+                            'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-code' . $unique_domain
+                        );
+                        $last_response_body = get_option(
+                            'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-body' . $unique_domain
+                        );
+
+                        $servers_to_use = get_option(
+                            'cache-warmer-setting-external-warmer-servers-to-use' . $unique_domain,
+                            []
+                        );
+
+                        if ( 200 === $last_response_code ) {
+                            $locations = (array) json_decode( $last_response_body, true );
+
+                            $cache_warmer_available_locations = [];
+
+                            if ( count( $locations ) > 1 ) {
+                                foreach ( $locations as $location ) {
+                                    foreach ( $location as $location_name => $location_url ) {
+                                        $data = [
+                                            'desc'    => $location_name,
+                                            'id'      => $location_url . $unique_domain,
+                                            'default' => in_array( $location_url, $servers_to_use, true ) ? 'yes' : 'no',
+                                            'type'    => 'checkbox',
+                                        ];
+
+                                        if ( 0 === count( $cache_warmer_available_locations ) ) {
+                                            $data['title'] = __( 'Server(s) To Use', 'cache-warmer' );
+                                        }
+
+                                        $cache_warmer_available_locations[] = $data;
+                                    }
+                                }
+                            } else {
+                                foreach ( $locations as $location_name => $location_url ) {
+                                    $data = [
+                                        'desc'    => $location_name,
+                                        'id'      => $location_url,
+                                        'default' => in_array( $location_url, $servers_to_use, true ) ? 'yes' : 'no',
+                                        'type'    => 'checkbox',
+                                    ];
+
+                                    if ( 0 === count( $cache_warmer_available_locations ) ) {
+                                        $data['title'] = __( 'Server(s) To Use', 'cache-warmer' );
+                                    }
+
+                                    $cache_warmer_available_locations[] = $data;
+                                }
+                            }
+
+                            $external_warmer_interval = get_option( 'cache-warmer-setting-external-warmer-interval' . $unique_domain );
+
+                            $cache_warmer_available_locations[] = [
+                                'title'    => __( 'How often to warm posts', 'cache-warmer' ),
+                                'desc_tip' => __( 'This will use this website pages list from the last successful standard warming.', 'cache-warmer' ),
+                                'id'       => 'external-warmer-interval' . $unique_domain,
+                                'value'    => $external_warmer_interval,
+                                'type'     => 'select',
+                                'options'  => [
+                                    '0'   => __( 'Never', 'cache-warmer' ),
+                                    '1'   => __( 'Hourly', 'cache-warmer' ),
+                                    '4'   => __( '4-hourly', 'cache-warmer' ),
+                                    '24'  => __( 'Daily', 'cache-warmer' ),
+                                    '168' => __( 'Weekly', 'cache-warmer' ),
+                                ],
+                            ];
+                        } else {
+                            $cache_warmer_available_locations = [
+                                [
+                                    'title' => __( 'External Server', 'cache-warmer' ),
+                                    'type'  => 'html',
+                                    'value' =>
+                                        $last_response_code ?
+                                            sprintf(
+                                                __( 'Server returned code <b>"%1$s"</b> with text: <b>%2$s</b>', 'cache-warmer' ),
+                                                $last_response_code,
+                                                $last_response_body
+                                            ) :
+                                            __( 'Please specify External server API key first.', 'cache-warmer' ),
+                                ],
+                            ];
+                        }
+
+                        $settings = [
+                            [
+                                'title' => $unique_domain,
+                                'type'  => 'title',
+                                'id'    => 'external-warmer' . $unique_domain,
+                            ],
+                            [
+                                'id'                => 'external-warmer-license-key' . $unique_domain,
+                                'title'             => __( 'API Key', 'cache-warmer' ),
+                                'value'             => get_option( 'cache-warmer-setting-external-warmer-license-key' . $unique_domain ),
+                                'type'              => 'text',
+                                'custom_attributes' => [
+                                    'data-server-domain' => $unique_domain,
+                                ],
+                            ],
+                            ... $cache_warmer_available_locations,
+                            [
+                                'type' => 'sectionend',
+                                'id'   => 'external-warmer' . $unique_domain,
+                            ],
+                        ];
+
+                        Setting_Fields::output_fields( $settings );
+                    }
                     ?>
                 </div>
             </div>

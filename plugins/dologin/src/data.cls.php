@@ -17,6 +17,7 @@ class Data extends Instance {
 	const TB_FAILURE = 'dologin_failure' ;
 	const TB_SMS = 'dologin_sms' ;
 	const TB_PSWDLESS = 'dologin_pswdless' ;
+	const TB_SITE = 'dologin_site' ;
 
 	/**
 	 * Data upgrade
@@ -62,6 +63,10 @@ class Data extends Instance {
 
 			case 'pswdless':
 				return $wpdb->prefix . self::TB_PSWDLESS;
+				break;
+
+			case 'site':
+				return $wpdb->prefix . self::TB_SITE;
 				break;
 
 			default:
@@ -153,6 +158,7 @@ class Data extends Instance {
 		$this->tb_create( 'failure' );
 		$this->tb_create( 'sms' );
 		$this->tb_create( 'pswdless' );
+		$this->tb_create( 'site' );
 	}
 
 	/**
@@ -167,6 +173,7 @@ class Data extends Instance {
 		$this->tb_del( 'failure' );
 		$this->tb_del( 'sms' );
 		$this->tb_del( 'pswdless' );
+		$this->tb_del( 'site' );
 	}
 
 

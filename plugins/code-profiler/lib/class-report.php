@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -21,7 +21,6 @@ class CodeProfiler_Report {
 	private $last_time		= 0;
 	private $themes			= [];
 	private $plugins			= [];
-	private $composer			= [];
 	private $summary_list	= [];
 	private $cx_buffer		= [];
 	private $parsed_data		= 0;
@@ -36,7 +35,7 @@ class CodeProfiler_Report {
 	private $tmp_summary;
 	private $tmp_diskio;
 	private $tmp_connections;
-	private $tmp_ticks;
+	private $tmp_calls;
 
 
 	/**
@@ -48,8 +47,8 @@ class CodeProfiler_Report {
 											CODE_PROFILER_TMP_SUMMARY_LOG;
 		$this->tmp_iostats		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
 											CODE_PROFILER_TMP_IOSTATS_LOG;
-		$this->tmp_ticks   		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
-											CODE_PROFILER_TMP_TICKS_LOG;
+		$this->tmp_calls   		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
+											CODE_PROFILER_TMP_CALLS_LOG;
 		$this->tmp_diskio 		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
 											CODE_PROFILER_TMP_DISKIO_LOG;
 		$this->tmp_connections	= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
@@ -58,27 +57,24 @@ class CodeProfiler_Report {
 		$this->microtime = $microtime;
 
 		// Make sure all files are there
-		if (! file_exists( $this->tmp_ticks ) ) {
-			$cp_error = 1;
+		if (! file_exists( $this->tmp_calls ) ) {
+			$cp_error = 'calls';
 		} elseif (! file_exists( $this->tmp_iostats ) ) {
-			$cp_error = 2;
+			$cp_error = 'iostats';
 		}
 		if (! empty( $cp_error ) ) {
 			$error = sprintf(
-				esc_html__('Cannot create the report: the profiler did not '.
-				'generate a data file (#%s). Make sure the following directory '.
-				'is writable: %s. If you are using a caching plugin or an '.
-				'opcode cache, try to disable it. You may also find more '.
-				'details about the error in the "Log" tab.', 'code-profiler'),
-				$cp_error,
-				CODE_PROFILER_UPLOAD_DIR .'/'
-				);
+				esc_html__('Cannot create the report: the profiler did not generate a data file (%s). '.
+				'You may find more details about this error in the "Log" tab or your PHP error log.',
+				'code-profiler'),
+				$cp_error
+			);
 			$this->return_error( $error );
 		}
 
 		// Total data analyzed
 		$this->parsed_data += filesize( $this->tmp_iostats );
-		$this->parsed_data += filesize( $this->tmp_ticks );
+		$this->parsed_data += filesize( $this->tmp_calls );
 
 		$this->profile_name	= $profile_name;
 		$this->plugins_dir	= preg_quote( realpath( WP_PLUGIN_DIR ) );
@@ -92,13 +88,12 @@ class CodeProfiler_Report {
 	 */
 	public function prepare_report() {
 
-		$this->parse_ticks();
+		$this->parse_calls();
 		$this->get_plugins_theme_name();
 		$this->save_iostats();
 		$this->save_connections();
 		$this->save_data();
 		$this->save_diskio();
-		$this->save_composer();
 
 		code_profiler_log_info( sprintf(
 			__('Volume of code and data analyzed: %1$sMB (%2$s plugins and '.
@@ -193,23 +188,32 @@ class CodeProfiler_Report {
 		$s = json_decode( file_get_contents( $this->tmp_summary ), true );
 		unlink( $this->tmp_summary );
 		if ( empty( $s['memory'] ) ) {
-			$this->summary_list['memory'] = '-';
+			$this->summary_list['memory'] = 0;
 		} else {
 			$this->summary_list['memory'] = $s['memory'] / 1024 / 1024;
 		}
 		if ( empty( $s['queries'] ) ) {
-			$this->summary_list['queries']= '-';
+			$this->summary_list['queries']= 0;
 		} else {
 			$this->summary_list['queries']= $s['queries'];
 		}
 		if ( empty( $this->total_io ) ) {
-			$this->summary_list['io']		= '-';
+			$this->summary_list['io']		= 0;
 		} else {
 			$this->summary_list['io']		= $this->total_io;
+		}
+		if (! empty( $s['precision'] ) ) {
+			$this->summary_list['precision']	= $s['precision'];
 		}
 		$this->summary_list['items']		= $this->total_plugins + 1; // Add the theme
 		$this->summary_list['time']		= $this->convert_2_seconds( $this->summary_list['time'] );
 		$this->summary_list['time']		= number_format( $this->summary_list['time'], 4 );
+
+		// Re-run options
+		if (! empty( $s['rerun'] ) ) {
+			$this->summary_list['rerun'] = $s['rerun'];
+			$this->summary_list['rerun']['profile'] = $this->profile_name;
+		}
 
 		// Save Code Profiler, PHP and WordPress' versions
 		global $wp_version;
@@ -220,7 +224,6 @@ class CodeProfiler_Report {
 		];
 
 		file_put_contents( $summary_json, json_encode( $this->summary_list ) );
-
 	}
 
 
@@ -316,13 +319,13 @@ class CodeProfiler_Report {
 	/**
 	 * Parse, filter and sort the data
 	 */
-	private function parse_ticks() {
+	private function parse_calls() {
 
-		$fh = fopen( $this->tmp_ticks, 'rb');
+		$fh = fopen( $this->tmp_calls, 'rb');
 		if ( $fh === false ) {
 			$error = sprintf(
 				esc_html__('Cannot open file for reading: %s', 'code-profiler'),
-				$this->tmp_ticks
+				$this->tmp_calls
 			);
 			$this->return_error( $error );
 		}
@@ -386,14 +389,6 @@ class CodeProfiler_Report {
 								$this->plugins[ $slug['plugin'] ]['time'] = 0;
 							}
 						}
-
-						// Look for multiple copies of composer and warn the user
-						if ( preg_match("`^{$this->plugins_dir}[\\\/](?:[^\\\/]+)[\\\/].+?[\\\/]composer[\\\/]autoload_real\.php`", $caller ) ) {
-							// Save the slug first, we'll fetch the name later
-							if (! isset( $this->composer[ $slug['plugin'] ] ) ) {
-								$this->composer[ $slug['plugin'] ] = '';
-							}
-						}
 					}
 
 				// We don't have a slug: if there's an old record, update it
@@ -427,7 +422,7 @@ class CodeProfiler_Report {
 		}
 
 		fclose( $fh );
-		unlink( $this->tmp_ticks );
+		unlink( $this->tmp_calls );
 	}
 
 	/********************************************************************
@@ -472,25 +467,6 @@ class CodeProfiler_Report {
 	}
 
 
-	 /**
-	  * Save list of plugins using composer
-	  */
-	private function save_composer() {
-
-		if (! empty( $this->composer ) ) {
-			// Try to get the plugin's name
-			foreach( $this->composer as $slug => $v ) {
-				if ( isset( $this->plugins[ $slug ]['name'] ) ) {
-					$this->composer[ $slug ] = $this->plugins[ $slug ]['name'];
-				}
-			}
-			file_put_contents(
-				CODE_PROFILER_UPLOAD_DIR ."/{$this->microtime}.{$this->profile_name}.composer.profile",
-				json_encode( $this->composer )
-			);
-		}
-	}
-
 	/**
 	 * External connections.
 	 */
@@ -508,28 +484,42 @@ class CodeProfiler_Report {
 		}
 
 		foreach( $connections as $connection => $array ) {
-			$found = 0;
+			$found_call		= 0;
+			$found_caller	= 0;
 
 			foreach( $array['bt'] as $k =>$v ) {
 				if ( isset( $v['file'] ) && isset( $v['function'] ) && isset( $v['line'] ) ) {
-					if ( ! $found &&
+
+					if (! $found_caller && ( $found_call ||
 						in_array( $v['function'], [
 							'wp_remote_get',
 							'wp_safe_remote_get',
 							'wp_remote_post',
 							'wp_safe_remote_post'
 						] )
-					) {
-						$found = 1;
+					) ) {
+
+						$found_call = 1;
 
 						$type = $this->plugin_or_theme( $v['file'] );
+
 						if (! empty( $type['theme'] ) ) {
 							// Save it for later use
-							$this->cx_buffer['theme'][ $type['theme'] ] = $array['stop'] - $connection;
+							if ( isset( $this->cx_buffer['theme'][ $type['theme'] ] ) ) {
+								$this->cx_buffer['theme'][ $type['theme'] ] += $array['stop'] - $connection;
+							} else {
+								$this->cx_buffer['theme'][ $type['theme'] ] = $array['stop'] - $connection;
+							}
+							$found_caller = 1;
 
 						} elseif (! empty( $type['plugin'] ) ) {
 							// Save it for later use
-							$this->cx_buffer['plugin'][ $type['plugin'] ] = $array['stop'] - $connection;
+							if ( isset( $this->cx_buffer['plugin'][ $type['plugin'] ] ) ) {
+								$this->cx_buffer['plugin'][ $type['plugin'] ] += $array['stop'] - $connection;
+							} else {
+								$this->cx_buffer['plugin'][ $type['plugin'] ] = $array['stop'] - $connection;
+							}
+							$found_caller = 1;
 						}
 					}
 				}

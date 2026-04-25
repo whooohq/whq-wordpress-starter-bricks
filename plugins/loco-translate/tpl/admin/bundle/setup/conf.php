@@ -6,8 +6,9 @@ $this->extend('../setup');
 $this->start('header');
 
 
-   if( $params->has('jsonFields') ):?> 
-    <form action="" method="post" enctype="application/x-www-form-urlencoded" class="notice inline notice-generic jsonly" id="loco-remote">
+   /*if( $params->has('jsonFields') ):
+    Remote JSON config is scrapped
+    <form action="" method="post" enctype="application/x-www-form-urlencoded" class="panel jsonly" id="loco-remote">
         <h3>
             <?php esc_html_e('Check config repository','loco-translate')?>  
         </h3>
@@ -25,23 +26,22 @@ $this->start('header');
         <div id="loco-remote-empty">
             <p>
                 <button type="button" class="button button-primary"><?php esc_html_e('Find config','loco-translate')?></button>
-                <a href="<?php $tabs[1]->e('href')?>" class="button button-link"><?php esc_html_e('Cancel','default')?></a>
+                <a href="<?php $tabs[1]->e('href')?>" class="button button-link"><?php esc_html_e('Cancel','loco-translate')?></a>
                 <span></span>
             </p>
         </div>
         <div id="loco-remote-found" class="jshide">
             <p>
                 <input type="submit" class="button button-success" name="json-setup" value="<?php esc_attr_e('OK, Load this config','loco-translate')?>" />
-                <input type="reset" class="button button-link" value="<?php esc_attr_e('Cancel','default')?>" />
+                <input type="reset" class="button button-link" value="<?php esc_attr_e('Cancel','loco-translate')?>" />
             </p>
         </div>
         <?php $jsonFields->_e()?> 
     </form><?php
-    endif;
-
+    endif;*/
 
     if( $params->has('xmlFields') ):?> 
-    <form action="" method="post" enctype="application/x-www-form-urlencoded" class="notice inline notice-generic">
+    <form action="" method="post" enctype="application/x-www-form-urlencoded" class="panel">
         <h3>
             <?php esc_html_e('XML setup','loco-translate')?> 
         </h3>
@@ -53,15 +53,14 @@ $this->start('header');
         </fieldset>
         <p>
             <input type="submit" class="button button-primary" name="xml-setup" value="<?php esc_html_e('Load config','loco-translate')?>" />
-            <a href="<?php $tabs[1]->e('href')?>" class="button button-link"><?php esc_html_e('Cancel','default')?></a>
+            <a href="<?php $tabs[1]->e('href')?>" class="button button-link"><?php esc_html_e('Cancel','loco-translate')?></a>
         </p>
         <?php $xmlFields->_e()?> 
     </form><?php
     endif;
 
-
     if( $params->has('autoFields') ):?> 
-    <form action="" method="post" enctype="application/x-www-form-urlencoded" class="notice inline notice-generic">
+    <form action="" method="post" enctype="application/x-www-form-urlencoded" class="panel">
         <h3>
             Auto setup
         </h3>

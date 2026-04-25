@@ -6,12 +6,12 @@
 abstract class Loco_compat_PosixExtension {
 
     /**
-     * @param int
+     * @var int|null
      */
     private static $uid = null;
 
     /**
-     * @param int
+     * @var int|null
      */
     private static $gid = null;
     
@@ -56,10 +56,12 @@ abstract class Loco_compat_PosixExtension {
      * Attempt to get effective user ID by reading a temporary file
      * @return int
      */
-    public static function getuidViaTempDir(){
-        $dir = get_temp_dir();
+    public static function getuidViaTempDir( $dir = '' ){
+        if( ! $dir ) {
+            $dir = get_temp_dir();
+        }
         if( 04000 & fileperms($dir) ){
-            trigger_error( sprintf('%s directory has setuid bit, getuid may not be accurate',basename($dir) ), E_USER_NOTICE );
+            trigger_error( sprintf('%s directory has setuid bit, getuid may not be accurate',basename($dir) ) );
         }
         $path = wp_tempnam( 'loco-sniff-'.time(), $dir );
         $uid = fileowner($path);
@@ -73,10 +75,12 @@ abstract class Loco_compat_PosixExtension {
      * Attempt to get effective group ID by reading a temporary file
      * @return int
      */
-    public static function getgidViaTempDir(){
-        $dir = get_temp_dir();
+    public static function getgidViaTempDir( $dir = '' ){
+        if( ! $dir ) {
+            $dir = get_temp_dir();
+        }
         if( 02000 & fileperms($dir) ){
-            trigger_error( sprintf('%s directory has setgid bit, getgid may not be accurate',basename($dir) ), E_USER_NOTICE );
+            trigger_error( sprintf('%s directory has setgid bit, getgid may not be accurate',basename($dir) ) );
         }
         $path = wp_tempnam( 'loco-sniff-'.time(), $dir );
         $gid = filegroup($path);
@@ -107,7 +111,7 @@ abstract class Loco_compat_PosixExtension {
                 return $name;
             }
         }
-        // translators: used when user name of web server process is unknown
+        // translators: used when username of web server process is unknown
         return __('the web server','loco-translate');
         // @codeCoverageIgnoreEnd
      }

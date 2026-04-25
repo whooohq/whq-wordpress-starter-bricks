@@ -1,8 +1,11 @@
 <?php
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 $wppb_general_settings = get_option( 'wppb_general_settings' );
 
-if ( isset( $wppb_general_settings ) && $wppb_general_settings['emailConfirmation'] == 'yes' )
+if ( !empty( $wppb_general_settings ) && isset( $wppb_general_settings['emailConfirmation'] ) && $wppb_general_settings['emailConfirmation'] == 'yes' )
     add_filter('wppb_add_to_user_signup_form_meta', 'wppb_toolbox_capitalize_first_last', 20, 2);
 else
     add_filter('wppb_build_userdata', 'wppb_toolbox_capitalize_first_last', 20, 2);

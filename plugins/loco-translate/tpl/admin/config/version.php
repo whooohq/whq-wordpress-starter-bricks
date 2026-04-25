@@ -3,10 +3,10 @@
  * Plugin version information
  */
 $this->extend('../layout');
-
+    /* @var Loco_mvc_ViewParams $params */
     // Loco Translate version:
-    if( $params->has('update') ):?> 
-    <div class="notice inline notice-warning">
+    if( $params->truthy('update') && $params->truthy('update_href') ):?> 
+    <div class="panel panel-warning">
         <h3 class="has-icon">
             <?php self::e( __('Version %s','loco-translate'), $version )?> 
         </h3>
@@ -14,13 +14,13 @@ $this->extend('../layout');
             <?php esc_html_e('A newer version of Loco Translate is available for download','loco-translate')?>.
         </p>
         <p class="submit">
-            <a class="button button-primary" href="<?php echo $update_href?>" target="_blank"><?php self::e(__('Upgrade to %s','loco-translate'), 'v'.$update )?></a>
+            <a class="button button-primary" href="<?php echo esc_url($update_href)?>" target="_blank"><?php self::e(__('Upgrade to %s','loco-translate'), 'v'.$update )?></a>
             <a class="button button-link has-icon icon-ext" href="https://wordpress.org/plugins/loco-translate/installation/" target="_blank"><?php esc_html_e('Install manually','loco-translate')?></a>
         </p>
     </div><?php
 
     elseif( $params->has('devel') ):?> 
-    <div class="notice inline notice-debug">
+    <div class="panel panel-debug">
         <h3 class="has-icon">
             <?php self::e( __('Version %s','loco-translate'), $version )?> 
         </h3>
@@ -30,7 +30,7 @@ $this->extend('../layout');
     </div><?php
 
     else:?> 
-    <div class="notice inline notice-success">
+    <div class="panel panel-success">
         <h3 class="has-icon">
             <?php self::e( __('Version %s','loco-translate'), $version)?> 
         </h3>
@@ -43,7 +43,7 @@ $this->extend('../layout');
     
     // PHP version (warnings only)
     if( $params->has('phpupdate') ):?> 
-    <div class="notice inline notice-warning">
+    <div class="panel panel-warning">
         <h3 class="has-icon"><?php 
             // translators: Where %s is the full version number of PHP
             self::e( __('PHP %s','loco-translate'), $phpversion )?> 
@@ -62,7 +62,7 @@ $this->extend('../layout');
 
     // WordPress version (warnings only)
     if( $params->has('wpupdate') ):?>
-        <div class="notice inline notice-warning">
+        <div class="panel panel-warning">
         <h3 class="has-icon"><?php
             // translators: Where %s is the full version number of WordPress
             self::e( __('WordPress %s','loco-translate'), $wpversion )?> 
@@ -71,7 +71,7 @@ $this->extend('../layout');
             self::e( __('Your version of %1$s is out of date. We recommend you upgrade to at least v%2$s, but preferably to the latest stable version.','loco-translate'),'WordPress',$wpupdate)?> 
         </p>
         <p class="submit">
-            <a class="button button-primary" href="<?php echo esc_url($wpupdate_href)?>"><?php esc_html_e('Update Now','default')?></a>
+            <a class="button button-primary" href="<?php echo esc_url($wpupdate_href)?>"><?php esc_html_e('Update Now','loco-translate')?></a>
             <a class="button-link has-icon icon-ext" target="_blank" href="https://wordpress.org/download/releases/"><?php esc_html_e( __('Install manually','loco-translate') )?></a>
         </p>
         </div><?php

@@ -15,20 +15,16 @@ abstract class PB_Elementor_Register_Edit_Profile_Widget extends PB_Elementor_Wi
      */
     protected function register_pb_scripts_styles() {
         //Select2
-        wp_register_script('wppb_sl2_lib_js', WPPB_PLUGIN_URL . 'assets/js/select2/select2.min.js', array('jquery'));
+        // wp_enqueue_script('wppb_sl2_lib_js', WPPB_PLUGIN_URL . 'assets/js/select2/select2.min.js', array('jquery'));
+        // wp_enqueue_style('wppb_sl2_lib_css', WPPB_PLUGIN_URL . 'assets/css/select2/select2.min.css');
 
-        wp_register_style('wppb_sl2_lib_css', WPPB_PLUGIN_URL . 'assets/css/select2/select2.min.css');
 
-        //SelectCPT
-        wp_register_script( 'wppb_select2_js', WPPB_PLUGIN_URL .'assets/js/select2/select2.min.js', array( 'jquery' ), PROFILE_BUILDER_VERSION );
-        wp_register_style( 'wppb_select2_css', WPPB_PLUGIN_URL .'assets/css/select2/select2.min.css', array(), PROFILE_BUILDER_VERSION );
+        //Upload
+        wp_register_style( 'profile-builder-upload-css', WPPB_PLUGIN_URL.'front-end/default-fields/upload/upload.css', false, PROFILE_BUILDER_VERSION );
 
         if( defined( 'WPPB_PAID_PLUGIN_URL' ) ){
-            wp_register_style( 'wppb_sl2_css', WPPB_PAID_PLUGIN_URL.'front-end/extra-fields/select2/select2.css', false, PROFILE_BUILDER_VERSION );
+            //SelectCPT
             wp_register_style( 'wppb-select-cpt-style', WPPB_PAID_PLUGIN_URL.'front-end/extra-fields/select-cpt/style-front-end.css', array(), PROFILE_BUILDER_VERSION );
-
-            //Upload
-            wp_register_style( 'profile-builder-upload-css', WPPB_PAID_PLUGIN_URL.'front-end/extra-fields/upload/upload.css', false, PROFILE_BUILDER_VERSION );
 
             //Multi-Step Forms compatibility
             wp_register_style( 'wppb-msf-style-frontend', WPPB_PAID_PLUGIN_URL.'add-ons-advanced/multi-step-forms/assets/css/frontend-multi-step-forms.css', array(), PROFILE_BUILDER_VERSION );
@@ -192,6 +188,23 @@ abstract class PB_Elementor_Register_Edit_Profile_Widget extends PB_Elementor_Wi
             );
         }
 
+        if( defined( 'WPPB_PAID_PLUGIN_DIR' ) ) {
+            $this->add_control(
+                'pb_ajax',
+                array(
+                    'label'        => __( 'AJAX Validation', 'profile-builder' ),
+                    'type'         => \Elementor\Controls_Manager::SWITCHER,
+                    'label_on'     => __( 'Yes', 'profile-builder' ),
+                    'label_off'    => __( 'No', 'profile-builder' ),
+                    'return_value' => 'true',
+                    'default'      => 'false',
+                    'condition'    => [
+                        'pb_form_name' => '',
+                    ],
+                )
+            );
+        }
+
         foreach ( $edit_form_links as $form_slug => $edit_form_link ){
             foreach ($form_fields[$form_slug] as $key_1 => $form_field) {
                 if ($form_slug === 'default') {
@@ -213,7 +226,7 @@ abstract class PB_Elementor_Register_Edit_Profile_Widget extends PB_Elementor_Wi
                 'pb_form_'.$form_slug.'_edit_link' ,
                 array(
                     'type'     => \Elementor\Controls_Manager::RAW_HTML,
-                    'raw'      => sprintf( __( 'Edit the Settings for this form %1$shere%2$s' , 'profile-builder' ), '<a href="'.esc_url( $edit_form_link ).'" target="_blank">', '</a>'),
+                    'raw'      => sprintf( __( 'Edit the Settings for this form %1$shere%2$s' , 'profile-builder' ), '<a href="'. ( $edit_form_link ? esc_url( $edit_form_link )  : '').'" target="_blank">', '</a>'),
                     'condition'=> [
                         'pb_form_name' => [ '-'.$form_slug ],
                     ],
@@ -369,7 +382,7 @@ abstract class PB_Elementor_Register_Edit_Profile_Widget extends PB_Elementor_Wi
                 'pb_register_' . $form_slug . '_register_button',
                 [
                     'register_button' => [
-                        'selector' => '.wppb-register-user .submit.button',
+                        'selector' => '.wppb-register-user #register.submit.button',
                         'section_name' => 'Register Button',
                     ]
                 ]
@@ -381,7 +394,7 @@ abstract class PB_Elementor_Register_Edit_Profile_Widget extends PB_Elementor_Wi
                 'pb_edit_profile_'.$form_slug.'_update_button',
                 [
                     'update_button' => [
-                        'selector'     => '.wppb-edit-user .submit.button',
+                        'selector'     => '.wppb-edit-user #edit_profile.submit.button',
                         'section_name' => 'Update Button',
                     ]
                 ]
@@ -921,9 +934,9 @@ abstract class PB_Elementor_Register_Edit_Profile_Widget extends PB_Elementor_Wi
             $message= "";
         }
 
-        if ( $is_elementor_edit_mode && $output->args !== null ) {
+        if ( $is_elementor_edit_mode && ( isset( $output->args ) && $output->args !== null ) ) {
 
-            if( defined( 'WPPB_PAID_PLUGIN_URL' ) ){
+            if( defined( 'WPPB_PAID_PLUGIN_URL' ) && isset( $output->args['form_fields'] ) ){
                 //add the scripts for various fields
                 foreach ( $output->args['form_fields'] as $form_field ){
                     switch ( $form_field['field'] ){

@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 $text = wppb_toolbox_get_settings( 'fields', 'send-credentials-text' );
 

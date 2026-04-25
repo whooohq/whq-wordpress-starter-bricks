@@ -41,7 +41,7 @@ class Dropbox_Encrypter
             # Short-cut so that the mbstring extension is not required
             $this->key = $key;
         } elseif (($length = mb_strlen($key, '8bit')) !== self::KEY_SIZE) {
-            throw new Dropbox_Exception('Expecting a ' .  self::KEY_SIZE . ' byte key, got ' . $length);
+            throw new Dropbox_Exception('Expecting a ' .  self::KEY_SIZE . ' byte key, got ' . $length); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should happen when the exception is caught and printed
         } else {
             // Set the encryption key
             $this->key = $key;
@@ -58,7 +58,7 @@ class Dropbox_Encrypter
 
         // Encryption: we always use phpseclib for this
         global $updraftplus;
-        $ensure_phpseclib = $updraftplus->ensure_phpseclib('Crypt_AES');
+        $ensure_phpseclib = $updraftplus->ensure_phpseclib();
         
         if (is_wp_error($ensure_phpseclib)) {
             $updraftplus->log("Failed to load phpseclib classes (".$ensure_phpseclib->get_error_code()."): ".$ensure_phpseclib->get_error_message());
@@ -66,14 +66,12 @@ class Dropbox_Encrypter
             return false;
         }
         
-        $updraftplus->ensure_phpseclib('Crypt_Rijndael');
-
-        if (!function_exists('crypt_random_string')) updraft_try_include_file('vendor/phpseclib/phpseclib/phpseclib/Crypt/Random.php', 'require_once');
+        $updraftplus->ensure_phpseclib();
         
-        $iv = crypt_random_string(self::IV_SIZE);
+        $iv = phpseclib_Crypt_Random::string(self::IV_SIZE);
         
         // Defaults to CBC mode
-        $rijndael = new Crypt_Rijndael();
+        $rijndael = new phpseclib_Crypt_Rijndael();
         
         $rijndael->setKey($this->key);
         
@@ -91,31 +89,21 @@ class Dropbox_Encrypter
      */
     public function decrypt($cipherText)
     {
-    
-        // Decryption: prefer mcrypt, if available (since it can decrypt data encrypted by either mcrypt or phpseclib)
 
+		// Note: mcrypt_decrypt() is deprecated since PHP 7.1 and removed in 7.2.
+		// Switched to phpseclib exclusively for decryption.
+		
+		global $updraftplus;
         $cipherText = base64_decode($cipherText);
         $iv = substr($cipherText, 0, self::IV_SIZE);
         $cipherText = substr($cipherText, self::IV_SIZE);
+            
+		$updraftplus->ensure_phpseclib();
 
-        $decrypted = false;
-    
-        if (function_exists('mcrypt_decrypt')) {
-            // @codingStandardsIgnoreLine
-            $token = @mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $this->key, $cipherText, MCRYPT_MODE_CBC, $iv);
-            // Some plugins provide their own version of mcrypt_* functions and they don't provide the functionality that the original method has, so try and detect if the decryption has failed and if so try rijndael
-            if (false != $token) $decrypted = true;
-        }
-        
-        if (!$decrypted) {
-            global $updraftplus;
-            $updraftplus->ensure_phpseclib('Crypt_Rijndael');
-
-            $rijndael = new Crypt_Rijndael();
-            $rijndael->setKey($this->key);
-            $rijndael->setIV($iv);
-            $token = $rijndael->decrypt($cipherText);
-        }
+		$rijndael = new phpseclib_Crypt_Rijndael();
+		$rijndael->setKey($this->key);
+		$rijndael->setIV($iv);
+		$token = $rijndael->decrypt($cipherText);
         
         return $token;
     }

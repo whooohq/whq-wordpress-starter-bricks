@@ -94,21 +94,20 @@ final class Admin_Menu {
      */
     public static function get_texts() {
         return [
-            'error'                    => __( 'Error', 'cache-warmer' ),
-            'somethingWentWrong'       => __( 'Something went wrong.', 'cache-warmer' ),
-            'startANewWarmUp'          => __( 'Start a new Warm-Up', 'cache-warmer' ),
-            'areYouSure'               => __( 'Are you sure?', 'cache-warmer' ),
-            'yes'                      => __( 'Yes', 'cache-warmer' ),
-            'urlIsInvalid'             => __( 'Entry points: URL {} is invalid.', 'cache-warmer' ),
-            'resetAllSettingsNotice'   => __( 'Are you sure you want to reset all plugin settings?', 'cache-warmer' ),
-            'yesResetAllSettings'      => __( 'Yes, reset all plugin settings!', 'cache-warmer' ),
-            'invalidExternalWarmerKey' => __( 'Invalid External Warmer key', 'cache-warmer' ),
+            'error'                  => __( 'Error', 'cache-warmer' ),
+            'somethingWentWrong'     => __( 'Something went wrong.', 'cache-warmer' ),
+            'startANewWarmUp'        => __( 'Start a new Warm-Up', 'cache-warmer' ),
+            'areYouSure'             => __( 'Are you sure?', 'cache-warmer' ),
+            'yes'                    => __( 'Yes', 'cache-warmer' ),
+            'urlIsInvalid'           => __( 'Entry points: URL {} is invalid.', 'cache-warmer' ),
+            'resetAllSettingsNotice' => __( 'Are you sure you want to reset all plugin settings?', 'cache-warmer' ),
+            'yesResetAllSettings'    => __( 'Yes, reset all plugin settings!', 'cache-warmer' ),
             /* translators: %s is a plugin name. */
-            'settingsAreImporting'     => sprintf( __( '%s settings are being imported.', 'cache-warmer' ), Cache_Warmer::$name ),
-            'pleaseWait'               => __( 'Please wait.', 'cache-warmer' ),
-            'cookiesInsertionNotice'   => __( 'If some other admin user visits this page, he can use your inserted cookies to log-in into your account on this site.<br><br>The page will be reloaded if you click "yes".', 'cache-warmer' ),
-            'yesIUnderstand'           => __( 'Yes, I understand', 'cache-warmer' ),
-            'no'                       => __( 'No', 'cache-warmer' ),
+            'settingsAreImporting'   => sprintf( __( '%s settings are being imported.', 'cache-warmer' ), Cache_Warmer::$name ),
+            'pleaseWait'             => __( 'Please wait.', 'cache-warmer' ),
+            'cookiesInsertionNotice' => __( 'If some other admin user visits this page, he can use your inserted cookies to log-in into your account on this site.<br><br>The page will be reloaded if you click "yes".', 'cache-warmer' ),
+            'yesIUnderstand'         => __( 'Yes, I understand', 'cache-warmer' ),
+            'no'                     => __( 'No', 'cache-warmer' ),
         ];
     }
 }

@@ -30,7 +30,9 @@ class UpdraftPlus_BackupModule_openstack extends UpdraftPlus_BackupModule_openst
 
 		if (null === $disablesslverify) $disablesslverify = UpdraftPlus_Options::get_updraft_option('updraft_ssl_disableverify');
 
-		if (empty($user) || empty($password) || empty($authurl)) throw new Exception(__('Authorisation failed (check your credentials)', 'updraftplus'));// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable -- $user, $password and $authurl being extracted in extract() line 29
+		if (empty($user) || empty($password) || empty($authurl)) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable -- $user, $password and $authurl being extracted in extract() line 29
+			throw new Exception(__('Authorisation failed (check your credentials)', 'updraftplus')); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
+		}
 
 		updraft_try_include_file('vendor/autoload.php', 'include_once');
 		global $updraftplus;
@@ -112,22 +114,26 @@ class UpdraftPlus_BackupModule_openstack extends UpdraftPlus_BackupModule_openst
 	public function credentials_test($posted_settings) {
 
 		if (empty($posted_settings['user'])) {
-			printf(__("Failure: No %s was given.", 'updraftplus'), __('username', 'updraftplus'));
+			/* translators: %s: Username */
+			echo esc_html(sprintf(__("Failure: No %s was given.", 'updraftplus'), __('username', 'updraftplus')));
 			return;
 		}
 
 		if (empty($posted_settings['password'])) {
-			printf(__("Failure: No %s was given.", 'updraftplus'), __('password', 'updraftplus'));
+			/* translators: %s: Password */
+			echo esc_html(sprintf(__("Failure: No %s was given.", 'updraftplus'), __('password', 'updraftplus')));
 			return;
 		}
 
 		if (empty($posted_settings['tenant'])) {
-			printf(__("Failure: No %s was given.", 'updraftplus'), _x('tenant', '"tenant" is a term used with OpenStack storage - Google for "OpenStack tenant" to get more help on its meaning', 'updraftplus'));
+			/* translators: %s: Tenant (used in OpenStack storage) */
+			echo esc_html(sprintf(__("Failure: No %s was given.", 'updraftplus'), _x('tenant', '"tenant" is a term used with OpenStack storage - Google for "OpenStack tenant" to get more help on its meaning', 'updraftplus')));
 			return;
 		}
 
 		if (empty($posted_settings['authurl'])) {
-			printf(__("Failure: No %s was given.", 'updraftplus'), __('authentication URI', 'updraftplus'));
+			/* translators: %s: Authentication URI */
+			echo esc_html(sprintf(__("Failure: No %s was given.", 'updraftplus'), __('authentication URI', 'updraftplus')));
 			return;
 		}
 
@@ -170,7 +176,7 @@ class UpdraftPlus_BackupModule_openstack extends UpdraftPlus_BackupModule_openst
 				{{{mb_substr_existence_label}}}
 				{{{curl_existence_label}}}
 				<br>
-				<p>{{openstack_text_description}} <a href="{{faq_link_url}}" target="_blank">{{faq_link_text}}</a></p>
+				<p>{{openstack_text_description}} <a href="{{{faq_link_url}}}" target="_blank">{{faq_link_text}}</a></p>
 			</td>
 		</tr>
 
@@ -236,14 +242,30 @@ class UpdraftPlus_BackupModule_openstack extends UpdraftPlus_BackupModule_openst
 	 */
 	public function get_template_properties() {
 		global $updraftplus, $updraftplus_admin;
+
+		$mb_substr_existence_label = '';
+		if (!apply_filters('updraftplus_openstack_mbsubstr_exists', function_exists('mb_substr'))) {
+			$mb_substr_existence_label = wp_kses($updraftplus_admin->show_double_warning(
+				'<strong>'.__('Warning', 'updraftplus').':</strong> '.
+				/* translators: %s: Required module name */
+				sprintf(__('Your web server\'s PHP installation does not include a required module (%s).', 'updraftplus'), 'mbstring').' '.
+				__('Please contact your web hosting provider\'s support.', 'updraftplus').' '.
+				/* translators: 1: Module name, 2: Required module name */
+				sprintf(__('UpdraftPlus\'s %1$s module <strong>requires</strong> %2$s.', 'updraftplus'), $this->desc, 'mbstring').' '.
+				__('Please do not file any support requests; there is no alternative.', 'updraftplus'),
+				$this->method,
+				false
+			), $this->allowed_html_for_content_sanitisation());
+		}
+
 		$properties = array(
 			'storage_image_url' => !empty($this->img_url) ? UPDRAFTPLUS_URL.$this->img_url : '',
 			'storage_long_description' => $this->long_desc,
-			'mb_substr_existence_label' => !apply_filters('updraftplus_openstack_mbsubstr_exists', function_exists('mb_substr')) ? wp_kses($updraftplus_admin->show_double_warning('<strong>'.__('Warning', 'updraftplus').':</strong> '.sprintf(__('Your web server\'s PHP installation does not include a required module (%s). Please contact your web hosting provider\'s support.', 'updraftplus'), 'mbstring').' '.sprintf(__("UpdraftPlus's %s module <strong>requires</strong> %s. Please do not file any support requests; there is no alternative.", 'updraftplus'), $this->desc, 'mbstring'), $this->method, false), $this->allowed_html_for_content_sanitisation()) : '',
+			'mb_substr_existence_label' => $mb_substr_existence_label,
 			'curl_existence_label' => wp_kses($updraftplus_admin->curl_check($this->long_desc, false, $this->method.' hidden-in-updraftcentral', false), $this->allowed_html_for_content_sanitisation()),
-			'openstack_text_description' => __('Get your access credentials from your OpenStack Swift provider, and then pick a container name to use for storage. This container will be created for you if it does not already exist.', 'updraftplus'),
+			'openstack_text_description' => __('Get your access credentials from your OpenStack Swift provider, and then pick a container name to use for storage.', 'updraftplus').' '.__('This container will be created for you if it does not already exist.', 'updraftplus'),
 			'faq_link_text' => __('Also, you should read this important FAQ.', 'updraftplus'),
-			'faq_link_url' => wp_kses(apply_filters("updraftplus_com_link", "https://updraftplus.com/faqs/there-appear-to-be-lots-of-extra-files-in-my-rackspace-cloud-files-container/"), array(), array('http', 'https')),
+			'faq_link_url' => wp_kses(apply_filters("updraftplus_com_link", "https://teamupdraft.com/documentation/updraftplus/topics/cloud-storage/rackspace/there-are-extra-files-in-my-rackspace-cloud-files-container/?utm_source=udp-plugin&utm_medium=referral&utm_campaign=paac&utm_content=openstack-important-faq&utm_creative_format=tex"), array(), array('http', 'https')),
 			'input_authentication_uri_label' => __('Authentication URI', 'updraftplus'),
 			'input_authentication_uri_title' => _x('This needs to be a v2 (Keystone) authentication URI; v1 (Swauth) is not supported.', 'Keystone and swauth are technical terms which cannot be translated', 'updraftplus'),
 			'input_tenant_label' => __('Tenant', 'updraftplus'),
@@ -255,6 +277,7 @@ class UpdraftPlus_BackupModule_openstack extends UpdraftPlus_BackupModule_openst
 			'input_password_label' => __('Password', 'updraftplus'),
 			'input_password_type' => apply_filters('updraftplus_admin_secret_field_type', 'password'),
 			'input_container_label' => __('Container', 'updraftplus'),
+			/* translators: %s: Remote storage method */
 			'input_test_label' => sprintf(__('Test %s Settings', 'updraftplus'), $updraftplus->backup_methods[$this->get_id()]),
 		);
 		return wp_parse_args($properties, $this->get_persistent_variables_and_methods());

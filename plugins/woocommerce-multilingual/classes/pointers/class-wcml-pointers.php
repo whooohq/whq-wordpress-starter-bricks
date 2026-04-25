@@ -5,40 +5,40 @@ use function WCML\functions\isStandAlone;
 class WCML_Pointers{
 
 	public function add_hooks() {
-		add_action( 'admin_head', array( $this, 'setup' ) );
+		add_action( 'admin_head', [ $this, 'setup' ] );
 	}
 
 	public function setup() {
 		$current_screen = get_current_screen();
-		
+
 		if ( empty( $current_screen ) ) {
 			return;
 		}
-		
+
 		if ( ! WCML_Capabilities::canManageWcml() ) {
 			return;
 		}
 
-		$tab        = isset( $_GET['tab'] ) ? $_GET['tab'] : '';
-		$section    = isset( $_GET['section'] ) ? $_GET['section'] : '';
+		$tab        = $_GET['tab'] ?? '';
+		$section    = $_GET['section'] ?? '';
 		$isFullMode = ! isStandAlone();
 		wp_register_style( 'wcml-pointers', WCML_PLUGIN_URL . '/res/css/wcml-pointers.css' );
 
 		if ( $isFullMode && 'edit-product' === $current_screen->id ) {
-			add_action( 'admin_footer', array( $this, 'add_products_translation_link' ), 100 );
+			add_action( 'admin_footer', [ $this, 'add_products_translation_link' ], 100 );
 		} elseif ( 'woocommerce_page_wc-settings' === $current_screen->id ) {
 			if ( $isFullMode && 'shipping' === $tab && 'classes' === $section ) {
-				add_action( 'admin_footer', array( $this, 'add_shipping_classes_translation_link' ) );
+				add_action( 'admin_footer', [ $this, 'add_shipping_classes_translation_link' ] );
 			} elseif ( ! $tab || 'general' === $tab ) {
-				add_filter( 'woocommerce_general_settings', array( $this, 'add_multi_currency_link' ) );
+				add_filter( 'woocommerce_general_settings', [ $this, 'add_multi_currency_link' ] );
 			} elseif ( $isFullMode && 'advanced' === $tab ) {
-				add_filter( 'woocommerce_settings_pages', array( $this, 'add_endpoints_translation_link' ) );
+				add_filter( 'woocommerce_settings_pages', [ $this, 'add_endpoints_translation_link' ] );
 			}
 		}
 	}
 
 	public function add_products_translation_link() {
-		$link   = admin_url( 'admin.php?page=wpml-wcml' );
+		$link   = \WCML\Utilities\AdminUrl::getWPMLTMDashboardProducts();
 		$name   = __( 'Translate WooCommerce products', 'woocommerce-multilingual' );
 		$anchor = '<a class="button button-small button-wpml wcml-pointer-products_translation" href="{{ url }}">{{ text }}</a>';
 
@@ -46,7 +46,11 @@ class WCML_Pointers{
 	}
 
 	public function add_shipping_classes_translation_link() {
-		$link   = admin_url( 'admin.php?page=wpml-wcml&tab=product_shipping_class' );
+		if ( ! WCML_Terms::wpml_is_product_shipping_class_set_as_translated() ) {
+			return;
+		}
+
+		$link   = \WCML\Utilities\AdminUrl::getWPMLTaxonomyTranslation( 'product_shipping_class' );
 		$name   = __( 'Translate shipping classes', 'woocommerce-multilingual' );
 		$anchor = '<a class="button button-small button-wpml wcml-pointer-shipping_classes_translation" href="{{ url }}">{{ text }}</a>';
 
@@ -59,7 +63,7 @@ class WCML_Pointers{
 	 * @return array
 	 */
 	public function add_multi_currency_link( array $settings ) {
-		$link = admin_url( 'admin.php?page=wpml-wcml&tab=multi-currency' );
+		$link = \WCML\Utilities\AdminUrl::getMultiCurrencyTab();
 		$name = __( 'Configure multicurrency for multilingual sites', 'woocommerce-multilingual' );
 
 		$anchor = '<a class="button button-small button-wpml wcml-pointer-multi_currency" href="{{ url }}">{{ text }}</a>';
@@ -73,7 +77,7 @@ class WCML_Pointers{
 	 * @return array
 	 */
 	public function add_endpoints_translation_link( array $settings ) {
-		$link = admin_url( 'admin.php?page=wpml-wcml&tab=slugs' );
+		$link = \WCML\Utilities\AdminUrl::getStoreURLTab();
 		$name = __( 'Translate endpoints', 'woocommerce-multilingual' );
 
 		$anchor = '<a class="button button-small button-wpml wcml-pointer-endpoints_translation" href="{{ url }}">{{ text }}</a>';
@@ -95,7 +99,7 @@ class WCML_Pointers{
 		// @todo move to an enqueued script?.
 		?>
 			<script type="text/javascript">
-				jQuery('<?php echo $jquery_selector; ?>').<?php echo $method; ?>('<?php echo $this->get_anchor( $link, $name, $anchor_template ); ?>');
+				jQuery('<?php echo esc_js( $jquery_selector ); ?>').<?php echo $method; ?>('<?php echo $this->get_anchor( $link, $name, $anchor_template ); ?>');
 			</script>
 		<?php
 	}
@@ -112,7 +116,7 @@ class WCML_Pointers{
 	private function add_link_with_settings( $link, $name, $setting_key, array $settings, $anchor_template ) {
 		wp_enqueue_style( 'wcml-pointers' );
 		foreach ( $settings as $key => $value ) {
-			if ( $setting_key === $value['id'] && isset( $value['desc'] ) ) {
+			if ( is_array( $value ) && isset( $value['id'], $value['desc'] ) && $setting_key === $value['id'] ) {
 
 				$settings[ $key ]['desc'] = $this->get_anchor( $link, $name, $anchor_template ) . '<br />' . $value['desc'];
 			}
@@ -129,6 +133,6 @@ class WCML_Pointers{
 	 * @return string
 	 */
 	private function get_anchor( $link, $name, $anchor_template ) {
-		return str_replace( array( '{{ url }}', '{{ text }}' ), array( $link, $name ), $anchor_template );
+		return str_replace( [ '{{ url }}', '{{ text }}' ], [ $link, $name ], $anchor_template );
 	}
 }

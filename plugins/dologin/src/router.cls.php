@@ -13,12 +13,14 @@ class Router extends Instance {
 	const TYPE = 'dologin_type';
 	const I = 'dologin_i';
 
+	const ACTION_SITE = 'site';
 	const ACTION_PSWD = 'pswdless';
 	const ACTION_AUTH = 'auth';
 	const ACTION_INSTALLER = 'installer';
 
 	// List all handlers here
 	private static $_HANDLERS = array(
+		self::ACTION_SITE,
 		self::ACTION_PSWD,
 		self::ACTION_AUTH,
 		self::ACTION_INSTALLER,
@@ -126,6 +128,7 @@ class Router extends Instance {
 		$_can_option = current_user_can( 'manage_options' );
 
 		switch ( $action ) {
+			case self::ACTION_SITE:
 			case self::ACTION_PSWD:
 			case self::ACTION_AUTH:
 			case self::ACTION_INSTALLER:
@@ -147,7 +150,11 @@ class Router extends Instance {
 	 * @since  1.4
 	 */
 	private function verify_nonce( $action ) {
-		if ( ! isset( $_REQUEST[ Router::NONCE ] ) || ! wp_verify_nonce( $_REQUEST[ Router::NONCE ], $action ) ) {
+		if ( ! isset( $_REQUEST[ Router::NONCE ] ) ) {
+			return false;
+		}
+
+		if (! wp_verify_nonce( $_REQUEST[ Router::NONCE ], $action )) {
 			return false;
 		}
 

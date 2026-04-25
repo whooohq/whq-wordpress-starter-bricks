@@ -1,10 +1,18 @@
 <?php
 
+use WCML\Multicurrency\CurrencySwitcher\CurrencySwitcherComponent;
+use WCML\Multicurrency\CurrencySwitcher\CurrencySwitcherTemplateInterface;
 use WPML\Core\Twig_SimpleFunction;
 
-class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
+class WCML_Currency_Switcher_Template extends WCML_Templates_Factory implements CurrencySwitcherTemplateInterface {
 
-	const FILENAME = 'template.twig';
+	const TEMPLATE_FILENAME_LEGACY_TWIG = 'template.twig';
+
+	/**
+	 * backward compatibility
+	 * @deprcated 5.5.0
+	 */
+	const FILENAME = self::TEMPLATE_FILENAME_LEGACY_TWIG;
 
 	/* @var array $template */
 	private $template;
@@ -12,23 +20,13 @@ class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
 	/* @var string $prefix */
 	private $prefix = 'wcml-cs-';
 
-	/**
-	 * @var woocommerce_wpml
-	 */
-	private $woocommerce_wpml;
-
 	/** @var array|null $model */
 	private $model;
 
 	/**
-	 * WCML_Currency_Switcher_Template constructor.
-	 *
-	 * @param woocommerce_wpml $woocommerce_wpml
-	 * @param array            $template_data
+	 * @param array $template_data
 	 */
-	public function __construct( $woocommerce_wpml, $template_data ) {
-		$this->woocommerce_wpml = $woocommerce_wpml;
-
+	public function __construct( $template_data ) {
 		$this->template = $this->format_data( $template_data );
 
 		if ( array_key_exists( 'template_string', $this->template ) ) {
@@ -43,7 +41,7 @@ class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
 	}
 
 	/**
-	 * @param array $model
+	 * @param array|mixed $model
 	 */
 	public function set_model( $model ) {
 		$this->model = is_array( $model ) ? $model : [ $model ];
@@ -60,11 +58,19 @@ class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
 		echo $this->get_view();
 	}
 
-	public function get_formatted_price( $currency, $format ) {
-		$wc_currencies = get_woocommerce_currencies();
+	protected function before_render() {
+		$templateSetup = $this->get_template_data();
 
-		$wcml_settings  = $this->woocommerce_wpml->get_settings();
-		$multi_currency = $this->woocommerce_wpml->multi_currency;
+		/**
+		 * Hook fired when a currency switcher is using legacy TWIG template
+		 *
+		 * @param string $templateSlug Template slug
+		 */
+		do_action( 'wpml_currency_switcher_uses_twig_templates', $templateSetup['slug'] ?? '' );
+	}
+
+	static public function get_formatted_price( $currency, $format ) {
+		$wc_currencies = get_woocommerce_currencies();
 
 		$currency_format = preg_replace(
 			[ '#%name%#', '#%symbol%#', '#%code%#' ],
@@ -89,65 +95,39 @@ class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
 	 */
 	private function format_data( $template_data ) {
 		foreach ( [ 'path', 'js', 'css' ] as $k ) {
-			$template_data[ $k ] = isset( $template_data[ $k ] ) ? $template_data[ $k ] : [];
+			$template_data[ $k ] = $template_data[ $k ] ?? [];
 			$template_data[ $k ] = is_array( $template_data[ $k ] ) ? $template_data[ $k ] : [ $template_data[ $k ] ];
 		}
 
 		return $template_data;
 	}
 
-
-	/**
-	 * @param bool $with_version
-	 *
-	 * @return array
-	 */
-	public function get_styles( $with_version = false ) {
+	public function get_styles( bool $with_version = false ): array {
 		return $with_version
-			? array_map( [ $this, 'add_resource_version' ], $this->template['css'] )
+			? array_map( [ CurrencySwitcherComponent::class, 'addResourceVersion' ], $this->template['css'] )
 			: $this->template['css'];
 	}
 
-	/**
-	 * @return bool
-	 */
-	public function has_styles() {
+	public function has_styles(): bool {
 		return ! empty( $this->template['css'] );
 	}
 
-	/**
-	 * @param bool $with_version
-	 *
-	 * @return array
-	 */
-	public function get_scripts( $with_version = false ) {
+	public function get_scripts( bool $with_version = false ): array {
 		return $with_version
-			? array_map( [ $this, 'add_resource_version' ], $this->template['js'] )
+			? array_map( [ CurrencySwitcherComponent::class, 'addResourceVersion' ], $this->template['js'] )
 			: $this->template['js'];
 	}
 
-	/**
-	 * @param string $url
-	 *
-	 * @return string
-	 */
-	private function add_resource_version( $url ) {
-		return $url . '?ver=' . WCML_VERSION;
-	}
-
-	/**
-	 * @param int $index
-	 *
-	 * @return string
-	 */
-	public function get_resource_handler( $index ) {
-		$slug   = isset( $this->template['slug'] ) ? $this->template['slug'] : '';
+	public function get_resource_handler( string $index ): string {
+		$slug = $this->template['slug'] ?? '';
 		$prefix = $this->is_core() ? '' : $this->prefix;
+
 		return $prefix . $slug . '-' . $index;
 	}
 
 	public function get_inline_style_handler() {
 		$count = count( $this->template['css'] );
+
 		return $count > 0 ? $this->get_resource_handler( $count - 1 ) : null;
 	}
 
@@ -170,10 +150,7 @@ class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
 		return $template;
 	}
 
-	/**
-	 * @return array
-	 */
-	public function get_template_data() {
+	public function get_template_data(): array {
 		return $this->template;
 	}
 
@@ -184,14 +161,13 @@ class WCML_Currency_Switcher_Template extends WCML_Templates_Factory {
 		return isset( $this->template['is_core'] ) ? (bool) $this->template['is_core'] : false;
 	}
 
-	public function is_path_valid() {
-		$valid = true;
+	public function is_path_valid(): bool {
 		foreach ( $this->template_paths as $path ) {
 			if ( ! file_exists( $path ) ) {
-				$valid = false;
-				break;
+				return false;
 			}
 		}
-		return $valid;
+
+		return true;
 	}
 }

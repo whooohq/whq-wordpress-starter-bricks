@@ -46,6 +46,9 @@ class WPPB_Elementor {
 
         // Filter Elementor `the_content` hook
         add_action( 'elementor/frontend/the_content', array( $this, 'filter_elementor_templates' ), 20 );
+
+		// Disable Element Cache when Content Restriction rules are setup for an element
+		add_filter( 'elementor/element/is_dynamic_content', array( $this, 'are_content_restriction_rules_setup' ), 20, 3 );
 	}
 
     /**
@@ -339,6 +342,24 @@ class WPPB_Elementor {
 
         return wppb_content_restriction_filter_content( $content, $document->get_post() );
     }
+
+	public function are_content_restriction_rules_setup( $is_dynamic_content, $data, $element ){
+
+		if( empty( $data['settings'] ) )
+			return $is_dynamic_content;
+
+		if( isset( $data['settings']['wppb_restriction_loggedin_users'] ) && $data['settings']['wppb_restriction_loggedin_users'] == 'yes' )
+			return true;
+
+		if( isset( $data['settings']['wppb_restriction_loggedout_users'] ) && $data['settings']['wppb_restriction_loggedout_users'] == 'yes' )
+			return true;
+
+		if( isset( $data['settings']['wppb_restriction_user_roles'] ) && !empty( $data['settings']['wppb_restriction_user_roles'] ) )
+			return true;
+
+		return $is_dynamic_content;
+
+	}
 }
 
 // Instantiate Plugin Class

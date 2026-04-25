@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 $delay = wppb_toolbox_get_settings( 'forms', 'redirect-delay-timer' );
 

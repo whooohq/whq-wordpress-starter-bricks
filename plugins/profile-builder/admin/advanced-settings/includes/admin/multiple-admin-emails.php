@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 function wppb_as_overwrite_mail_to( $to, $context ){
     $admin_email = get_option( 'admin_email' );
     $wppb_toolbox_admin_settings = get_option('wppb_toolbox_admin_settings');

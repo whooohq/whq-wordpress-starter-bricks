@@ -2,6 +2,30 @@
 
 /**
  * A redirect action - what happens after a URL is matched.
+ *
+ * @phpstan-type UrlActionData array{
+ *     code: int,
+ *     target: string,
+ *     type: string
+ * }
+ * @phpstan-type ErrorActionData array{
+ *     code: int,
+ *     type: string
+ * }
+ * @phpstan-type NothingActionData array{
+ *     code: int,
+ *     type: string
+ * }
+ * @phpstan-type RandomActionData array{
+ *     code: int,
+ *     type: string
+ * }
+ * @phpstan-type PassActionData array{
+ *     code: int,
+ *     target: string,
+ *     type: string
+ * }
+ * @phpstan-type RedActionData UrlActionData|ErrorActionData|NothingActionData|RandomActionData|PassActionData
  */
 abstract class Red_Action {
 	/**
@@ -21,23 +45,32 @@ abstract class Red_Action {
 	/**
 	 * Target URL, if any
 	 *
-	 * @var String|null
+	 * @var string|null
 	 */
 	protected $target = null;
 
 	/**
 	 * Constructor
 	 *
-	 * @param array $values Values.
+	 * @param RedActionData|array{} $values Values.
 	 */
 	public function __construct( $values = [] ) {
-		if ( is_array( $values ) ) {
-			foreach ( $values as $key => $value ) {
-				$this->$key = $value;
-			}
+		if ( isset( $values['code'] ) ) {
+			$this->code = $values['code'];
+		}
+
+		if ( isset( $values['target'] ) ) {
+			$this->target = $values['target'];
+		}
+
+		if ( isset( $values['type'] ) ) {
+			$this->type = $values['type'];
 		}
 	}
 
+	/**
+	 * @return string
+	 */
 	abstract public function name();
 
 	/**
@@ -52,7 +85,7 @@ abstract class Red_Action {
 
 		if ( isset( $avail[ $name ] ) ) {
 			if ( ! class_exists( strtolower( $avail[ $name ][1] ) ) ) {
-				include_once dirname( __FILE__ ) . '/../actions/' . $avail[ $name ][0];
+				include_once __DIR__ . '/../actions/' . $avail[ $name ][0];
 			}
 
 			/**
@@ -69,7 +102,7 @@ abstract class Red_Action {
 	/**
 	 * Get list of available actions
 	 *
-	 * @return array
+	 * @return array<string, array{string, string}>
 	 */
 	public static function available() {
 		return [
@@ -102,7 +135,7 @@ abstract class Red_Action {
 	/**
 	 * Set the target for this action
 	 *
-	 * @param String $target_url The original URL from the client.
+	 * @param string $target_url The original URL from the client.
 	 * @return void
 	 */
 	public function set_target( $target_url ) {
@@ -112,7 +145,7 @@ abstract class Red_Action {
 	/**
 	 * Get the target for this action
 	 *
-	 * @return String|null
+	 * @return string|null
 	 */
 	public function get_target() {
 		return $this->target;

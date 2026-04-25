@@ -32,16 +32,15 @@ class ProductTerms extends Handler {
 	 * @param \WP_REST_Request $request Request object.
 	 *
 	 * @return array
-	 *
-	 * @throws InvalidLanguage
 	 */
 	public function query( $args, $request ) {
 		$language = Obj::prop( 'lang', $request->get_params() );
 
 		if ( $language ) {
 			if ( 'all' === $language ) {
-				remove_filter( 'terms_clauses', [ $this->sitepress, 'terms_clauses' ], 10 );
+				remove_filter( 'terms_clauses', [ $this->sitepress, 'terms_clauses' ] );
 				remove_filter( 'get_term', [ $this->sitepress, 'get_term_adjust_id' ], 1 );
+				remove_filter( 'get_terms_args', [ $this->sitepress, 'get_terms_args_filter' ] );
 			} else {
 				$this->checkLanguage( $language );
 			}
@@ -69,19 +68,13 @@ class ProductTerms extends Handler {
 		if ( $trid ) {
 			$getTermId = function( $termTaxonomyId ) {
 				$term = get_term_by( 'term_taxonomy_id', $termTaxonomyId );
-				return isset( $term->term_id ) ? $term->term_id : null;
+				return $term->term_id ?? null;
 			};
-
-			$hasFilter = remove_filter( 'get_term', [ $this->sitepress, 'get_term_adjust_id' ], 1 );
 
 			$response->data['translations'] = Fns::map(
 				$getTermId,
 				$this->wpmlTermTranslations->get_element_translations( $termTaxonomyId, $trid )
 			);
-
-			if ( $hasFilter ) {
-				add_filter( 'get_term', [ $this->sitepress, 'get_term_adjust_id' ], 1 );
-			}
 
 			$response->data['lang'] = $this->wpmlTermTranslations->get_element_lang_code( $termTaxonomyId );
 		}
@@ -94,11 +87,10 @@ class ProductTerms extends Handler {
 	 *
 	 * @param \WP_Term         $term
 	 * @param \WP_REST_Request $request
-	 * @param bool             $creating
+	 * @param bool             $creating if true, it is an insert event; otherwise an update.
 	 *
-	 * @throws InvalidLanguage
-	 * @throws InvalidTerm
-	 *
+	 * @throws MissingLanguage When no $language is set yet $translationOf is set.
+	 * @throws InvalidTerm When updating the term and no $trid obtained.
 	 */
 	public function insert( $term, $request, $creating ) {
 		$getParam = Obj::prop( Fns::__, $request->get_params() );
@@ -110,18 +102,22 @@ class ProductTerms extends Handler {
 
 			$this->checkLanguage( $language );
 
-			if ( $translationOf ) {
-				$translationOfTerm = get_term( $translationOf, $term->taxonomy );
+			if ( $creating ) {
+				if ( $translationOf ) {
+					$translationOfTerm = get_term( $translationOf, $term->taxonomy );
 
-				$trid = isset( $translationOfTerm->term_taxonomy_id )
-					? $this->wpmlTermTranslations->get_element_trid( $translationOfTerm->term_taxonomy_id )
-					: null;
+					$trid = isset( $translationOfTerm->term_taxonomy_id )
+						? $this->wpmlTermTranslations->get_element_trid( $translationOfTerm->term_taxonomy_id )
+						: null;
 
-				if ( ! $trid ) {
-					throw new InvalidTerm( $translationOf );
+					if ( ! $trid ) {
+						throw new InvalidTerm( $translationOf );
+					}
+				} else {
+					$trid = null;
 				}
 			} else {
-				$trid = null;
+				$trid = $this->wpmlTermTranslations->get_element_trid( $term->term_taxonomy_id );
 			}
 
 			$this->sitepress->set_element_language_details( $term->term_taxonomy_id, 'tax_' . $term->taxonomy, $trid, $language );
@@ -135,7 +131,7 @@ class ProductTerms extends Handler {
 	/**
 	 * @param string $language
 	 *
-	 * @throws InvalidLanguage
+	 * @throws InvalidLanguage When $language is not active.
 	 */
 	private function checkLanguage( $language ) {
 		if ( ! $this->sitepress->is_active_language( $language ) ) {

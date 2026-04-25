@@ -83,8 +83,25 @@ function relevanssi_recognize_phrases( $search_query, $operator = 'AND' ) {
 		return $all_queries;
 	}
 
-	$custom_fields  = relevanssi_get_custom_fields();
-	$taxonomies     = get_option( 'relevanssi_index_taxonomies_list', array() );
+	/**
+	 * Filters the custom fields for phrase matching.
+	 *
+	 * If you don't want the phrase matching to target custom fields, you can
+	 * have this filter hook return an empty array.
+	 *
+	 * @param array $custom_fields An array of custom field names.
+	 */
+	$custom_fields = apply_filters( 'relevanssi_phrase_custom_fields', relevanssi_get_custom_fields() );
+
+	/**
+	 * Filters the taxonomies for phrase matching.
+	 *
+	 * If you don't want the phrase matching to target taxonomies, you can have
+	 * this filter hook return an empty array.
+	 *
+	 * @param array $taxonomies An array of taxonomy names.
+	 */
+	$taxonomies     = apply_filters( 'relevanssi_phrase_taxonomies', get_option( 'relevanssi_index_taxonomies_list', array() ) );
 	$excerpts       = get_option( 'relevanssi_index_excerpt', 'off' );
 	$phrase_queries = array();
 	$queries        = array();
@@ -161,8 +178,12 @@ function relevanssi_recognize_phrases( $search_query, $operator = 'AND' ) {
  *
  * @return array An array of queries sorted by phrase.
  */
-function relevanssi_generate_phrase_queries( array $phrases, array $taxonomies,
-$custom_fields, string $excerpts ) : array {
+function relevanssi_generate_phrase_queries(
+	array $phrases,
+	array $taxonomies,
+	$custom_fields,
+	string $excerpts
+): array {
 	global $wpdb;
 
 	$status = relevanssi_valid_status_array();
@@ -197,17 +218,15 @@ $custom_fields, string $excerpts ) : array {
 			$excerpt = "OR post_excerpt LIKE '%$phrase%'";
 		}
 
-		$query = "(SELECT ID FROM $wpdb->posts
-			WHERE (post_content LIKE '%$phrase%'
-			OR post_title LIKE '%$title_phrase%' $excerpt)
-			AND post_status IN ($status))";
+		$query = "(SELECT ID FROM $wpdb->posts WHERE (post_content LIKE '%$phrase%' "
+			. "OR post_title LIKE '%$title_phrase%' $excerpt) AND post_status IN ($status))";
 
-		$queries[] = array(
+		$queries['content_title'] = array(
 			'query'  => $query,
 			'target' => 'doc',
 		);
 
-		if ( $taxonomies ) {
+		if ( ! empty( $taxonomies ) ) {
 			$taxonomies_escaped = implode( "','", array_map( 'esc_sql', $taxonomies ) );
 			$taxonomies_sql     = "AND s.taxonomy IN ('$taxonomies_escaped')";
 
@@ -220,13 +239,13 @@ $custom_fields, string $excerpts ) : array {
 				$taxonomies_sql
 				AND t.name LIKE '%$phrase%' AND p.post_status IN ($status))";
 
-			$queries[] = array(
+			$queries['taxonomies'] = array(
 				'query'  => $query,
 				'target' => 'doc',
 			);
 		}
 
-		if ( $custom_fields ) {
+		if ( ! empty( $custom_fields ) ) {
 			$keys = '';
 
 			if ( is_array( $custom_fields ) ) {
@@ -261,7 +280,7 @@ $custom_fields, string $excerpts ) : array {
 				AND m.meta_value LIKE '%$phrase%'
 				AND p.post_status IN ($status))";
 
-			$queries[] = array(
+			$queries['custom_fields'] = array(
 				'query'  => $query,
 				'target' => 'doc',
 			);

@@ -22,74 +22,156 @@
     padding-left: 0;
 }
 
-.wck-post-body{
-    clear: left;
+.wck-post-body {
     float: left;
-    margin-right: -2000px;
-    width: 100%;
 }
 
-.metabox-holder .column-1 {
-    margin-right:300px;
-}
 .metabox-holder .column-2 {
-    float: right;
     width: 280px;
-    clear:right;
-    position:relative;
+    position: absolute;
+    /*right: 80px;*/
+    right: -300px;
+    top: 10px;
 }
-.metabox-holder .column-3 {
-    clear: both;
-    margin-right:300px;
+
+.cozmoslabs-wrap #poststuff {
+    position: relative;
+    padding-top: 0;
 }
+
+.cozmoslabs-email-customizer-section .cozmoslabs-form-field-wrapper {
+    padding: 0;
+}
+
+.cozmoslabs-email-customizer-section .cozmoslabs-form-field-wrapper.checkbox {
+    position: absolute;
+    top: -30px;
+    right: 40px;
+    margin: 0 !important;
+    padding: 0;
+}
+
+#page-save-metabox .hndle,
+.cozmoslabs-email-customizer-section .postbox-header {
+    padding: 0 12px;
+}
+
+#page-save-metabox .hndle,
+.cozmoslabs-email-customizer-section .postbox-header .hndle {
+    font-weight: 600;
+    font-size: 11px !important;
+    line-height: 40px !important;
+    text-transform: uppercase;
+    color: #1E1E1E;
+    height: 40px;
+    pointer-events: none;
+}
+
+.cozmoslabs-email-customizer-section .postbox-header .hndle {
+    padding: 0 !important;
+}
+
+#page-save-metabox .handle-actions,
+.cozmoslabs-email-customizer-section .postbox-header .handle-actions .handlediv {
+    display: none;
+}
+
+.cozmoslabs-email-customizer-section .inside {
+    padding: 0 15px;
+    margin: 0 !important;
+}
+
+.cozmoslabs-email-customizer-section table.mustache-box {
+    margin: 0;
+}
+
+.cozmoslabs-email-customizer-section table.mustache-box tbody {
+    display: flex;
+    flex-direction: column;
+}
+
+
 /*--------------------------------------------------------------
 2.0 Textarea Codemirror styling
 --------------------------------------------------------------*/
-.textarea .stp-extra{
-    border:1px solid #ccc;
-    border-left:0;
-    float: left;
-    overflow: auto;
-    width: 39%;
-    height:400px;
+.cozmoslabs-form-field-wrapper.textarea {
+    gap: 0;
 }
-.textarea  .stp-extra h4 {
+
+.textarea .stp-extra {
+    border: 1px solid #ccc;
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.textarea .stp-extra h4 {
     height: 20px;
     margin: 1px 0;
     padding:10px 20px;
     overflow: hidden;
-    cursor:pointer;
-    background:#F1F1F1;
+    cursor: pointer;
+    background: #F1F1F1;
 }
-.textarea  .stp-extra h4:hover{
-    background:#FCFCFC;
+
+.textarea .stp-extra h4:hover {
+    background: #FCFCFC;
 }
+
 .textarea  .stp-extra pre {
     display: block;
-    height: 253px;
-    margin: 12px 0;
-    max-height: 253px;
+    height: 250px;
+    margin: 0;
+    max-height: 250px;
     overflow: auto;
-    padding-left: 20px;
-    vertical-align: top;
+    padding: 15px 20px;
     width: auto;
+    background: #FAFAFA;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 20px;
+    color: #1E1E1E;
 }
+
 .textarea label.wppb_mustache_label {
     display: none;
 }
+
 .cm-s-default.CodeMirror {
     border: 1px solid #CCCCCC;
     float: left;
     font-family: Monaco,Menlo,"Andale Mono","lucida console","Courier New",monospace !important;
     line-height: 1.4em !important;
-    width: 60%;
+    width: 100%;
+    cursor: text;
 }
+
+.cm-s-default.CodeMirror:hover {
+    border-color: #3858E9;
+}
+
+.cm-s-default.CodeMirror-focused {
+    border-color: #3858E9;
+    box-shadow: 0 0 0 1px #3858e9;
+}
+
+.cm-s-default.CodeMirror .CodeMirror-scroll {
+    width: 100%;
+}
+
+.cm-s-default.CodeMirror .CodeMirror-scroll .CodeMirror-sizer {
+    min-width: unset !important;
+}
+
 .cm-s-default {
     min-height: 400px;
 }
-.mustache-box{
-    table-layout:fixed;
+
+.mustache-box {
+    table-layout: fixed;
 }
+
+
 /*--------------------------------------------------------------
 3.0 Other Form Elements
 --------------------------------------------------------------*/
@@ -104,62 +186,85 @@
     margin-right: 8px;
 }
 
-.mustache-box input[type="text"]{
-    width:400px;
+.mustache-box input[type="text"] {
+    width: 400px;
     min-width: auto;
 }
 
-.mustache-box .description{
+.mustache-box .description {
     display: block;
 }
 
-.mustache-box.form-table td.header{
+.mustache-box.form-table td.header {
     padding-top: 0;
     padding-bottom: 0;
 }
 
+.cozmoslabs-form-field-wrapper.textarea .stp-extra h4 {
+    font-style: normal;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 20px;
+    color: #1E1E1E;
+    cursor: pointer;
+    margin: 0;
+    padding: 10px 15px;
+    background: #FAFAFA url("data:image/svg+xml;charset=UTF-8,<svg width='20' height='20' xmlns='http://www.w3.org/2000/svg'><path d='M5 6l5 5 5-5 2 1-7 7-7-7 2-1z' fill='rgba(30, 30, 30, 0.5)'/></svg>") no-repeat right 15px top 55%;
+}
+
+.cozmoslabs-form-field-wrapper.textarea .stp-extra h4.ui-accordion-header-active {
+    background: #FAFAFA url("data:image/svg+xml;charset=UTF-8,<svg width='20' height='20' xmlns='http://www.w3.org/2000/svg'><path d='M5 14l5-5 5 5 2-1-7-7-7 7 2 1z' fill='rgba(30, 30, 30, 0.5)'/></svg>") no-repeat right 15px top 55%;
+}
+
+.cozmoslabs-form-field-wrapper.textarea .stp-extra h4:not(:first-of-type) {
+    border-top: 1px solid #CCCCCC;
+}
+
+.cozmoslabs-email-customizer-section #uec_common_settings .mustache-box,
+.cozmoslabs-email-customizer-section #aec_common_settings .mustache-box {
+    margin-bottom: 25px;
+}
+
+
 /*--------------------------------------------------------------
 4.0 Save Button
 --------------------------------------------------------------*/
-.mustache-save{
+.mustache-save {
     width: 100%;
     text-align: center;
 }
 
-#page-save-metabox .hndle{
-    background: #333333;
-    color: #fff;
-}
 #page-save-metabox .inside{
     padding: 30px;
 }
+
 
 /*--------------------------------------------------------------
 5.0 Media Queries
 --------------------------------------------------------------*/
 @media screen and ( max-width: 878px ) {
     .wck-post-body{
-        float:none;
+        float: none;
         margin-right: 0;
     }
 
     .metabox-holder .column-2{
-        float:none;
-        width:100%;
+        float: none;
+        width: 100%;
     }
 
     .metabox-holder .column-1{
-        margin-right:0;
+        margin-right: 0;
     }
 
     .textarea .stp-extra{
-        float:none;
-        width:auto;
-        border:1px solid #ccc;
-        border-top:0;
+        float: none;
+        border: 1px solid #ccc;
+        border-top: 0;
+        box-sizing: border-box;
     }
     .cm-s-default.CodeMirror{
-        float:none;
+        float: none;
         width: auto;
     }
     #page-save-metabox .inside{
@@ -172,22 +277,20 @@
 
 }
 
+
 /*--------------------------------------------------------------
 6.0 Other
 --------------------------------------------------------------*/
 /* show email toggle checkbox inline for User/Admin Email Customizers */
-.profile-builder_page_user-email-customizer .wck-post-body .postbox:not(:first-child) tr:nth-child(1), .profile-builder_page_admin-email-customizer .wck-post-body .postbox:not(:first-child) tr:nth-child(1) {
-    width: 50%;
-    display: inline-block;
-}
-
-.profile-builder_page_user-email-customizer .wck-post-body .postbox:not(:first-child) tr:nth-child(2), .profile-builder_page_admin-email-customizer .wck-post-body .postbox:not(:first-child) tr:nth-child(2) {
+.profile-builder_page_user-email-customizer .wck-post-body .postbox:not(#uec_common_settings) tr:nth-child(2),
+.profile-builder_page_admin-email-customizer .wck-post-body .postbox:not(#aec_common_settings) tr:nth-child(2) {
     text-align: left;
     width: 50%;
     display: inline-block;
 }
 
-.profile-builder_page_user-email-customizer .wck-post-body .postbox:not(:first-child) tr:nth-child(2) td, .profile-builder_page_admin-email-customizer .wck-post-body .postbox:not(:first-child) tr:nth-child(2) td {
+.profile-builder_page_user-email-customizer .wck-post-body .postbox:not(#uec_common_settings) tr:nth-child(2) td,
+.profile-builder_page_admin-email-customizer .wck-post-body .postbox:not(#aec_common_settings) tr:nth-child(2) td {
     float: right;
     padding-right: 20px;
 }

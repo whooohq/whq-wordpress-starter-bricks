@@ -1,5 +1,6 @@
 <?php
 
+use WCML\Utilities\WcAdminPages;
 use WPML\FP\Fns;
 use WPML\FP\Logic;
 use WPML\FP\Obj;
@@ -26,6 +27,15 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 
 	const PRIORITY_BEFORE_DELETE = 5;
 
+	// Database saving for rates happens on woocommerce_settings_shipping:10.
+	const PRIORITY_REGISTER_RATE_LABELS = 11;
+
+	const RATE_SHIPPING_METHOD_ID = 'table_rate';
+	// The first placeholder is the instance ID and the second is the rate ID.
+	const RATE_LABEL_NAME_FORMAT = 'table_rate%1$s%2$s_shipping_method_title';
+	// The placeholder is the rate ID.
+	const RATE_ABORT_REASON_NAME_FORMAT = 'table_rate_shipping_abort_reason_%s';
+
 	/**
 	 * WCML_Table_Rate_Shipping constructor.
 	 *
@@ -41,56 +51,73 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 
 	public function add_hooks() {
 
-		add_action( 'init', [ $this, 'init' ], 9 );
-
 		if ( ! is_admin() ) {
 			add_filter( 'get_the_terms', [ $this, 'shipping_class_id_in_default_language' ], 10, 3 );
 			add_filter( 'woocommerce_shipping_table_rate_is_available', [ $this, 'shipping_table_rate_is_available' ], 10, 3 );
 		}
 
 		if ( is_admin() ) {
-			// phpcs:disable WordPress.Security.NonceVerification.Missing
-			if ( Obj::prop( 'shipping_abort_reason', $_POST ) ) {
-				// phpcs:enable WordPress.Security.NonceVerification.Missing
-				add_filter( 'woocommerce_table_rate_get_shipping_rates', [ $this, 'register_abort_messages' ] );
-			}
+			add_action( 'woocommerce_settings_shipping', [ $this, 'registerShippingRatesStrings' ], self::PRIORITY_REGISTER_RATE_LABELS );
 			add_action( 'wp_ajax_woocommerce_table_rate_delete', [ $this, 'unregister_abort_messages_ajax' ], self::PRIORITY_BEFORE_DELETE );
 			add_action( 'delete_product_shipping_class', [ $this, 'unregister_abort_messages_shipping_class' ], self::PRIORITY_BEFORE_DELETE );
 		}
 		add_filter( 'woocommerce_table_rate_query_rates', [ $this, 'translate_abort_messages' ] );
 
+		add_filter( 'wcml_order_item_shipping_method_translators', [ $this, 'registerOrderShippingMethodTranslator' ] );
 	}
 
 	/**
-	 * Register shipping labels for string translation.
+	 * @todo We have a mechanism to unregister abort messages when deleting a rate; we could also unregister the label.
+	 * @todo Note that the RATE_LABEL_NAME_FORMAT can produce non unique names: instanceId = 11, rateId = 1 versus instanceId = 1, rateId = 11.
 	 */
-	public function init() {
-		// Register shipping label.
-		if (
-			isset( $_GET['page'] ) &&
-			(
-				'shipping_zones' === $_GET['page'] ||
-				(
-					'wc-settings' === $_GET['page'] &&
-					isset( $_GET['tab'] ) &&
-					'shipping' === $_GET['tab']
-				)
-			)
-		) {
+	public function registerShippingRatesStrings() {
+		// phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected
+		$isEditingShippingInstance         = WcAdminPages::isShippingSettings() && isset( $_GET['instance_id'] );
+		$isSavingTRSInstanceWithTableRates = isset( $_POST['rate_id'] );
+		$canGetStoredTableRates            = class_exists( '\WooCommerce\Shipping\Table_Rate\Helpers' );
 
-			$this->show_pointer_info();
-
-			if ( isset( $_POST['shipping_label'] ) &&
-				isset( $_POST['woocommerce_table_rate_title'] ) ) {
-				do_action( 'wpml_register_single_string', WCML_WC_Shipping::STRINGS_CONTEXT, sanitize_text_field( $_POST['woocommerce_table_rate_title'] ) . '_shipping_method_title', sanitize_text_field( $_POST['woocommerce_table_rate_title'] ) );
-
-				$shipping_labels = array_map( 'wc_clean', $_POST['shipping_label'] );
-				foreach ( $shipping_labels as $key => $shipping_label ) {
-					$rate_key = isset( $_GET['instance_id'] ) ? 'table_rate' . $_GET['instance_id'] . $_POST['rate_id'][ $key ] : $shipping_label;
-					do_action( 'wpml_register_single_string', WCML_WC_Shipping::STRINGS_CONTEXT, $rate_key . '_shipping_method_title', $shipping_label );
-				}
-			}
+		if ( ! (
+			$isEditingShippingInstance
+			&& $isSavingTRSInstanceWithTableRates
+			&& $canGetStoredTableRates
+		) ) {
+			return;
 		}
+
+		$instanceId = (int) $_GET['instance_id'];
+		$rates      = \WooCommerce\Shipping\Table_Rate\Helpers::get_shipping_rates( $instanceId, ARRAY_A );
+
+		if ( ! is_array( $rates ) ) {
+			return;
+		}
+
+		/** @var callable(array):void $registerLabel */
+		$registerLabel = function( $rate ) use ( $instanceId ) {
+			do_action(
+				'wpml_register_single_string',
+				WCML_WC_Shipping::STRINGS_CONTEXT,
+				sprintf( self::RATE_LABEL_NAME_FORMAT, $instanceId, $rate['rate_id'] ),
+				$rate['rate_label']
+			);
+		};
+
+		wpml_collect( $rates )
+			->filter( Obj::prop( 'rate_label' ) )
+			->each( $registerLabel );
+
+		/** @var callable $registerAbortReason */
+		$registerAbortReason = function( $rate ) {
+			do_action(
+				'wpml_register_single_string',
+				WCML_WC_Shipping::STRINGS_CONTEXT,
+				sprintf( self::RATE_ABORT_REASON_NAME_FORMAT, $rate['rate_id'] ),
+				$rate['rate_abort_reason']
+			);
+		};
+
+		wpml_collect( $rates )
+			->filter( Obj::prop( 'rate_abort_reason' ) )
+			->each( $registerAbortReason );
 	}
 
 	/**
@@ -124,7 +151,7 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 
 			foreach ( $terms as $k => $term ) {
 
-				$shipping_class_id = apply_filters( 'translate_object_id', $term->term_id, 'product_shipping_class', false, $shipp_class_language );
+				$shipping_class_id = apply_filters( 'wpml_object_id', $term->term_id, 'product_shipping_class', false, $shipp_class_language );
 
 				$icl_adjust_id_url_filter     = $icl_adjust_id_url_filter_off;
 				$icl_adjust_id_url_filter_off = true;
@@ -141,46 +168,34 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 	}
 
 	public function show_pointer_info() {
-		$pointer_ui = new WCML_Pointer_UI(
-			/* translators: %1$s and %2$s are opening and closing HTML link tag */
-			sprintf( __( 'You can translate this method title on the %1$sWPML String Translation page%2$s. Use the search on the top of that page to find the method title string.', 'woocommerce-multilingual' ), '<a href="' . admin_url( 'admin.php?page=' . WPML_ST_FOLDER . '/menu/string-translation.php' ) . '">', '</a>' ),
-			WCML_Tracking_Link::getWcmlTableRateShippingDoc(),
-			'woocommerce_table_rate_title'
-		);
+		$pointerFactory = new WCML\PointerUi\Factory();
+		$dashboardUrl   = \WCML\Utilities\AdminUrl::getWPMLTMDashboardStringDomain( \WCML_WC_Shipping::STRINGS_CONTEXT );
 
-		$pointer_ui->show();
+		$pointerFactory
+			->create( [
+				'content'    => sprintf(
+					/* translators: %1$s and %2$s are opening and closing HTML link tags */
+					esc_html__( 'To translate the Method Title, go to the %1$sTranslation Dashboard%2$s.', 'woocommerce-multilingual' ),
+					'<a href="' . esc_url( $dashboardUrl ) . '">',
+					'</a>'
+				),
+				'selectorId' => 'woocommerce_table_rate_title',
+				'docLink'    => WCML_Tracking_Link::getWcmlTableRateShippingDoc(),
+			] )
+			->show();
 
-		$pointer_ui = new WCML_Pointer_UI(
-			/* translators: %1$s and %2$s are opening and closing HTML link tag */
-			sprintf( __( 'You can translate the labels of your table rates on the %1$sWPML String Translation page%2$s. Use the search on the top of that page to find the labels strings.', 'woocommerce-multilingual' ), '<a href="' . admin_url( 'admin.php?page=' . WPML_ST_FOLDER . '/menu/string-translation.php' ) . '">', '</a>' ),
-			WCML_Tracking_Link::getWcmlTableRateShippingDoc(),
-			'shipping_rates .shipping_label a'
-		);
-
-		$pointer_ui->show();
-	}
-
-	/**
-	 * Register the new rate's shipping abort reasons.
-	 *
-	 * @param array[] $rates
-	 * @return array[]
-	 */
-	public function register_abort_messages( $rates ) {
-		// $registerAbortReason :: array -> void
-		$registerAbortReason = function( $rate ) {
-			do_action(
-				'wpml_register_single_string',
-				WCML_WC_Shipping::STRINGS_CONTEXT,
-				$this->get_rate_name( $rate['rate_id'] ),
-				$rate['rate_abort_reason']
-			);
-		};
-
-		return wpml_collect( $rates )
-			->filter( Obj::prop( 'rate_abort_reason' ) )
-			->map( $registerAbortReason )
-			->toArray();
+		$pointerFactory
+			->create( [
+				'content'    => sprintf(
+					/* translators: %1$s and %2$s are opening and closing HTML link tags */
+					esc_html__( 'To translate Labels, go to the %1$sTranslation Dashboard%2$s.', 'woocommerce-multilingual' ),
+					'<a href="' . esc_url( $dashboardUrl ) . '">',
+					'</a>'
+				),
+				'selectorId' => 'shipping_rates',
+				'docLink'    => WCML_Tracking_Link::getWcmlTableRateShippingDoc(),
+			] )
+			->show();
 	}
 
 	/**
@@ -228,7 +243,7 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 					'wpml_translate_single_string',
 					$rate->rate_abort_reason,
 					WCML_WC_Shipping::STRINGS_CONTEXT,
-					$this->get_rate_name( $rate->rate_id )
+					sprintf( self::RATE_ABORT_REASON_NAME_FORMAT, $rate->rate_id )
 				),
 				$rate
 			);
@@ -239,7 +254,6 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 			->toArray();
 	}
 
-
 	/**
 	 * Unregister the deleted rate's shipping abort reasons for list of ids
 	 *
@@ -248,18 +262,8 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 	public function unregister_abort_messages( $rate_id ) {
 		icl_unregister_string(
 			WCML_WC_Shipping::STRINGS_CONTEXT,
-			$this->get_rate_name( $rate_id )
+			sprintf( self::RATE_ABORT_REASON_NAME_FORMAT, $rate_id )
 		);
-	}
-
-	/**
-	 * The name for the rate's shipping abort reason
-	 *
-	 * @param int $rate_id
-	 * @return string
-	 */
-	private function get_rate_name( $rate_id ) {
-		return 'table_rate_shipping_abort_reason_' . $rate_id;
 	}
 
 	/**
@@ -310,5 +314,17 @@ class WCML_Table_Rate_Shipping implements \IWPML_Action {
 		}
 
 		return $priorities;
+	}
+
+	/**
+	 * Register the translator for shipping order items coming from table rates.
+	 *
+	 * @param array $translators
+	 *
+	 * @return array
+	 */
+	public function registerOrderShippingMethodTranslator( $translators ) {
+		$translators[ self::RATE_SHIPPING_METHOD_ID ] = \WCML\Compatibility\TableRateShipping\OrderItems\ShippingRate::class;
+		return $translators;
 	}
 }

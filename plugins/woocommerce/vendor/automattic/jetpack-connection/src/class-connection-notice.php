@@ -12,6 +12,8 @@ use Automattic\Jetpack\Tracking;
 
 /**
  * Admin connection notices.
+ *
+ * @phan-constructor-used-for-side-effects
  */
 class Connection_Notice {
 
@@ -40,7 +42,7 @@ class Connection_Notice {
 	 * @return void
 	 */
 	public function initialize_notices( $screen ) {
-		if ( ! in_array(
+		if ( in_array(
 			$screen->id,
 			array(
 				'jetpack_page_akismet-key-config',
@@ -48,6 +50,19 @@ class Connection_Notice {
 			),
 			true
 		) ) {
+			return;
+		}
+
+		/*
+		 * phpcs:disable WordPress.Security.NonceVerification.Recommended
+		 *
+		 * This function is firing within wp-admin and checks (below) if it is in the midst of a deletion on the users
+		 * page. Nonce will be already checked by WordPress, so we do not need to check ourselves.
+		 */
+
+		if ( isset( $screen->base ) && 'users' === $screen->base
+			&& isset( $_REQUEST['action'] ) && 'delete' === $_REQUEST['action']
+		) {
 			add_action( 'admin_notices', array( $this, 'delete_user_update_connection_owner_notice' ) );
 		}
 	}
@@ -57,23 +72,6 @@ class Connection_Notice {
 	 * the connection owner.
 	 */
 	public function delete_user_update_connection_owner_notice() {
-		global $current_screen;
-
-		/*
-		 * phpcs:disable WordPress.Security.NonceVerification.Recommended
-		 *
-		 * This function is firing within wp-admin and checks (below) if it is in the midst of a deletion on the users
-		 * page. Nonce will be already checked by WordPress, so we do not need to check ourselves.
-		 */
-
-		if ( ! isset( $current_screen->base ) || 'users' !== $current_screen->base ) {
-			return;
-		}
-
-		if ( ! isset( $_REQUEST['action'] ) || 'delete' !== $_REQUEST['action'] ) {
-			return;
-		}
-
 		// Get connection owner or bail.
 		$connection_manager  = new Manager();
 		$connection_owner_id = $connection_manager->get_connection_owner_id();
@@ -240,5 +238,4 @@ class Connection_Notice {
 		echo '</p>';
 		echo '</div>';
 	}
-
 }

@@ -1,40 +1,44 @@
 <?php
 
-use WCML\StandAlone\NullSitePress;
 use WCML\Utilities\DB;
 use WPML\Core\ISitePress;
 use WPML\FP\Fns;
 use WPML\FP\Obj;
 use function WCML\functions\isStandAlone;
+use function WPML\Container\make;
 use function WPML\FP\partial;
 use function WPML\FP\pipe;
 
 class WCML_Products {
 
+	const PRODUCT_INVENTORY_META_TYPE_SKU = '_sku';
+	const PRODUCT_INVENTORY_META_TYPE_GLOBAL_UID = '_global_unique_id';
+
 	/** @var woocommerce_wpml */
 	private $woocommerce_wpml;
 	/** @var SitePress */
 	private $sitepress;
-	/** @var WPML_Post_Translation */
+	/** @var WPML_Post_Translation|null */
 	private $post_translations;
 	/** @var wpdb */
 	private $wpdb;
-	/** @var WPML_WP_Cache */
-	private $wpml_cache;
 
 	/**
-	 * @param woocommerce_wpml        $woocommerce_wpml
-	 * @param SitePress|NullSitePress $sitepress
-	 * @param WPML_Post_Translation   $post_translations
-	 * @param wpdb                    $wpdb
-	 * @param WPML_WP_Cache           $wpml_cache
+	 * @param woocommerce_wpml           $woocommerce_wpml
+	 * @param ISitePress    $sitepress
+	 * @param WPML_Post_Translation|null $post_translations
+	 * @param wpdb|null                  $wpdb
 	 */
-	public function __construct( woocommerce_wpml $woocommerce_wpml, ISitePress $sitepress, WPML_Post_Translation $post_translations = null, wpdb $wpdb, WPML_WP_Cache $wpml_cache = null ) {
+	public function __construct( woocommerce_wpml $woocommerce_wpml, ISitePress $sitepress, $post_translations = null, $wpdb = null ) {
 		$this->woocommerce_wpml  = $woocommerce_wpml;
+		/* @phpstan-ignore assign.propertyType */
 		$this->sitepress         = $sitepress;
 		$this->post_translations = $post_translations;
-		$this->wpdb              = $wpdb;
-		$this->wpml_cache        = $wpml_cache ?: new WPML_WP_Cache( 'WCML_Products' );
+
+		if ( null === $wpdb ) {
+			global $wpdb;
+		}
+		$this->wpdb = $wpdb;
 	}
 
 	public function add_hooks() {
@@ -64,11 +68,12 @@ class WCML_Products {
 			add_filter( 'wpml_override_is_translator', [ $this, 'wcml_override_is_translator' ], 10, 3 );
 			add_filter( 'wpml_user_can_translate', [ $this, 'wcml_user_can_translate' ], 10, 2 );
 			add_filter( 'wc_product_has_unique_sku', [ $this, 'check_product_sku' ], 10, 3 );
+			add_filter( 'wc_product_has_global_unique_id', [ $this, 'check_product_has_global_unique_id' ], 10, 3 );
 			add_filter( 'get_product_search_form', [ $this->sitepress, 'get_search_form_filter' ] );
 			add_filter( 'woocommerce_pre_customer_bought_product', Fns::withoutRecursion( Fns::identity(), [ $this, 'is_customer_bought_product' ] ), 10, 4 );
 		}
 
-		add_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], 10, 3 );
+		add_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], PHP_INT_MAX, 3 );
 		add_filter( 'woocommerce_can_reduce_order_stock', [ $this, 'remove_post_meta_data_filter_on_checkout_stock_update' ] );
 	}
 
@@ -104,6 +109,24 @@ class WCML_Products {
 		return $original_product_id ?: $product_id;
 	}
 
+	/**
+	 * @param \WC_Product $product
+	 *
+	 * @return bool
+	 */
+	public function isVariableProductObject( $product ) {
+		if ( $product instanceOf WC_Product_Variable ) {
+			return true;
+		}
+		$productId = $product->get_id();
+		return $this->is_variable_product( $productId );
+	}
+
+	/**
+	 * @param int|string $product_id
+	 *
+	 * @return bool
+	 */
 	public function is_variable_product( $product_id ) {
 		$cache_key        = $product_id;
 		$cache_group      = 'is_variable_product';
@@ -123,28 +146,15 @@ class WCML_Products {
 		return $is_variable_product;
 	}
 
+	/**
+	 * @param \WC_Product $product
+	 *
+	 * @return bool
+	 *
+	 * @deprecated Use \WCML_Downloadable_Products::isDownloadableProduct
+	 */
 	public function is_downloadable_product( $product ) {
-
-		$product_id = $product->get_id();
-		$cache_key  = 'is_downloadable_product_' . $product_id;
-
-		$found           = false;
-		$is_downloadable = $this->wpml_cache->get( $cache_key, $found );
-		if ( ! $found ) {
-			if ( $product->is_downloadable() ) {
-				$is_downloadable = true;
-			} elseif ( $this->is_variable_product( $product_id ) ) {
-				foreach ( $product->get_available_variations() as $variation ) {
-					if ( $variation['is_downloadable'] ) {
-						$is_downloadable = true;
-						break;
-					}
-				}
-			}
-			$this->wpml_cache->set( $cache_key, $is_downloadable );
-		}
-
-		return $is_downloadable;
+		return $this->woocommerce_wpml->downloadable->isDownloadableProduct( $product );
 	}
 
 	public function is_grouped_product( $product_id ) {
@@ -187,7 +197,7 @@ class WCML_Products {
 			if ( $job_language && $language['code'] != $job_language ) {
 				continue;
 			} elseif ( isset( $product_translations[ $language['code'] ] ) && $product_translations[ $language['code'] ]->original ) { ?>
-				<span title="<?php echo $language['english_name'] . ': ' . __( 'Original language', 'woocommerce-multilingual' ); ?>">
+				<span title="<?php echo esc_attr( $language['english_name'] ) . ': ' . __( 'Original language', 'woocommerce-multilingual' ); ?>">
 					<i class="otgs-ico-original"></i>
 				</span>
 				<?php
@@ -223,7 +233,7 @@ class WCML_Products {
 						)
 					);
 
-					if ( ! is_null( $tr_status ) && get_current_user_id() != $tr_status->translator_id ) {
+					if ( is_object( $tr_status ) && get_current_user_id() != $tr_status->translator_id ) {
 						if ( $tr_status->status == ICL_TM_IN_PROGRESS ) {
 							?>
 								<a title="<?php _e( 'Translation in progress', 'woocommerce-multilingual' ); ?>"><i
@@ -242,7 +252,7 @@ class WCML_Products {
 							$translation_queue_page = admin_url( 'admin.php?page=' . WPML_TM_FOLDER . '/menu/translations-queue.php&job_id=' . $tr_job_id );
 							$edit_url               = apply_filters( 'icl_job_edit_url', $translation_queue_page, $tr_job_id );
 							?>
-								<a href="<?php echo $edit_url; ?>" title="<?php echo $language['english_name'] . ': ' . __( 'Take this and edit', 'woocommerce-multilingual' ); ?>">
+								<a href="<?php echo esc_url( $edit_url ); ?>" title="<?php echo esc_attr( $language['english_name'] ) . ': ' . __( 'Take this and edit', 'woocommerce-multilingual' ); ?>">
 									<i class="otgs-ico-add"></i>
 								</a>
 												<?php
@@ -302,8 +312,14 @@ class WCML_Products {
 			foreach ( $actions as $key => $action ) {
 				if ( $key == 'inline hide-if-no-js' ) {
 					$new_actions['quick_hide'] = '<a href="#TB_inline?width=200&height=150&inlineId=quick_edit_notice" class="thickbox" title="' .
-													__( 'Edit this item inline', 'woocommerce-multilingual' ) . '">' .
-													__( 'Quick Edit', 'woocommerce-multilingual' ) . '</a>';
+													esc_attr(
+														sprintf(
+															/* translators: %s is the post title */
+															__( 'Quick edit "%s" inline', 'woocommerce-multilingual' ),
+															$post->post_title
+														)
+													) . '">' .
+													esc_html__( 'Quick Edit', 'woocommerce-multilingual' ) . '</a>';
 				} else {
 					$new_actions[ $key ] = $action;
 				}
@@ -318,7 +334,7 @@ class WCML_Products {
 	 */
 	public function filter_woocommerce_upsell_crosssell_posts_by_language( $posts ) {
 		foreach ( $posts as $key => $post ) {
-			$post_id   = $posts[ $key ]->ID;
+			$post_id   = $post->ID;
 			$post_data = $this->wpdb->get_row(
 				$this->wpdb->prepare(
 					"SELECT * FROM {$this->wpdb->prefix}icl_translations
@@ -346,6 +362,9 @@ class WCML_Products {
 	 * @return array
 	 */
 	private function filter_found_products_by_language( $found_products, $language = false ) {
+		if ( null === $this->post_translations ) {
+			return $found_products;
+		}
 
 		if ( ! $language ) {
 			$language = $this->sitepress->get_current_language();
@@ -386,48 +405,61 @@ class WCML_Products {
 		return $found_products;
 	}
 
-	// update menu_order fro translations after ordering original products.
+	/**
+	 * Sync to translations after sorting original products.
+	 */
 	public function update_all_products_translations_ordering() {
 		if ( $this->woocommerce_wpml->settings['products_sync_order'] ) {
 			$current_language = $this->sitepress->get_current_language();
-			if ( $current_language == $this->sitepress->get_default_language() ) {
-				$products = $this->wpdb->get_results(
-					$this->wpdb->prepare(
-						"SELECT p.ID FROM {$this->wpdb->posts} AS p
-                                    LEFT JOIN {$this->wpdb->prefix}icl_translations AS icl
-                                    ON icl.element_id = p.id
-                                    WHERE p.post_type = 'product'
-                                      AND p.post_status IN ( 'publish', 'future', 'draft', 'pending', 'private' )
-                                      AND icl.element_type= 'post_product'
-                                      AND icl.language_code = %s",
-						$current_language
+			$default_language = $this->sitepress->get_default_language();
+			if ( $current_language === $default_language ) {
+				$this->wpdb->query(
+					$this->wpdb->prepare( "
+						UPDATE {$this->wpdb->posts} posts
+						JOIN {$this->wpdb->prefix}icl_translations trans ON posts.ID = trans.element_id AND trans.element_type = 'post_product'
+						SET posts.menu_order = (
+							SELECT menu_order FROM {$this->wpdb->posts}
+							JOIN {$this->wpdb->prefix}icl_translations ON ID = element_id AND element_type = 'post_product'
+							WHERE language_code = '%s' AND trid = trans.trid
+						)
+						WHERE trans.language_code <> %s
+						",
+						$default_language,
+						$default_language
 					)
 				);
-
-				foreach ( $products as $product ) {
-					$this->update_order_for_product_translations( (int)$product->ID );
-				}
 			}
 		}
 	}
 
 	/**
-	 * update menu_order fro translations after ordering original products
+	 * Update menu_order fro translations after ordering original products
 	 *
 	 * @param int $product_id
 	 */
 	public function update_order_for_product_translations( $product_id ) {
+		if ( null === $this->post_translations ) {
+			return;
+		}
+
 		if ( isset( $this->woocommerce_wpml->settings['products_sync_order'] ) && $this->woocommerce_wpml->settings['products_sync_order'] ) {
 			$current_language = $this->sitepress->get_current_language();
 
 			if ( $current_language == $this->sitepress->get_default_language() ) {
-				$menu_order   = $this->wpdb->get_var( $this->wpdb->prepare( "SELECT menu_order FROM {$this->wpdb->posts} WHERE ID = %d", $product_id ) );
-				$translations = $this->post_translations->get_element_translations( $product_id );
+				$translations = array_diff(
+					$this->post_translations->get_element_translations( $product_id ),
+					[ $product_id ]
+				);
 
-				foreach ( $translations as $translation ) {
-					if ( (int)$translation !== $product_id ) {
-						$this->wpdb->update( $this->wpdb->posts, [ 'menu_order' => $menu_order ], [ 'ID' => $translation ] );
-					}
+				if ( $translations ) {
+					$menu_order = $this->wpdb->get_var( $this->wpdb->prepare( "SELECT menu_order FROM {$this->wpdb->posts} WHERE ID = %d", $product_id ) );
+
+					$this->wpdb->query(
+						$this->wpdb->prepare(
+							"UPDATE {$this->wpdb->posts} SET menu_order = %d WHERE ID IN (" . wpml_prepare_in( $translations, '%d' ) . ')',
+							$menu_order
+						)
+					);
 				}
 			}
 		}
@@ -562,6 +594,15 @@ class WCML_Products {
 	}
 
 	public function switch_product_variations_language() {
+		if ( ! isset( $_POST['nonce'] ) ) {
+			return;
+		}
+		if ( ! wp_verify_nonce( $_POST['nonce'], \WPML_Post_Edit_Ajax::AJAX_ACTION_SWITCH_POST_LANGUAGE ) ) {// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			return;
+		}
+		if ( ! current_user_can( 'edit_products' ) ) {
+			return;
+		}
 
 		$lang_to = false;
 		$post_id = false;
@@ -577,7 +618,7 @@ class WCML_Products {
 			$product_variations = $this->woocommerce_wpml->sync_variations_data->get_product_variations( $post_id );
 			foreach ( $product_variations as $product_variation ) {
 				$trid                      = $this->sitepress->get_element_trid( $product_variation->ID, 'post_product_variation' );
-				$current_prod_variation_id = apply_filters( 'translate_object_id', $product_variation->ID, 'product_variation', false, $lang_to );
+				$current_prod_variation_id = apply_filters( 'wpml_object_id', $product_variation->ID, 'product_variation', false, $lang_to );
 				if ( is_null( $current_prod_variation_id ) ) {
 					$this->sitepress->set_element_language_details( $product_variation->ID, 'post_product_variation', $trid, $lang_to );
 
@@ -594,9 +635,42 @@ class WCML_Products {
 		}
 	}
 
-	public function check_product_sku( $sku_found, $product_id, $sku ) {
+	/**
+	 * @param bool|null $has_unique_sku Set to a boolean value to short-circuit the default SKU check.
+	 * @param int       $product_id The ID of the current product.
+	 * @param string    $sku The SKU to check for uniqueness.
+	 *
+	 * @return bool|null
+	 */
+	public function check_product_sku( $has_unique_sku, $product_id, $sku ) {
+		return $this->check_product_inventory_uid( $has_unique_sku, $product_id, $sku, self::PRODUCT_INVENTORY_META_TYPE_SKU );
+	}
 
-		if ( $sku_found ) {
+	/**
+	 * @param bool   $global_unique_id_found Whether the Unique ID is found.
+	 * @param int    $product_id The ID of the current product.
+	 * @param string $global_unique_id The Unique ID to check for uniqueness.
+	 *
+	 * @return bool
+	 */
+	public function check_product_has_global_unique_id( $global_unique_id_found, $product_id, $global_unique_id ) {
+		return $this->check_product_inventory_uid( $global_unique_id_found, $product_id, $global_unique_id, self::PRODUCT_INVENTORY_META_TYPE_GLOBAL_UID );
+	}
+
+	/**
+	 * @param bool|null $is_product_inventory_uid_found
+	 * @param int       $product_id
+	 * @param string    $product_inventory_uid
+	 * @param string    $product_inventory_meta_type
+	 *
+	 * @return bool|null
+	 */
+	private function check_product_inventory_uid( $is_product_inventory_uid_found, $product_id, $product_inventory_uid, $product_inventory_meta_type ) {
+		if ( null === $this->post_translations ) {
+			return $is_product_inventory_uid_found;
+		}
+
+		if ( $is_product_inventory_uid_found ) {
 
 			$product_trid = $this->post_translations->get_element_trid( $product_id );
 
@@ -608,24 +682,25 @@ class WCML_Products {
                 LEFT JOIN {$this->wpdb->postmeta} as pm ON ( p.ID = pm.post_id )
                 WHERE p.post_type IN ( 'product', 'product_variation' )
                 AND p.post_status = 'publish'
-                AND pm.meta_key = '_sku' AND pm.meta_value = '%s'
+                AND pm.meta_key = '%s' AND pm.meta_value = '%s'
              ",
-					wp_slash( $sku )
+					$product_inventory_meta_type,
+					wp_slash( $product_inventory_uid )
 				)
 			);
 
-			$sku_found = false;
+			$is_product_inventory_uid_found = false;
 
 			foreach ( (array) $products as $product ) {
 				$trid = $this->post_translations->get_element_trid( $product->ID );
 				if ( $product_trid !== $trid ) {
-					$sku_found = true;
+					$is_product_inventory_uid_found = true;
 					break;
 				}
 			}
 		}
 
-		return $sku_found;
+		return $is_product_inventory_uid_found;
 	}
 
 	public function add_lang_to_shortcode_products_query( $query_args ) {
@@ -647,9 +722,9 @@ class WCML_Products {
 		$is_per_domain = $this->sitepress->get_wp_api()->constant( 'WPML_LANGUAGE_NEGOTIATION_TYPE_DOMAIN' ) === (int) $this->sitepress->get_setting( 'language_negotiation_type' );
 
 		if ( $is_per_domain ) {
-			$wpml_url_helper = new WPML_URL_Converter_Url_Helper();
+			$wpml_url_converter = make( \WPML_URL_Converter::class );
 
-			if ( strpos( trim( $file_path ), $wpml_url_helper->get_abs_home() ) === 0 ) {
+			if ( strpos( trim( $file_path ), $wpml_url_converter->get_abs_home() ) === 0 ) {
 				$file_path = $this->sitepress->convert_url( $file_path );
 			}
 		}
@@ -676,22 +751,22 @@ class WCML_Products {
 	 * @return bool
 	 */
 	public function is_customer_bought_product( $value, $customer_email, $user_id, $product_id ) {
-        if ( $value ) {
-            return $value;
-        }
+		if ( $value ) {
+			return $value;
+		}
 
-        $post_type = get_post_type( $product_id );
-        $trid      = apply_filters( 'wpml_element_trid', 0, $product_id, 'post_' . $post_type );
+		$post_type = get_post_type( $product_id );
+		$trid      = apply_filters( 'wpml_element_trid', 0, $product_id, 'post_' . $post_type );
 
-        // $has_bought_original_or_translation :: object -> bool
-        $has_bought_original_or_translation = pipe(
-            Obj::prop( 'element_id' ),
-            partial( 'wc_customer_bought_product', $customer_email, $user_id )
-        );
+		// $has_bought_original_or_translation :: object -> bool
+		$has_bought_original_or_translation = pipe(
+			Obj::prop( 'element_id' ),
+			partial( 'wc_customer_bought_product', $customer_email, $user_id )
+		);
 
-        return (bool) wpml_collect(
-            apply_filters( 'wpml_get_element_translations', [], $trid, $post_type )
-        )->first( $has_bought_original_or_translation );
+		return (bool) wpml_collect(
+			apply_filters( 'wpml_get_element_translations', [], $trid, $post_type )
+		)->first( $has_bought_original_or_translation );
 	}
 
 	public function filter_product_data( $data, $product_id, $meta_key ) {
@@ -701,11 +776,9 @@ class WCML_Products {
 			$post_type = get_post_type( $product_id );
 
 			if ( in_array( $post_type, [ 'product', 'product_variation' ], true ) ) {
+				remove_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], PHP_INT_MAX );
 
-				remove_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], 10 );
-
-				$data = get_post_meta( $product_id );
-
+				$data                = get_post_meta( $product_id );
 				$meta_keys_to_filter = [];
 				$is_mc_enabled       = (int) $this->woocommerce_wpml->settings['enable_multi_currency'] === (int) $this->sitepress->get_wp_api()->constant( 'WCML_MULTI_CURRENCIES_INDEPENDENT' );
 
@@ -723,7 +796,7 @@ class WCML_Products {
 					$is_original_product = $this->woocommerce_wpml->products->is_original_product( $product_id );
 					if ( ! $is_original_product ) {
 						$meta_keys_to_filter[] = '_thumbnail_id';
-						if ( 'product' === $post_type && is_product() ) {
+						if ( 'product' === $post_type && is_single() ) {
 							$meta_keys_to_filter[] = '_product_image_gallery';
 						}
 					}
@@ -733,7 +806,7 @@ class WCML_Products {
 					$data[ $meta_key ][0] = get_post_meta( $product_id, $meta_key, true );
 				}
 
-				add_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], 10, 3 );
+				add_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], PHP_INT_MAX, 3 );
 			}
 		}
 
@@ -778,7 +851,7 @@ class WCML_Products {
 	 */
 	public function remove_post_meta_data_filter_on_checkout_stock_update( $reduce_stock ) {
 		if ( isset( $_GET['wc-ajax'] ) && 'checkout' === $_GET['wc-ajax'] ) {
-			remove_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], 10 );
+			remove_filter( 'get_post_metadata', [ $this, 'filter_product_data' ], PHP_INT_MAX );
 		}
 		return $reduce_stock;
 	}
@@ -791,7 +864,7 @@ class WCML_Products {
 		) {
 			$current_language = $this->sitepress->get_current_language();
 			if ( $current_language !== $this->sitepress->get_default_language() ) {
-				$url .= '&lang=' . $this->sitepress->get_current_language();
+				$url = add_query_arg( 'lang', $current_language, $url );
 			}
 		}
 

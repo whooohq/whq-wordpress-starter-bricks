@@ -4,11 +4,16 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 /* Hijack the content when restrictions are set on a single post */
 function wppb_content_restriction_filter_content( $content, $post = null ) {
 
-    global $user_ID, $wppb_show_content, $pms_show_content;
+    global $user_ID, $wppb_show_content, $pms_is_post_restricted_arr;
 
     if( is_null( $post ) ) {
         global $post;
     }
+
+	if( empty( $post->ID ) )
+		return $content;
+
+    $user_ID = get_current_user_id();
 
     /*
      * Defining this variable:
@@ -28,19 +33,51 @@ function wppb_content_restriction_filter_content( $content, $post = null ) {
     }
 
     // Check if any PMS restriction should take place. PMS restrictions have priority
-    if( $pms_show_content === false ) {
+    if( isset( $pms_is_post_restricted_arr[$post->ID] ) && $pms_is_post_restricted_arr[$post->ID] === true ) {
         return $content;
+    }
+
+    $restricted_term = wppb_content_restriction_get_restricted_term_for_post( $post->ID );
+
+    if ( $restricted_term ) {
+        $term_user_status = get_term_meta( $restricted_term->term_id, 'wppb-content-restrict-user-status', true );
+        $term_user_roles  = get_term_meta( $restricted_term->term_id, 'wppb-content-restrict-user-role' );
+
+        if ( ! wppb_content_restriction_check_user_access( $term_user_status, $term_user_roles, $user_ID ) ) {
+            $wppb_show_content = false;
+
+            if ( is_user_logged_in() ) {
+                $message = wppb_content_restriction_process_term_content_message( 'logged_in', $user_ID, $restricted_term->term_id );
+
+                return do_shortcode( apply_filters( 'wppb_content_restriction_message_logged_in', $message, $content, $post, $user_ID ) );
+            }
+
+            $message = wppb_content_restriction_process_term_content_message( 'logged_out', $user_ID, $restricted_term->term_id );
+
+            return do_shortcode( apply_filters( 'wppb_content_restriction_message_logged_out', $message, $content, $post, $user_ID ) );
+        }
     }
 
     // Get user roles that have access to this post
     if ( isset( $post ) && isset( $post->ID ) ) {
         $user_status = get_post_meta($post->ID, 'wppb-content-restrict-user-status', true);
         $post_user_roles = get_post_meta($post->ID, 'wppb-content-restrict-user-role');
+
+        /**
+         * Filter for disabling/enabling User Role based content restriction for Logged-Out users.
+         * By default, restrictions apply even if logged in users is not selected. 
+         * If this filter is set to false, restrictions will apply only if the logged in users option is selected alongside user roles.
+         *
+         * @param bool $user_roles_without_logged_in_option -> Defaults to TRUE.
+         *
+         */
+        $user_roles_without_logged_in_option = apply_filters( 'wppb_content_restriction_enable_user_roles_without_logged_in_option', true );
     }
 
     if( empty( $user_status ) && empty( $post_user_roles ) ) {
+		$wppb_show_content = true;
         return $content;
-    } else if( $user_status == 'loggedin' ) {
+    } else if( $user_status == 'loggedin' || ( $user_roles_without_logged_in_option && !empty( $post_user_roles ) ) ) {
         if( is_user_logged_in() ) {
             if( ! empty( $post_user_roles ) ) {
                 $user_data = get_userdata( $user_ID );
@@ -90,9 +127,19 @@ function wppb_check_content_restriction_on_post_id( $post_id ){
     $user_status        = get_post_meta( $post_id, 'wppb-content-restrict-user-status', true );
     $post_user_roles    = get_post_meta( $post_id, 'wppb-content-restrict-user-role' );
 
+    /**
+     * Filter for disabling/enabling User Role based content restriction for Logged-Out users.
+     * By default, restrictions apply even if logged in users is not selected. 
+     * If this filter is set to false, restrictions will apply only if the logged in users option is selected alongside user roles.
+     *
+     * @param bool $user_roles_without_logged_in_option -> Defaults to TRUE.
+     *
+     */
+    $user_roles_without_logged_in_option = apply_filters( 'wppb_content_restriction_enable_user_roles_without_logged_in_option', true );
+
     if( empty( $user_status ) && empty( $post_user_roles ) ) {
         return false;
-    } else if( $user_status == 'loggedin' ) {
+    } else if( $user_status == 'loggedin' || ( $user_roles_without_logged_in_option && !empty( $post_user_roles ) ) ) {
         if( is_user_logged_in() ) {
             if( ! empty( $post_user_roles ) ) {
                 $user_data = get_userdata( $user_ID );
@@ -340,6 +387,26 @@ if( !function_exists( 'pms_exclude_restricted_comments' ) ){
     }
 }
 
+
+/**
+ * Clean the LearnDash post type slug before output
+ * - displayed in Content Restriction Meta-box settings description
+ */
+function wppb_ld_handle_cr_settings_description_cpt( $post_type ) {
+
+    if ( substr( $post_type, 0, 5 ) === "sfwd-" ) {
+        $post_type = substr( $post_type, 5 );
+
+        if ( substr( $post_type, -1 ) === "s" )
+            $post_type = substr( $post_type, 0, -1 );
+
+    }
+
+    return $post_type;
+}
+add_filter( 'wppb_content_restrict_settings_description_cpt', 'wppb_ld_handle_cr_settings_description_cpt', 20 );
+
+
 /**
  * WooCommerce specific filters
  */
@@ -384,7 +451,7 @@ if( function_exists( 'wc_get_page_id' ) ) {
                 
             $message = '<div class="woocommerce"><div class="woocommerce-info wppb-woo-restriction-message wppb-woo-restricted-product-purchasing-message">' . $message . '</div></div>';
 
-            $output .= $message;
+            $output .= do_shortcode( $message );
 
             $post->post_password = null;
 
@@ -483,23 +550,35 @@ if( function_exists( 'wc_get_page_id' ) ) {
     add_filter( 'template_include', 'wppb_woo_restrict_shop_page', 40 );
 
     /**
-     * Function that restricts product viewing by hijacking WooCommerce product password protection (hide_content restriction mode)
+     * Restrict single product view by marking restricted products as password-protected
      *
+     * - Runs on 'template_redirect' so it executes early enough for both classic and block themes
+     * - Applies only to 'message' restriction type. Redirect mode is handled separately
      */
     function wppb_woo_maybe_password_protect_product(){
         global $post;
 
-        // if the product is to be restricted, and doesn't already have a password,
-        // set a password so as to perform the actions we want
-        if ( wppb_content_restriction_is_post_restricted() && ! post_password_required() ) {
+        if ( ! is_singular( 'product' ) || empty( $post ) || empty( $post->ID ) )
+            return;
 
+        $post_restriction_type = get_post_meta( $post->ID, 'wppb-content-restrict-type', true );
+        $settings              = get_option( 'wppb_content_restriction_settings', array() );
+
+        if ( $post_restriction_type == 'default' || empty( $post_restriction_type ) )
+            $post_restriction_type = ( ! empty( $settings['restrict_type'] ) ? $settings['restrict_type'] : 'message' );
+
+        if ( $post_restriction_type !== 'message' )
+            return;
+
+        // if the product is restricted and doesn't already require a password, set a temporary password before Woo renders product templates
+        if ( wppb_content_restriction_is_post_restricted( $post->ID ) && ! post_password_required() ) {
             $post->post_password = uniqid( 'wppb_woo_product_restricted_' );
 
-            add_filter( 'the_password_form', 'wppb_woo_restrict_product_content' );
-
+            if ( ! has_filter( 'the_password_form', 'wppb_woo_restrict_product_content' ) )
+                add_filter( 'the_password_form', 'wppb_woo_restrict_product_content' );
         }
     }
-    add_action( 'woocommerce_before_single_product', 'wppb_woo_maybe_password_protect_product' );
+    add_action( 'template_redirect', 'wppb_woo_maybe_password_protect_product', 0 );
 
 
     /**
@@ -581,19 +660,25 @@ if( function_exists( 'wc_get_page_id' ) ) {
      */
     function wppb_woo_product_is_purchasable( $purchasable, $product ){
 
-        // if the product is view-restricted or purchase-restricted it cannot be purchased
+        // if the product is a variation, we need to grab the parent product before checking if it is purchasable
+        if( $product->is_type( array( 'variation' ) ) ){
+            $product = wc_get_product( $product->get_parent_id() );
+        }
+
         if ( wppb_content_restriction_is_post_restricted( $product->get_id() ) || !wppb_woo_is_product_purchasable( $product ) )
             $purchasable = false;
 
         // double-check for variations; if parent is not purchasable, then neither should be the variation
-        if ( $purchasable && $product->is_type( array( 'variation' ) ) ) {
+        // NOTE: This was removed because it doesn't make sense for varations. We need to check if the product that we receive is a variation and go directly
+        // to the parent product to check settings
+        // if ( $purchasable && $product->is_type( array( 'variation' ) ) ) {
 
-            $parent = wc_get_product( $product->get_parent_id() );
+        //     $parent = wc_get_product( $product->get_parent_id() );
 
-            if( !empty( $parent ) && is_object( $parent ) )
-                $purchasable = $parent->is_purchasable();
+        //     if( !empty( $parent ) && is_object( $parent ) )
+        //         $purchasable = $parent->is_purchasable();
 
-        }
+        // }
 
         return $purchasable;
 
@@ -610,6 +695,11 @@ if( function_exists( 'wc_get_page_id' ) ) {
 
         if( empty( $post->ID ) )
             return;
+
+        // View restrictions already render their own message
+        if( wppb_content_restriction_is_post_restricted( $post->ID ) ) {
+            return;
+        }
 
         if ( !wppb_woo_is_product_purchasable() ) {
 
@@ -630,3 +720,199 @@ if( function_exists( 'wc_get_page_id' ) ) {
     add_filter( 'wppb_content_restriction_message_purchasing_restricted', 'wppb_content_restriction_message_wpautop', 30, 1 );
 
 }
+
+/**
+ * Exclude Restricted Posts From Query
+ */
+ if( isset( $wppb_cr_settings['excludePosts'] ) && $wppb_cr_settings['excludePosts'] == 'yes' ) {
+	 add_action( 'pre_get_posts', 'wppb_exclude_post_from_query', 40 );
+	 function wppb_exclude_post_from_query( $query ) {
+
+		if( !function_exists( 'wppb_content_restriction_is_post_restricted' ) || is_admin() || is_singular() )
+			 return;
+
+        if( isset( $query->query_vars['wc_query'] ) && $query->query_vars['wc_query'] == 'product_query' )
+            return;
+
+         // Skip Ultimate Member queries
+         if( isset( $query->query_vars['um_action'] ) || isset( $query->query_vars['um_user'] ) ) 
+            return;
+
+		 if( $query->is_main_query() || ( $query->is_search() && isset( $query->query_vars['s'] ) ) ) {
+
+			 remove_action( 'pre_get_posts', 'wppb_exclude_post_from_query', 40 );
+
+			 $args = $query->query_vars;
+			 $args['suppress_filters'] = true;
+			 $args['fields']           = 'ids';
+
+			 // Setup paged arguments so we exclude restricted posts from the current page, not only the first N posts.
+			 if( !empty( $query->query_vars['paged'] ) ){
+				 $args['paged'] = round( $args['paged'] / 2 );
+				 if( !empty( $args['posts_per_page'] ) )
+					 $args['posts_per_page'] = $args['posts_per_page'] * 2;
+				 else
+					 $args['posts_per_page'] = get_option( 'posts_per_page' ) * 2;
+			 }
+
+			 if( is_search() )
+				 $args['post_type'] = 'any';
+
+			 $restricted_posts = get_posts( $args );
+
+			 $previous_restricted_ids = $query->get( 'post__not_in' );
+			 if ( ! is_array( $previous_restricted_ids ) ) {
+				 $previous_restricted_ids = array();
+			 }
+
+			 $restricted_ids = array_filter( $restricted_posts, 'wppb_content_restriction_is_post_restricted' );
+			 $query->set( 'post__not_in', array_merge( $previous_restricted_ids, $restricted_ids ) );
+
+		 }
+	 }
+
+	 //Remove restricted forums from the main bbPress query
+	 add_filter( 'bbp_after_has_forums_parse_args', 'wppb_exclude_restricted_forums_from_main_query' );
+	 function wppb_exclude_restricted_forums_from_main_query( $vars ) {
+		 if( !function_exists( 'wppb_content_restriction_is_post_restricted' ) ) return;
+
+		 $query = new WP_Query( $vars );
+
+		 $forum_ids = array();
+
+		 foreach ( $query->posts as $forum ) {
+			 $forum_ids[] = $forum->ID;
+		 }
+
+		 $previous_restricted_forums = $query->get( 'post__not_in' );
+		 if ( ! is_array( $previous_restricted_forums ) ) {
+			 $previous_restricted_forums = array();
+		 }
+
+		 $restricted_forums = array_filter( $forum_ids, 'wppb_content_restriction_is_post_restricted' );
+		 $updated_restricted_forums = array_merge( $previous_restricted_forums, $restricted_forums );
+
+		 $vars['post__not_in'] = $updated_restricted_forums;
+
+		 return $vars;
+	 }
+
+	 //Alters the output of the query that displays the Category Archive (including Shop) pages, filtering the restricted products from the output
+	 add_action( 'pre_get_posts', 'wppb_exclude_restricted_products_from_woocoommerce_category_queries', 11 );
+	 function wppb_exclude_restricted_products_from_woocoommerce_category_queries( $query ) {
+
+		 if( is_admin() || !function_exists('wppb_content_restriction_is_post_restricted') )
+			 return;
+
+		 if( isset( $query->query_vars['wc_query'] ) && $query->query_vars['wc_query'] == 'product_query' ){
+
+			 remove_action( 'pre_get_posts', 'wppb_exclude_restricted_products_from_woocoommerce_category_queries', 11 );
+
+			 $args = $query->query_vars;
+			 $args['suppress_filters'] = true;
+			 $args['posts_per_page'] = -1;
+
+			 $previous_restricted_ids = $query->get( 'post__not_in' );
+			 if ( ! is_array( $previous_restricted_ids ) ) {
+				 $previous_restricted_ids = array();
+			 }
+
+			 $transient_key = 'wppb_cr_products_' . md5( serialize( $args ) );
+			 if ( false === ( $products = get_transient( $transient_key ) ) ) {
+				 $products = wc_get_products( $args );
+				 set_transient( $transient_key, $products, 2 * HOUR_IN_SECONDS );
+			 }
+
+			 $product_ids = array();
+
+			 foreach ($products as $product) {
+				 $product_ids[] = $product->get_id();
+			 }
+
+			 $restricted_ids = array_filter( $product_ids, 'wppb_content_restriction_is_post_restricted' );
+
+			 $updated_restricted_ids = array_merge( $previous_restricted_ids, $restricted_ids );
+			 $query->set( 'post__not_in', $updated_restricted_ids );
+
+		 }
+
+	 }
+
+	 //Alters the output of the [products] shortcode from WooCommerce, filtering restricted products from the output
+	 add_filter( 'woocommerce_shortcode_products_query', 'wppb_exclude_restricted_products_from_woocoommerce_products_shortcode_queries' );
+	 function wppb_exclude_restricted_products_from_woocoommerce_products_shortcode_queries( $query_args ) {
+		 if( !is_admin() && function_exists('wppb_content_restriction_is_post_restricted') ) {
+			 $posts_per_page = $query_args['posts_per_page'];
+
+			 $query_args['suppress_filters'] = true;
+			 $query_args['posts_per_page'] = '-1';
+
+			 $products = wc_get_products($query_args);
+
+			 $query_args['posts_per_page'] = $posts_per_page;
+
+			 $product_ids = array();
+
+			 foreach ($products as $product) {
+				 $product_ids[] = $product->get_id();
+			 }
+
+			 $previous_restricted_ids = isset($query_args['post__not_in']) ? $query_args['post__not_in'] : array();
+
+			 if ( ! is_array( $previous_restricted_ids ) ) {
+				 $previous_restricted_ids = array();
+			 }
+
+			 $restricted_ids = array_filter( $product_ids, 'wppb_content_restriction_is_post_restricted' );
+			 $updated_restricted_ids = array_merge( $previous_restricted_ids, $restricted_ids );
+
+			 $query_args['post__not_in'] = $updated_restricted_ids;
+		 }
+
+		 return $query_args;
+	 }
+
+	 // Exclude restricted posts from Elementor
+	 add_filter( 'elementor/query/query_args', 'wppb_exclude_posts_from_elementor' );
+	 function wppb_exclude_posts_from_elementor( $query_args ) {
+
+		 // check if the form is being displayed in the Elementor editor
+		 $is_elementor_edit_mode = false;
+		 if( class_exists ( '\Elementor\Plugin' ) ){
+			 $is_elementor_edit_mode = \Elementor\Plugin::$instance->editor->is_edit_mode();
+		 }
+
+		 if ( !$is_elementor_edit_mode && !is_admin() && function_exists( 'wppb_content_restriction_is_post_restricted' ) ) {
+			 $args = $query_args;
+			 $args['suppress_filters'] = true;
+			 $args['fields']           = 'ids';
+
+			 if( !empty( $query_args['paged'] ) ){
+
+				 $args['paged'] = round( $args['paged'] / 2 );
+
+				 if( !empty( $args['posts_per_page'] ) )
+					 $args['posts_per_page'] = $args['posts_per_page'] * 2;
+				 else
+					 $args['posts_per_page'] = get_option( 'posts_per_page' ) * 2;
+
+			 }
+
+			 if( is_search() )
+				 $args['post_type'] = 'any';
+
+			 $restricted_posts = get_posts( $args );
+
+			 $restricted_ids = array_filter( $restricted_posts, 'wppb_content_restriction_is_post_restricted' );
+
+			 if ( ! empty( $restricted_ids ) ) {
+				 if ( isset( $query_args['post__not_in'] ) && is_array( $query_args['post__not_in'] ) ) {
+					 $query_args['post__not_in'] = array_merge( $query_args['post__not_in'], $restricted_ids );
+				 } else {
+					 $query_args['post__not_in'] = $restricted_ids;
+				 }
+			 }
+		 }
+		 return $query_args;
+	 }
+ }

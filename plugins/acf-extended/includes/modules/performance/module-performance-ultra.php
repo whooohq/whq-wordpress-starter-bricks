@@ -186,10 +186,16 @@ class acfe_performance_ultra extends acfe_performance{
         if($this->compile !== $post_id){
             $this->update_meta($acf, $post_id);
         }
-    
-        // save normal meta
-        if(acf_is_filter_enabled('acfe/performance_ultra/normal_save')){
-            return $return;
+        
+        // disallow on revision
+        // use 'save as individual meta' on post only
+        if(!wp_is_post_revision($post_id)){
+            
+            // save normal meta
+            if(acf_is_filter_enabled('acfe/performance_ultra/individual_meta')){
+                return $return;
+            }
+            
         }
     
         // get config
@@ -287,7 +293,6 @@ class acfe_performance_ultra extends acfe_performance{
     
     }
     
-    
     /**
      * update_value
      *
@@ -302,11 +307,11 @@ class acfe_performance_ultra extends acfe_performance{
     function update_value($value, $post_id, $field){
         
         // disabled by default
-        acf_disable_filter('acfe/performance_ultra/normal_save');
+        acf_disable_filter('acfe/performance_ultra/individual_meta');
         
         // check if save as individual meta
         if(acf_maybe_get($field, 'acfe_save_meta')){
-            acf_enable_filter('acfe/performance_ultra/normal_save');
+            acf_enable_filter('acfe/performance_ultra/individual_meta');
         }
         
         return $value;

@@ -204,7 +204,7 @@ class Pswdless extends Instance {
 			return admin_url( '?dologin=' . $id . '.' . $hash );
 		}
 
-		Router::redirect( admin_url( 'options-general.php?page=dologin' ) );
+		Router::redirect( admin_url( 'options-general.php?page=dologin#pswdless' ) );
 	}
 
 	/**

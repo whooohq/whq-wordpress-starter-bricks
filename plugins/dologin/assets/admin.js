@@ -58,7 +58,7 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 			},
 			success: function( res ) {
 				if ( res._res !== 'ok' ) {
-					$( '#dologin_test_sms_res' ).attr( 'class', 'dologin-err' ).html( res._msg );
+					$( '#dologin_test_sms_res' ).attr( 'class', 'dologin-danger' ).html( res._msg );
 				} else {
 					$( '#dologin_test_sms_res' ).attr( 'class', 'dologin-success' ).html( res.info );
 				}

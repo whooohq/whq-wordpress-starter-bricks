@@ -1,7 +1,7 @@
 /**
  * WP Captcha
  * Backend GUI pointers
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 jQuery(document).ready(function($){

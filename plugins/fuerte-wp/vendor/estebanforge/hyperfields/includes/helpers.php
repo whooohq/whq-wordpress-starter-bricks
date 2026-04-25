@@ -1,0 +1,662 @@
+<?php
+
+declare(strict_types=1);
+
+use HyperFields\Admin\ExportImportUI;
+use HyperFields\Compatibility\WPSettingsCompatibility;
+use HyperFields\ContentExportImport;
+use HyperFields\ExportImport;
+use HyperFields\Field;
+use HyperFields\OptionsPage;
+use HyperFields\OptionsSection;
+use HyperFields\RepeaterField;
+use HyperFields\TabsField;
+use HyperFields\Validation\SchemaValidator;
+
+// Exit if accessed directly (but allow test environment to proceed).
+if (!defined('ABSPATH') && !defined('HYPERFIELDS_TESTING_MODE')) {
+    return;
+}
+
+if (!function_exists('hf_option_page')) {
+    /**
+     * Create an OptionsPage instance.
+     *
+     * @param string $page_title The title of the page
+     * @param string $menu_slug  The slug for the menu
+     * @param string $prefix     Optional prefix prepended to all field names
+     * @return OptionsPage
+     */
+    function hf_option_page(string $page_title, string $menu_slug, string $prefix = ''): OptionsPage
+    {
+        return OptionsPage::make($page_title, $menu_slug, $prefix);
+    }
+}
+
+if (!function_exists('hf_field')) {
+    /**
+     * Create a Field instance.
+     *
+     * @param string $type  The field type
+     * @param string $name  The field name
+     * @param string $label The field label
+     * @return Field
+     */
+    function hf_field(string $type, string $name, string $label): Field
+    {
+        return Field::make($type, $name, $label);
+    }
+}
+
+if (!function_exists('hf_tabs')) {
+    /**
+     * Create a TabsField instance.
+     *
+     * @param string $name  The field name
+     * @param string $label The field label
+     * @return TabsField
+     */
+    function hf_tabs(string $name, string $label): TabsField
+    {
+        return TabsField::make($name, $label);
+    }
+}
+
+if (!function_exists('hf_repeater')) {
+    /**
+     * Create a RepeaterField instance.
+     *
+     * @param string $name  The field name
+     * @param string $label The field label
+     * @return RepeaterField
+     */
+    function hf_repeater(string $name, string $label): RepeaterField
+    {
+        return RepeaterField::make($name, $label);
+    }
+}
+
+if (!function_exists('hf_section')) {
+    /**
+     * Create an OptionsSection instance.
+     *
+     * @param string $id    The section ID
+     * @param string $title The section title
+     * @return OptionsSection
+     */
+    function hf_section(string $id, string $title): OptionsSection
+    {
+        return OptionsSection::make($id, $title);
+    }
+}
+
+if (!function_exists('hf_resolve_field_context')) {
+    /**
+     * Resolve field context into a normalized structure.
+     *
+     * @param mixed $source Context source
+     * @param array $args   Additional arguments
+     * @return array
+     */
+    function hf_resolve_field_context($source = null, array $args = []): array
+    {
+        $context = [
+            'type' => 'option',
+            'object_id' => 0,
+            'option_group' => $args['option_group'] ?? apply_filters('hyperfields/default_option_group', 'hyperfields_options'),
+        ];
+
+        if (is_array($source)) {
+            $context['type'] = $source['type'] ?? $context['type'];
+            if (isset($source['id'])) {
+                $context['object_id'] = (int) $source['id'];
+            }
+            if (isset($source['option_group'])) {
+                $context['option_group'] = (string) $source['option_group'];
+            }
+
+            return $context;
+        }
+
+        if ($source instanceof WP_Post) {
+            $context['type'] = 'post';
+            $context['object_id'] = (int) $source->ID;
+
+            return $context;
+        }
+
+        if ($source instanceof WP_User) {
+            $context['type'] = 'user';
+            $context['object_id'] = (int) $source->ID;
+
+            return $context;
+        }
+
+        if ($source instanceof WP_Term) {
+            $context['type'] = 'term';
+            $context['object_id'] = (int) $source->term_id;
+
+            return $context;
+        }
+
+        if (is_numeric($source)) {
+            $context['type'] = 'post';
+            $context['object_id'] = (int) $source;
+
+            return $context;
+        }
+
+        if (is_string($source)) {
+            if (strpos($source, 'user_') === 0) {
+                $context['type'] = 'user';
+                $context['object_id'] = (int) substr($source, 5);
+
+                return $context;
+            }
+            if (strpos($source, 'term_') === 0) {
+                $context['type'] = 'term';
+                $context['object_id'] = (int) substr($source, 5);
+
+                return $context;
+            }
+            if ($source === 'option' || $source === 'options') {
+                $context['type'] = 'option';
+
+                return $context;
+            }
+        }
+
+        // Fallbacks when $source is null or unrecognized
+        $post_id = get_the_ID();
+        if ($post_id) {
+            $context['type'] = 'post';
+            $context['object_id'] = (int) $post_id;
+
+            return $context;
+        }
+
+        return $context; // default is option
+    }
+}
+
+if (!function_exists('hf_maybe_sanitize_field_value')) {
+    /**
+     * Optionally sanitize a value using Field::sanitizeValue when a type is provided.
+     *
+     * @param string $name  Field name
+     * @param mixed  $value Value to sanitize
+     * @param array  $args  Arguments including type
+     * @return mixed
+     */
+    function hf_maybe_sanitize_field_value(string $name, $value, array $args = [])
+    {
+        $type = $args['type'] ?? null;
+        if (is_string($type) && $type !== '') {
+            try {
+                $field = Field::make($type, $name, $name);
+
+                return $field->sanitizeValue($value);
+            } catch (Throwable $e) {
+                // Fall through to filters if Field cannot be created
+            }
+        }
+
+        // Allow external sanitization via filter when no type is provided
+        return apply_filters('hyperfields/update_field_sanitize', $value, $name, $args);
+    }
+}
+
+if (!function_exists('hf_get_field')) {
+    /**
+     * Get a field value from post/user/term meta or options.
+     *
+     * @param string $name   Meta key / option key
+     * @param mixed  $source Context
+     * @param array  $args   Arguments
+     * @return mixed
+     */
+    function hf_get_field(string $name, $source = null, array $args = [])
+    {
+        $ctx = hf_resolve_field_context($source, $args);
+
+        switch ($ctx['type']) {
+            case 'post':
+                if ($ctx['object_id'] > 0) {
+                    $val = get_post_meta($ctx['object_id'], $name, true);
+
+                    return $val !== '' ? $val : ($args['default'] ?? null);
+                }
+                break;
+            case 'user':
+                if ($ctx['object_id'] > 0) {
+                    $val = get_user_meta($ctx['object_id'], $name, true);
+
+                    return $val !== '' ? $val : ($args['default'] ?? null);
+                }
+                break;
+            case 'term':
+                if ($ctx['object_id'] > 0) {
+                    $val = get_term_meta($ctx['object_id'], $name, true);
+
+                    return $val !== '' ? $val : ($args['default'] ?? null);
+                }
+                break;
+            case 'option':
+            default:
+                $group = $ctx['option_group'];
+                $options = get_option($group, []);
+                if (is_array($options) && array_key_exists($name, $options)) {
+                    return $options[$name];
+                }
+
+                return $args['default'] ?? null;
+        }
+
+        return $args['default'] ?? null;
+    }
+}
+
+if (!function_exists('hf_update_field')) {
+    /**
+     * Update (save) a field value into post/user/term meta or options.
+     *
+     * @param string $name  Field name
+     * @param mixed  $value Value to save
+     * @param mixed  $source Context
+     * @param array  $args  Arguments
+     * @return bool
+     */
+    function hf_update_field(string $name, $value, $source = null, array $args = []): bool
+    {
+        $ctx = hf_resolve_field_context($source, $args);
+        $sanitized = hf_maybe_sanitize_field_value($name, $value, $args);
+
+        switch ($ctx['type']) {
+            case 'post':
+                if ($ctx['object_id'] > 0) {
+                    return (bool) update_post_meta($ctx['object_id'], $name, $sanitized);
+                }
+                break;
+            case 'user':
+                if ($ctx['object_id'] > 0) {
+                    return (bool) update_user_meta($ctx['object_id'], $name, $sanitized);
+                }
+                break;
+            case 'term':
+                if ($ctx['object_id'] > 0) {
+                    return (bool) update_term_meta($ctx['object_id'], $name, $sanitized);
+                }
+                break;
+            case 'option':
+            default:
+                $group = $ctx['option_group'];
+                $options = get_option($group, []);
+                if (!is_array($options)) {
+                    $options = [];
+                }
+                $options[$name] = $sanitized;
+
+                return (bool) update_option($group, $options);
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('hf_delete_field')) {
+    /**
+     * Delete a field value from post/user/term meta or options.
+     *
+     * @param string $name  Field name
+     * @param mixed  $source Context
+     * @param array  $args  Arguments
+     * @return bool
+     */
+    function hf_delete_field(string $name, $source = null, array $args = []): bool
+    {
+        $ctx = hf_resolve_field_context($source, $args);
+
+        switch ($ctx['type']) {
+            case 'post':
+                if ($ctx['object_id'] > 0) {
+                    return (bool) delete_post_meta($ctx['object_id'], $name);
+                }
+                break;
+            case 'user':
+                if ($ctx['object_id'] > 0) {
+                    return (bool) delete_user_meta($ctx['object_id'], $name);
+                }
+                break;
+            case 'term':
+                if ($ctx['object_id'] > 0) {
+                    return (bool) delete_term_meta($ctx['object_id'], $name);
+                }
+                break;
+            case 'option':
+            default:
+                $group = $ctx['option_group'];
+                $options = get_option($group, []);
+                if (!is_array($options)) {
+                    return false;
+                }
+                if (array_key_exists($name, $options)) {
+                    unset($options[$name]);
+
+                    return (bool) update_option($group, $options);
+                }
+
+                return false;
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('hf_save_field')) {
+    /**
+     * Alias of hf_update_field for parity with the initial TODO wording.
+     *
+     * @param string $name  Field name
+     * @param mixed  $value Value to save
+     * @param mixed  $source Context
+     * @param array  $args  Arguments
+     * @return bool
+     */
+    function hf_save_field(string $name, $value, $source = null, array $args = []): bool
+    {
+        return hf_update_field($name, $value, $source, $args);
+    }
+}
+
+// Backward compatibility aliases for hp_ prefixed functions (HyperPress era)
+if (!function_exists('hp_get_field')) {
+    function hp_get_field(string $name, $source = null, array $args = [])
+    {
+        return hf_get_field($name, $source, $args);
+    }
+}
+if (!function_exists('hp_update_field')) {
+    function hp_update_field(string $name, $value, $source = null, array $args = []): bool
+    {
+        return hf_update_field($name, $value, $source, $args);
+    }
+}
+if (!function_exists('hp_save_field')) {
+    function hp_save_field(string $name, $value, $source = null, array $args = []): bool
+    {
+        return hf_save_field($name, $value, $source, $args);
+    }
+}
+if (!function_exists('hp_delete_field')) {
+    function hp_delete_field(string $name, $source = null, array $args = []): bool
+    {
+        return hf_delete_field($name, $source, $args);
+    }
+}
+if (!function_exists('hp_resolve_field_context')) {
+    function hp_resolve_field_context($source = null, array $args = []): array
+    {
+        return hf_resolve_field_context($source, $args);
+    }
+}
+if (!function_exists('hp_create_option_page')) {
+    function hp_create_option_page(string $page_title, string $menu_slug, string $prefix = ''): OptionsPage
+    {
+        return hf_option_page($page_title, $menu_slug, $prefix);
+    }
+}
+if (!function_exists('hp_create_field')) {
+    function hp_create_field(string $type, string $name, string $label): Field
+    {
+        return hf_field($type, $name, $label);
+    }
+}
+if (!function_exists('hp_create_tabs')) {
+    function hp_create_tabs(string $name, string $label): TabsField
+    {
+        return hf_tabs($name, $label);
+    }
+}
+if (!function_exists('hp_create_repeater')) {
+    function hp_create_repeater(string $name, string $label): RepeaterField
+    {
+        return hf_repeater($name, $label);
+    }
+}
+if (!function_exists('hp_create_section')) {
+    function hp_create_section(string $id, string $title): OptionsSection
+    {
+        return hf_section($id, $title);
+    }
+}
+
+if (!function_exists('hf_register_data_tools_page')) {
+    /**
+     * Register an Export / Import admin page as a submenu of an existing menu.
+     *
+     * Must be called from inside an `admin_menu` action hook.
+     *
+     * @param string $parentSlug           Parent menu slug (e.g. 'my-plugin').
+     * @param string $pageSlug             Unique slug for this page.
+     * @param array  $options              Associative map of WP option names to labels.
+     * @param array  $allowedImportOptions Whitelist of option names permitted on import. Defaults to all.
+     * @param string $prefix               Optional key prefix for both export and import.
+     * @param string $title                Page heading and menu label.
+     * @param string $capability           Required capability. Default: 'manage_options'.
+     */
+    function hf_register_data_tools_page(
+        string $parentSlug,
+        string $pageSlug,
+        array $options = [],
+        array $allowedImportOptions = [],
+        string $prefix = '',
+        string $title = 'Data Export / Import',
+        string $capability = 'manage_options'
+    ): void {
+        ExportImportUI::registerPage(
+            parentSlug: $parentSlug,
+            pageSlug: $pageSlug,
+            options: $options,
+            allowedImportOptions: $allowedImportOptions,
+            prefix: $prefix,
+            title: $title,
+            capability: $capability,
+        );
+    }
+}
+
+if (!function_exists('hf_register_wpsettings_compatibility_page')) {
+    /**
+     * Register a settings page using the compatibility schema.
+     *
+     * @param array $config Compatibility settings configuration.
+     * @return OptionsPage
+     */
+    function hf_register_wpsettings_compatibility_page(array $config): OptionsPage
+    {
+        return WPSettingsCompatibility::register($config);
+    }
+}
+
+if (!function_exists('hp_register_wpsettings_compatibility_page')) {
+    function hp_register_wpsettings_compatibility_page(array $config): OptionsPage
+    {
+        return hf_register_wpsettings_compatibility_page($config);
+    }
+}
+
+if (!function_exists('hf_register_settings_compatibility_page')) {
+    function hf_register_settings_compatibility_page(array $config): OptionsPage
+    {
+        return hf_register_wpsettings_compatibility_page($config);
+    }
+}
+
+if (!function_exists('hp_register_settings_compatibility_page')) {
+    function hp_register_settings_compatibility_page(array $config): OptionsPage
+    {
+        return hp_register_wpsettings_compatibility_page($config);
+    }
+}
+
+if (!function_exists('hf_export_options')) {
+    /**
+     * Export one or more WordPress option groups to a JSON string.
+     *
+     * @param array               $optionNames Option names to export.
+     * @param string              $prefix      Only export keys starting with this prefix.
+     * @param array<string,array> $schemaMap   Optional schema rules keyed by option name.
+     * @return string JSON string ready for download or storage.
+     */
+    function hf_export_options(array $optionNames, string $prefix = '', array $schemaMap = []): string
+    {
+        return ExportImport::exportOptions($optionNames, $prefix, $schemaMap);
+    }
+}
+
+if (!function_exists('hf_import_options')) {
+    /**
+     * Import options from a previously exported JSON string.
+     *
+     * @param string $jsonString         JSON produced by hf_export_options().
+     * @param array  $allowedOptionNames Whitelist of option names that may be written. Empty = allow all.
+     * @param string $prefix             Only import keys starting with this prefix. Default '' imports all.
+     * @return array{success: bool, message: string, backup_keys?: array<string, string>}
+     */
+    function hf_import_options(string $jsonString, array $allowedOptionNames = [], string $prefix = '', array $options = []): array
+    {
+        return ExportImport::importOptions($jsonString, $allowedOptionNames, $prefix, $options);
+    }
+}
+
+if (!function_exists('hf_diff_options')) {
+    /**
+     * Build a dry-run diff report for options import.
+     *
+     * @param string $jsonString         JSON produced by hf_export_options().
+     * @param array  $allowedOptionNames Whitelist of option names that may be written.
+     * @param string $prefix             Only include array keys starting with this prefix.
+     * @param array  $options            Optional behavior (for example ['mode' => 'replace']).
+     * @return array
+     */
+    function hf_diff_options(string $jsonString, array $allowedOptionNames = [], string $prefix = '', array $options = []): array
+    {
+        return ExportImport::diffOptions($jsonString, $allowedOptionNames, $prefix, $options);
+    }
+}
+
+if (!function_exists('hf_export_posts')) {
+    /**
+     * Export posts/pages/CPT records to JSON.
+     *
+     * @param array $postTypes Post types to export.
+     * @param array $options Optional export behavior.
+     */
+    function hf_export_posts(array $postTypes, array $options = []): string
+    {
+        return ContentExportImport::exportPosts($postTypes, $options);
+    }
+}
+
+if (!function_exists('hf_snapshot_posts')) {
+    /**
+     * Snapshot posts/pages/CPT records for compare workflows.
+     *
+     * @param array $postTypes Post types to snapshot.
+     * @param array $options Optional snapshot behavior.
+     * @return array
+     */
+    function hf_snapshot_posts(array $postTypes, array $options = []): array
+    {
+        return ContentExportImport::snapshotPosts($postTypes, $options);
+    }
+}
+
+if (!function_exists('hf_import_posts')) {
+    /**
+     * Import posts/pages/CPT records from JSON.
+     *
+     * @param string $jsonString Export payload created by hf_export_posts().
+     * @param array  $options Optional import behavior.
+     * @return array
+     */
+    function hf_import_posts(string $jsonString, array $options = []): array
+    {
+        return ContentExportImport::importPosts($jsonString, $options);
+    }
+}
+
+if (!function_exists('hf_diff_posts')) {
+    /**
+     * Build a dry-run compare report for posts/pages/CPT imports.
+     *
+     * @param string $jsonString Export payload created by hf_export_posts().
+     * @param array  $options Optional compare behavior.
+     * @return array
+     */
+    function hf_diff_posts(string $jsonString, array $options = []): array
+    {
+        return ContentExportImport::diffPosts($jsonString, $options);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────
+//  Schema validation helpers
+// ──────────────────────────────────────────────────────────────────────
+
+if (!function_exists('hf_validate_value')) {
+    /**
+     * Validate a single value against a schema rule.
+     *
+     * @param string $fieldName Human-readable field name (for error messages).
+     * @param mixed  $value     The value to validate.
+     * @param array  $rule      Schema rule: { type, max?, min?, pattern?, enum?, format?, fields? }.
+     * @return string|null      Error message on failure, null on success.
+     */
+    function hf_validate_value(string $fieldName, mixed $value, array $rule): ?string
+    {
+        return SchemaValidator::validate($fieldName, $value, $rule);
+    }
+}
+
+if (!function_exists('hf_validate_schema')) {
+    /**
+     * Validate a keyed map of values against a keyed map of schema rules.
+     *
+     * @param array<string,mixed> $values    Values to validate.
+     * @param array<string,array> $schemaMap Schema rules keyed by field name.
+     * @param string              $prefix    Optional prefix for error field names.
+     * @return array<int,string>             Error messages (empty = all valid).
+     */
+    function hf_validate_schema(array $values, array $schemaMap, string $prefix = ''): array
+    {
+        return SchemaValidator::validateMap($values, $schemaMap, $prefix);
+    }
+}
+
+if (!function_exists('hf_is_valid')) {
+    /**
+     * Check if a value passes validation against a schema rule (boolean shorthand).
+     *
+     * @param mixed $value The value to check.
+     * @param array $rule  Schema rule array.
+     * @return bool
+     */
+    function hf_is_valid(mixed $value, array $rule): bool
+    {
+        return SchemaValidator::isValid($value, $rule);
+    }
+}
+
+if (!function_exists('hf_detect_type')) {
+    /**
+     * Detect the canonical schema type name of a PHP value.
+     *
+     * @param mixed $value
+     * @return string One of: string, integer, double, boolean, array, null.
+     */
+    function hf_detect_type(mixed $value): string
+    {
+        return SchemaValidator::detectType($value);
+    }
+}

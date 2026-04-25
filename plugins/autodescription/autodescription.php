@@ -1,25 +1,37 @@
 <?php
 /**
+ * The SEO Framework
+ *
+ * @package   The_SEO_Framework\Bootstrap
+ * @author    Sybre Waaijer
+ * @copyright 2015 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * @license   GPL-3.0
+ * @link      https://theseoframework.com/
+ * @access    public
+ *
+ * @troy-repo
+ * Troy: repo.theseoframework.com
+ *
+ * @wordpress-plugin
  * Plugin Name: The SEO Framework
  * Plugin URI: https://theseoframework.com/
  * Description: An automated, advanced, accessible, unbranded and extremely fast SEO solution for your WordPress website.
- * Version: 4.2.8
- * Author: The SEO Framework Team
+ * Version: 5.1.4
+ * Author: Sybre Waaijer
  * Author URI: https://theseoframework.com/
  * License: GPLv3
  * Text Domain: autodescription
  * Domain Path: /language
- * Requires at least: 5.5
- * Requires PHP: 7.2.0
- *
- * @package The_SEO_Framework\Bootstrap
+ * Requires at least: 6.0
+ * Tested up to: 6.9
+ * Requires PHP: 7.4.0
  */
 
 defined( 'ABSPATH' ) or die;
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2015 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2015 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -41,7 +53,7 @@ defined( 'ABSPATH' ) or die;
  *
  * @since 2.3.5
  */
-define( 'THE_SEO_FRAMEWORK_VERSION', '4.2.8' );
+define( 'THE_SEO_FRAMEWORK_VERSION', '5.1.4' );
 
 /**
  * The plugin Database version.
@@ -50,7 +62,7 @@ define( 'THE_SEO_FRAMEWORK_VERSION', '4.2.8' );
  *
  * @since 2.7.0
  */
-define( 'THE_SEO_FRAMEWORK_DB_VERSION', '4270' );
+define( 'THE_SEO_FRAMEWORK_DB_VERSION', '5140' );
 
 /**
  * The plugin file, absolute unix path.
@@ -95,12 +107,12 @@ require THE_SEO_FRAMEWORK_BOOTSTRAP_PATH . 'load.php';
 // #    ;;Olll;;:::ittL::,;;;;;;ii;ttttt.                i.iii..
 // #        ;,iiiii:LL:,,:iiiii;ii;ttttt.              ;::iii0..
 // #        ,,...,,;;;,.....,ii;ii;...ll.            :::OO,GG.
-// # , L...........,::O::.00Gii;ii;ll.11.           .,,G,,0..
-// # , L..0000LL000LLL0::.00Gii,;;l..lll.  ...    ..,00,00.
-// # , L..L;;;..1LLLLLLLL1iiiii,ll;ttt11t..:::.  .,,0,,0..
-// # , L..O;;i;;;;;LLLLLLiiiiii,;;L;;t11t..:ii.;;,0i:0;,
+// # , L....;,.....,::O::.00Gii;ii;ll.11.           .,,G,,0..
+// # , L..LL;LLL00LLLL0::.00Gii,;;l..lll.  ...    ..,00,00.
+// # , L..L;;;..11LLLLLLL1iiiii,ll;ttt11t..:::.  .,,0,,0..
+// # , L..O;;i;;;LLLLLLLLiiiiii,;;L;;t11t..:ii.;;,0i:0;,
 // # , L..Oiii;;;;;LLL1iiiii,::t,,t111::1:::00.,,,00L..
-// # , L..Oiiiii:::t.........::tttt11tttttt:::.OOiii.
+// # , L..Oiiiii::t..........::tttt11tttttt:::.OOiii.
 // # , L..Oiit00tttLlll11lttt;;tll1llllltttt..GGGO:::..
 // # , L..L..;00tttOii...:tt;;;tll::::::lttttt.OO::::::.
 // # , L..O;;L00:::011;..l::;tttll:..   ;::lll...:::0ii.
@@ -116,23 +128,22 @@ require THE_SEO_FRAMEWORK_BOOTSTRAP_PATH . 'load.php';
 // #         11t11l11,           .ll111l.. It's Link?! Not Zelda??
 // #         ll......             ........ - Sybre drew this by hand.
 
-// phpcs:disable, Squiz.Commenting.InlineComment, Squiz.PHP.CommentedOutCode
+// phpcs:disable Universal.WhiteSpace, Squiz.Commenting.InlineComment, Squiz.PHP.CommentedOutCode
 //
 // Debug: Not to be used on production websites as it dumps and/or disables all kinds of stuff everywhere.
 //        This is here as an easily accessible toolset used solely for the development of this plugin.
 //
 // Headless tip: ?tsf_headless[meta]=0&tsf_headless[settings]=0&tsf_headless[user]=0
 //
-// add_action( 'plugins_loaded', function() { if ( is_super_admin() ) {
+// add_action( 'plugins_loaded', function () { if ( is_super_admin() ) {
 // if ( is_admin() ) {
 // 	define( 'THE_SEO_FRAMEWORK_DEBUG', true );
-// 	define( 'THE_SEO_FRAMEWORK_DISABLE_TRANSIENTS', true );
 // 	delete_option( 'the_seo_framework_upgraded_db_version' );
 // 	( $_GET['reset_tsf_upgrade'] ?? 0 ) and delete_option( 'the_seo_framework_upgraded_db_version' ) and delete_option( 'the_seo_framework_initial_db_version' );
-// 	( $_GET['downgrade_tsf'] ?? 0 ) and update_option( 'the_seo_framework_upgraded_db_version', (string) (int) $_GET['downgrade_tsf'] );
-// 	( $_GET['downgrade_tsf_initial'] ?? 0 ) and update_option( 'the_seo_framework_initial_db_version', (string) (int) $_GET['downgrade_tsf_initial'] );
+// 	( $_GET['downgrade_tsf'] ?? 0 ) and update_option( 'the_seo_framework_upgraded_db_version', (string) (int) $_GET['downgrade_tsf'], true );
+// 	( $_GET['downgrade_tsf_initial'] ?? 0 ) and update_option( 'the_seo_framework_initial_db_version', (string) (int) $_GET['downgrade_tsf_initial'], false );
 // 	( $_GET['tsf_headless'] ?? 0 ) and define( 'THE_SEO_FRAMEWORK_HEADLESS', $_GET['tsf_headless'] === 'true' ?: $_GET['tsf_headless'] );
-// 	add_action( 'admin_footer', function() { print( '<script>jQuery.migrateMute=true;</script>' ); } );
+// 	add_action( 'admin_footer', function () { print( '<script>jQuery.migrateMute=true;</script>' ); } );
 // }
 // }},0);
-// phpcs:enable, Squiz.Commenting.InlineComment, Squiz.PHP.CommentedOutCode
+// phpcs:enable Squiz.Commenting.InlineComment, Squiz.PHP.CommentedOutCode

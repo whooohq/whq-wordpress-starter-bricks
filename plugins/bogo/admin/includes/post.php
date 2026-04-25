@@ -8,6 +8,7 @@ function bogo_pages_columns( $posts_columns ) {
 	return bogo_posts_columns( $posts_columns, 'page' );
 }
 
+
 add_filter( 'manage_posts_columns', 'bogo_posts_columns', 10, 2 );
 
 function bogo_posts_columns( $posts_columns, $post_type ) {
@@ -26,6 +27,7 @@ function bogo_posts_columns( $posts_columns, $post_type ) {
 	return $posts_columns;
 }
 
+
 add_action( 'manage_pages_custom_column',
 	'bogo_manage_posts_custom_column', 10, 2
 );
@@ -35,7 +37,7 @@ add_action( 'manage_posts_custom_column',
 );
 
 function bogo_manage_posts_custom_column( $column_name, $post_id ) {
-	if ( 'locale' != $column_name ) {
+	if ( 'locale' !== $column_name ) {
 		return;
 	}
 
@@ -68,6 +70,7 @@ function bogo_manage_posts_custom_column( $column_name, $post_id ) {
 	);
 }
 
+
 add_action( 'restrict_manage_posts', 'bogo_restrict_manage_posts', 10, 2 );
 
 function bogo_restrict_manage_posts( $post_type, $which ) {
@@ -76,31 +79,47 @@ function bogo_restrict_manage_posts( $post_type, $which ) {
 	}
 
 	$available_languages = bogo_available_languages();
-	$current_locale = empty( $_GET['lang'] ) ? '' : $_GET['lang'];
+	$current_locale = $_GET['lang'] ?? '';
 
-	echo '<select name="lang">';
-
-	$selected = ( '' == $current_locale ) ? ' selected="selected"' : '';
-
-	echo '<option value=""' . $selected . '>'
-		. esc_html( __( 'Show all locales', 'bogo' ) ) . '</option>';
+	$options = array(
+		sprintf(
+			'<option %1$s>%2$s</option>',
+			bogo_format_atts( array(
+				'value' => '',
+				'selected' => '' === $current_locale,
+			) ),
+			__( 'Show all locales', 'bogo' )
+		),
+	);
 
 	foreach ( $available_languages as $locale => $lang ) {
-		$selected = ( $locale == $current_locale ) ? ' selected="selected"' : '';
-
-		echo '<option value="' . esc_attr( $locale ) . '"' . $selected . '>'
-			. esc_html( $lang ) . '</option>';
+		$options[] = sprintf(
+			'<option %1$s>%2$s</option>',
+			bogo_format_atts( array(
+				'value' => $locale,
+				'selected' => $locale === $current_locale,
+			) ),
+			$lang
+		);
 	}
 
-	echo '</select>' . "\n";
+	$dropdown = sprintf(
+		'<select name="lang">%s</select>',
+		implode( $options )
+	);
+
+	echo wp_kses( $dropdown, 'bogo_form_inside' );
 }
+
 
 add_filter( 'post_row_actions', 'bogo_post_row_actions', 10, 2 );
 add_filter( 'page_row_actions', 'bogo_post_row_actions', 10, 2 );
 
 function bogo_post_row_actions( $actions, $post ) {
-	if ( ! bogo_is_localizable_post_type( $post->post_type )
-	or 'trash' === $post->post_status ) {
+	if (
+		! bogo_is_localizable_post_type( $post->post_type ) or
+		'trash' === $post->post_status
+	) {
 		return $actions;
 	}
 
@@ -113,25 +132,29 @@ function bogo_post_row_actions( $actions, $post ) {
 	$user_locale = bogo_get_user_locale();
 	$post_locale = bogo_get_post_locale( $post->ID );
 
-	if ( $user_locale == $post_locale ) {
+	if ( $user_locale === $post_locale ) {
 		return $actions;
 	}
 
 	if ( $translation = bogo_get_post_translation( $post, $user_locale ) ) {
-		if ( empty( $translation->ID )
-		or $translation->ID === $post->ID ) {
+		if ( empty( $translation->ID ) or $translation->ID === $post->ID ) {
 			return $actions;
 		}
 
+		/* translators: %s: Language name */
 		$text = __( 'Edit %s translation', 'bogo' );
+
 		$edit_link = get_edit_post_link( $translation->ID );
 	} else {
+		/* translators: %s: Language name */
 		$text = __( 'Translate into %s', 'bogo' );
+
 		$edit_link = admin_url( 'post-new.php?post_type=' . $post->post_type
 			. '&action=bogo-add-translation'
 			. '&locale=' . $user_locale
 			. '&original_post=' . $post->ID
 		);
+
 		$edit_link = wp_nonce_url( $edit_link, 'bogo-add-translation' );
 	}
 
@@ -150,33 +173,36 @@ function bogo_post_row_actions( $actions, $post ) {
 	return $actions;
 }
 
+
 add_action( 'admin_init', 'bogo_add_translation', 10, 0 );
 
 function bogo_add_translation() {
-	if ( empty( $_REQUEST['action'] )
-	or 'bogo-add-translation' != $_REQUEST['action'] ) {
+	if (
+		empty( $_REQUEST['action'] ) or
+		'bogo-add-translation' !== $_REQUEST['action']
+	) {
 		return;
 	}
 
 	check_admin_referer( 'bogo-add-translation' );
 
-	$locale = isset( $_REQUEST['locale'] ) ? $_REQUEST['locale'] : '';
-	$original_post = isset( $_REQUEST['original_post'] )
-		? absint( $_REQUEST['original_post'] ) : 0;
+	$locale = trim( $_REQUEST['locale'] ?? '' );
+	$original_post = absint( $_REQUEST['original_post'] ?? 0 );
 
 	if ( ! bogo_is_available_locale( $locale ) ) {
 		return;
 	}
 
-	if ( ! $original_post
-	or ! $original_post = get_post( $original_post ) ) {
+	if ( ! $original_post or ! $original_post = get_post( $original_post ) ) {
 		return;
 	}
 
 	$post_type_object = get_post_type_object( $original_post->post_type );
 
-	if ( $post_type_object
-	and current_user_can( $post_type_object->cap->edit_posts ) ) {
+	if (
+		$post_type_object and
+		current_user_can( $post_type_object->cap->edit_posts )
+	) {
 		$new_post_id = bogo_duplicate_post( $original_post, $locale );
 
 		if ( $new_post_id ) {
@@ -186,6 +212,7 @@ function bogo_add_translation() {
 		}
 	}
 }
+
 
 /* Single Post */
 
@@ -208,8 +235,9 @@ function bogo_add_l10n_meta_boxes( $post_type, $post ) {
 	);
 }
 
+
 function bogo_l10n_meta_box( $post ) {
-	$initial = ( 'auto-draft' == $post->post_status );
+	$initial = ( 'auto-draft' === $post->post_status );
 
 	if ( $initial ) {
 		$post_locale = bogo_get_user_locale();
@@ -218,97 +246,100 @@ function bogo_l10n_meta_box( $post ) {
 	}
 
 	$translations = bogo_get_post_translations( $post->ID );
+
 	$available_languages = bogo_available_languages( array(
 		'current_user_can_access' => true,
 	) );
 
+	$post_language = $available_languages[$post_locale] ?? $post_locale;
+
+	unset( $available_languages[$post_locale] );
+
 ?>
 
 <div class="descriptions">
-<?php
-	if ( isset( $available_languages[$post_locale] ) ) {
-		$lang = $available_languages[$post_locale];
-	} else {
-		$lang = $post_locale;
-	}
+<p><?php
 
-	unset( $available_languages[$post_locale] );
-?>
-<p>
-	<strong><?php echo esc_html( __( 'Language', 'bogo' ) ); ?>:</strong>
-	<?php echo esc_html( $lang ); ?>
-</p>
+	echo wp_kses_data( sprintf(
+		'<strong>%1$s</strong> %2$s',
+		__( 'Language:', 'bogo' ),
+		$post_language
+	) );
+
+?></p>
 </div>
 
-<?php
-	echo '<div class="descriptions">';
-	echo sprintf( '<p><strong>%s:</strong></p>',
-		esc_html( __( 'Translations', 'bogo' ) )
-	);
+<div class="descriptions">
+<p>
+	<strong><?php echo wp_kses_data( __( 'Translations:', 'bogo' ) ); ?></strong>
+</p>
 
-	echo '<ul id="bogo-translations">';
+<ul id="bogo-translations">
+<?php
 
 	foreach ( $translations as $locale => $translation ) {
-		$edit_link = get_edit_post_link( $translation->ID );
-		echo '<li>';
+		$li_content = get_the_title( $translation->ID );
 
-		if ( $edit_link ) {
-			echo sprintf(
-				'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s <span class="screen-reader-text">%3$s</span></a>',
-				esc_url( $edit_link ),
-				get_the_title( $translation->ID ),
+		if ( $edit_link = get_edit_post_link( $translation->ID ) ) {
+			$li_content = sprintf(
+				'<a %1$s>%2$s<span class="screen-reader-text">%3$s</span></a>',
+				bogo_format_atts( array(
+					'href' => esc_url( $edit_link ),
+					'target' => '_blank',
+				) ),
+				$li_content,
 				/* translators: accessibility text */
 				esc_html( __( '(opens in a new window)', 'bogo' ) )
 			);
-		} else {
-			echo get_the_title( $translation->ID );
 		}
 
-		if ( isset( $available_languages[$locale] ) ) {
-			$lang = $available_languages[$locale];
-		} else {
-			$lang = $locale;
-		}
-
-		echo ' [' . $lang . ']';
-		echo '</li>';
-
-		// make it unavailable for select options
-		unset( $available_languages[$locale] );
-	}
-
-	echo '</ul>';
-	echo '</div>';
-
-	if ( $initial or empty( $available_languages ) ) {
-		return;
-	}
-
-	echo '<div id="bogo-add-translation-actions" class="descriptions">';
-	echo sprintf( '<p><strong>%s:</strong></p>',
-		esc_html( __( 'Add Translation', 'bogo' ) )
-	);
-	echo '<select id="bogo-translations-to-add">';
-
-	foreach ( $available_languages as $locale => $lang ) {
-		if ( isset( $translations[$locale] ) ) {
-			continue;
-		}
-
-		echo sprintf( '<option value="%1$s">%2$s</option>',
-			esc_attr( $locale ), esc_html( $lang )
+		$li_content .= sprintf(
+			' [%s]',
+			$available_languages[$locale] ?? $locale
 		);
+
+		echo wp_kses_post( sprintf( '<li>%s</li>', $li_content ) );
 	}
 
-	echo '</select>';
-	echo '<p>';
-	echo sprintf(
-		'<button type="button" class="button" id="%1$s">%2$s</button>',
-		'bogo-add-translation',
-		esc_html( __( 'Add Translation', 'bogo' ) )
-	);
-	echo '<span class="spinner"></span>';
-	echo '</p>';
-	echo '<div class="clear"></div>';
-	echo '</div>';
+?>
+</ul>
+</div>
+
+<?php
+
+	$available_languages = array_diff_key( $available_languages, $translations );
+
+	if ( ! $initial and $available_languages ) {
+
+?>
+
+<div class="descriptions" id="bogo-add-translation-actions">
+<p>
+	<strong><?php echo wp_kses_data( __( 'Add Translation:', 'bogo' ) ); ?></strong>
+</p>
+
+<?php
+
+		foreach ( $available_languages as $locale => $lang ) {
+			echo wp_kses_post( sprintf(
+				'<p><button %1$s>%2$s</button> <span class="spinner"></span></p>',
+				bogo_format_atts( array(
+					'type' => 'button',
+					'class' => 'button',
+					'data-locale' => $locale,
+				) ),
+				sprintf(
+					/* translators: %s: Language name. */
+					__( 'Add %s translation', 'bogo' ),
+					$lang
+				)
+			) );
+		}
+
+?>
+<div class="clear"></div>
+</div>
+<?php
+
+	}
 }

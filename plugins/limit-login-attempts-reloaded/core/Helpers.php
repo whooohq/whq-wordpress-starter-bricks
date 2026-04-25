@@ -38,15 +38,18 @@ class Helpers {
 			if ( ! empty( $users ) ) {
 				foreach ( $users as $user_name => $info ) {
 
-					if ( is_array( $info ) ) { // For new plugin version
+					if ( is_array( $info ) && ! empty( $info['date'] ) && ! empty( $info['counter'] ) ) { // For new plugin version
 						$new_log[ $info['date'] ] = array(
 							'ip'       => $ip,
 							'username' => $user_name,
 							'counter'  => $info['counter'],
-							'gateway'  => ( isset( $info['gateway'] ) ) ? $info['gateway'] : '-',
+							'gateway'  => isset( $info['gateway'] ) ? $info['gateway'] : '-',
 							'unlocked' => ! empty( $info['unlocked'] ),
 						);
-					} else { // For old plugin version
+						continue;
+					}
+
+					if ( ! is_array( $info ) ) { // For old plugin version
 						$new_log[0] = array(
 							'ip'       => $ip,
 							'username' => $user_name,
@@ -55,10 +58,8 @@ class Helpers {
 							'unlocked' => false,
 						);
 					}
-
 				}
 			}
-
 		}
 
 		krsort( $new_log );
@@ -76,6 +77,18 @@ class Helpers {
 		asort( $countries );
 
 		return $countries;
+	}
+
+	public static function get_continent_list() {
+
+		if ( ! ( $continent = require LLA_PLUGIN_DIR . '/resources/continent.php' ) ) {
+
+			return array();
+		}
+
+		asort( $continent );
+
+		return $continent;
 	}
 
 	/**
@@ -119,9 +132,34 @@ class Helpers {
 		return $content;
 	}
 
+	// Solution prevents double quotes problem in json string
+	public static function sanitize_stripslashes_deep( $value )
+	{
+		if ( is_array( $value ) ) {
+			return array_map( [self::class, 'sanitize_stripslashes_deep'], $value );
+		}
+
+		if ( is_bool( $value ) || is_null( $value ) ) {
+			return $value;
+		}
+
+		return sanitize_textarea_field( stripslashes( (string)$value ) );
+	}
+
+
 	public static function is_auto_update_enabled() {
 		$auto_update_plugins = get_site_option( 'auto_update_plugins' );
 		return is_array( $auto_update_plugins ) && in_array( LLA_PLUGIN_BASENAME, $auto_update_plugins );
+	}
+
+	public static function is_block_automatic_update_disabled() {
+
+        if ( ( defined( 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS )
+            || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+            return true;
+        }
+
+        return apply_filters( 'automatic_updater_disabled', false ) || ! apply_filters( 'auto_update_plugin', true, 10, 2 );
 	}
 
 	public static function get_wordpress_version() {
@@ -297,6 +335,13 @@ class Helpers {
 
 			if( in_array( $key, array( 'SERVER_ADDR' ) ) ) continue;
 
+			// If REMOTE_ADDR contains multiple values (comma-separated), keep only the first before validation
+			if ( $key === 'REMOTE_ADDR' && strpos( $value, ',' ) !== false ) {
+
+				$parts = explode( ',', $value );
+				$value = trim( $parts[0] );
+			}
+
 			if( $valid_ip = self::is_ip_valid( $value ) ) {
 
 				$ips[$key] = $valid_ip;
@@ -321,11 +366,44 @@ class Helpers {
 	public static function detect_gateway() {
 
 		$gateway = 'wp_login';
+		// Use raw path for matching; avoid sanitize_text_field() which can alter the URI and break gateway detection.
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? rawurldecode( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
 
-		if ( isset( $_POST['woocommerce-login-nonce'] ) ) {
-			$gateway = 'wp_woo_login';
-		} elseif ( isset( $GLOBALS['wp_xmlrpc_server'] ) && is_object( $GLOBALS['wp_xmlrpc_server'] ) ) {
-			$gateway = 'wp_xmlrpc';
+		// Some plugins hide wp-login.php and mask REQUEST_URI.
+		// Prefer core routing marker when available.
+		if ( isset( $GLOBALS['pagenow'] ) && 'wp-login.php' === $GLOBALS['pagenow'] ) {
+			switch ( $action ) {
+				case 'lostpassword':
+					return 'wp_lostpassword';
+				case 'register':
+					return 'wp_register';
+				default:
+					return 'wp_login';
+			}
+		}
+
+		switch ( true ) {
+			case false !== strpos( $request_uri, 'wp-login.php' ) && ( ! $action || 'login' === $action ):
+				$gateway = 'wp_login';
+				break;
+			case 'lostpassword' === $action && false !== strpos( $request_uri, 'wp-login.php' ):
+				$gateway = 'wp_lostpassword';
+				break;
+			case 'register' === $action && false !== strpos( $request_uri, 'wp-login.php' ):
+				$gateway = 'wp_register';
+				break;
+			case isset( $GLOBALS['wp_xmlrpc_server'] ) && is_object( $GLOBALS['wp_xmlrpc_server'] ):
+				$gateway = 'wp_xmlrpc';
+				break;
+			case false === strpos( $request_uri, 'wp-login.php' ):
+				$gateway = trim( $request_uri, '/' );
+				$gateway = str_replace( '/', '_', $gateway );
+				$gateway = substr( sanitize_key( $gateway ), 0, 100 );
+				if ( empty( $gateway ) ) {
+					$gateway = 'custom_login';
+				}
+				break;
 		}
 
 		return $gateway;
@@ -355,4 +433,139 @@ class Helpers {
 			$phpmailer->AddEmbeddedImage( $logo_path, 'logo' );
 		}
 	}
+
+	public static function wp_locale() {
+		return str_replace( '_', '-', get_locale() );
+	}
+
+	/**
+	 * Obfuscate email for handshake API: first+asterisks+last per part, preserving length (e.g. t**t@*******.***).
+	 *
+	 * @param string $email Raw email address.
+	 * @return string Obfuscated email or empty string if invalid.
+	 */
+	public static function obfuscate_email( $email ) {
+		$email = trim( (string) $email );
+		if ( $email === '' ) {
+			return '';
+		}
+		if ( ! preg_match( LLA_EMAIL_OBFUSCATE_REGEX, $email ) ) {
+			return '***@***.***';
+		}
+		$after_local  = preg_replace( LLA_EMAIL_OBFUSCATE_LOCAL, '*', $email );
+		$after_domain = preg_replace_callback( '/@(.*)$/', function ( $m ) {
+			return '@' . preg_replace_callback( '/[^.]+/', function ( $m2 ) {
+				return str_repeat( '*', strlen( $m2[0] ) );
+			}, $m[1] );
+		}, $after_local );
+		return $after_domain;
+	}
+
+	
+	/**
+	 * Retrieves debug information for the Debug tab.
+	 *
+	 * @return string Debug info as a multi-line string.
+	 */
+	public static function get_debug_info() {
+		$debug_info = '';
+		$ips        = array();
+		$server     = array();
+
+		foreach ( $_SERVER as $key => $value ) {
+			if ( in_array( $key, array( 'SERVER_ADDR' ), true ) || is_array( $value ) ) {
+				continue;
+			}
+			$ips_for_check = array_map( 'trim', explode( ',', $value ) );
+			foreach ( $ips_for_check as $ip ) {
+				if ( self::is_ip_valid( $ip ) ) {
+					if ( ! in_array( $ip, $ips, true ) ) {
+						$ips[] = $ip;
+					}
+					if ( ! isset( $server[ $key ] ) ) {
+						$server[ $key ] = '';
+					}
+					if ( in_array( $ip, array( '127.0.0.1', '0.0.0.0' ), true ) ) {
+						$server[ $key ] = $ip;
+					} else {
+						$server[ $key ] .= 'IP' . array_search( $ip, $ips, true ) . ',';
+					}
+				}
+			}
+		}
+		$debug_info .= 'IPs:' . "\n";
+		foreach ( $server as $server_key => $ips_val ) {
+			$debug_info .= $server_key . ' = ' . trim( $ips_val, ',' ) . "\n";
+		}
+
+		$plugin_data = get_plugin_data( LLA_PLUGIN_FILE );
+		if ( is_array( $plugin_data ) ) {
+			$version = isset( $plugin_data['Version'] ) ? $plugin_data['Version'] : '';
+			$debug_info .= "\nPlugin Version: " . $version . "\n";
+		} else {
+			$debug_info .= "\nPlugin Version: \n";
+		}
+		$debug_info .= 'WordPress Version: ' . get_bloginfo( 'version' ) . "\n";
+		$debug_info .= 'Is Multisite: ' . ( is_multisite() ? 'yes' : 'no' ) . "\n";
+		$debug_info .= "\nActive Plugins:\n";
+		$all_plugins = get_plugins();
+		$active_plugins = get_option( 'active_plugins' );
+		if ( is_array( $active_plugins ) ) {
+			foreach ( $active_plugins as $plugin_file ) {
+				if ( isset( $all_plugins[ $plugin_file ] ) ) {
+					$plugin_data_item = $all_plugins[ $plugin_file ];
+
+					$name    = isset( $plugin_data_item['Name'] ) ? $plugin_data_item['Name'] : '';
+					$version = isset( $plugin_data_item['Version'] ) ? $plugin_data_item['Version'] : '';
+					$uri     = isset( $plugin_data_item['PluginURI'] ) ? $plugin_data_item['PluginURI'] : '';
+
+					// Base slug from path.
+					$slug = dirname( $plugin_file );
+
+					// Single-file plugin at plugins root: dirname() returns '.'.
+					if ( '.' === $slug || '' === $slug ) {
+						$slug = basename( $plugin_file, '.php' );
+					}
+					
+
+					// If PluginURI points to WordPress.org, prefer slug from the URI.
+					if ( ! empty( $uri ) && preg_match( '#WordPress\.org/plugins/([^/]+)/?#i', $uri, $m ) ) {
+						$slug = $m[1];
+					}
+
+					// Normalize slug similar to WP's sanitize_title().
+					$slug = sanitize_title( $slug );
+
+					$mu_indicator = '';
+					if ( 0 === strpos( $plugin_file, 'limit-login-attempts-reloaded' ) ) {
+						$mu_indicator = self::is_mu() ? ' MU' : '';
+					}
+
+					// Prefer official WordPress.org PluginURI when it is clearly such.
+					if ( ! empty( $uri ) && 0 === strpos( $uri, 'https://wordpress.org/plugins/' ) ) {
+						$debug_info .= $name . ' ' . $version . ' (' . $uri . ')' . $mu_indicator . "\n";
+					} else {
+						$debug_info .= $name . ' ' . $version . ' (https://wordpress.org/plugins/' . $slug . '/)' . $mu_indicator . "\n";
+					}
+				}
+			}
+		}
+
+		$current_theme = wp_get_theme();
+		$theme_name    = is_object( $current_theme ) ? $current_theme->get( 'Name' ) : '';
+		$theme_uri     = is_object( $current_theme ) ? $current_theme->get( 'ThemeURI' ) : '';
+		$theme_slug    = is_object( $current_theme ) ? $current_theme->get_stylesheet() : '';
+
+		$debug_info .= "\nActive Theme:\n";
+
+		if ( ! empty( $theme_uri ) && 0 === strpos( $theme_uri, 'https://wordpress.org/themes/' ) ) {
+			$debug_info .= $theme_name . ' (' . $theme_uri . ')' . "\n";
+		} else {
+			$debug_info .= $theme_name . ' (https://wordpress.org/themes/' . $theme_slug . '/)' . "\n";
+		}
+
+		return $debug_info;
+	}
+		
+	
 }

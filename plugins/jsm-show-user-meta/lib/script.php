@@ -2,7 +2,7 @@
 /*
  * License: GPLv3
  * License URI: https://www.gnu.org/licenses/gpl.txt
- * Copyright 2012-2023 Jean-Sebastien Morisset (https://surniaulula.com/)
+ * Copyright 2012-2026 Jean-Sebastien Morisset (https://surniaulula.com/)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -43,9 +43,11 @@ if ( ! class_exists( 'JsmSumScript' ) ) {
 
 			$admin_l10n = $cf[ 'plugin' ][ 'jsmsum' ][ 'admin_l10n' ];
 
-			// The version number should match the version in js/com/jquery-admin-page.js.
+			/*
+			 * The version number should match the version in js/com/jquery-admin-page.js.
+			 */
 			wp_register_script( 'sucom-admin-page', JSMSUM_URLPATH . 'js/com/jquery-admin-page.min.js',
-				$deps = array( 'jquery' ), '20230704', $in_footer = true );
+				$deps = array( 'jquery' ), '20240810', $in_footer = true );
 
 			wp_localize_script( 'sucom-admin-page', $admin_l10n, $this->get_admin_page_script_data() );
 

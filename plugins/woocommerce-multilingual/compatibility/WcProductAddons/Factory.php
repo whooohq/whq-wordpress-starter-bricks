@@ -2,6 +2,7 @@
 
 namespace WCML\Compatibility\WcProductAddons;
 
+use WCML\PointerUi\Factory as PointerFactory;
 use WCML\Compatibility\ComponentFactory;
 use WCML\StandAlone\IStandAloneAction;
 use function WCML\functions\getSitePress;
@@ -26,7 +27,8 @@ class Factory extends ComponentFactory implements IStandAloneAction {
 		}
 
 		if ( ! isStandAlone() ) {
-			$hooks[] = new \WCML_Product_Addons( getSitePress() );
+			$hooks[] = new \WCML_Product_Addons( getSitePress(), new PointerFactory() );
+			$hooks[] = new JobHooks();
 		}
 
 		return $hooks;

@@ -88,7 +88,7 @@
 
 .post-type-wppb-roles-editor .wppb-delete-capability-disabled,
 .post-type-wppb-roles-editor .row-actions span.delete_notify {
-    color: #a00;
+    color: #e76054;
     cursor: not-allowed;
 }
 
@@ -104,13 +104,6 @@
 
 .post-type-wppb-roles-editor #wppb_edit_role_capabilities .select2 .select2-container {
     padding: 0 5px 5px 0 !important;
-}
-
-.post-type-wppb-roles-editor #wppb_edit_role_capabilities a.button-primary {
-    vertical-align: top;
-    margin: 1px 0 0 10px;
-    height: 32px;
-    line-height: 30px;
 }
 
 .post-type-wppb-roles-editor #wppb_edit_role_capabilities #wppb-add-new-cap-link {
@@ -148,9 +141,9 @@
 .post-type-wppb-roles-editor #wppb-duplicate-capability-error,
 .post-type-wppb-roles-editor #wppb-hidden-capability-error,
 .post-type-wppb-roles-editor #wppb-add-capability-error {
-    border-left: 3px solid #a00;
+    border-left: 3px solid #e76054;
     display: none;
-    color: #a00;
+    color: #e76054;
     font-size: 14px;
     margin-left: 6px;
     padding: 5px 10px;
@@ -190,12 +183,12 @@
 .post-type-wppb-roles-editor #wppb-capabilities-tabs .wppb-role-editor-tab-title a:focus,
 .post-type-wppb-roles-editor #wppb-capabilities-tabs .wppb-role-editor-tab-title a:hover {
     text-decoration: none;
-    color: #a00;
+    color: #e76054;
     box-shadow: none;
 }
 
 .post-type-wppb-roles-editor #wppb-capabilities-tabs .wppb-role-editor-tab-title.wppb-role-editor-tab-active {
-    color: #a00;
+    color: #e76054;
     font-weight: bold;
 }
 
@@ -222,8 +215,11 @@
     margin: 5px 3px 0 2px;
     padding: 6px 0;
     background-color: #f7f7f7;
-    display: block;
     height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry.wppb-new-capability-highlight {
@@ -258,14 +254,14 @@
 
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry .wppb-delete-capability a:link {
     text-decoration: none;
-    color: #a00;
+    color: #e76054;
 }
 
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry .wppb-delete-capability a:active,
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry .wppb-delete-capability a:hover,
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry .wppb-delete-capability a:visited {
-    text-decoration: none;
-    color: #FF0000;
+    text-decoration: underline;
+    color: #e76054;
 }
 
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry.wppb-role-edit-no-cap {
@@ -273,7 +269,7 @@
 }
 
 .post-type-wppb-roles-editor #wppb-role-edit-table .wppb-role-edit-table-entry.wppb-role-edit-no-cap span {
-    color: #a00;
+    color: #e76054;
 }
 
 .post-type-wppb-roles-editor #wppb-role-edit-table #wppb-role-edit-caps-clear,
@@ -304,7 +300,7 @@
 }
 
 .post-type-wppb-roles-editor .wppb-re-cap-perm-delete {
-    color: #a00;
+    color: #e76054;
     font-size: 13px;
     float: right;
     position: relative;
@@ -319,7 +315,7 @@
 }
 
 .post-type-wppb-roles-editor #wpbody .wrap .wp-heading-inline, .post-type-wppb-roles-editor #wpbody .wrap .page-title-action {
-    display: inline-block !important;
+    display: inline-flex !important;
 }
 
 @media screen and ( max-width: 1600px ) {

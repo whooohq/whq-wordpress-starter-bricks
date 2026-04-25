@@ -1,4 +1,6 @@
-<?php
+<?php 
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.file_system_operations_fputs, WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable, WordPress.WP.AlternativeFunctions.file_system_operations_chown, WordPress.WP.AlternativeFunctions.file_system_operations_chgrp, WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
+// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array, WordPress.WP.AlternativeFunctions.curl_curl_setopt, WordPress.WP.AlternativeFunctions.curl_curl_init, WordPress.WP.AlternativeFunctions.curl_curl_exec, WordPress.WP.AlternativeFunctions.curl_curl_getinfo, WordPress.WP.AlternativeFunctions.curl_curl_multi_init, WordPress.WP.AlternativeFunctions.curl_curl_multi_add_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_exec, WordPress.WP.AlternativeFunctions.curl_curl_multi_select, WordPress.WP.AlternativeFunctions.curl_curl_multi_getcontent, WordPress.WP.AlternativeFunctions.curl_curl_multi_remove_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_close, WordPress.WP.AlternativeFunctions.curl_curl_error, WordPress.WP.AlternativeFunctions.curl_curl_close, WordPress.WP.AlternativeFunctions.curl_curl_errno -- Direct cURL usage is intentional to leverage specific low-level options not available via the WordPress HTTP API.
 /**
  * $Id$
  *
@@ -288,12 +290,12 @@ class UpdraftPlus_S3 {
 
 
 	/**
-	 * Free signing key from memory, MUST be called if you are using setSigningKey()
+	 * Free signing key from memory, MUST be called on older PHP versions if you are using setSigningKey()
 	 *
 	 * @return void
 	 */
 	public function freeSigningKey() {
-		if (false !== $this->__signingKeyResource) {
+		if (false !== $this->__signingKeyResource && (!defined('PHP_MAJOR_VERSION') || PHP_MAJOR_VERSION < 8)) { // @phpcs:ignore PHPCompatibility.Constants.NewConstants.php_major_versionFound
 			openssl_free_key($this->__signingKeyResource);
 		}
 	}
@@ -323,9 +325,9 @@ class UpdraftPlus_S3 {
 	 */
 	private function _triggerError($message, $file, $line, $code = 0) {
 		if ($this->useExceptions) {
-			throw new UpdraftPlus_S3Exception($message, $file, $line, $code);
+			throw new UpdraftPlus_S3Exception($message, $file, $line, $code); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should happen when the exception is caught and printed
 		} else {
-			trigger_error($message, E_USER_WARNING);
+			trigger_error(esc_html($message), E_USER_WARNING); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error -- The trigger_error() function is intentionally used to generate user-level error messages.
 		}
 	}
 
@@ -1273,68 +1275,6 @@ class UpdraftPlus_S3 {
 	}
 
 	/**
-	 * Get upload POST parameters for form uploads
-	 *
-	 * @param string  $bucket Bucket name
-	 * @param string  $uriPrefix Object URI prefix
-	 * @param string  $acl ACL constant
-	 * @param integer $lifetime Lifetime in seconds
-	 * @param integer $maxFileSize Maximum file size in bytes (default 5MB)
-	 * @param string  $successRedirect Redirect URL or 200 / 201 status code
-	 * @param array   $amzHeaders Array of x-amz-meta-* headers
-	 * @param array   $headers Array of request headers or content type as a string
-	 * @param boolean $flashVars Includes additional "Filename" variable posted by Flash
-	 *
-	 * @return object
-	 */
-	public function getHttpUploadPostParams($bucket, $uriPrefix = '', $acl = self::ACL_PRIVATE, $lifetime = 3600,
-	$maxFileSize = 5242880, $successRedirect = "201", $amzHeaders = array(), $headers = array(), $flashVars = false) {
-		// Create policy object
-		$policy = new stdClass;
-		$policy->expiration = gmdate('Y-m-d\TH:i:s\Z', (time() + $lifetime));
-		$policy->conditions = array();
-		$obj = new stdClass; $obj->bucket = $bucket; array_push($policy->conditions, $obj);
-		$obj = new stdClass; $obj->acl = $acl; array_push($policy->conditions, $obj);
-
-		$obj = new stdClass; // 200 for non-redirect uploads
-		if (is_numeric($successRedirect) && in_array((int)$successRedirect, array(200, 201)))
-			$obj->success_action_status = (string)$successRedirect;
-		else // URL
-			$obj->success_action_redirect = $successRedirect;
-		array_push($policy->conditions, $obj);
-
-		if (self::ACL_PUBLIC_READ !== $acl)
-			array_push($policy->conditions, array('eq', '$acl', $acl));
-
-		array_push($policy->conditions, array('starts-with', '$key', $uriPrefix));
-		if ($flashVars) array_push($policy->conditions, array('starts-with', '$Filename', ''));
-		foreach (array_keys($headers) as $headerKey)
-			array_push($policy->conditions, array('starts-with', '$'.$headerKey, ''));
-		foreach ($amzHeaders as $headerKey => $headerVal) {
-			$obj = new stdClass;
-			$obj->{$headerKey} = (string)$headerVal;
-			array_push($policy->conditions, $obj);
-		}
-		array_push($policy->conditions, array('content-length-range', 0, $maxFileSize));
-		$policy = base64_encode(str_replace('\/', '/', json_encode($policy)));
-
-		// Create parameters
-		$params = new stdClass;
-		$params->AWSAccessKeyId = $this->__accessKey;
-		$params->key = $uriPrefix.'${filename}';
-		$params->acl = $acl;
-		$params->policy = $policy; unset($policy);
-		$params->signature = $this->__getHash($params->policy);
-		if (is_numeric($successRedirect) && in_array((int)$successRedirect, array(200, 201)))
-			$params->success_action_status = (string)$successRedirect;
-		else
-			$params->success_action_redirect = $successRedirect;
-		foreach ($headers as $headerKey => $headerVal) $params->{$headerKey} = (string)$headerVal;
-		foreach ($amzHeaders as $headerKey => $headerVal) $params->{$headerKey} = (string)$headerVal;
-		return $params;
-	}
-
-	/**
 	 * Get MIME type for file
 	 *
 	 * @internal Used to get mime types
@@ -1347,8 +1287,9 @@ class UpdraftPlus_S3 {
 		$type = false;
 		// Fileinfo documentation says fileinfo_open() will use the
 		// MAGIC env var for the magic file
-		if (extension_loaded('fileinfo') && isset($_ENV['MAGIC']) &&
-		false !== ($finfo = finfo_open(FILEINFO_MIME, $_ENV['MAGIC']))) {// phpcs:ignore PHPCompatibility.FunctionUse.NewFunctions.finfo_openFound -- The function finfo_open() is not present in PHP version 5.2 or earlier
+		$env_magic = UpdraftPlus_Manipulation_Functions::fetch_superglobal('env', 'MAGIC');
+		if (extension_loaded('fileinfo') && isset($env_magic) &&
+		false !== ($finfo = finfo_open(FILEINFO_MIME, $env_magic))) {// phpcs:ignore PHPCompatibility.FunctionUse.NewFunctions.finfo_openFound -- The function finfo_open() is not present in PHP version 5.2 or earlier
 			if (false !== ($type = finfo_file($finfo, $file))) {// phpcs:ignore PHPCompatibility.FunctionUse.NewFunctions.finfo_fileFound -- The function finfo_file() is not present in PHP version 5.2 or earlier
 				// Remove the charset and grab the last content-type
 				$type = explode(' ', str_replace('; charset=', ';charset=', $type));
@@ -1451,10 +1392,11 @@ class UpdraftPlus_S3 {
 		foreach ($aHeaders as $k => $v) {
 			$amzHeaders[strtolower($k)] = trim($v);
 		}
-		uksort($amzHeaders, 'strcmp');
 
 		// payload
 		$payloadHash = isset($amzHeaders['x-amz-content-sha256']) ? $amzHeaders['x-amz-content-sha256'] : hash('sha256', $data);
+		if (!isset($amzHeaders['x-amz-content-sha256']) && (!defined('UPDRAFTPLUS_S3_EXCLUDE_SIGV4_CONTENT_SHA256_HEADER') || !UPDRAFTPLUS_S3_EXCLUDE_SIGV4_CONTENT_SHA256_HEADER)) $amzHeaders['x-amz-content-sha256'] = $payloadHash;
+		uksort($amzHeaders, 'strcmp');
 
 		// parameters
 		$parameters = array();
@@ -1471,7 +1413,13 @@ class UpdraftPlus_S3 {
 		$amzRequests[] = $method;
 		$uriQmPos = strpos($uri, '?');
 		$amzRequests[] = (false === $uriQmPos ? $uri : substr($uri, 0, $uriQmPos));
-		$amzRequests[] = http_build_query($parameters);
+		$built_queries = '';
+		foreach ($parameters as $query => $val) {
+			if (!empty($built_queries)) $built_queries .= '&';
+			$built_queries .= "$query=".rawurlencode($val);
+		}
+		$amzRequests[] = $built_queries;
+
 
 		// add headers as string to requests
 		foreach ($amzHeaders as $k => $v) {
@@ -1618,7 +1566,7 @@ abstract class UpdraftPlus_AWSRequest {
 	);
 	public $fp = false, $size = 0, $data = false, $response;
 	
-	private $s3;
+	protected $s3;
 
 	/**
 	 * Set request parameter
@@ -1753,13 +1701,6 @@ abstract class UpdraftPlus_AWSRequest {
 }
 
 final class UpdraftPlus_S3Request extends UpdraftPlus_AWSRequest {
-
-	/**
-	 * Amazon S3 object
-	 *
-	 * @var UpdraftPlus_S3|null
-	 */
-	private $s3;
 
 	/**
 	 * Constructor
@@ -1908,6 +1849,8 @@ final class UpdraftPlus_S3Request extends UpdraftPlus_AWSRequest {
 						);
 				} else {
 					// Use V4
+					if (isset($this->headers['Content-MD5']) && '' == $this->headers['Content-MD5']) unset($this->headers['Content-MD5']); // content-md5 is part of v2 signature, but it may be presented in the HTTP headers whilst doing PUT requests, we've seen this happening on Amazon S3 storage when testing credentials, but it shouldn't be added to v4's SignedHeaders if it's empty so we unset it
+					if (isset($this->headers['Content-Type']) && '' == $this->headers['Content-Type']) unset($this->headers['Content-Type']); // content-type may get included in the HTTP headers, but if it's not presented then it shouldn't be added to SignedHeaders
 					$amzHeaders = $this->s3->__getSignatureV4(
 						$this->amzHeaders,
 						$this->headers,
@@ -1969,7 +1912,33 @@ final class UpdraftPlus_S3Request extends UpdraftPlus_AWSRequest {
 			);
 		}
 
-		@curl_close($curl);
+		if (version_compare(PHP_VERSION, '8.0', '<')) {
+			@curl_close($curl);
+		} else {
+			unset($curl);
+		}
+
+		if (false !== $this->response->error && preg_match('/\.amazonaws\.com$/i', $this->endpoint) && 'PUT' === $this->verb) {
+			$curl = curl_init();
+			curl_setopt($curl, CURLOPT_URL, 'https://tls12.browserleaks.com/');
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($curl, CURLOPT_FAILONERROR, true);
+			curl_setopt($curl, CURLOPT_HEADER, false);
+			curl_setopt($curl, CURLOPT_TIMEOUT, 10);
+			curl_setopt($curl, CURLOPT_VERBOSE, true);
+			$response = curl_exec($curl);
+			$info = curl_getinfo($curl);
+			if (version_compare(PHP_VERSION, '8.0', '<')) {
+				curl_close($curl);
+			} else {
+				unset($curl);
+			}
+			
+			if (200 === $info['http_code'] && 'TLS 1.2' !== $response) {
+				$updraftplus->log('Connecting to Amazon S3 failed. Your PHP installation failed a TLS v1.2 connection test, which is the minimum version required by Amazon. Please ask your webserver support how to upgrade your PHP and cURL library versions to use non-obsolete TLS versions.');
+				$updraftplus->log(__('Connecting to Amazon S3 failed.', 'updraftplus').' '.__('Your PHP installation failed a TLS v1.2 connection test, which is the minimum version required by Amazon.', 'updraftplus').' '.__('Please ask your webserver support how to upgrade your PHP and cURL library versions to use non-obsolete TLS versions.', 'updraftplus'), 'warning');
+			}
+		}
 
 		// Parse body into XML
 		// The case in which there is not application/xml content-type header is to support a DreamObjects case seen, April 2018
@@ -1986,7 +1955,11 @@ final class UpdraftPlus_S3Request extends UpdraftPlus_AWSRequest {
 				// Useful for debugging
 				// $this->response->error['body_xml'] = $this->response->body->asXML();
 				
-				if (isset($this->response->body->Region)) $this->response->error['region'] = $this->response->body->Region;
+				if (isset($this->response->body->Region)) {
+					$this->response->error['region'] = $this->response->body->Region;
+				} elseif (false !== stripos($this->response->body->Code, 'AuthorizationHeaderMalformed') && !empty($this->response->body->Message) && preg_match("#the region '[^']+' is wrong; expecting '([^']+)'#i", $this->response->body->Message, $matches)) {
+					$this->response->error['region'] = $matches[1];
+				}
 				$this->response->error['message'] = isset($this->response->body->Message) ? $this->response->body->Message : '';
 				if (isset($this->response->body->Resource))
 					$this->response->error['resource'] = (string)$this->response->body->Resource;
@@ -2176,7 +2149,11 @@ final class UpdraftPlus_IAMRequest extends UpdraftPlus_AWSRequest {
 			);
 		}
 
-		@curl_close($curl);
+		if (version_compare(PHP_VERSION, '8.0', '<')) {
+			@curl_close($curl);
+		} else {
+			unset($curl);
+		}
 
 		// Parse body into XML
 		// The case in which there is not application/xml content-type header is to support a DreamObjects case seen, April 2018

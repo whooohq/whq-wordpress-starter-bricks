@@ -4,12 +4,13 @@ loco_require_lib('compiled/gettext.php');
 
 /**
  * Holds metadata about a PO file, cached as Transient
+ * TODO Non-PO files (MO/PHP) are sparse. We need to obtain the 100% mark from the PO sibling, and adjust completion.
  */
 class Loco_gettext_Metadata extends Loco_data_Transient {
 
     /**
      * Generate abbreviated stats from parsed array data  
-     * @param array in form returned from parser, including header message
+     * @param array $po in form returned from parser, including header message
      * @return array in form ['t' => total, 'p' => progress, 'f' => fuzzy ];
      */
     public static function stats( array $po ){
@@ -49,14 +50,12 @@ class Loco_gettext_Metadata extends Loco_data_Transient {
     /**
      * Load metadata from file, using cache if enabled.
      * Note that this does not throw exception, check "valid" key
-     * @param Loco_fs_File
-     * @param bool
      * @return Loco_gettext_Metadata
      */
     public static function load( Loco_fs_File $po, $nocache = false ){
         $bytes = $po->size();
         $mtime = $po->modified();
-        // quick construct of new meta object. enough to query and validate cache
+        // quick construct of a new metadata object. enough to query and validate cache
         $meta = new Loco_gettext_Metadata( [
             'rpath' => $po->getRelativePath( loco_constant('WP_CONTENT_DIR') ),
         ] );
@@ -90,8 +89,6 @@ class Loco_gettext_Metadata extends Loco_data_Transient {
 
     /**
      * Construct metadata from previously parsed PO data
-     * @param Loco_fs_File
-     * @param Loco_gettext_Data
      * @return Loco_gettext_Metadata 
      */
     public static function create( Loco_fs_File $file, Loco_gettext_Data $data ){
@@ -201,11 +198,14 @@ class Loco_gettext_Metadata extends Loco_data_Transient {
      */
     public function getProgressSummary(){
         $extra = [];
+        // translators: Shows percentage translated at top of editor
         $stext = sprintf( __('%s%% translated','loco-translate'), $this->getPercent() ).', '.$this->getTotalSummary();
         if( $num = $this->countFuzzy() ){
+            // translators: Shows number of fuzzy strings at top of editor
             $extra[] = sprintf( __('%s fuzzy','loco-translate'), number_format($num) );
         }
         if( $num = $this->countUntranslated() ){
+            // translators: Shows number of untranslated strings at top of editor
             $extra[] = sprintf( __('%s untranslated','loco-translate'), number_format($num) );
         }
         if( $extra ){
@@ -216,7 +216,7 @@ class Loco_gettext_Metadata extends Loco_data_Transient {
 
 
     /**
-     * @param bool
+     * @param bool $absolute
      * @return string
      */
     public function getPath( $absolute ){

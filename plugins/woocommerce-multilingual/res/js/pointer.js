@@ -58,6 +58,9 @@ jQuery( function($) {
                 case 'append':
                     $(this).appendTo( $( '#'+selector ) ).show();
                     break;
+                case 'before':
+                    $(this).insertBefore( $( '#'+selector ) ).show();
+                    break;
                 default:
                     $(this).insertAfter( $( '#'+selector ) ).show();
             }

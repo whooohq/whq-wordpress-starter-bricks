@@ -86,11 +86,11 @@ class Webhooks {
 			case 'authorize':
 				$this->handle_authorize();
 				$this->do_exit();
-				break;
+				break; // @phan-suppress-current-line PhanPluginUnreachableCode -- Safer to include it even though do_exit never returns.
 			case 'authorize_redirect':
 				$this->handle_authorize_redirect();
 				$this->do_exit();
-				break;
+				break; // @phan-suppress-current-line PhanPluginUnreachableCode -- Safer to include it even though do_exit never returns.
 			// Class Jetpack::admin_page_load() still handles other cases.
 		}
 	}
@@ -107,7 +107,7 @@ class Webhooks {
 		}
 		do_action( 'jetpack_client_authorize_processing' );
 
-		$data              = stripslashes_deep( $_GET );
+		$data              = stripslashes_deep( $_GET ); // We need all request data under the context of an authorization request.
 		$data['auth_type'] = 'client';
 		$roles             = new Roles();
 		$role              = $roles->translate_current_user_to_role();
@@ -159,9 +159,11 @@ class Webhooks {
 
 	/**
 	 * The `exit` is wrapped into a method so we could mock it.
+	 *
+	 * @return never
 	 */
 	protected function do_exit() {
-		exit;
+		exit( 0 );
 	}
 
 	/**
@@ -173,6 +175,8 @@ class Webhooks {
 	public function handle_connect_url_redirect() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- no site changes.
 		$from = ! empty( $_GET['from'] ) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : 'iframe';
+
+		$skip_pricing = filter_input( INPUT_GET, 'skip_pricing', FILTER_VALIDATE_BOOLEAN );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- no site changes, sanitization happens in get_authorization_url()
 		$redirect = ! empty( $_GET['redirect_after_auth'] ) ? wp_unslash( $_GET['redirect_after_auth'] ) : false;
@@ -186,6 +190,10 @@ class Webhooks {
 
 			$connect_url = add_query_arg( 'from', $from, $this->connection->get_authorization_url( null, $redirect ) );
 
+			if ( $skip_pricing ) {
+				$connect_url = add_query_arg( 'skip_pricing', '1', $connect_url );
+			}
+
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- no site changes.
 			if ( isset( $_GET['notes_iframe'] ) ) {
 				$connect_url .= '&notes_iframe';
@@ -197,6 +205,10 @@ class Webhooks {
 			wp_safe_redirect( $redirect );
 			$this->do_exit();
 		} else {
+			if ( 'connect-after-checkout' === $from && $redirect ) {
+				wp_safe_redirect( $redirect );
+				$this->do_exit();
+			}
 			$connect_url = add_query_arg(
 				array(
 					'from'               => $from,

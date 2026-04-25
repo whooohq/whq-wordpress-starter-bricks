@@ -21,10 +21,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.6.0
  */
-function cptui_listings_assets() {
-	$current_screen = get_current_screen();
+function cptui_listings_assets( $hook ) {
 
-	if ( ! is_object( $current_screen ) || 'cpt-ui_page_cptui_listings' !== $current_screen->base ) {
+	if ( 'cpt-ui_page_cptui_listings' !== $hook ) {
 		return;
 	}
 
@@ -37,7 +36,7 @@ function cptui_listings_assets() {
 add_action( 'admin_enqueue_scripts', 'cptui_listings_assets' );
 
 /**
- * Output the content for the "Registered Types/Taxes" page.
+ * Output the content for the "Registered types/taxonomies" page.
  *
  * @since 1.1.0
  *
@@ -48,6 +47,13 @@ function cptui_listings() {
 		<div class="wrap cptui-listings">
 			<?php
 			/**
+			 * Fires immediately after wrap div started on all of the cptui admin pages.
+			 *
+			 * @since 1.14.0
+			 */
+			do_action( 'cptui_inside_wrap' );
+
+			/**
 			 * Fires right inside the wrap div for the listings screen.
 			 *
 			 * @since 1.3.0
@@ -55,7 +61,7 @@ function cptui_listings() {
 			do_action( 'cptui_inside_listings_wrap' );
 			?>
 
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Content types registered with Custom Post Type UI.', 'custom-post-type-ui' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php echo get_admin_page_title(); ?></h1>
 			<a href="<?php echo esc_url( cptui_get_add_new_link( 'post_types' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Add New Post Type', 'custom-post-type-ui' ); ?></a>
 			<a href="<?php echo esc_url( cptui_get_add_new_link( 'taxonomies' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Add New Taxonomy', 'custom-post-type-ui' ); ?></a>
 			<?php
@@ -240,7 +246,7 @@ function cptui_listings() {
 								<p>
 									<?php
 									printf(
-										'<a href="https://developer.wordpress.org/themes/basics/template-hierarchy/">%s</a>',
+										'<a href="https://developer.wordpress.org/themes/classic-themes/basics/template-hierarchy/">%s</a>',
 										esc_html__( 'Template hierarchy Theme Handbook', 'custom-post-type-ui' )
 									);
 									?>
@@ -428,7 +434,7 @@ function cptui_listings() {
 									<p>
 										<?php
 										printf(
-											'<a href="https://developer.wordpress.org/themes/basics/template-hierarchy/">%s</a>',
+											'<a href="https://developer.wordpress.org/themes/classic-themes/basics/template-hierarchy/">%s</a>',
 											esc_html__( 'Template hierarchy Theme Handbook', 'custom-post-type-ui' )
 										);
 										?>

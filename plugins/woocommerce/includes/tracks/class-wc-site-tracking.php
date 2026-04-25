@@ -68,8 +68,9 @@ class WC_Site_Tracking {
 		$server_details  = WC_Tracks::get_server_details();
 		$blog_details    = WC_Tracks::get_blog_details( $user->ID );
 		$tracks_identity = WC_Tracks_Client::get_identity( $user->ID );
+		$role_details    = WC_Tracks::get_role_details( $user );
 
-		$client_tracking_properties = array_merge( $server_details, $blog_details );
+		$client_tracking_properties = array_merge( $server_details, $blog_details, $role_details );
 		/**
 		 * Add global tracks event properties.
 		 *
@@ -120,7 +121,7 @@ class WC_Site_Tracking {
 
 				const eventName = '<?php echo esc_attr( WC_Tracks::PREFIX ); ?>' + name;
 				let eventProperties = properties || {};
-				eventProperties = { ...eventProperties, ...<?php echo json_encode( $filtered_properties ); ?> };
+				eventProperties = { ...eventProperties, ...<?php echo json_encode( $filtered_properties, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode ?> };
 				if ( window.wp && window.wp.hooks && window.wp.hooks.applyFilters ) {
 					eventProperties = window.wp.hooks.applyFilters( 'woocommerce_tracks_client_event_properties', eventProperties, eventName );
 					delete( eventProperties._ui );
@@ -209,6 +210,7 @@ class WC_Site_Tracking {
 		include_once WC_ABSPATH . 'includes/tracks/events/class-wc-order-tracking.php';
 		include_once WC_ABSPATH . 'includes/tracks/events/class-wc-coupon-tracking.php';
 		include_once WC_ABSPATH . 'includes/tracks/events/class-wc-theme-tracking.php';
+		include_once WC_ABSPATH . 'includes/tracks/events/class-wc-product-collection-block-tracking.php';
 
 		$tracking_classes = array(
 			'WC_Extensions_Tracking',
@@ -221,6 +223,7 @@ class WC_Site_Tracking {
 			'WC_Order_Tracking',
 			'WC_Coupon_Tracking',
 			'WC_Theme_Tracking',
+			'WC_Product_Collection_Block_Tracking',
 		);
 
 		foreach ( $tracking_classes as $tracking_class ) {
@@ -231,7 +234,46 @@ class WC_Site_Tracking {
 				call_user_func( $tracker_init_method );
 			}
 		}
+
+		add_filter( 'pre_update_option_woocommerce_allow_tracking', array( __CLASS__, 'maybe_unschedule_deferred_tracks' ) );
 	}
 
+	/**
+	 * When the tracking is getting disabled, unschedules all deferred tracks.
+	 *
+	 * @internal
+	 * @since 10.6.0
+	 *
+	 * @param string $new_option_value The new, unserialized option value.
+	 * @return string
+	 */
+	public static function maybe_unschedule_deferred_tracks( $new_option_value ) {
+		if ( 'yes' !== $new_option_value ) {
+			as_unschedule_all_actions( '', array(), 'woocommerce-tracks' );
+		}
+		return $new_option_value;
+	}
 
+	/**
+	 * Sets a cookie for tracking purposes, but only if tracking is enabled/allowed.
+	 *
+	 * @internal
+	 * @since 9.2.0
+	 *
+	 * @param string $cookie_key   The key of the cookie.
+	 * @param string $cookie_value The value of the cookie.
+	 * @param int    $expire       Expiry of the cookie.
+	 * @param bool   $secure       Whether the cookie should be served only over https.
+	 * @param bool   $http_only    Whether the cookie is only accessible over HTTP.
+	 *
+	 * @return bool If setting the cookie was attempted (will be false if tracking is not allowed).
+	 */
+	public static function set_tracking_cookie( string $cookie_key, string $cookie_value, int $expire = 0, bool $secure = false, bool $http_only = false ): bool {
+		if ( self::is_tracking_enabled() ) {
+			wc_setcookie( $cookie_key, $cookie_value, $expire, $secure, $http_only );
+			return true;
+		}
+
+		return false;
+	}
 }

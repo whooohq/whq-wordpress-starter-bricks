@@ -27,7 +27,7 @@ function wppb_display_fields_in_admin( $user ){
             if( $display_field == false )
                 continue;
 
-            $admin_fields .= apply_filters( 'wppb_admin_output_form_field_'.Wordpress_Creation_Kit_PB::wck_generate_slug( $value['field'] ), '', 'back_end', $value, $user->ID, '', $_REQUEST );
+            $admin_fields .= apply_filters( 'wppb_admin_output_form_field_'.Wordpress_Creation_Kit_PB::wck_generate_slug( $value['field'] ), '', 'back_end', $value, $user->ID, array(), $_REQUEST );
         }
 
 	}

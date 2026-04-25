@@ -40,18 +40,19 @@ class UpdraftPlus_Tour {
 		add_filter('plugin_action_links', array($this, 'plugin_action_links'), 10, 2);
 
 		// only init and load assets if the tour hasn't been canceled
-		if (isset($_REQUEST['updraftplus_tour']) && 0 === (int) $_REQUEST['updraftplus_tour']) {
+		$updraftplus_tour = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'updraftplus_tour');
+		if (isset($updraftplus_tour) && 0 === (int) $updraftplus_tour) {
 			$this->set_tour_status(array('current_step' => 'start'));
 			return;
 		}
 		
 		// if backups already exist and
-		if ($this->updraftplus_was_already_installed() && !isset($_REQUEST['updraftplus_tour'])) {
+		if ($this->updraftplus_was_already_installed() && !isset($updraftplus_tour)) {
 			return;
 		}
 
 		// if 'Take tour' link was used, reset tour
-		if (isset($_REQUEST['updraftplus_tour']) && 1 === (int) $_REQUEST['updraftplus_tour']) {
+		if (isset($updraftplus_tour) && 1 === (int) $updraftplus_tour) {
 			$this->reset_tour_status();
 		}
 
@@ -105,7 +106,13 @@ class UpdraftPlus_Tour {
 			),
 			'backup_now' => array(
 				'title' => __('Your first backup', 'updraftplus'),
-				'text' => sprintf(_x('To make a simple backup to your server, press this button. Or to setup regular backups and remote storage, go to %s settings %s', 'updraftplus'), '<strong><a href="#settings" class="js--go-to-settings">', '</a></strong>')
+				'text' => sprintf(
+					__('To make a simple backup to your server, press this button.', 'updraftplus').' '.
+					/* translators: 1: HTML <a> and <strong> opening tag 2: HTML </a> and </strong> closing tag*/
+					__('Or to setup regular backups and remote storage, go to %1$s settings %2$s', 'updraftplus'),
+					'<strong><a href="#settings" class="js--go-to-settings">',
+					'</a></strong>'
+				)
 			),
 			'backup_options' => array(
 				'title' => __("Manual backup options", 'updraftplus'),
@@ -113,12 +120,16 @@ class UpdraftPlus_Tour {
 			),
 			'backup_now_btn' => array(
 				'title' => __("Creating your first backup", 'updraftplus'),
-				'text' => __("Press here to run a manual backup.", 'updraftplus').'<br>'.sprintf(_x("But to avoid server-wide threats backup regularly to remote cloud storage in %s settings %s", 'Translators: %s is a bold tag.', 'updraftplus'), '<strong><a href="#settings" class="js--go-to-settings">', '</a></strong>'),
+				'text' => __("Press here to run a manual backup.", 'updraftplus').'<br>'.
+					/* translators: 1: Opening anchor tag, 2: Closing anchor tag */
+					sprintf(_x('But to avoid server-wide threats backup regularly to remote cloud storage in %1$s settings %2$s', 'Backup warning with link', 'updraftplus'), '<strong><a href="#settings" class="js--go-to-settings">', '</a></strong>'),
 				'btn_text' => __('Go to settings', 'updraftplus')
 			),
 			'backup_now_btn_success' => array(
 				'title' => __('Creating your first backup', 'updraftplus'),
-				'text' => __('Congratulations! Your first backup is running.', 'updraftplus').'<br>'.sprintf(_x('But to avoid server-wide threats backup regularly to remote cloud storage in %s settings %s', 'Translators: %s is a bold tag.', 'updraftplus'), '<strong>', '</strong>'),
+				'text' => __('Congratulations! Your first backup is running.', 'updraftplus').'<br>'.
+					/* translators: 1: Opening strong tag, 2: Closing strong tag */
+					sprintf(_x('But to avoid server-wide threats backup regularly to remote cloud storage in %1$s settings %2$s', 'Backup recommendation', 'updraftplus'), '<strong>', '</strong>'),
 				'btn_text' => __('Go to settings', 'updraftplus')
 			),
 			'settings_timing' => array(
@@ -127,11 +138,11 @@ class UpdraftPlus_Tour {
 			),
 			'settings_remote_storage' => array(
 				'title' => __("Remote storage", 'updraftplus'),
-				'text' => __("Now select a remote storage destination to protect against server-wide threats. If not, your backups remain on the same server as your site.", 'updraftplus')
+				'text' => __('Now select a remote storage destination to protect against server-wide threats.', 'updraftplus').' '.__('If not, your backups remain on the same server as your site.', 'updraftplus')
 					.'<div class="ud-notice">'
-					.'<h3>'.__('Try UpdraftVault!').'</h3>'
+					.'<h3>'.__('Try UpdraftVault!', 'updraftplus').'</h3>'
 					.__("UpdraftVault is our remote storage which works seamlessly with UpdraftPlus.", 'updraftplus')
-					.' <a href="'.apply_filters('updraftplus_com_link', 'https://updraftplus.com/updraftvault/').'" target="_blank">'.__('Find out more here.', 'updraftplus').'</a>'
+					.' <a href="'.apply_filters('updraftplus_com_link', 'https://teamupdraft.com/updraftplus/updraftvault/').'" target="_blank">'.__('Find out more here.', 'updraftplus').'</a>'
 					.'<p><a href="'.apply_filters('updraftplus_com_link', $updraftplus->get_url('shop_vault_5')).'" target="_blank" '.$checkout_embed_5gb_attribute.' class="button button-primary">'.__('Try UpdraftVault for 1 month for only $1!', 'updraftplus').'</a></p>'
 					.'</div>'
 			),
@@ -169,9 +180,9 @@ class UpdraftPlus_Tour {
 				'text' => _x('To get started with UpdraftVault, select one of the options below:', 'Translators: UpdraftVault is a product name and should not be translated.', 'updraftplus')
 			)
 		);
-
-		if (isset($_REQUEST['tab'])) {
-			$tour_data['show_tab_on_load'] = '#updraft-navtab-'.esc_attr($_REQUEST['tab']);
+		$tab = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'tab');
+		if (isset($tab)) {
+			$tour_data['show_tab_on_load'] = '#updraft-navtab-'.esc_attr(sanitize_text_field($tab));
 		}
 
 		// Change the data for premium users
@@ -179,21 +190,21 @@ class UpdraftPlus_Tour {
 
 			$tour_data['settings_remote_storage'] = array(
 				'title' => __("Remote storage", 'updraftplus'),
-				'text' => __("Now select a remote storage destination to protect against server-wide threats. If not, your backups remain on the same server as your site.", 'updraftplus')
+				'text' => __('Now select a remote storage destination to protect against server-wide threats.', 'updraftplus').' '.__('If not, your backups remain on the same server as your site.', 'updraftplus')
 					.'<div class="ud-notice">'
-					.'<h3>'.__('Try UpdraftVault!').'</h3>'
+					.'<h3>'.__('Try UpdraftVault!', 'updraftplus').'</h3>'
 					.__("UpdraftVault is our remote storage which works seamlessly with UpdraftPlus.", 'updraftplus')
-					.' <a href="'.apply_filters('updraftplus_com_link', 'https://updraftplus.com/updraftvault/').'" target="_blank">'.__('Find out more here.', 'updraftplus').'</a>'
+					.' <a href="'.apply_filters('updraftplus_com_link', 'https://teamupdraft.com/updraftplus/updraftvault/').'" target="_blank">'.__('Find out more here.', 'updraftplus').'</a>'
 					.'<br>'
 					.__("If you have a valid Premium license, you get 1GB of storage included.", 'updraftplus')
-					.' <a href="'.apply_filters('updraftplus_com_link', 'https://updraftplus.com/shop/updraftplus-vault-storage-5-gb/').'" target="_blank" '.$checkout_embed_5gb_attribute.'>'.__('Otherwise, you can try UpdraftVault for 1 month for only $1!', 'updraftplus').'</a>'
+					.' <a href="'.apply_filters('updraftplus_com_link', $updraftplus->get_url('shop_vault_5')).'" target="_blank" '.$checkout_embed_5gb_attribute.'>'.__('Otherwise, you can try UpdraftVault for 1 month for only $1!', 'updraftplus').'</a>'
 					.'</div>'
 			);
 
 			if ($updraftplus_addons2->connection_status() && !is_wp_error($updraftplus_addons2->connection_status())) {
 				$tour_data['premium'] = array(
 					'title' => 'UpdraftPlus Premium',
-					'text' => __('Thank you for taking the tour. You are now all set to use UpdraftPlus!', 'updraftplus'),
+					'text' => __('Thank you for taking the tour.', 'updraftplus').' '.__('You are now all set to use UpdraftPlus!', 'updraftplus'),
 					'attach_to' => '#updraft-navtab-addons top',
 					'button' => __('Finish', 'updraftplus')
 				);

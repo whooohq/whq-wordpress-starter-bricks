@@ -33,6 +33,7 @@ $configSectionBottomMargin: 1em;
 	.elm-line-actions {
 		visibility: hidden;
 	}
+
 	tr:hover .elm-line-actions,
 	.elm-entry:hover .elm-line-actions {
 		visibility: visible;
@@ -104,17 +105,20 @@ $configSectionBottomMargin: 1em;
 				background: orangered;
 			}
 		}
+
 		.elm-level-warning {
 			.elm-severity-bubble {
 				background: orange;
 			}
 		}
+
 		.elm-level-notice, .elm-level-strict-standards, .elm-level-deprecated {
 			.elm-severity-bubble {
 				background: darkgrey;
 			}
 		}
 	}
+
 	//endregion
 
 	//region Context
@@ -123,19 +127,29 @@ $configSectionBottomMargin: 1em;
 		//background: #ffffff;
 	}
 
+	$contextGroupLeftMargin: 1em;
+	$contextGroupVerticalMargin: 1em;
+
 	.elm-context-group {
-		margin-left: 1em;
-		margin-top: 1em;
-		margin-bottom: 1em;
+		margin-left: $contextGroupLeftMargin;
+		margin-bottom: $contextGroupVerticalMargin;
 
 		border-top: 1px solid $entryBorderColor;
-
 		color: $contextBaseColor;
+
+		&:first-child {
+			margin-top: $contextGroupVerticalMargin;
+		}
 
 		h3 {
 			$headingSpacing: 8px;
-			margin: $headingSpacing 0;
-			//padding-top: $headingSpacing;
+			//margin: $headingSpacing 0;
+			margin: 0;
+			padding: $headingSpacing 0;
+
+			display: flex;
+			flex-direction: row;
+			align-items: center;
 		}
 
 		.elm-stacktrace {
@@ -161,6 +175,50 @@ $configSectionBottomMargin: 1em;
 		&:hover {
 			text-decoration: underline;
 		}
+	}
+
+	.elm-collapsible-context-group {
+		h3 {
+			padding-left: $contextGroupLeftMargin / 2;
+			margin-left: -($contextGroupLeftMargin / 2);
+
+			cursor: pointer;
+			$toggleWidth: 12px;
+
+			&:before {
+				display: inline-block;
+
+				width: $toggleWidth;
+				margin-right: 0.4em;
+
+				content: "▼";
+				font-size: 10px;
+
+				//background: cornflowerblue;
+				color: #787c82;
+			}
+
+			&:hover {
+				//background: #f6f7f7;
+				&:before {
+					//color: #1d2327;
+				}
+			}
+		}
+	}
+
+	.elm-collapsible-context-group.elm-closed-context-group {
+		h3:before {
+			content: "▶";
+		}
+	}
+
+	.elm-closed-context-group .elm-context-group-content {
+		display: none;
+	}
+
+	.elm-context-group.elm-closed-context-group {
+		margin-bottom: 0;
 	}
 
 	table.elm-context-group-content {
@@ -191,11 +249,13 @@ $configSectionBottomMargin: 1em;
 			tr {
 				background: $defaultRowBackground;
 			}
+
 			.elm-is-odd-visible-row {
 				background-color: $contextDarkBackground;
 			}
 		}
 	}
+
 	//endregion
 
 	//region Enhanced stack trace
@@ -245,6 +305,7 @@ $configSectionBottomMargin: 1em;
 			padding-left: 0;
 		}
 	}
+
 	//endregion
 
 	//region Configuration screen
@@ -267,8 +328,12 @@ $configSectionBottomMargin: 1em;
 
 	#elm_regex_filter_text {
 		width: 100%;
-		margin-bottom: $configSectionBottomMargin;
 	}
+
+	#elm-group-visibility-options {
+		margin-bottom: $configSectionBottomMargin + 0.5em;
+	}
+
 	//endregion
 
 	//region "Upgrade to Pro" notices
@@ -299,9 +364,11 @@ $configSectionBottomMargin: 1em;
 
 	#elm-pro-version-settings-section {
 		@include widget-footer;
+
 		p {
 			margin-bottom: 0;
 		}
 	}
-	//endgregion
+
+	//endregion
 }

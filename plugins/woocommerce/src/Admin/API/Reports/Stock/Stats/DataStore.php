@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 use Automattic\WooCommerce\Admin\API\Reports\DataStore as ReportsDataStore;
 use Automattic\WooCommerce\Admin\API\Reports\DataStoreInterface;
+use Automattic\WooCommerce\Enums\ProductStockStatus;
 
 /**
  * API\Reports\Stock\Stats\DataStore.
@@ -17,6 +18,8 @@ class DataStore extends ReportsDataStore implements DataStoreInterface {
 
 	/**
 	 * Get stock counts for the whole store.
+	 *
+	 * @override ReportsDataStore::get_data()
 	 *
 	 * @param array $query Not used for the stock stats data store, but needed for the interface.
 	 * @return array Array of counts.
@@ -32,7 +35,7 @@ class DataStore extends ReportsDataStore implements DataStoreInterface {
 		} else {
 			$low_stock_count = intval( $low_stock_count );
 		}
-		$report_data['lowstock'] = $low_stock_count;
+		$report_data[ ProductStockStatus::LOW_STOCK ] = $low_stock_count;
 
 		$status_options = wc_get_product_stock_status_options();
 		foreach ( $status_options as $status => $label ) {
@@ -77,6 +80,7 @@ class DataStore extends ReportsDataStore implements DataStoreInterface {
 				LEFT JOIN {$wpdb->wc_product_meta_lookup} wc_product_meta_lookup ON posts.ID = wc_product_meta_lookup.product_id
 				LEFT JOIN {$wpdb->postmeta} low_stock_amount_meta ON posts.ID = low_stock_amount_meta.post_id AND low_stock_amount_meta.meta_key = '_low_stock_amount'
 				WHERE posts.post_type IN ( 'product', 'product_variation' )
+				AND posts.post_status IN ( 'publish', 'private' )
 				AND wc_product_meta_lookup.stock_quantity IS NOT NULL
 				AND wc_product_meta_lookup.stock_status = 'instock'
 				AND (
@@ -116,6 +120,7 @@ class DataStore extends ReportsDataStore implements DataStoreInterface {
 				SELECT count( DISTINCT posts.ID ) FROM {$wpdb->posts} posts
 				LEFT JOIN {$wpdb->wc_product_meta_lookup} wc_product_meta_lookup ON posts.ID = wc_product_meta_lookup.product_id
 				WHERE posts.post_type IN ( 'product', 'product_variation' )
+				AND posts.post_status IN ( 'publish', 'private' )
 				AND wc_product_meta_lookup.stock_status = %s
 				",
 				$status

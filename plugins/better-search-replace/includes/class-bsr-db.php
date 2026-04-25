@@ -330,6 +330,13 @@ class BSR_DB {
 	 */
 	public function recursive_unserialize_replace( $from = '', $to = '', $data = '', $serialised = false, $case_insensitive = false ) {
 		try {
+			// Exit early if $data is a string but has no search matches.
+			if ( is_string( $data ) ) {
+				$has_match = $case_insensitive ? false !== stripos( $data, $from ) : false !== strpos( $data, $from );
+				if ( ! $has_match ) {
+					return $data;
+				}
+			}
 
 			if ( is_string( $data ) && ! is_serialized_string( $data ) && ( $unserialized = $this->unserialize( $data ) ) !== false ) {
 				$data = $this->recursive_unserialize_replace( $from, $to, $unserialized, true, $case_insensitive );
@@ -346,11 +353,23 @@ class BSR_DB {
 			}
 
 			// Submitted by Tina Matter
-			elseif ( is_object( $data ) ) {
-				if ('__PHP_Incomplete_Class' !== get_class($data)) {
-					$_tmp = $data;
+			elseif ( 'object' == gettype( $data ) ) {
+				if($this->is_object_cloneable($data)) {
+					$_tmp = clone $data;
 					$props = get_object_vars( $data );
 					foreach ( $props as $key => $value ) {
+						// Integer properties are crazy and the best thing we can do is to just ignore them.
+						// see http://stackoverflow.com/a/10333200
+						if ( is_int( $key ) ) {
+							continue;
+						}
+
+						// Skip any representation of a protected property
+						// https://github.com/deliciousbrains/better-search-replace/issues/71#issuecomment-1369195244
+						if ( is_string( $key ) && 1 === preg_match( "/^(\\\\0).+/im", preg_quote( $key ) ) ) {
+							continue;
+						}
+
 						$_tmp->$key = $this->recursive_unserialize_replace( $from, $to, $value, false, $case_insensitive );
 					}
 
@@ -433,7 +452,12 @@ class BSR_DB {
 		}
 
 		$serialized_string   = trim( $serialized_string );
-		$unserialized_string = @unserialize( $serialized_string );
+
+		if ( PHP_VERSION_ID >= 70000 ) {
+			$unserialized_string = @unserialize( $serialized_string, array('allowed_classes' => false ) );
+		} else {
+			$unserialized_string = @BSR\Brumann\Polyfill\Unserialize::unserialize( $serialized_string, array( 'allowed_classes' => false ) );
+		}
 
 		return $unserialized_string;
 	}
@@ -467,5 +491,16 @@ class BSR_DB {
 	 */
 	private function table_exists( $table ) {
 		return in_array( $table, $this->get_tables() );
+	}
+
+	/**
+	 * Check if a given object can be cloned.
+	 *
+	 * @param object $object
+	 *
+	 * @return bool
+	 */
+	private function is_object_cloneable( $object ) {
+		return ( new \ReflectionClass( get_class( $object ) ) )->isCloneable();
 	}
 }

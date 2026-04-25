@@ -8,7 +8,8 @@ class UpdraftPlus_Temporary_Clone_Auto_Login {
 	 * Constructor for the class.
 	 */
 	public function __construct() {
-		if (!empty($_REQUEST['uc_auto_login'])) add_action('wp_loaded', array($this, 'handle_url_actions'));
+		$uc_auto_login = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'uc_auto_login');
+		if (!empty($uc_auto_login)) add_action('wp_loaded', array($this, 'handle_url_actions'));
 	}
 
 	/**
@@ -25,14 +26,14 @@ class UpdraftPlus_Temporary_Clone_Auto_Login {
 		try {
 			// WooCommerce (3.4.4) dies here. We catch and carry on to avoid confusing the user about something that nothing can be done about / is a one-time issue.
 			do_action('wp_login', $user->user_login);
-			if (wp_redirect(admin_url())) exit;
+			if (wp_safe_redirect(admin_url())) exit;
 		} catch (Exception $e) {
 			$log_message = 'Exception ('.get_class($e).') occurred during the wp_login action call: '.$e->getMessage().' (Code: '.$e->getCode().', line '.$e->getLine().' in '.$e->getFile().')';
-			error_log($log_message);
+			UpdraftPlus_Manipulation_Functions::error_log($log_message);
 		// @codingStandardsIgnoreLine
 		} catch (Error $e) {
 			$log_message = 'PHP Fatal error ('.get_class($e).') occurred during the wp_login action call. Error Message: '.$e->getMessage().' (Code: '.$e->getCode().', line '.$e->getLine().' in '.$e->getFile().')';
-			error_log($log_message);
+			UpdraftPlus_Manipulation_Functions::error_log($log_message);
 		}
 	}
 
@@ -60,15 +61,19 @@ class UpdraftPlus_Temporary_Clone_Auto_Login {
 	 * @return void
 	 */
 	public function handle_url_actions() {
+		$request_method = UpdraftPlus_Manipulation_Functions::fetch_superglobal('server', 'REQUEST_METHOD');
+		$uc_auto_login = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'uc_auto_login');
 
-		if (!isset($_SERVER['REQUEST_METHOD']) || 'GET' != $_SERVER['REQUEST_METHOD'] || !isset($_REQUEST['uc_auto_login'])) return;
+		if (!isset($request_method) || 'GET' != $request_method || !isset($uc_auto_login)) return;
 
 		if (0 == get_current_user_id()) {
+			$uc_login = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'uc_login');
+			$uc_lkey = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'uc_lkey');
 
-			if (isset($_REQUEST['uc_login']) && '' !== $_REQUEST['uc_login'] && !empty($_REQUEST['uc_lkey'])) {
+			if (isset($uc_login) && '' !== $uc_login && !empty($uc_lkey)) {
 
-				if ($this->auto_login_key_matches($_REQUEST['uc_lkey'], $_REQUEST['uc_login'])) {
-					$login_user = get_user_by('login', $_REQUEST['uc_login']);
+				if ($this->auto_login_key_matches($uc_lkey, $uc_login)) {
+					$login_user = get_user_by('login', $uc_login);
 					$allow_autolink = get_user_meta($login_user->ID, 'uc_allow_auto_login');
 
 					if ($allow_autolink) {

@@ -8,6 +8,14 @@ use woocommerce_wpml;
 use WPML_Twig_Template_Loader;
 
 class MulticurrencyHooks implements \IWPML_Action {
+	const ADDON_FIELD_TYPE_INPUT_MULTIPLIER = 'input_multiplier';
+	const ADDON_PRICE_TYPE_QUANTITY_BASED   = 'quantity_based';
+	const ADDON_PRICE_TYPE_FLAT_FEE         = 'flat_fee';
+
+	const CONVERTABLE_ADDON_PRICE_TYPE_LIST = [
+		self::ADDON_PRICE_TYPE_QUANTITY_BASED,
+		self::ADDON_PRICE_TYPE_FLAT_FEE,
+	];
 
 	const TEMPLATE_FOLDER   = '/templates/compatibility/';
 	const DIALOG_TEMPLATE   = 'product-addons-prices-dialog.twig';
@@ -29,6 +37,10 @@ class MulticurrencyHooks implements \IWPML_Action {
 		add_filter( 'wcml_cart_contents_not_changed', [ $this, 'filter_booking_addon_product_in_cart_contents' ], 20 );
 		add_filter( 'wcml_product_addons_global_updated', [ $this, 'onGlobalAddonsUpdated' ], 10, 2 );
 
+		if ( wp_doing_ajax() ) {
+			add_action( 'wcml_switch_currency', [ $this, 'convertAddonPriceSavedInSession' ], 10, 2 );
+		}
+
 		if ( is_admin() ) {
 			add_action( 'woocommerce_product_addons_panel_start', [ $this, 'load_dialog_resources' ] );
 			add_action( 'woocommerce_product_addons_panel_option_row', [ $this, 'dialog_button_after_option_row' ], 10, 4 );
@@ -36,6 +48,45 @@ class MulticurrencyHooks implements \IWPML_Action {
 			add_action( 'wcml_before_sync_product', [ $this, 'update_custom_prices_values' ] );
 			add_action( 'save_post', [ $this, 'maybeUpdateCustomPricesValues' ], 10, 2 );
 			add_action( 'woocommerce_product_addons_global_edit_objects', [ $this, 'custom_prices_settings_block' ] );
+		}
+	}
+
+	/**
+	 * Addon price when adding to cart is saved after conversion to the currently selected currency.
+	 * When we change currency, we have to go back to the default currency and convert to the selected
+	 *
+	 * @param string $toCurrency
+	 * @param string $fromCurrency
+	 */
+	public function convertAddonPriceSavedInSession( $toCurrency, $fromCurrency ) {
+
+		$cart = WC()->session->get( 'cart', null );
+
+		if ( is_array( $cart ) ) {
+			$save = false;
+			foreach ( $cart as $itemId => $item ) {
+				if ( isset( $item['addons'] ) && is_array( $item['addons'] ) ) {
+					foreach ( $item['addons'] as $addonId => $addon ) {
+						$addonFieldType = $addon['field_type'] ?? null;
+						$addonPriceType = $addon['price_type'] ?? null;
+						$addonPrice     = $addon['price'] ?? null;
+
+						if ( self::ADDON_FIELD_TYPE_INPUT_MULTIPLIER === $addonFieldType ) {
+							if ( in_array( $addonPriceType, self::CONVERTABLE_ADDON_PRICE_TYPE_LIST, true ) ) {
+								$orgPrice = $this->woocommerce_wpml->multi_currency->prices->unconvert_price_amount( $addonPrice, $fromCurrency );
+								$newPrice = $this->woocommerce_wpml->multi_currency->prices->convert_price_amount( $orgPrice, $toCurrency );
+
+								$cart[ $itemId ]['addons'][ $addonId ]['price'] = $newPrice;
+
+								$save = true;
+							}
+						}
+					}
+				}
+			}
+			if ( $save ) {
+				WC()->session->set( 'cart', $cart );
+			}
 		}
 	}
 
@@ -114,7 +165,7 @@ class MulticurrencyHooks implements \IWPML_Action {
 			return $addonData->get( $field );
 		}
 
-		if ( wpml_collect( [ 'flat_fee', 'quantity_based' ] )->contains( $addonData->get( 'price_type' ) ) ) {
+		if ( wpml_collect( self::CONVERTABLE_ADDON_PRICE_TYPE_LIST )->contains( $addonData->get( 'price_type' ) ) ) {
 			return apply_filters( 'wcml_raw_price_amount', $addonData->get( 'price' ) );
 		}
 
@@ -335,7 +386,7 @@ class MulticurrencyHooks implements \IWPML_Action {
 			'custom_text',
 			'custom_textarea',
 			'file_upload',
-			'input_multiplier',
+			self::ADDON_FIELD_TYPE_INPUT_MULTIPLIER,
 		];
 	}
 }

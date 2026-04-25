@@ -8,7 +8,7 @@
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2019 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2019 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -32,16 +32,16 @@
  *
  * @constructor
  */
-window.tsfC = function() {
+window.tsfC = function () {
 
 	/**
 	 * Data property injected by WordPress l10n handler.
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 * @type {(Object<string, *>)|boolean|null} l10n Localized strings
+	 * @type {(Object<string,*>)|Boolean|null} l10n Localized strings
 	 */
-	const l10n = 'undefined' !== typeof tsfCL10n && tsfCL10n;
+	const l10n = tsfCL10n;
 
 	/**
 	 * The current counter type.
@@ -52,18 +52,6 @@ window.tsfC = function() {
 	 * @type {Number} countertype The counterType
 	 */
 	let counterType = +( l10n.counterType || 0 );
-
-	/**
-	 * Returns the counter type.
-	 *
-	 * @since 4.0.0
-	 * @access public
-	 * @see counterClasses
-	 *
-	 * @function
-	 * @return {Number} The counter type
-	 */
-	const getCounterType = () => counterType;
 
 	/**
 	 * The current character counter classes.
@@ -81,15 +69,27 @@ window.tsfC = function() {
 	};
 
 	/**
+	 * Returns the counter type.
+	 *
+	 * @since 4.0.0
+	 * @access public
+	 * @see counterClasses
+	 *
+	 * @return {Number} The counter type
+	 */
+	function getCounterType() {
+		return counterType;
+	}
+
+	/**
 	 * Updates character counter.
 	 *
 	 * @since 4.0.0
 	 * @access private
 	 *
-	 * @function
 	 * @param {Object} test The object to test.
 	 */
-	const updateCharacterCounter = test => {
+	function updateCharacterCounter( test ) {
 
 		let el         = test.e,
 			text       = tsf.decodeEntities( test.text ),
@@ -122,7 +122,7 @@ window.tsfC = function() {
 			newClass  = classes.okay;
 			exclaimer = l10n.i18n.guidelines.short.tooLong;
 		} else {
-			//= between goodUpper and goodLower.
+			// between goodUpper and goodLower.
 			newClass  = classes.good;
 			exclaimer = l10n.i18n.guidelines.short.good;
 		}
@@ -152,10 +152,9 @@ window.tsfC = function() {
 	 * @since 4.0.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {Object} test The object to test.
 	 */
-	const updatePixelCounter = test => {
+	function updatePixelCounter( test ) {
 
 		const wrap = test.e.parentElement;
 
@@ -183,7 +182,7 @@ window.tsfC = function() {
 			unknown: 'tsf-pixel-counter-unknown',
 		};
 
-		//= Can never be over 100. Good.
+		// Can never be over 100. Good formula is good.
 		newWidth = ( testWidth / guidelines.goodUpper * 100 ) + '%';
 
 		if ( ! testWidth ) {
@@ -197,7 +196,7 @@ window.tsfC = function() {
 			newClass = classes.okay;
 			guidelineHelper = l10n.i18n.guidelines.long.tooShort;
 		} else if ( testWidth > guidelines.upper ) {
-			//= Can never be 0. Good. Add 2/3rds of difference to it; implying emphasis.
+			// Can never be 0. Good formula is good. Add 2/3rds of difference to it; implying emphasis.
 			newWidth = ( guidelines.upper / ( testWidth + ( ( testWidth - guidelines.upper ) * 2 / 3 ) ) * 100 ) + '%';
 			newClass = classes.bad;
 			guidelineHelper = l10n.i18n.guidelines.long.farTooLong;
@@ -206,7 +205,7 @@ window.tsfC = function() {
 			guidelineHelper = l10n.i18n.guidelines.long.tooLong;
 			newWidth = '100%'; // Let's just assume someone will break this otherwise.
 		} else {
-			//= between goodUpper and goodLower.
+			// between goodUpper and goodLower.
 			newClass = classes.good;
 			guidelineHelper = l10n.i18n.guidelines.long.good;
 		}
@@ -237,10 +236,8 @@ window.tsfC = function() {
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 *
-	 * @function
 	 */
-	const triggerCounterUpdate = () => {
+	function triggerCounterUpdate() {
 		window.dispatchEvent( new CustomEvent( 'tsf-counter-updated' ) );
 	}
 
@@ -250,10 +247,9 @@ window.tsfC = function() {
 	 * @since 4.0.0
 	 * @access private
 	 *
-	 * @function
-	 * @param {(undefined|boolean)} countUp Whether to add one.
+	 * @param {(undefined|Boolean)} countUp Whether to add one.
 	 */
-	const updateCounterClasses = countUp => {
+	function updateCounterClasses( countUp ) {
 
 		if ( countUp ) ++counterType;
 
@@ -269,23 +265,18 @@ window.tsfC = function() {
 	 *
 	 * @since 4.0.0
 	 * @since 4.2.0 Now uses wp.ajax, instead of jQuery.ajax
+	 * @since 5.1.0 No longer listens to the response to change the counter.
 	 * @access private
-	 *
-	 * @function
 	 */
-	const _counterUpdate = () => {
+	function _counterUpdate() {
 
 		// Update counters locally, and add a number.
 		//! We don't want this to be promised after the AJAX call, that'll resolve separately.
 		updateCounterClasses( true );
 
-		let target = '.tsf-counter-wrap .tsf-ajax',
-			status = 0;
+		const target = '.tsf-counter-wrap .tsf-ajax';
 
-		// Reset ajax loader
 		tsf.resetAjaxLoader( target );
-
-		// Set ajax loader.
 		tsf.setAjaxLoader( target );
 
 		wp.ajax.post(
@@ -294,25 +285,8 @@ window.tsfC = function() {
 				nonce: tsf.l10n.nonces.edit_posts,
 				val:   counterType,
 			}
-		).done( response => {
-
-			response = tsf.convertJSONResponse( response );
-
-			// I could do value check, but that will simply lag behind. Unless an annoying execution delay is added.
-			if ( 'success' === response.type )
-				status = 1;
-
-			switch ( status ) {
-				case 0:
-					tsf.unsetAjaxLoader( target, false );
-					break;
-				case 1:
-					tsf.unsetAjaxLoader( target, true );
-					break;
-				default:
-					tsf.resetAjaxLoader( target );
-					break;
-			}
+		).done( () => {
+			tsf.unsetAjaxLoader( target, true );
 		} ).fail( () => {
 			tsf.unsetAjaxLoader( target, false );
 		} );
@@ -323,22 +297,20 @@ window.tsfC = function() {
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 *
-	 * @function
 	 */
-	const resetCounterListener = () => document.querySelectorAll( '.tsf-counter' ).forEach(
-		el => el.addEventListener( 'click', _counterUpdate )
-	);
+	function resetCounterListener() {
+		return document.querySelectorAll( '.tsf-counter' ).forEach(
+			el => el.addEventListener( 'click', _counterUpdate ),
+		);
+	}
 
 	/**
 	 * Initializes counters.
 	 *
 	 * @since 4.0.0
 	 * @access private
-	 *
-	 * @function
 	 */
-	const _initCounters = () => {
+	function _initCounters() {
 		// Any edit screen
 		resetCounterListener();
 	}
@@ -355,7 +327,7 @@ window.tsfC = function() {
 		 */
 		load: () => {
 			document.body.addEventListener( 'tsf-onload', _initCounters );
-		}
+		},
 	}, {
 		updatePixelCounter,
 		updateCharacterCounter,

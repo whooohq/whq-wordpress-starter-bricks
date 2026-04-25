@@ -1,9 +1,16 @@
 <?php
 
+use WCML\COT\Helper as COTHelper;
+use WCML\Orders\Helper as OrdersHelper;
+use WCML\Orders\Legacy\Helper as LegacyHelper;
 use WPML\FP\Fns;
+use WPML\FP\Just;
 use WPML\FP\Logic;
+use WPML\FP\Maybe;
+use WPML\FP\Nothing;
 use WPML\FP\Obj;
 use WPML\FP\Str;
+use WPML\LIB\WP\Hooks;
 use function WCML\functions\getSitePress;
 use function WPML\FP\pipe;
 
@@ -22,11 +29,6 @@ class WCML_Multi_Currency_Prices {
 	private $multi_currency;
 
 	/**
-	 * @var string
-	 */
-	private $orders_list_currency;
-
-	/**
 	 * @var bool
 	 */
 	private $isSavingPost = false;
@@ -42,7 +44,6 @@ class WCML_Multi_Currency_Prices {
 		add_filter( 'woocommerce_currency', [ $this, 'currency_filter' ] );
 		add_filter( 'wcml_price_currency', [ $this, 'price_currency_filter' ] );
 		add_filter( 'get_post_metadata', [ $this, 'product_price_filter' ], 10, 4 );
-		add_filter( 'get_post_metadata', [ $this, 'variation_prices_filter' ], 12, 4 );
 		add_filter( 'wcml_formatted_price', [ $this, 'formatted_price' ], 10, 2 );
 
 		if ( $this->multi_currency->load_filters ) {
@@ -92,16 +93,15 @@ class WCML_Multi_Currency_Prices {
 			add_filter( 'wc_price_args', [ $this, 'filter_wc_price_args' ] );
 		}
 
+		add_filter( 'wc_price_args', [ $this, 'filter_wc_price_args_on_order_admin_screen' ] );
+
 		add_action( 'woocommerce_cart_loaded_from_session', [ $this, 'recalculate_totals' ], PHP_INT_MAX );
 
 		// formatting options.
 		add_filter( 'option_woocommerce_price_thousand_sep', [ $this, 'filter_currency_thousand_sep_option' ] );
 		add_filter( 'option_woocommerce_price_decimal_sep', [ $this, 'filter_currency_decimal_sep_option' ] );
 		add_filter( 'option_woocommerce_price_num_decimals', [ $this, 'filter_currency_num_decimals_option' ] );
-		add_filter( 'option_woocommerce_currency_pos', [ $this, 'filter_currency_position_option' ] );
-
-		// need for display correct price format for order on orders list page.
-		add_filter( 'get_post_metadata', [ $this, 'save_order_currency_for_filter' ], 10, 4 );
+		add_filter( 'option_woocommerce_currency_pos', Fns::withoutRecursion( Fns::identity(), [ $this, 'filter_currency_position_option' ] ) );
 
 		// Set a flag to skip the currency filter while applying a translation.
 		add_filter( 'wpml_pre_save_pro_translation', Fns::tap( [ $this, 'enableSavingPost' ] ) );
@@ -127,12 +127,8 @@ class WCML_Multi_Currency_Prices {
 
 	public function price_currency_filter( $currency ) {
 
-		if ( $this->is_multi_currency_filters_loaded() ) {
-			if ( isset( $this->order_currency ) ) {
-				$currency = $this->order_currency;
-			} else {
-				$currency = $this->multi_currency->get_client_currency();
-			}
+		if ( empty( $currency ) || $this->is_multi_currency_filters_loaded() ) {
+			$currency = $this->multi_currency->get_client_currency();
 		}
 
 		return $currency;
@@ -168,11 +164,11 @@ class WCML_Multi_Currency_Prices {
 
 	public function raw_price_filter( $price, $currency = false ) {
 
-		if ( $currency === false ) {
+		if ( false === $currency ) {
 			$currency = $this->multi_currency->get_client_currency();
 		}
 
-		if ( $currency !== wcml_get_woocommerce_currency_option() ) {
+		if ( wcml_get_woocommerce_currency_option() !== $currency ) {
 			$price = $this->convert_price_amount( $price, $currency );
 			$price = $this->apply_rounding_rules( $price, $currency );
 		}
@@ -236,10 +232,10 @@ class WCML_Multi_Currency_Prices {
 
 		if (
 			$unlocked
-			&& in_array( get_post_type( $object_id ), [ 'product', 'product_variation' ] )
-			&& in_array( $meta_key, wcml_price_custom_fields( $object_id ) )
-			&& $this->is_multi_currency_filters_loaded()
 			&& ! $this->isSavingPost
+			&& $this->is_multi_currency_filters_loaded()
+			&& in_array( get_post_type( $object_id ), [ 'product', 'product_variation' ], true )
+			&& in_array( $meta_key, wcml_price_custom_fields( $object_id ), true )
 		) {
 			$unlocked = false;
 			$currency = $this->multi_currency->get_client_currency();
@@ -248,12 +244,12 @@ class WCML_Multi_Currency_Prices {
 			$get_price_by_legacy_ccr = function() use ( $object_id, $meta_key, $single, $currency ) {
 				// exception for products migrated from before WCML 3.1 with independent prices.
 				// legacy prior 3.1.
-				$original_object_id = apply_filters( 'translate_object_id', $object_id, get_post_type( $object_id ), false, getSitePress()->get_default_language() );
+				$original_object_id = apply_filters( 'wpml_object_id', $object_id, get_post_type( $object_id ), false, getSitePress()->get_default_language() );
 				$ccr_rate           = Obj::path( [ $meta_key, $currency ], (array) get_post_meta( $original_object_id, '_custom_conversion_rate', true ) );
 
 				if (
 					$ccr_rate
-					&& in_array( $meta_key, [ '_price', '_regular_price', '_sale_price' ] )
+					&& in_array( $meta_key, [ '_price', '_regular_price', '_sale_price' ], true )
 				) {
 					$price_original = get_post_meta( $original_object_id, $meta_key, $single );
 					if ( is_numeric( $price_original ) ) {
@@ -289,50 +285,14 @@ class WCML_Multi_Currency_Prices {
 			$unlocked = true;
 		}
 
-		return isset( $price ) ? $price : $null;
-	}
-
-	public function variation_prices_filter( $null, $object_id, $meta_key, $single ) {
-
-		if ( empty( $meta_key ) && get_post_type( $object_id ) === 'product_variation' ) {
-			static $no_filter = false;
-
-			if ( empty( $no_filter ) && $this->is_multi_currency_filters_loaded() ) {
-				$no_filter = true;
-
-				$variation_fields = get_post_meta( $object_id );
-
-				$manual_prices = $this->multi_currency->custom_prices->get_product_custom_prices( $object_id, $this->multi_currency->get_client_currency() );
-
-				foreach ( $variation_fields as $k => $v ) {
-
-					if ( in_array( $k, [ '_price', '_regular_price', '_sale_price' ] ) ) {
-
-						foreach ( $v as $j => $amount ) {
-
-							if ( isset( $manual_prices[ $k ] ) ) {
-								$variation_fields[ $k ][ $j ] = $manual_prices[ $k ];     // manual price.
-
-							} elseif ( $amount ) {
-								$variation_fields[ $k ][ $j ] = apply_filters( 'wcml_raw_price_amount', $amount );   // automatic conversion.
-							}
-						}
-					}
-				}
-
-				$no_filter = false;
-			}
-		}
-
-		return isset( $variation_fields ) ? $variation_fields : $null;
-
+		return $price ?? $null;
 	}
 
 	/**
-	 * @param float|int   $amount
+	 * @param mixed       $amount
 	 * @param bool|string $currency
 	 *
-	 * @return float|int
+	 * @return mixed
 	 */
 	public function convert_price_amount( $amount, $currency = false ) {
 
@@ -340,7 +300,7 @@ class WCML_Multi_Currency_Prices {
 			$currency = $this->multi_currency->get_client_currency();
 		}
 
-		if ( $currency !== wcml_get_woocommerce_currency_option() ) {
+		if ( wcml_get_woocommerce_currency_option() !== $currency ) {
 
 			$amount = $this->calculate_exchange_rate_price( $amount, $currency, '*' );
 
@@ -351,15 +311,15 @@ class WCML_Multi_Currency_Prices {
 	}
 
 	/**
-	 * @param float|int $amount
-	 * @param string    $from_currency
-	 * @param string    $to_currency
+	 * @param mixed  $amount
+	 * @param string $from_currency
+	 * @param string $to_currency
 	 *
-	 * @return float|int
+	 * @return mixed
 	 */
 	public function convert_price_amount_by_currencies( $amount, $from_currency, $to_currency ) {
 
-		if ( $to_currency !== wcml_get_woocommerce_currency_option() ) {
+		if ( wcml_get_woocommerce_currency_option() !== $to_currency ) {
 			$amount = $this->calculate_exchange_rate_price( $amount, $to_currency, '*' );
 		} else {
 			$amount = $this->calculate_exchange_rate_price( $amount, $from_currency, '/' );
@@ -369,15 +329,17 @@ class WCML_Multi_Currency_Prices {
 	}
 
 	/**
-	 * @param float|int $amount
-	 * @param string    $currency
-	 * @param string    $operator
+	 * @param mixed  $amount
+	 * @param string $currency
+	 * @param string $operator
 	 *
-	 * @return float|int
+	 * @return mixed
 	 */
 	private function calculate_exchange_rate_price( $amount, $currency, $operator ) {
 
 		$exchange_rates = $this->multi_currency->get_exchange_rates();
+
+		$initialType = gettype( $amount );
 
 		if ( isset( $exchange_rates[ $currency ] ) && is_numeric( $amount ) ) {
 
@@ -388,11 +350,15 @@ class WCML_Multi_Currency_Prices {
 			}
 
 			// exception - currencies_without_cents.
-			if ( in_array( $currency, $this->multi_currency->get_currencies_without_cents() ) ) {
+			if ( in_array( $currency, $this->multi_currency->get_currencies_without_cents(), true ) ) {
 				$amount = $this->round_up( $amount );
 			}
 		} else {
 			$amount = 0;
+		}
+
+		if ( 'string' === $initialType ) {
+			$amount = (string) $amount;
 		}
 
 		return $amount;
@@ -413,7 +379,7 @@ class WCML_Multi_Currency_Prices {
 			$currency = $this->multi_currency->get_client_currency();
 		}
 
-		if ( $currency !== wcml_get_woocommerce_currency_option() ) {
+		if ( wcml_get_woocommerce_currency_option() !== $currency ) {
 
 			$exchange_rates = $this->multi_currency->get_exchange_rates();
 
@@ -421,7 +387,7 @@ class WCML_Multi_Currency_Prices {
 				$amount = $amount / $exchange_rates[ $currency ];
 
 				// exception - currencies_without_cents.
-				if ( in_array( $currency, $this->multi_currency->get_currencies_without_cents() ) ) {
+				if ( in_array( $currency, $this->multi_currency->get_currencies_without_cents(), true ) ) {
 					$amount = $this->round_up( $amount );
 				}
 			} else {
@@ -435,7 +401,7 @@ class WCML_Multi_Currency_Prices {
 
 	public function apply_rounding_rules( $price, $currency = false ) {
 
-		if ( is_null( $this->currency_options ) ) {
+		if ( empty( $this->currency_options ) ) {
 			global $woocommerce_wpml;
 			$this->currency_options = $woocommerce_wpml->get_setting( 'currency_options' );
 		}
@@ -446,7 +412,7 @@ class WCML_Multi_Currency_Prices {
 
 		$currency_options = $this->currency_options[ $currency ];
 
-		if ( $currency_options['rounding'] !== 'disabled' ) {
+		if ( 'disabled' !== $currency_options['rounding'] ) {
 
 			if ( $currency_options['rounding_increment'] > 1 ) {
 				$price = $price / $currency_options['rounding_increment'];
@@ -479,7 +445,7 @@ class WCML_Multi_Currency_Prices {
 		} else {
 
 			// Use configured number of decimals.
-			$price = floor( $price * pow( 10, $currency_options['num_decimals'] ) + 0.0001 ) / pow( 10, $currency_options['num_decimals'] );
+			$price = round( $price, $currency_options['num_decimals'] );
 
 		}
 
@@ -491,25 +457,24 @@ class WCML_Multi_Currency_Prices {
 	 * The PHP 5.2 compatible equivalent to "round($amount, 0, PHP_ROUND_HALF_UP)"
 	 *
 	 * @param float|int $amount
-	 *
-	 * @return float|int
 	 */
-	private function round_up( $amount ) {
+	private function round_up( $amount ): float {
 		if ( $amount - floor( $amount ) < 0.5 ) {
-			$amount = floor( $amount );
-		} else {
-			$amount = ceil( $amount );
+			return floor( $amount );
 		}
 
-		return $amount;
+		return ceil( $amount );
 	}
 
-	/*
-	* Converts the price from the default currency to the given currency and applies the format
-	*/
+	/**
+	 * Converts the price from the default currency to the given currency and applies the format
+	 *
+	 * @param float|int    $amount
+	 * @param false|string $currency
+	 */
 	public function formatted_price( $amount, $currency = false ) {
 
-		if ( $currency === false ) {
+		if ( false === $currency ) {
 			$currency = $this->multi_currency->get_client_currency();
 		}
 
@@ -518,85 +483,30 @@ class WCML_Multi_Currency_Prices {
 		return $this->format_price_in_currency( $amount, $currency );
 	}
 
+	/**
+	 * @param float  $price
+	 * @param string $currency
+	 *
+	 * @return string
+	 */
 	public function format_price_in_currency( $price, $currency ) {
-
 		$currency_details = $this->multi_currency->get_currency_details_by_code( $currency );
-
-		switch ( $currency_details['position'] ) {
-			case 'left':
-				$format = '%1$s%2$s';
-				break;
-			case 'right':
-				$format = '%2$s%1$s';
-				break;
-			case 'left_space':
-				$format = '%1$s&nbsp;%2$s';
-				break;
-			case 'right_space':
-				$format = '%2$s&nbsp;%1$s';
-				break;
-			default:
-				$format = get_woocommerce_price_format();
-		}
 
 		$wc_price_args = [
 			'currency'           => $currency,
 			'decimal_separator'  => $currency_details['decimal_sep'],
 			'thousand_separator' => $currency_details['thousand_sep'],
 			'decimals'           => $currency_details['num_decimals'],
-			'price_format'       => $format,
+			'price_format'       => $this->get_price_format_in_currency( $currency ),
 		];
 
 		return wc_price( $price, $wc_price_args );
 	}
 
-	// Exposed function.
-	public function apply_currency_position( $price, $currency_code ) {
-
-		$currencies = $this->multi_currency->get_currencies();
-
-		if ( isset( $currencies[ $currency_code ]['position'] ) ) {
-			$position = $currencies[ $currency_code ]['position'];
-		} else {
-			remove_filter(
-				'option_woocommerce_currency_pos',
-				[
-					$this,
-					'filter_currency_position_option',
-				]
-			);
-			$position = get_option( 'woocommerce_currency_pos' );
-			add_filter(
-				'option_woocommerce_currency_pos',
-				[
-					$this,
-					'filter_currency_position_option',
-				]
-			);
-		}
-
-		switch ( $position ) {
-			case 'left':
-				$price = sprintf( '%s%s', get_woocommerce_currency_symbol( $currency_code ), $price );
-				break;
-			case 'right':
-				$price = sprintf( '%s%s', $price, get_woocommerce_currency_symbol( $currency_code ) );
-				break;
-			case 'left_space':
-				$price = sprintf( '%s %s', get_woocommerce_currency_symbol( $currency_code ), $price );
-				break;
-			case 'right_space':
-				$price = sprintf( '%s %s', $price, get_woocommerce_currency_symbol( $currency_code ) );
-				break;
-		}
-
-		return $price;
-	}
-
 	public function filter_price_woocommerce_paypal_args( $args ) {
 
 		foreach ( $args as $key => $value ) {
-			if ( substr( $key, 0, 7 ) == 'amount_' ) {
+			if ( substr( $key, 0, 7 ) === 'amount_' ) {
 
 				$currency_details = $this->multi_currency->get_currency_details_by_code( $args['currency_code'] );
 
@@ -610,7 +520,7 @@ class WCML_Multi_Currency_Prices {
 	public function add_currency_to_variation_prices_hash( $data ) {
 
 		$data['currency']            = $this->multi_currency->get_client_currency();
-		$data['exchange_rates_hash'] = md5( json_encode( $this->multi_currency->get_exchange_rates() ) );
+		$data['exchange_rates_hash'] = md5( wp_json_encode( $this->multi_currency->get_exchange_rates() ) );
 
 		return $data;
 
@@ -649,6 +559,7 @@ class WCML_Multi_Currency_Prices {
 
 	public function price_filter_post_clauses( $args, $wp_query ) {
 
+		/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
 		if ( ! $wp_query->is_main_query() || ( ! isset( $_GET['max_price'] ) && ! isset( $_GET['min_price'] ) ) ) {
 			return $args;
 		}
@@ -705,40 +616,19 @@ class WCML_Multi_Currency_Prices {
 	}
 
 
-	private function check_admin_order_currency_code() {
+	private function get_context_currency_code() {
 		global $pagenow;
 
-		$actions              = [
-			'woocommerce_add_order_item',
-			'woocommerce_remove_order_item',
-			'woocommerce_save_order_items',
-			'woocommerce_calc_line_taxes',
-		];
-		$is_ajax_order_action =
-			wp_doing_ajax() &&
-			(
-			(
-				isset( $_POST['action'] ) &&
-				in_array( $_POST['action'], $actions ) ||
-				(
-					isset( $_GET['action'] ) &&
-					$_GET['action'] == 'woocommerce_json_search_products_and_variations'
-				)
-			)
-			);
-
-		$is_shop_order_new = $pagenow == 'post-new.php' && isset( $_GET['post_type'] ) && $_GET['post_type'] == 'shop_order';
-
-		if ( ( $is_ajax_order_action || $is_shop_order_new ) && isset( $_COOKIE['_wcml_order_currency'] ) ) {
+		if ( ( OrdersHelper::isEditingNewOrderItems() || OrdersHelper::isOrderCreateAdminScreen() ) && isset( $_COOKIE['_wcml_order_currency'] ) ) {
 			$currency_code = $_COOKIE['_wcml_order_currency'];
-		} elseif ( isset( $_GET['post'] ) && get_post_type( $_GET['post'] ) == 'shop_order' ) {
-			$currency_code = get_post_meta( $_GET['post'], '_order_currency', true );
-		} elseif ( isset( $_GET['post_type'] ) && $_GET['post_type'] == 'shop_order' && ! is_null( $this->orders_list_currency ) ) {
-			$currency_code = $this->orders_list_currency;
+		} elseif ( LegacyHelper::isOrderEditAdminScreen() ) {
+			$currency_code = OrdersHelper::getCurrency( $_GET['post'], true );
+		} elseif ( COTHelper::isOrderEditAdminScreen() && isset( $_GET['id'] ) ) {
+			$currency_code = OrdersHelper::getCurrency( (int) $_GET['id'], true );
 		} elseif ( isset( $_GET['page'] ) && $_GET['page'] == 'wc-reports' && isset( $_COOKIE['_wcml_reports_currency'] ) ) {
 			$currency_code = $_COOKIE['_wcml_reports_currency'];
 		} elseif ( isset( $_COOKIE['_wcml_dashboard_currency'] ) && is_admin() && ! defined( 'DOING_AJAX' ) && $pagenow == 'index.php' ) {
-			$currency_code = $_COOKIE['_wcml_dashboard_currency'];
+			$currency_code = $_COOKIE['_wcml_dashboard_currency']; // This case might be useless.
 		} else {
 			$currency_code = $this->multi_currency->get_client_currency();
 		}
@@ -747,147 +637,126 @@ class WCML_Multi_Currency_Prices {
 
 	}
 
-	public function get_admin_order_currency_code() {
-
-		return $this->check_admin_order_currency_code();
-
-	}
-
-	public function save_order_currency_for_filter( $null, $object_id, $meta_key, $single ) {
-
-		if (
-			$meta_key == '_order_currency' &&
-			isset( $_GET['post_type'] ) &&
-			$_GET['post_type'] == 'shop_order' &&
-			! isset( $_GET['post'] ) &&
-			get_post_type( $object_id ) == 'shop_order'
-		) {
-			remove_filter( 'get_post_metadata', [ $this, 'save_order_currency_for_filter' ], 10 );
-			$this->orders_list_currency = get_post_meta( $object_id, $meta_key, true );
-			add_filter( 'get_post_metadata', [ $this, 'save_order_currency_for_filter' ], 10, 4 );
-		}
-
-		return $null;
-	}
-
+	/**
+	 * @param string $value
+	 *
+	 * @return string
+	 */
 	public function filter_currency_thousand_sep_option( $value ) {
-
-		$default_currency = $this->multi_currency->get_default_currency();
-		$currency_code    = $this->check_admin_order_currency_code();
-
-		if ( $currency_code !== $default_currency && isset( $this->multi_currency->currencies[ $currency_code ]['thousand_sep'] ) ) {
-			$value = $this->multi_currency->currencies[ $currency_code ]['thousand_sep'];
-		}
-
-		return $value;
+		return $this->filter_currency_option_in_global_secondary_currency( 'thousand_sep', $value );
 	}
 
+	/**
+	 * @param string $value
+	 *
+	 * @return string
+	 */
 	public function filter_currency_decimal_sep_option( $value ) {
-
-		$default_currency = $this->multi_currency->get_default_currency();
-		$currency_code    = $this->check_admin_order_currency_code();
-
-		if ( $currency_code !== $default_currency && isset( $this->multi_currency->currencies[ $currency_code ]['decimal_sep'] ) ) {
-			$value = $this->multi_currency->currencies[ $currency_code ]['decimal_sep'];
-
-		}
-
-		return $value;
+		return $this->filter_currency_option_in_global_secondary_currency( 'decimal_sep', $value );
 	}
 
+	/**
+	 * @param int $value
+	 *
+	 * @return int
+	 */
 	public function filter_currency_num_decimals_option( $value ) {
-		// no other way available (at the moment) to filter currency_num_decimals_option.
+		return $this->filter_currency_option_in_global_secondary_currency( 'num_decimals', $value );
+	}
+
+	/**
+	 * @param string $value
+	 *
+	 * @return string
+	 */
+	public function filter_currency_position_option( $value ) {
+		return $this->filter_currency_option_in_global_secondary_currency( 'position', $value );
+	}
+
+	/**
+	 * @param string $option
+	 * @param mixed  $value
+	 *
+	 * @return mixed
+	 */
+	private function filter_currency_option_in_global_secondary_currency( $option, $value ) {
 		$default_currency = $this->multi_currency->get_default_currency();
+		$currency_code    = $this->get_context_currency_code();
 
-		$db = debug_backtrace();
-		if (
-			isset( $db['8']['function'] ) && isset( $db['5']['function'] ) &&
-			$db['8']['function'] == 'calculate_shipping_for_package' && $db['5']['function'] == 'add_rate'
-			||
-			isset( $db['7']['function'] ) && isset( $db['4']['function'] ) &&
-			$db['7']['function'] == 'calculate_shipping_for_package' && $db['4']['function'] == 'add_rate'
-		) {
-			$currency_code = $default_currency;
-		} else {
-			$currency_code = $this->check_admin_order_currency_code();
-		}
-
-		if ( $currency_code !== $default_currency && isset( $this->multi_currency->currencies[ $currency_code ]['num_decimals'] ) ) {
-			$value = $this->multi_currency->currencies[ $currency_code ]['num_decimals'];
+		if ( $currency_code !== $default_currency ) {
+			$value = $this->get_currency_option( $currency_code, $option )->getOrElse( $value );
 		}
 
 		return $value;
 	}
 
-	public function filter_currency_position_option( $value ) {
-
-		$default_currency = $this->multi_currency->get_default_currency();
-		$currency_code    = $this->get_admin_order_currency_code();
-
-		if ( $currency_code !== $default_currency &&
-			 isset( $this->multi_currency->currencies[ $currency_code ]['position'] ) && wcml_get_woocommerce_currency_option() !== $currency_code &&
-			in_array(
-				$this->multi_currency->currencies[ $currency_code ]['position'],
-				[
-					'left',
-					'right',
-					'left_space',
-					'right_space',
-				]
-			)
-		) {
-			$value = $this->multi_currency->currencies[ $currency_code ]['position'];
-		}
-
-		return $value;
+	/**
+	 * @param string $currency
+	 * @param string $option
+	 *
+	 * @return Just|Nothing
+	 */
+	private function get_currency_option( $currency, $option ) {
+		return Maybe::fromNullable( $this->multi_currency->currencies[ $currency ][ $option ] ?? null );
 	}
 
 	public function filter_currency_num_decimals_in_cart( $cart ) {
 		$cart->dp = wc_get_price_decimals();
 	}
 
-	/*
-	 * Limitation: If the default currency is configured to display more decimals than the other currencies,
-	 * the prices in the secondary currencies would be approximated to the number of decimals that they have more.
-	*/
-	public function price_in_specific_currency( $return, $price, $args ) {
-
-		if ( isset( $args['currency'] ) && $this->multi_currency->get_client_currency() != $args['currency'] ) {
-			remove_filter( 'wc_price', [ $this, 'price_in_specific_currency' ], 10 );
-			$this->multi_currency->set_client_currency( $args['currency'] );
-			$return = wc_price( $price, $args );
-			add_filter( 'wc_price', [ $this, 'price_in_specific_currency' ], 10, 3 );
+	/**
+	 * @param array $args
+	 *
+	 * @return array
+	 */
+	public function filter_wc_price_args_on_order_admin_screen( $args ) {
+		if ( OrdersHelper::isOrderListAdminScreen() ) {
+			$args = $this->filter_wc_price_args( $args );
 		}
-
-		return $return;
-
+		return $args;
 	}
 
+	/**
+	 * @param array $args
+	 *
+	 * @return array
+	 */
 	public function filter_wc_price_args( $args ) {
+		$currency = Obj::prop( 'currency', $args );
 
-		if ( isset( $args['currency'] ) ) {
+		if ( $currency ) {
 
-			if ( isset( $this->multi_currency->currencies[ $args['currency'] ]['decimal_sep'] ) ) {
-				$args['decimal_separator'] = $this->multi_currency->currencies[ $args['currency'] ]['decimal_sep'];
+			foreach ( [
+				'decimal_sep'  => 'decimal_sep',
+				'thousand_sep' => 'thousand_sep',
+				'num_decimals' => 'decimals',
+			] as $wcmlOption => $wcOptions ) {
+				$filteredOption = $this->get_currency_option( $currency, $wcmlOption )->getOrElse( null );
+
+				if ( $filteredOption ) {
+					$args[ $wcOptions ] = $filteredOption;
+				}
 			}
 
-			if ( isset( $this->multi_currency->currencies[ $args['currency'] ]['thousand_sep'] ) ) {
-				$args['thousand_separator'] = $this->multi_currency->currencies[ $args['currency'] ]['thousand_sep'];
-			}
-
-			if ( isset( $this->multi_currency->currencies[ $args['currency'] ]['num_decimals'] ) ) {
-				$args['decimals'] = $this->multi_currency->currencies[ $args['currency'] ]['num_decimals'];
-			}
-
-			if ( isset( $this->multi_currency->currencies[ $args['currency'] ]['position'] ) ) {
-				$current_currency = $this->multi_currency->get_client_currency();
-				$this->multi_currency->set_client_currency( $args['currency'] );
-				$args['price_format'] = get_woocommerce_price_format();
-				$this->multi_currency->set_client_currency( $current_currency ); // restore.
+			if ( $this->get_currency_option( $currency, 'position' )->getOrElse( null ) ) {
+				$args['price_format'] = $this->get_price_format_in_currency( $currency );
 			}
 		}
 
 		return $args;
+	}
+
+	/**
+	 * @param string $currency
+	 *
+	 * @return string
+	 */
+	private function get_price_format_in_currency( $currency ) {
+		$useCurrentCurrencyPos = function( $value ) use ( $currency ) {
+			return $this->get_currency_option( $currency, 'position' )->getOrElse( $value );
+		};
+
+		return Hooks::callWithFilter( 'get_woocommerce_price_format', 'option_woocommerce_currency_pos', $useCurrentCurrencyPos );
 	}
 
 	/**

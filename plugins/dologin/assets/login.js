@@ -37,7 +37,7 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 			dataType: 'json',
 			success: function( res ) {
 				if ( res._res !== 'ok' ) {
-					$( '#dologin-process-msg' ).attr( 'class', 'dologin-err' ).html( res._msg );
+					$( '#dologin-process-msg' ).attr( 'class', 'dologin-danger' ).html( res._msg );
 					$( '#dologin-two_factor_code' ).attr( 'required', false );
 					$( '#dologin-dynamic_code' ).hide();
 				} else {
@@ -57,8 +57,8 @@ document.addEventListener( 'DOMContentLoaded', function() { jQuery( document ).r
 		} );
 	}
 
-	$('#loginform').submit( dologin_cb );
-	$('.woocommerce-form-login').submit( dologin_cb );
+	$('#loginform').on("submit", dologin_cb );
+	$('.woocommerce-form-login').on("submit", dologin_cb );
 	// $('.tml-login form[name="loginform"], .tml-login form[name="login"], #wpmem_login form, form#ihc_login_form').submit( dologin_cb );
 
 } ); } );

@@ -11,6 +11,7 @@ function wppb_username_handler( $output, $form_location, $field, $user_id, $fiel
 	$input_value = ( ( trim( $input_value ) == '' ) ? $field['default-value'] : $input_value );
 		
 	$input_value = ( isset( $request_data['username'] ) ? trim( $request_data['username'] ) : $input_value );
+	$input_value = apply_filters( 'wppb_form_username_field_value', $input_value, $field, $form_location );
 
 	if ( $form_location != 'back_end' ){
 		$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );
@@ -56,13 +57,16 @@ function wppb_check_username_value( $message, $field, $request_data, $form_locat
         }
 
         $wppb_generalSettings = get_option('wppb_general_settings');
-        if ( $wppb_generalSettings['emailConfirmation'] == 'yes'  ){
+        if ( isset($wppb_generalSettings['emailConfirmation']) && $wppb_generalSettings['emailConfirmation'] == 'yes'  ){
 
             if( is_multisite() && $request_data['username'] != preg_replace( '/\s+/', '', $request_data['username'] ) ){
                 return __( 'This username is invalid because it uses illegal characters.', 'profile-builder' ) .'<br/>'. __( 'Please enter a valid username.', 'profile-builder' );
             }
 
-            $userSignup = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM ".$wpdb->prefix."signups WHERE user_login = %s", $request_data['username'] ) );
+            // Only pending signup rows should reserve a username during Email Confirmation
+            // - activated rows can remain in the signups table after confirmation, so they must not block a new registration
+            // - this keeps the username reservation check aligned with the email reservation check, which also only considers pending signups
+            $userSignup = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM ".$wpdb->prefix."signups WHERE user_login = %s AND active = 0", $request_data['username'] ) );
             if ( !empty( $userSignup ) ){
                 return __( 'This username is already reserved to be used soon.', 'profile-builder') .'<br/>'. __( 'Please try a different one!', 'profile-builder' );
             }

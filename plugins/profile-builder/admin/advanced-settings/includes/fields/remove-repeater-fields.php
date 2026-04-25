@@ -1,5 +1,8 @@
 <?php
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 function wppb_toolbox_remove_repeater_from_admin() {
     remove_filter('wppb_admin_output_form_field_repeater', 'wppb_repeater_handler', 10);
 }

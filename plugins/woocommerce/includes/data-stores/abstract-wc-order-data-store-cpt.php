@@ -6,11 +6,16 @@
  */
 
 use Automattic\Jetpack\Constants;
+use Automattic\WooCommerce\Caches\OrderCache;
+use Automattic\WooCommerce\Enums\OrderStatus;
+use Automattic\WooCommerce\Proxies\LegacyProxy;
+use Automattic\WooCommerce\Utilities\OrderUtil;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable Squiz.Classes.ClassFileName.NoMatch, Squiz.Classes.ValidClassName.NotCamelCaps -- Backward compatibility.
 /**
  * Abstract Order Data Store: Stored in CPT.
  *
@@ -79,6 +84,13 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		}
 
 		$id = wp_insert_post(
+			/**
+			 * Filters the data for a new order before it is inserted into the database.
+			 *
+			 * @param array $data Array of data for the new order.
+			 *
+			 * @since 3.3.0
+			 */
 			apply_filters(
 				'woocommerce_new_order_data',
 				array(
@@ -114,7 +126,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	 * @param int $order_id The order id to check.
 	 * @return bool True if an order exists with the given name.
 	 */
-	public function order_exists( $order_id ) : bool {
+	public function order_exists( $order_id ): bool {
 		if ( ! $order_id ) {
 			return false;
 		}
@@ -134,7 +146,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		$order->set_defaults();
 		$post_object = get_post( $order->get_id() );
 		if ( ! $order->get_id() || ! $post_object || ! in_array( $post_object->post_type, wc_get_order_types(), true ) ) {
-			throw new Exception( __( 'Invalid order.', 'woocommerce' ) );
+			throw new Exception( esc_html__( 'Invalid order.', 'woocommerce' ) );
 		}
 
 		$this->set_order_props(
@@ -164,8 +176,8 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	/**
 	 * Set the properties of an object and log the first error found while doing so.
 	 *
-	 * @param $order WC_Order $order Order object.
-	 * @param array          $props The properties to set.
+	 * @param \WC_Order $order Order object.
+	 * @param array     $props The properties to set.
 	 */
 	private function set_order_props( &$order, array $props ) {
 		$errors = $order->set_props( $props );
@@ -175,7 +187,8 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		}
 
 		$order_id = $order->get_id();
-		$logger   = WC()->call_function( 'wc_get_logger' );
+		/** @var WC_Logger_Interface $logger */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort
+		$logger = WC()->call_function( 'wc_get_logger' );
 
 		foreach ( $errors->get_error_codes() as $error_code ) {
 			$property_name = $errors->get_error_data( $error_code )['property_name'] ?? '';
@@ -290,7 +303,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 				/**
 				 * Fires immediately after an order is deleted.
 				 *
-				 * @since
+				 * @since 2.7.0
 				 *
 				 * @param int $order_id ID of the order that has been deleted.
 				 */
@@ -310,13 +323,13 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 			}
 
 			wp_trash_post( $id );
-			$order->set_status( 'trash' );
+			$order->set_status( OrderStatus::TRASH );
 
 			if ( $do_filters ) {
 				/**
 				 * Fires immediately after an order is trashed.
 				 *
-				 * @since
+				 * @since 2.7.0
 				 *
 				 * @param int      $order_id ID of the order that has been trashed.
 				 */
@@ -344,17 +357,24 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		$order_status = $order->get_status( 'edit' );
 
 		if ( ! $order_status ) {
-			$order_status = apply_filters( 'woocommerce_default_order_status', 'pending' );
+			/**
+			 * Filters the default order status to use when creating a new order.
+			 *
+			 * @param string $order_status Default order status.
+			 *
+			 * @since 3.7.0
+			 */
+			$order_status = apply_filters( 'woocommerce_default_order_status', OrderStatus::PENDING );
 		}
 
 		$post_status    = $order_status;
 		$valid_statuses = get_post_stati();
 
 		// Add a wc- prefix to the status, but exclude some core statuses which should not be prefixed.
-		// @todo In the future this should only happen based on `wc_is_order_status`, but in order to
+		// In the future this should only happen based on `wc_is_order_status`, but in order to
 		// preserve back-compatibility this happens to all statuses except a select few. A doing_it_wrong
 		// Notice will be needed here, followed by future removal.
-		if ( ! in_array( $post_status, array( 'auto-draft', 'draft', 'trash' ), true ) && in_array( 'wc-' . $post_status, $valid_statuses, true ) ) {
+		if ( ! in_array( $post_status, array( OrderStatus::AUTO_DRAFT, OrderStatus::DRAFT, OrderStatus::TRASH ), true ) && in_array( 'wc-' . $post_status, $valid_statuses, true ) ) {
 			$post_status = 'wc-' . $post_status;
 		}
 
@@ -379,7 +399,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	protected function get_post_title() {
 		// @codingStandardsIgnoreStart
 		/* translators: %s: Order date */
-		return sprintf( __( 'Order &ndash; %s', 'woocommerce' ), (new DateTime('now'))->format( _x( 'M d, Y @ h:i A', 'Order date parsed by DateTime::format', 'woocommerce' ) ) );
+		return sprintf( __( 'Order &ndash; %s', 'woocommerce' ), ( new DateTime( 'now' ) )->format( _x( 'M d, Y @ h:i A', 'Order date parsed by DateTime::format', 'woocommerce' ) ) );
 		// @codingStandardsIgnoreEnd
 	}
 
@@ -404,18 +424,22 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	protected function read_order_data( &$order, $post_object ) {
 		$id = $order->get_id();
 
+		$meta_data = get_post_meta( $id );
+
+		$prices_include_tax = $meta_data['_prices_include_tax'][0] ?? '';
+
 		$this->set_order_props(
 			$order,
 			array(
-				'currency'           => get_post_meta( $id, '_order_currency', true ),
-				'discount_total'     => get_post_meta( $id, '_cart_discount', true ),
-				'discount_tax'       => get_post_meta( $id, '_cart_discount_tax', true ),
-				'shipping_total'     => get_post_meta( $id, '_order_shipping', true ),
-				'shipping_tax'       => get_post_meta( $id, '_order_shipping_tax', true ),
-				'cart_tax'           => get_post_meta( $id, '_order_tax', true ),
-				'total'              => get_post_meta( $id, '_order_total', true ),
-				'version'            => get_post_meta( $id, '_order_version', true ),
-				'prices_include_tax' => metadata_exists( 'post', $id, '_prices_include_tax' ) ? 'yes' === get_post_meta( $id, '_prices_include_tax', true ) : 'yes' === get_option( 'woocommerce_prices_include_tax' ),
+				'currency'           => $meta_data['_order_currency'][0] ?? '',
+				'discount_total'     => $meta_data['_cart_discount'][0] ?? '',
+				'discount_tax'       => $meta_data['_cart_discount_tax'][0] ?? '',
+				'shipping_total'     => $meta_data['_order_shipping'][0] ?? '',
+				'shipping_tax'       => $meta_data['_order_shipping_tax'][0] ?? '',
+				'cart_tax'           => $meta_data['_order_tax'][0] ?? '',
+				'total'              => $meta_data['_order_total'][0] ?? '',
+				'version'            => $meta_data['_order_version'][0] ?? '',
+				'prices_include_tax' => metadata_exists( 'post', $id, '_prices_include_tax' ) ? 'yes' === $prices_include_tax : 'yes' === get_option( 'woocommerce_prices_include_tax' ),
 			)
 		);
 
@@ -423,7 +447,7 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		foreach ( $order->get_extra_data_keys() as $key ) {
 			$function = 'set_' . $key;
 			if ( is_callable( array( $order, $function ) ) ) {
-				$order->{$function}( get_post_meta( $order->get_id(), '_' . $key, true ) );
+				$order->{$function}( $meta_data[ '_' . $key ][0] ?? '' );
 			}
 		}
 	}
@@ -465,6 +489,14 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 			}
 		}
 
+		/**
+		 * Action fired after updating order properties.
+		 *
+		 * @param WC_Abstract_Order $order Order object.
+		 * @param string[]          $updated_props Array of updated properties.
+		 *
+		 * @since 2.7.0
+		 */
 		do_action( 'woocommerce_order_object_updated_props', $order, $updated_props );
 	}
 
@@ -478,6 +510,10 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		clean_post_cache( $order->get_id() );
 		wc_delete_shop_order_transients( $order );
 		wp_cache_delete( 'order-items-' . $order->get_id(), 'orders' );
+		if ( OrderUtil::orders_cache_usage_is_enabled() ) {
+			$order_cache = wc_get_container()->get( OrderCache::class );
+			$order_cache->remove( $order->get_id() );
+		}
 	}
 
 	/**
@@ -489,6 +525,11 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	 */
 	public function read_items( $order, $type ) {
 		global $wpdb;
+
+		// When the order is not yet saved, we cannot get the items from DB. Trying to do so will risk reading items of different orders that were saved incorrectly.
+		if ( 0 === $order->get_id() ) {
+			return array();
+		}
 
 		// Get from cache if available.
 		$items = 0 < $order->get_id() ? wp_cache_get( 'order-items-' . $order->get_id(), 'orders' ) : false;
@@ -597,6 +638,117 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		}
 		$order_item_ids = wp_list_pluck( $order_items, 'order_item_id' );
 		update_meta_cache( 'order_item', $order_item_ids );
+
+		// Prime WC_Data meta cache (includes meta_id required by read_meta_data).
+		$id_placeholders     = implode( ', ', array_fill( 0, count( $order_item_ids ), '%d' ) );
+		$raw_meta_data_array = $wpdb->get_results(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $id_placeholders is generated above.
+				"SELECT order_item_id as object_id, meta_id, meta_key, meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id IN ({$id_placeholders}) ORDER BY meta_id",
+				...$order_item_ids
+			)
+		);
+
+		if ( ! empty( $raw_meta_data_array ) ) {
+			$raw_meta_data_collection = array();
+			foreach ( $raw_meta_data_array as $raw_meta_data ) {
+				if ( ! isset( $raw_meta_data_collection[ $raw_meta_data->object_id ] ) ) {
+					$raw_meta_data_collection[ $raw_meta_data->object_id ] = array();
+				}
+				$raw_meta_data_collection[ $raw_meta_data->object_id ][] = $raw_meta_data;
+			}
+			\WC_Order_Item::prime_raw_meta_data_cache( $raw_meta_data_collection, 'order-items' );
+		}
+	}
+
+	/**
+	 * Prime refund cache for a batch of orders.
+	 *
+	 * WC_Order::get_refunds() checks wp_cache before querying. By fetching
+	 * all refunds for the batch in a single query and populating the cache,
+	 * we eliminate one query per order.
+	 *
+	 * @param array $order_ids  Order IDs to prime cache for.
+	 * @param array $query_vars Query vars for the query.
+	 * @return void
+	 * @since 10.7.0
+	 */
+	protected function prime_refund_caches_for_orders( $order_ids, $query_vars ) {
+		if ( isset( $query_vars['fields'] ) && 'all' !== $query_vars['fields'] ) {
+			if ( is_array( $query_vars['fields'] ) && ! in_array( 'refunds', $query_vars['fields'], true ) ) {
+				return;
+			}
+		}
+
+		$cache_keys_mapping = array();
+		foreach ( $order_ids as $order_id ) {
+			$cache_keys_mapping[ $order_id ] = WC_Cache_Helper::get_cache_prefix( 'orders' ) . 'refunds' . $order_id;
+		}
+
+		$non_cached_ids = array();
+		$cache_values   = wc_cache_get_multiple( array_values( $cache_keys_mapping ), 'orders' );
+
+		if ( ! is_array( $cache_values ) ) {
+			$non_cached_ids = $order_ids;
+		} else {
+			foreach ( $order_ids as $order_id ) {
+				if ( false === $cache_values[ $cache_keys_mapping[ $order_id ] ] ) {
+					$non_cached_ids[] = $order_id;
+				}
+			}
+		}
+
+		if ( empty( $non_cached_ids ) ) {
+			return;
+		}
+
+		/**
+		 * Fetch all refunds for the given order IDs.
+		 *
+		 * @var WC_Order_Refund[] $refunds
+		 */
+		$refunds = wc_get_orders(
+			array(
+				'type'            => 'shop_order_refund',
+				'post_parent__in' => $non_cached_ids,
+				'limit'           => -1,
+			)
+		);
+
+		$order_refunds = array();
+		foreach ( $refunds as $refund ) {
+			if ( $refund instanceof \WC_Order_Refund ) {
+				$order_refunds[ $refund->get_parent_id() ][] = $refund;
+			}
+		}
+
+		foreach ( $non_cached_ids as $order_id ) {
+			$cached_refunds = isset( $order_refunds[ $order_id ] ) ? $order_refunds[ $order_id ] : array();
+			wp_cache_set( $cache_keys_mapping[ $order_id ], $cached_refunds, 'orders' );
+		}
+	}
+
+	/**
+	 * Prime the needs_processing transient cache for a batch of orders.
+	 *
+	 * WC_Order::needs_processing() calls get_transient() per order, which
+	 * triggers an individual wp_options query each time. By priming the
+	 * object cache for all transient option names in a single query, we
+	 * eliminate the N+1.
+	 *
+	 * @param array $order_ids  Order IDs to prime cache for.
+	 * @param array $query_vars Query vars for the query.
+	 * @return void
+	 * @since 10.7.0
+	 */
+	protected function prime_needs_processing_transients( $order_ids, $query_vars ) {
+		$option_names = array();
+		foreach ( $order_ids as $order_id ) {
+			$option_names[] = '_transient_wc_order_' . $order_id . '_needs_processing';
+			$option_names[] = '_transient_timeout_wc_order_' . $order_id . '_needs_processing';
+		}
+
+		wp_prime_option_caches( $option_names );
 	}
 
 	/**
@@ -607,13 +759,15 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	 */
 	public function delete_items( $order, $type = null ) {
 		global $wpdb;
+
 		if ( ! empty( $type ) ) {
-			$wpdb->query( $wpdb->prepare( "DELETE FROM itemmeta USING {$wpdb->prefix}woocommerce_order_itemmeta itemmeta INNER JOIN {$wpdb->prefix}woocommerce_order_items items WHERE itemmeta.order_item_id = items.order_item_id AND items.order_id = %d AND items.order_item_type = %s", $order->get_id(), $type ) );
+			$wpdb->query( $wpdb->prepare( "DELETE itemmeta FROM {$wpdb->prefix}woocommerce_order_itemmeta as itemmeta INNER JOIN {$wpdb->prefix}woocommerce_order_items as items WHERE itemmeta.order_item_id = items.order_item_id AND items.order_id = %d AND items.order_item_type = %s", $order->get_id(), $type ) );
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}woocommerce_order_items WHERE order_id = %d AND order_item_type = %s", $order->get_id(), $type ) );
 		} else {
-			$wpdb->query( $wpdb->prepare( "DELETE FROM itemmeta USING {$wpdb->prefix}woocommerce_order_itemmeta itemmeta INNER JOIN {$wpdb->prefix}woocommerce_order_items items WHERE itemmeta.order_item_id = items.order_item_id and items.order_id = %d", $order->get_id() ) );
+			$wpdb->query( $wpdb->prepare( "DELETE itemmeta FROM {$wpdb->prefix}woocommerce_order_itemmeta as itemmeta INNER JOIN {$wpdb->prefix}woocommerce_order_items as items WHERE itemmeta.order_item_id = items.order_item_id and items.order_id = %d", $order->get_id() ) );
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}woocommerce_order_items WHERE order_id = %d", $order->get_id() ) );
 		}
+
 		$this->clear_caches( $order );
 	}
 
@@ -706,7 +860,9 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 	 *
 	 * @param WC_Abstract_Order $order Order object.
 	 */
-	private function update_order_meta_from_object( $order ) {
+	protected function update_order_meta_from_object( $order ) {
+		global $wpdb;
+
 		if ( is_null( $order->get_meta() ) ) {
 			return;
 		}
@@ -715,15 +871,43 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 
 		foreach ( $order->get_meta_data() as $meta_data ) {
 			if ( isset( $existing_meta_data[ $meta_data->key ] ) ) {
-				if ( $existing_meta_data[ $meta_data->key ] === $meta_data->value ) {
+				// We don't know if the meta is single or array, so we assume it to be an array.
+				$meta_value = is_array( $meta_data->value ) ? $meta_data->value : array( $meta_data->value );
+
+				if ( $existing_meta_data[ $meta_data->key ] === $meta_value ) {
 					unset( $existing_meta_data[ $meta_data->key ] );
 					continue;
 				}
 
-				unset( $existing_meta_data[ $meta_data->key ] );
-				delete_post_meta( $order->get_id(), $meta_data->key );
+				if ( is_array( $existing_meta_data[ $meta_data->key ] ) ) {
+					$value_index = array_search( maybe_serialize( $meta_data->value ), $existing_meta_data[ $meta_data->key ], true );
+					if ( false !== $value_index ) {
+						unset( $existing_meta_data[ $meta_data->key ][ $value_index ] );
+						if ( 0 === count( $existing_meta_data[ $meta_data->key ] ) ) {
+							unset( $existing_meta_data[ $meta_data->key ] );
+						}
+						continue;
+					}
+				}
 			}
-			add_post_meta( $order->get_id(), $meta_data->key, $meta_data->value, false );
+			if ( is_object( $meta_data->value ) && '__PHP_Incomplete_Class' === get_class( $meta_data->value ) ) {
+				$meta_value = maybe_serialize( $meta_data->value );
+				$result     = $wpdb->insert(
+					_get_meta_table( 'post' ),
+					array(
+						'post_id'    => $order->get_id(),
+						'meta_key'   => $meta_data->key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+						'meta_value' => $meta_value, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+					),
+					array( '%d', '%s', '%s' )
+				);
+				wp_cache_delete( $order->get_id(), 'post_meta' );
+				/** @var WC_Logger_Interface $logger */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort
+				$logger = wc_get_container()->get( LegacyProxy::class )->call_function( 'wc_get_logger' );
+				$logger->warning( sprintf( 'encountered an order meta value of type __PHP_Incomplete_Class during `update_order_meta_from_object` in order with ID %d: "%s"', $order->get_id(), var_export( $meta_value, true ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+			} else {
+				add_post_meta( $order->get_id(), $meta_data->key, $meta_data->value, false );
+			}
 		}
 
 		// Find remaining meta that was deleted from the order but still present in the associated post.
@@ -735,9 +919,236 @@ abstract class Abstract_WC_Order_Data_Store_CPT extends WC_Data_Store_WP impleme
 		);
 
 		foreach ( $keys_to_delete as $meta_key ) {
-			delete_post_meta( $order->get_id(), $meta_key );
+			if ( isset( $existing_meta_data[ $meta_key ] ) ) {
+				foreach ( $existing_meta_data[ $meta_key ] as $meta_value ) {
+					delete_post_meta( $order->get_id(), $meta_key, maybe_unserialize( $meta_value ) );
+				}
+			}
 		}
 
 		$this->update_post_meta( $order );
+	}
+
+	/**
+	 * Returns a prepared SQL JOIN clause for finding refund orders belonging to a given parent order.
+	 *
+	 * The clause aliases the refund table as `refunds`. Subclasses should override this
+	 * to use a different table (e.g. the HPOS orders table).
+	 *
+	 * @since 10.7.0
+	 * @param int $order_id Parent order ID.
+	 * @return string Prepared SQL JOIN fragment.
+	 */
+	protected function get_refund_orders_join_clause( int $order_id ): string {
+		global $wpdb;
+		return $wpdb->prepare( '%i AS refunds ON ( refunds.post_type = %s AND refunds.post_parent = %d )', $wpdb->posts, 'shop_order_refund', $order_id );
+	}
+
+	/**
+	 * Returns a prepared SQL JOIN clause for finding refund orders belonging to multiple parent orders.
+	 *
+	 * The clause aliases the refund table as `refunds`. Subclasses should override this
+	 * to use a different table (e.g. the HPOS orders table).
+	 *
+	 * @since 10.7.0
+	 * @param array $order_ids List of order IDs.
+	 * @return string Prepared SQL JOIN fragment.
+	 */
+	protected function get_refund_orders_batch_join_clause( array $order_ids ): string {
+		global $wpdb;
+		$id_list = implode( ', ', array_map( 'absint', $order_ids ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $id_list is sanitized via absint above.
+		return $wpdb->prepare( "%i AS refunds ON ( refunds.post_type = %s AND refunds.post_parent IN ( $id_list ) )", $wpdb->posts, 'shop_order_refund' );
+	}
+
+	/**
+	 * Returns the column name on the refund table alias (`refunds`) that holds the parent order ID.
+	 *
+	 * @since 10.7.0
+	 * @return string Column reference, e.g. 'refunds.post_parent'.
+	 */
+	protected function get_refund_parent_column(): string {
+		return 'refunds.post_parent';
+	}
+
+	/**
+	 * Query total refunded amounts per order in a batch. Returns an associative array
+	 * of order_id => total (positive float).
+	 *
+	 * Subclasses should override this when the refund total is stored differently
+	 * (e.g. HPOS stores it directly in the orders table rather than postmeta).
+	 *
+	 * @since 10.7.0
+	 * @param array $order_ids List of order IDs.
+	 * @return array<int, float> Map of order_id => refund total.
+	 */
+	protected function get_batch_refund_totals( array $order_ids ): array {
+		global $wpdb;
+
+		$id_list = implode( ', ', array_map( 'absint', $order_ids ) );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $id_list is sanitized via absint above.
+		$refund_totals = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT posts.post_parent AS order_id, SUM( postmeta.meta_value ) AS total
+				FROM %i AS postmeta
+				INNER JOIN %i AS posts ON ( posts.post_type = 'shop_order_refund' AND posts.post_parent IN ( $id_list ) )
+				WHERE postmeta.meta_key = '_refund_amount'
+				AND postmeta.post_id = posts.ID
+				GROUP BY posts.post_parent",
+				$wpdb->postmeta,
+				$wpdb->posts
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$totals_by_order = array();
+		foreach ( $refund_totals as $row ) {
+			$totals_by_order[ $row->order_id ] = floatval( $row->total );
+		}
+
+		return $totals_by_order;
+	}
+
+	/**
+	 * Get the summed refund item meta value for a given order, item type, and meta keys.
+	 *
+	 * @since 10.7.0
+	 * @param WC_Order $order     Order object.
+	 * @param string   $item_type Order item type (e.g. 'tax', 'shipping').
+	 * @param array    $meta_keys Meta keys to sum.
+	 * @return float Absolute total.
+	 */
+	protected function get_refunded_item_meta_total( $order, string $item_type, array $meta_keys ): float {
+		global $wpdb;
+
+		$refund_join      = $this->get_refund_orders_join_clause( $order->get_id() );
+		$meta_placeholder = implode( ', ', array_fill( 0, count( $meta_keys ), '%s' ) );
+
+		$total = $wpdb->get_var(
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $refund_join is already prepared.
+			// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $meta_keys is splatted.
+			$wpdb->prepare(
+				"SELECT SUM( order_itemmeta.meta_value )
+				FROM %i AS order_itemmeta
+				INNER JOIN $refund_join
+				INNER JOIN %i AS order_items ON ( order_items.order_id = refunds.id AND order_items.order_item_type = %s )
+				WHERE order_itemmeta.order_item_id = order_items.order_item_id
+				AND order_itemmeta.meta_key IN ( $meta_placeholder )",
+				$wpdb->prefix . 'woocommerce_order_itemmeta',
+				$wpdb->prefix . 'woocommerce_order_items',
+				$item_type,
+				...$meta_keys,
+			)
+			// phpcs:enable
+		) ?? 0;
+
+		return abs( $total );
+	}
+
+	/**
+	 * Get the total tax refunded.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return float
+	 */
+	public function get_total_tax_refunded( $order ) {
+		return $this->get_refunded_item_meta_total( $order, 'tax', array( 'tax_amount', 'shipping_tax_amount' ) );
+	}
+
+	/**
+	 * Get the total shipping tax refunded.
+	 *
+	 * @param WC_Order $order Order object.
+	 *
+	 * @since 10.2.0
+	 * @return float
+	 */
+	public function get_total_shipping_tax_refunded( $order ) {
+		return $this->get_refunded_item_meta_total( $order, 'tax', array( 'shipping_tax_amount' ) );
+	}
+
+	/**
+	 * Get the total shipping refunded.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return float
+	 */
+	public function get_total_shipping_refunded( $order ) {
+		return $this->get_refunded_item_meta_total( $order, 'shipping', array( 'cost' ) );
+	}
+
+	/**
+	 * Prime the refund total and refund tax total caches for a batch of orders.
+	 *
+	 * @since 10.7.0
+	 * @param array $order_ids  Order IDs to prime cache for.
+	 * @param array $query_vars Query vars for the query.
+	 * @return void
+	 */
+	protected function prime_refund_total_caches_for_orders( $order_ids, $query_vars ): void {
+		global $wpdb;
+
+		$cache_prefix = \WC_Cache_Helper::get_cache_prefix( 'orders' );
+
+		// Find which orders need priming (check both total_refunded and total_tax_refunded).
+		$total_keys     = array();
+		$tax_keys       = array();
+		$non_cached_ids = array();
+		foreach ( $order_ids as $order_id ) {
+			$total_keys[ $order_id ] = $cache_prefix . 'total_refunded' . $order_id;
+			$tax_keys[ $order_id ]   = $cache_prefix . 'total_tax_refunded' . $order_id;
+		}
+
+		$all_keys     = array_merge( array_values( $total_keys ), array_values( $tax_keys ) );
+		$cache_values = wc_cache_get_multiple( $all_keys, 'orders' );
+
+		if ( ! is_array( $cache_values ) ) {
+			$non_cached_ids = $order_ids;
+		} else {
+			foreach ( $order_ids as $order_id ) {
+				if ( false === $cache_values[ $total_keys[ $order_id ] ] || false === $cache_values[ $tax_keys[ $order_id ] ] ) {
+					$non_cached_ids[] = $order_id;
+				}
+			}
+		}
+
+		if ( empty( $non_cached_ids ) ) {
+			return;
+		}
+
+		// Batch query: total refunded per order.
+		$totals_by_order = $this->get_batch_refund_totals( $non_cached_ids );
+		foreach ( $non_cached_ids as $order_id ) {
+			wp_cache_set( $total_keys[ $order_id ], $totals_by_order[ $order_id ] ?? 0.0, 'orders' );
+		}
+
+		// Batch query: total tax refunded per order.
+		$refund_join = $this->get_refund_orders_batch_join_clause( $non_cached_ids );
+		$parent_col  = $this->get_refund_parent_column();
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $refund_join is already prepared, $parent_col is hardcoded.
+		$tax_totals = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT $parent_col AS order_id, SUM( order_itemmeta.meta_value ) AS total
+				FROM %i AS order_itemmeta
+				INNER JOIN $refund_join
+				INNER JOIN %i AS order_items ON ( order_items.order_id = refunds.id AND order_items.order_item_type = 'tax' )
+				WHERE order_itemmeta.order_item_id = order_items.order_item_id
+				AND order_itemmeta.meta_key IN ('tax_amount', 'shipping_tax_amount')
+				GROUP BY $parent_col",
+				$wpdb->prefix . 'woocommerce_order_itemmeta',
+				$wpdb->prefix . 'woocommerce_order_items'
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$tax_by_order = array();
+		foreach ( $tax_totals as $row ) {
+			$tax_by_order[ $row->order_id ] = abs( floatval( $row->total ) );
+		}
+		foreach ( $non_cached_ids as $order_id ) {
+			wp_cache_set( $tax_keys[ $order_id ], $tax_by_order[ $order_id ] ?? 0.0, 'orders' );
+		}
 	}
 }

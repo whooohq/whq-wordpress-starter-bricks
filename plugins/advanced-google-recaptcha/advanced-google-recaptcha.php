@@ -3,16 +3,16 @@
   Plugin Name: Advanced Google reCAPTCHA
   Plugin URI: https://getwpcaptcha.com/
   Description: Advanced Google reCAPTCHA will safeguard your WordPress site from spam comments and brute force attacks. With this plugin, you can easily add Google reCAPTCHA to WordPress comment form, login form and other forms.
-  Version: 1.16
+  Version: 1.34
   Author: WebFactory Ltd
   Author URI: https://www.webfactoryltd.com/
   License: GNU General Public License v3.0
   Text Domain: advanced-google-recaptcha
-  Requires at least: 4.0
-  Tested up to: 6.4
+  Requires at least: 4.9
+  Tested up to: 7.0
   Requires PHP: 5.2
 
-  Copyright 2023 - 2024  WebFactory Ltd  (email: support@webfactoryltd.com)
+  Copyright 2023 - 2026  WebFactory Ltd  (email: support@webfactoryltd.com)
   Copyright 2021 - 2023  WP Concern
 
   This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 
 // include only file
 if (!defined('ABSPATH')) {
-    wp_die(__('Do not open this file directly.', 'advanced-google-recaptcha'));
+    wp_die(esc_html__('Do not open this file directly.', 'advanced-google-recaptcha'));
 }
 
 define('WPCAPTCHA_PLUGIN_FILE', __FILE__);
@@ -106,74 +106,79 @@ class WPCaptcha
             // admin actions
             add_action('admin_action_wpcaptcha_install_template', array('WPCaptcha_Functions', 'install_template'));
             add_action('admin_action_wpcaptcha_install_wp301', array('WPCaptcha_Functions', 'install_wp301'));
-            
+
             // AJAX endpoints
             add_action('wp_ajax_wpcaptcha_run_tool', array('WPCaptcha_AJAX', 'ajax_run_tool'));
-        } else {
+        }  else {
             // Handle login captcha
             if($options['captcha_show_login']){
-                add_filter( 'login_form', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_action( 'woocommerce_login_form', array('WPCaptcha_Functions', 'captcha_fields'));
+                add_filter( 'login_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_filter( 'login_form_middle', array('WPCaptcha_Functions', 'captcha_fields'));
+                add_filter( 'login_form_middle', array('WPCaptcha_Functions', 'login_scripts'));
+                add_action( 'woocommerce_login_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
                 add_action( 'woocommerce_login_form', array('WPCaptcha_Functions', 'login_form_fields'));
-                add_action( 'woocommerce_login_form', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_action( 'woocommerce_login_form', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_filter( 'edd_login_fields_after', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_filter( 'edd_login_fields_after', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_filter( 'edd_login_fields_after', array('WPCaptcha_Functions', 'login_scripts_print'));
+                add_action('login_enqueue_scripts', array('WPCaptcha_Functions', 'login_enqueue_scripts' ));
             }
 
             // Handle registration captcha
             if($options['captcha_show_wp_registration']){
                 add_filter( 'registration_errors', array('WPCaptcha_Functions', 'handle_captcha_wp_registration'), 10, 3 );
-                add_filter( 'register_form', array('WPCaptcha_Functions', 'captcha_fields'));
+                add_action( 'register_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
             }
 
             // Handle lost password captcha
             if($options['captcha_show_wp_lost_password']){
-                add_filter( 'lostpassword_form', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_filter( 'resetpass_form', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_action( 'woocommerce_lostpassword_form', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_action( 'woocommerce_resetpassword_form', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_action( 'woocommerce_lostpassword_form', array('WPCaptcha_Functions', 'login_print_scripts'));
-                add_action( 'woocommerce_resetpassword_form', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_action( 'lostpassword_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'resetpass_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'woocommerce_lostpassword_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'woocommerce_resetpassword_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'woocommerce_lostpassword_form', array('WPCaptcha_Functions', 'login_scripts_print'));
+                add_action( 'woocommerce_resetpassword_form', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_action( 'lostpassword_post', array('WPCaptcha_Functions', 'process_lost_password_form'), 10, 1 );
                 add_action( 'validate_password_reset', array('WPCaptcha_Functions', 'process_lost_password_form'), 10, 2 );
             }
 
             // Handle comment form captcha
             if($options['captcha_show_wp_comment']){
-                add_filter( 'comment_form_after_fields', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_filter( 'comment_form_after_fields', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_action( 'comment_form_after_fields', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'comment_form_after_fields', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_filter( 'preprocess_comment', array('WPCaptcha_Functions', 'process_comment_form'), 10, 1 );
             }
 
             // Handle woocommerce registration
             if($options['captcha_show_woo_registration']){
-                add_filter( 'woocommerce_register_form', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_filter( 'woocommerce_register_form', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_action( 'woocommerce_register_form', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'woocommerce_register_form', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_filter( 'woocommerce_process_registration_errors', array('WPCaptcha_Functions', 'check_woo_register_form_validation' ) );
             }
 
             // Handle woocommerce checkout
             if($options['captcha_show_woo_checkout']){
-                add_action( 'woocommerce_review_order_before_submit', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_action( 'woocommerce_review_order_before_submit', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_action( 'woocommerce_review_order_before_submit', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'woocommerce_review_order_before_submit', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_action( 'woocommerce_checkout_process', array('WPCaptcha_Functions', 'check_woo_checkout_form'));
+                add_action( 'woocommerce_pay_order_before_submit', array('WPCaptcha_Functions', 'login_scripts_print'), 10);
+                add_action( 'woocommerce_pay_order_before_submit', array('WPCaptcha_Functions', 'captcha_fields_print'), 11);
+                add_action( 'woocommerce_before_pay_action', array('WPCaptcha_Functions', 'check_woo_order_pay'));
             }
 
             // Handle Easy Digital Downloads registration
             if($options['captcha_show_edd_registration']){
-                add_filter( 'edd_register_form_fields_before_submit', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_filter( 'edd_register_form_fields_before_submit', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_filter( 'edd_register_form_fields_before_submit', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_filter( 'edd_register_form_fields_before_submit', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_action( 'edd_process_register_form', array('WPCaptcha_Functions', 'check_edd_register_form'));
             }
 
             // Handle BuddyPress registration
             if($options['captcha_show_bp_registration']){
-                add_filter( 'bp_after_signup_profile_fields', array('WPCaptcha_Functions', 'captcha_fields'));
-                add_filter( 'bp_after_signup_profile_fields', array('WPCaptcha_Functions', 'login_print_scripts'));
+                add_action( 'bp_after_signup_profile_fields', array('WPCaptcha_Functions', 'captcha_fields_print'));
+                add_action( 'bp_after_signup_profile_fields', array('WPCaptcha_Functions', 'login_scripts_print'));
                 add_action( 'bp_signup_validate', array('WPCaptcha_Functions', 'process_buddypress_signup_form'));
             }
 
-            add_action('login_enqueue_scripts', array('WPCaptcha_Functions', 'login_enqueue_scripts' ));
             add_action('login_head', array('WPCaptcha_Functions', 'login_head' ), 9999);
 
             remove_filter('authenticate', 'wp_authenticate_username_password', 9999, 3);
@@ -181,6 +186,7 @@ class WPCaptcha
 
             if($options['login_protection']){
                 add_action('login_form', array('WPCaptcha_Functions', 'login_form_fields'));
+                add_filter('login_form_bottom', array('WPCaptcha_Functions', 'login_form_fields'));
                 add_action('wp_login_failed', array('WPCaptcha_Functions', 'loginFailed' ), 10, 2);
                 add_filter('login_errors', array('WPCaptcha_Functions', 'login_error_message' ));
             }

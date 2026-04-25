@@ -7,10 +7,10 @@ use WC_REST_Exception;
 class Generic extends WC_REST_Exception {
 
 	/**
-	 * @param string $text
+	 * @param string $message
 	 */
-	public function __construct( $text ) {
-		parent::__construct( 422, $text, 422 );
+	public function __construct( $message ) {
+		parent::__construct( "422", $message, 422 );
 	}
 
 }

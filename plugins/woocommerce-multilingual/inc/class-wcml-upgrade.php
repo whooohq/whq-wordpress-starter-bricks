@@ -5,6 +5,9 @@ use Automattic\WooCommerce\Internal\ProductAttributesLookup\DataRegenerator;
 use Automattic\WooCommerce\Internal\ProductAttributesLookup\LookupDataStore;
 use WCML\Attributes\LookupTableFactory;
 use WCML\Utilities\DB;
+use WCML\Utilities\WCTaxonomies;
+use function WCML\functions\getSitePress;
+use function WCML\functions\isStandAlone;
 
 class WCML_Upgrade {
 
@@ -43,6 +46,10 @@ class WCML_Upgrade {
 		'4.11.0',
 		'4.12.0',
 		'5.0.0',
+		'5.3.0',
+		'5.4.1',
+		'5.4.4',
+		'5.5.2',
 	];
 
 	public function __construct() {
@@ -62,9 +69,9 @@ class WCML_Upgrade {
 			$wcml_settings['notifications'][ $n ] =
 				[
 					'show' => 1,
-					'text' => __( 'Looks like you are upgrading from a previous version of WooCommerce Multilingual & Multicurrency. Would you like to automatically create translated variations and images?', 'woocommerce-multilingual' ) .
+					'text' => __( 'Looks like you are upgrading from a previous version of WPML Multilingual & Multicurrency for WooCommerce. Would you like to automatically create translated variations and images?', 'woocommerce-multilingual' ) .
 								'<br /><strong>' .
-								' <a href="' . admin_url( 'admin.php?page=wpml-wcml&tab=troubleshooting' ) . '">' . __( 'Yes, go to the troubleshooting page', 'woocommerce-multilingual' ) . '</a> |' .
+								' <a href="' . \WCML\Utilities\AdminUrl::getTroubleshootingTab() . '">' . __( 'Yes, go to the troubleshooting page', 'woocommerce-multilingual' ) . '</a> |' .
 								' <a href="#" onclick="jQuery.ajax({type:\'POST\',url: ajaxurl,data:\'action=wcml_hide_notice&notice=' . $n . '\',success:function(){jQuery(\'#' . $n . '\').fadeOut()}});return false;">' . __( 'No - dismiss', 'woocommerce-multilingual' ) . '</a>' .
 								'</strong>',
 				];
@@ -78,13 +85,13 @@ class WCML_Upgrade {
 			foreach ( $wcml_settings['notifications'] as $k => $notification ) {
 
 				// Exceptions.
-				if ( isset( $_GET['tab'] ) && 'troubleshooting' === $_GET['tab'] && 'varimages' === $k ) {
+				if ( isset( $_GET['tab'] ) && \WCML\Utilities\AdminUrl::TAB_TROUBLESHOOTING === $_GET['tab'] && 'varimages' === $k ) {
 					continue;
 				}
 
 				if ( $notification['show'] ) {
 					?>
-					<div id="<?php echo $k; ?>" class="updated">
+					<div id="<?php echo esc_attr( $k ); ?>" class="updated">
 						<p><?php echo $notification['text']; ?></p>
 					</div>
 					<?php
@@ -202,16 +209,10 @@ class WCML_Upgrade {
 		// Multi-currency migration.
 		if ( 'yes' === $wcml_settings['enable_multi_currency'] && 2 === (int) $wcml_settings['currency_converting_option'] ) {
 
-			// Get currencies exchange rates.
-			$results = $wpdb->get_results( "SELECT code, value FROM {$wpdb->prefix}icl_currencies" );
-			foreach ( $results as $row ) {
-				$exchange_rates[ $row->code ] = $row->value;
-			}
-
 			// Get languages currencies map.
 			$results = $wpdb->get_results( "SELECT l.language_code, c.code FROM {$wpdb->prefix}icl_languages_currencies l JOIN {$wpdb->prefix}icl_currencies c ON l.currency_id = c.id" );
 			foreach ( $results as $row ) {
-				$language_currencies[ $row->language_code ] = $row->code;
+				 $language_currencies[ $row->language_code ] = $row->code;
 			}
 
 			$results = $wpdb->get_results(
@@ -302,7 +303,6 @@ class WCML_Upgrade {
 	}
 
 	public function upgrade_3_5() {
-		global $wpdb;
 		$wcml_settings = get_option( '_wcml_settings' );
 
 		$wcml_settings['products_sync_order'] = 1;
@@ -381,15 +381,16 @@ class WCML_Upgrade {
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE {$wpdb->prefix}icl_strings
-                                  SET context = 'WooCommerce Endpoints', name = %s
+                                  SET context = %s, name = %s
                                   WHERE context = 'WordPress' AND name = %s",
+					WCML_Url_Translation::WC_STRING_CONTEXT,
 					$endpoint_key,
 					'Endpoint slug: ' . $endpoint_key
 				)
 			);
 
 			// Update domain_name_context_md5 value.
-			$string_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}icl_strings WHERE context = 'WooCommerce Endpoints' AND name = %s", $endpoint_key ) );
+			$string_id = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}icl_strings WHERE context = %s AND name = %s", WCML_Url_Translation::WC_STRING_CONTEXT, $endpoint_key ) );
 
 			if ( $string_id ) {
 				$wpdb->query(
@@ -397,7 +398,7 @@ class WCML_Upgrade {
 						"UPDATE {$wpdb->prefix}icl_strings
                               SET domain_name_context_md5 = %s
                               WHERE id = %d",
-						md5( $endpoint_key, 'WooCommerce Endpoints' ),
+						md5( $endpoint_key, WCML_Url_Translation::WC_STRING_CONTEXT ),
 						$string_id
 					)
 				);
@@ -476,9 +477,9 @@ class WCML_Upgrade {
 		if ( isset( $wcml_settings['attributes_settings'] ) ) {
 			$attributes_settings = $wcml_settings['attributes_settings'];
 			foreach ( $attributes_settings as $name => $value ) {
-				if ( substr( $name, 0, 3 ) != 'pa_' ) {
+				if ( ! WCTaxonomies::isProductAttribute( $name ) ) {
 					unset( $wcml_settings['attributes_settings'] [ $name ] );
-					$wcml_settings['attributes_settings'] [ 'pa_' . $name ] = $value;
+					$wcml_settings['attributes_settings'] [ WCTaxonomies::TAXONOMY_PREFIX_ATTRIBUTE . $name ] = $value;
 				}
 			}
 		}
@@ -589,7 +590,7 @@ class WCML_Upgrade {
 
 			$wcml_settings['currency_switchers']['product'] = [
 				'switcher_style' => $switcher_style,
-				'template'       => isset( $wcml_settings['wcml_curr_template'] ) ? $wcml_settings['wcml_curr_template'] : '',
+				'template'       => $wcml_settings['wcml_curr_template'] ?? '',
 				'widget_title'   => '',
 				'color_scheme'   => [
 					'font_current_normal'       => '',
@@ -639,7 +640,7 @@ class WCML_Upgrade {
 	private function upgrade_4_2_10() {
 		// #wcml-2307
 		global $wpdb;
-
+		/* @phpstan-ignore booleanAnd.rightAlwaysTrue */
 		if ( defined( 'WC_BOOKINGS_VERSION' ) && version_compare( WC_BOOKINGS_VERSION, '1.10.9', '>=' ) ) {
 			$results = $wpdb->get_results(
 				"
@@ -690,7 +691,7 @@ class WCML_Upgrade {
 			$announcement_link  = '<a href="' . $announcement_url . '" target="_blank">' . __( 'important change about this service', 'woocommerce-multilingual' ) . '</a>';
 			$fixer_api_key_link = '<a href="' . $api_key_url . '" target="_blank">' . __( 'Fixer.io API key', 'woocommerce-multilingual' ) . '</a>';
 			$fixerio_name       = '<strong>Fixer.io</strong>';
-			$mc_settings_link   = '<a href="' . admin_url( 'admin.php?page=wpml-wcml&tab=multi-currency' ) . '">' . __( 'multicurrency settings page', 'woocommerce-multilingual' ) . '</a>';
+			$mc_settings_link   = '<a href="' . \WCML\Utilities\AdminUrl::getMultiCurrencyTab() . '">' . __( 'multicurrency settings page', 'woocommerce-multilingual' ) . '</a>';
 
 			// translators: 1: Fixer.io, 2: Announcement link.
 			$message = sprintf( __( 'Your site uses %1$s to automatically calculate prices in the secondary currency. There is an %2$s effective June 1st, 2018.', 'woocommerce-multilingual' ), $fixerio_name, $announcement_link );
@@ -858,6 +859,10 @@ class WCML_Upgrade {
 	}
 
 	private function upgrade_5_0_0() {
+		delete_transient( WCML_Payment_Gateway_PayPal_V2::BEARER_TOKEN_TRANSIENT );
+	}
+
+	private function upgrade_5_3_0() {
 		if (
 			LookupTableFactory::hasFeature() &&
 			! wc_get_container()->get( LookupDataStore::class )->regeneration_is_in_progress()
@@ -865,7 +870,67 @@ class WCML_Upgrade {
 			wc_get_container()->get( DataRegenerator::class )->initiate_regeneration();
 		}
 
-		delete_transient( WCML_Payment_Gateway_PayPal_V2::BEARER_TOKEN_TRANSIENT );
+		$adminNotices = $this->get_wpml_admin_notices();
+
+		if ( $adminNotices ) {
+			$adminNotices->remove_notice( 'wcml-admin-notices', 'hpos-sync-disabled' );
+		}
 	}
 
+	/**
+	 * @return WPML_Notices|null
+	 */
+	private function get_wpml_admin_notices() {
+		if ( function_exists( 'wpml_get_admin_notices' ) ) {
+			return wpml_get_admin_notices();
+		} elseif ( function_exists( 'wcml_wpml_get_admin_notices' ) ) { // Case Standalone.
+			return wcml_wpml_get_admin_notices();
+		}
+
+		return null;
+	}
+
+	private function upgrade_5_4_1() {
+		$this->fixture_5_4_1_all_products_screen_set_languages_column_visible();
+	}
+
+	private function fixture_5_4_1_all_products_screen_set_languages_column_visible() {
+		if ( isStandAlone() ) {
+			return;
+		}
+
+		$hasTooManyLanguages = count( (array) getSitePress()->get_active_languages() ) > 4;
+
+		if ( $hasTooManyLanguages ) {
+			return;
+		}
+
+		$args = [
+			'capability__in' => [ 'edit_products' ],
+		];
+
+		$users = get_users( $args );
+
+		foreach ( $users as $user ) {
+			$hiddenColumnsList = get_user_meta( $user->ID, \WCML\API\VendorAddon\Hooks::COLUMN_USER_OPTION, true );
+
+			if ( is_array( $hiddenColumnsList ) ) {
+				$columnKeyToRemove = array_search( 'icl_translations', $hiddenColumnsList, true );
+
+				if ( false !== $columnKeyToRemove ) {
+					unset( $hiddenColumnsList[ $columnKeyToRemove ] );
+
+					update_user_meta( $user->ID, \WCML\API\VendorAddon\Hooks::COLUMN_USER_OPTION, $hiddenColumnsList );
+				}
+			}
+		}
+	}
+
+	private function upgrade_5_4_4() {
+		\WCML_Capabilities::set_up_capabilities();
+	}
+
+	private function upgrade_5_5_2() {
+		delete_option( 'wcml_currency_switcher_template_objects' );
+	}
 }

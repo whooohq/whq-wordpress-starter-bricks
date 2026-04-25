@@ -172,7 +172,7 @@ class UpdraftCentral_Comments_Commands extends UpdraftCentral_Commands {
 			$network_sites = get_sites();
 		} else {
 			if (function_exists('wp_get_sites')) {
-				$network_sites = wp_get_sites();
+				$network_sites = wp_get_sites();// phpcs:ignore WordPress.WP.DeprecatedFunctions.wp_get_sitesFound -- This function was only intended for backward compatibility with versions below 4.6.
 			}
 		}
 		
@@ -347,16 +347,16 @@ class UpdraftCentral_Comments_Commands extends UpdraftCentral_Commands {
 	public function get_comment_filters() {
 		// Options for comment_types field
 		$comment_types = apply_filters('admin_comment_types_dropdown', array(
-			'comment' => __('Comments'),
-			'pings' => __('Pings'),
+			'comment' => __('Comments'),// phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- The string exists within the WordPress core.
+			'pings' => __('Pings'),// phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- The string exists within the WordPress core.
 		));
 				
 		// Options for comment_status field
 		$comment_statuses = array(
-			'approve' => __('Approve'),
-			'hold' => __('Hold or Unapprove'),
-			'trash' => __('Trash'),
-			'spam' => __('Spam'),
+			'approve' => __('Approve'),// phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- The string exists within the WordPress core.
+			'hold' => __('Hold or Unapprove', 'updraftplus'),
+			'trash' => __('Trash', 'updraftplus'),
+			'spam' => __('Spam', 'updraftplus'),
 		);
 		
 		// Pull sites options if available.
@@ -641,7 +641,7 @@ class UpdraftCentral_Comments_Commands extends UpdraftCentral_Commands {
 	 * The edit_comment function saves new information for the
 	 * currently selected comment.
 	 *
-	 * @param  array $params Specific params for editing a coment
+	 * @param  array $params Specific params for editing a comment
 	 * @return array
 	 */
 	public function edit_comment($params) {
@@ -721,7 +721,7 @@ class UpdraftCentral_Comments_Commands extends UpdraftCentral_Commands {
 	 * - approve comment
 	 * - unapprove comment
 	 * - set comment as spam
-	 * - move commment to trash
+	 * - move comment to trash
 	 * - delete comment permanently
 	 * - unset comment as spam
 	 * - restore comment

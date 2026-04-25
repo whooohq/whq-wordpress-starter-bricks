@@ -5,6 +5,9 @@
  * @package query-monitor
  */
 
+/**
+ * @phpstan-import-type QueryRow from QM_Data_DB_Queries
+ */
 class QM_Output_Raw_DB_Queries extends QM_Output_Raw {
 
 	/**
@@ -28,17 +31,33 @@ class QM_Output_Raw_DB_Queries extends QM_Output_Raw {
 
 	/**
 	 * @return array<string, mixed>
+	 * @phpstan-return array{
+	 *   total: int,
+	 *   time: float,
+	 *   queries: mixed[],
+	 *   errors?: array{
+	 *     total: int,
+	 *     errors: array<int, int>,
+	 *   },
+	 *   dupes?: array{
+	 *     total: int,
+	 *     queries: array<int, array{query: string, count: int, ltime: float, callers: array<string, int>, components: array<string, int>, sources: array<string, int>}>,
+	 *   },
+	 * }|array{}
 	 */
 	public function get_output() {
-		$output = array();
 		/** @var QM_Data_DB_Queries $data */
 		$data = $this->collector->get_data();
 
-		if ( empty( $data->wpdb ) ) {
-			return $output;
+		if ( empty( $data->rows ) ) {
+			return array();
 		}
 
-		$output['wpdb'] = $this->output_queries( $data->wpdb );
+		$output = array(
+			'total' => $data->total_qs,
+			'time' => round( array_sum( array_column( $data->rows, 'ltime' ) ), 4 ),
+			'queries' => array_map( array( $this, 'output_query_row' ), $data->rows ),
+		);
 
 		if ( ! empty( $data->errors ) ) {
 			$output['errors'] = array(
@@ -53,9 +72,6 @@ class QM_Output_Raw_DB_Queries extends QM_Output_Raw {
 			// Filter out SQL queries that do not have dupes
 			$dupes = array_filter( $dupes, array( $this->collector, 'filter_dupe_items' ) );
 
-			// Ignore dupes from `WP_Query->set_found_posts()`
-			unset( $dupes['SELECT FOUND_ROWS()'] );
-
 			$output['dupes'] = array(
 				'total' => count( $dupes ),
 				'queries' => $dupes,
@@ -66,37 +82,16 @@ class QM_Output_Raw_DB_Queries extends QM_Output_Raw {
 	}
 
 	/**
-	 * @param stdClass $db
-	 * @return array
-	 * @phpstan-return array{
-	 *   total: int,
-	 *   time: float,
-	 *   queries: mixed[],
-	 * }|array{}
-	 */
-	protected function output_queries( stdClass $db ) {
-		$this->query_row = 0;
-
-		$output = array();
-
-		if ( empty( $db->rows ) ) {
-			return $output;
-		}
-
-		foreach ( $db->rows as $row ) {
-			$output[] = $this->output_query_row( $row );
-		}
-
-		return array(
-			'total' => $db->total_qs,
-			'time' => round( $db->total_time, 4 ),
-			'queries' => $output,
-		);
-	}
-
-	/**
-	 * @param array<string, mixed> $row
+	 * @param array $row
+	 * @phpstan-param QueryRow $row
 	 * @return array<string, mixed>
+	 * @phpstan-return array{
+	 *   i: int,
+	 *   sql: string,
+	 *   time: float,
+	 *   stack: string[],
+	 *   result: int|bool|WP_Error,
+	 * }
 	 */
 	protected function output_query_row( array $row ) {
 		$output = array();
@@ -106,18 +101,13 @@ class QM_Output_Raw_DB_Queries extends QM_Output_Raw {
 		$output['time'] = round( $row['ltime'], 4 );
 
 		if ( isset( $row['trace'] ) ) {
-			$stack = array();
-			$filtered_trace = $row['trace']->get_filtered_trace();
-
-			foreach ( $filtered_trace as $item ) {
-				$stack[] = $item['display'];
-			}
+			$stack = $row['trace']->get_stack();
 		} else {
-			$stack = $row['stack'];
+			$stack = $row['stack'] ?? array();
 		}
 
 		$output['stack'] = $stack;
-		$output['result'] = $row['result'];
+		$output['result'] = $row['result'] ?? false;
 
 		return $output;
 	}

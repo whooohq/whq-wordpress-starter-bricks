@@ -9,6 +9,7 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 
 	const META_KEY_DATA     = '_bto_data';
 	const META_KEY_SCENARIO = '_bto_scenario_data';
+	const FIELD_TYPE_PREFIX = 'wc_composite';
 
 	/**
 	 * @var SitePress
@@ -21,33 +22,30 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 
 	public function add_hooks(){
 
-		add_filter( 'woocommerce_composite_component_default_option', array($this, 'woocommerce_composite_component_default_option'), 10, 3 );
-		add_filter( 'wcml_cart_contents', array($this, 'wpml_composites_compat'), 11, 4 );
-		add_filter( 'woocommerce_composite_component_options_query_args', array($this, 'wpml_composites_transients_cache_per_language'), 10, 3 );
-		add_action( 'wcml_before_sync_product_data', array( $this, 'sync_composite_data_across_translations' ), 10, 2 );
-		add_action( 'wpml_translation_job_saved',   array( $this, 'save_composite_data_translation' ), 10, 3 );
+		add_filter( 'woocommerce_composite_component_default_option', [ $this, 'woocommerce_composite_component_default_option' ], 10, 3 );
+		add_filter( 'wcml_cart_contents', [ $this, 'wpml_composites_compat' ], 11, 4 );
+		add_filter( 'woocommerce_composite_component_options_query_args', [ $this, 'wpml_composites_transients_cache_per_language' ], 10, 3 );
+		add_action( 'wcml_before_sync_product_data', [ $this, 'sync_composite_data_across_translations' ], 10, 2 );
+		add_action( 'wpml_translation_job_saved',   [ $this, 'save_composite_data_translation' ], 10, 3 );
+		add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_composite_data_translation_package' ], 10, 2 );
 
 		if( is_admin() ){
-
 			if ( ! WPML::useAte() ) {  // Legacy actions/filters for CTE
 				add_action( 'wcml_gui_additional_box_html', [ $this, 'custom_box_html' ], 10, 3 );
 				add_filter( 'wcml_gui_additional_box_data', [ $this, 'custom_box_html_data' ], 10, 4 );
 				add_action( 'wcml_update_extra_fields', [ $this, 'update_component_strings' ], 10, 4 );
 			}
 
-			add_filter( 'woocommerce_json_search_found_products', array( $this, 'woocommerce_json_search_found_products' ) );
-
-			add_filter( 'wpml_tm_translation_job_data', array( $this, 'append_composite_data_translation_package' ), 10, 2 );
+			add_filter( 'woocommerce_json_search_found_products', [ $this, 'woocommerce_json_search_found_products' ] );
 
 			//lock fields on translations pages
-			add_filter( 'wcml_js_lock_fields_input_names', array( $this, 'wcml_js_lock_fields_input_names' ) );
-			add_filter( 'wcml_js_lock_fields_ids', array( $this, 'wcml_js_lock_fields_ids' ) );
-			add_filter( 'wcml_after_load_lock_fields_js', array( $this, 'localize_lock_fields_js' ) );
-			add_action( 'init', array( $this, 'load_assets' ) );
+			add_filter( 'wcml_js_lock_fields_input_names', [ $this, 'wcml_js_lock_fields_input_names' ] );
+			add_filter( 'wcml_js_lock_fields_ids', [ $this, 'wcml_js_lock_fields_ids' ] );
+			add_filter( 'wcml_after_load_lock_fields_js', [ $this, 'localize_lock_fields_js' ] );
+			add_action( 'init', [ $this, 'load_assets' ] );
 
-			add_filter( 'wcml_do_not_display_custom_fields_for_product', array( $this, 'replace_tm_editor_custom_fields_with_own_sections' ) );
+			add_filter( 'wcml_do_not_display_custom_fields_for_product', [ $this, 'replace_tm_editor_custom_fields_with_own_sections' ] );
 		}
-
 	}
 
 	public function woocommerce_composite_component_default_option($selected_value, $component_id, $object) {
@@ -240,30 +238,30 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 
 			foreach( $composite_data as $component_id => $component ) {
 
-				$data['composite_'.$component_id.'_title'] = array( 'original' =>
-					isset( $composite_data[$component_id]['title'] ) ? $composite_data[$component_id]['title'] : '' );
+				$data['composite_'.$component_id.'_title'] = [ 'original' =>
+					isset( $composite_data[$component_id]['title'] ) ? $composite_data[$component_id]['title'] : '' ];
 
-				$data['composite_'.$component_id.'_description'] = array( 'original' =>
-					isset( $composite_data[$component_id]['description'] ) ? $composite_data[$component_id]['description'] : '' );
+				$data['composite_'.$component_id.'_description'] = [ 'original' =>
+					isset( $composite_data[$component_id]['description'] ) ? $composite_data[$component_id]['description'] : '' ];
 
 			}
 
 			$composite_scenarios_meta = $this->get_composite_scenarios_meta( $product_id );
 			if( $composite_scenarios_meta ){
 				foreach( $composite_scenarios_meta as $scenario_key => $scenario_meta ){
-					$data[ 'composite_scenario_'.$scenario_key.'_title' ] = array(
+					$data[ 'composite_scenario_'.$scenario_key.'_title' ] = [
 						'original' => isset( $scenario_meta['title'] ) ? $scenario_meta['title'] : '',
 						'translation' => ''
-					);
+					];
 
-					$data[ 'composite_scenario_'.$scenario_key.'_description' ] = array(
+					$data[ 'composite_scenario_'.$scenario_key.'_description' ] = [
 						'original' => isset( $scenario_meta['description'] ) ? $scenario_meta['description'] : '',
 						'translation' => ''
-						);
+					];
 				}
 			}
 
-			if( $translation ){
+			if ( is_object( $translation ) ) {
 				$translated_composite_data = $this->get_composite_data( $translation->ID );
 
 				foreach( $composite_data as $component_id => $component ){
@@ -301,8 +299,6 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 	 * @param string|int $product_id
 	 * @param array      $data
 	 * @param string     $language
-	 *
-	 * @return array
 	 */
 	public function update_component_strings( $original_product_id, $product_id, $data, $language ){
 
@@ -336,11 +332,6 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 		}
 
 		update_post_meta( $product_id, self::META_KEY_SCENARIO, $composite_scenarios_meta );
-
-		return array(
-			'components' => $composite_data,
-			'scenarios'  => $composite_scenarios_meta,
-		);
 	}
 
 	/**
@@ -384,7 +375,7 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 	 */
 	private static function get_field_name( $component_id, $field, $subtype ) {
 		$subtype = $subtype ? $subtype . ':' : $subtype;
-		return 'wc_composite:' . $subtype . $component_id . ':' . $field;
+		return self::FIELD_TYPE_PREFIX . ':' . $subtype . $component_id . ':' . $field;
 	}
 
 	/**
@@ -476,7 +467,7 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 	}
 
 	public function localize_lock_fields_js(){
-		wp_localize_script( 'wcml-composite-js', 'lock_settings' , array( 'lock_fields' => 1 ) );
+		wp_localize_script( 'wcml-composite-js', 'lock_settings' , [ 'lock_fields' => 1 ] );
 	}
 
 	public function load_assets( ){
@@ -492,7 +483,7 @@ class WCML_Composite_Products extends WCML_Compatibility_Helper implements \IWPM
 		}
 
 		if( $is_composite_edit_page || $pagenow == 'post-new.php' ){
-			wp_register_script( 'wcml-composite-js', WCML_PLUGIN_URL . '/compatibility/res/js/wcml-composite.js', array( 'jquery' ), WCML_VERSION, true );
+			wp_register_script( 'wcml-composite-js', WCML_PLUGIN_URL . '/compatibility/res/js/wcml-composite.js', [ 'jquery' ], WCML_VERSION, true );
 			wp_enqueue_script( 'wcml-composite-js' );
 
 		}

@@ -1,5 +1,80 @@
 # Changelog
 
+# 1.9.1 / 2026-04-25
+- **Bug Fix**: Fixed multiselect fields not saving data on deferred updates and restriction settings pages.
+- Fixed `fuertewp_restrictions_disable_admin_bar_roles`, `fuertewp_deferred_plugins`, `fuertewp_deferred_themes`, `fuertewp_blocked_plugins`, and `fuertewp_blocked_themes` fields now properly persist selections.
+- Updated HyperFields enhanced multiselect template to include hidden select element for form submission.
+- Updated HyperFields JavaScript to properly find and update the hidden select element.
+- Added HyperFields initialization with version parameter for proper cache busting.
+- **Bug Fix**: Fixed plugin status not being enabled by default on fresh installations.
+- Added `setup_default_status()` method to activator to ensure `fuertewp_status` defaults to 'enabled' on new installs.
+- Enhanced migrator to default plugin status to 'enabled' if not present in legacy options during upgrades.
+- Ensured seamless upgrade path from Carbon Fields (1.7.x) to HyperFields (1.8+) with proper status migration.
+
+# 1.9.0 / 2026-04-17
+- Added **Blocked Updates** feature to completely prevent updates for specific plugins and themes.
+- **Critical Security Feature**: Protect against supply chain attacks by locking plugins at safe versions when developer accounts are compromised
+- Prevents auto-installing malicious code during supply chain attacks or developer account breaches
+- Implemented full update blocking system that removes items from update transients.
+- Blocked items are prevented from both automatic and manual updates.
+- Added admin interface fields for selecting plugins/themes to block.
+- Implemented update notice hiding for blocked items in WordPress admin.
+- Added comprehensive configuration storage and migration support.
+- Added unit and integration tests for blocked updates functionality.
+- Enhanced documentation with supply chain attack scenarios and security guidance.
+- Maintained backward compatibility with existing deferred updates feature.
+
+# 1.8.1 / 2026-04-11
+- Migrated entire configuration system from Carbon Fields to the new HyperFields library.
+- Implemented `Fuerte_Wp_Config` as a centralized, thread-safe configuration manager.
+- Introduced single-array storage pattern (`fuertewp_settings`) for improved performance and cleaner database footprint.
+- Added recursive legacy configuration fallback to ensure 0-downtime migrations.
+- Integrated HyperFields Data Tools for settings maintenance and migration.
+- Removed legacy dependency on `htmlburger/carbon-fields`.
+- Purged technical debt: removed manual Carbon Fields asset injection and Elementor conflict workarounds.
+- Full PHP 8.2+ compatibility audit and strict types implementation.
+- Added comprehensive unit tests for the new configuration and storage logic.
+
+# 1.7.5 / 2025-11-18
+- Prevent Carbon Fields from booting in Elementor editor to avoid JS conflicts.
+
+# 1.7.4 / 2025-11-13
+- Added comprehensive Login Security system with rate limiting and IP lockout functionality.
+- Implemented failed login attempt tracking with configurable thresholds and lockout durations.
+- Added real-time AJAX-powered admin interface for monitoring login attempts and managing lockouts.
+- Introduced GDPR Privacy Notice feature with customizable message display on login and registration forms.
+- Enhanced security with IP-based and username-based lockout mechanisms.
+- Added support for blacklisted usernames during registration process.
+- Implemented increasing lockout durations for repeated security violations.
+- Added comprehensive logging system for security monitoring and forensic analysis.
+- Introduced individual unblock functionality for specific IP/username combinations.
+- Enhanced admin interface with export capabilities for security data.
+- Performance optimizations and database cleanup automation for security logs.
+- Improved code organization with dedicated login management and logging classes.
+- Added comprehensive Login URL Hiding functionality to obscure wp-login.php access points.
+- Implemented support for both query parameter mode (?custom-slug) and pretty URL mode (/custom-slug/).
+- Added customizable login slug with default 'secure-login' option for easy configuration.
+- Integrated wp-admin protection to redirect unauthorized admin area requests to custom login URL.
+- Added hidden field validation to login forms for enhanced security against direct POST attacks.
+- Comprehensive URL filtering system covering site_url, login_url, logout_url, lostpassword_url, and register_url.
+- Full integration with existing super user bypass system and security logging.
+- Implemented proper redirect handling with 404-like behavior for blocked login attempts.
+- Enhanced security through obscurity while maintaining WordPress core compatibility.
+
+# 1.6.0 / 2025-09-20
+- Refactored auto-update system into dedicated `Fuerte_Wp_Auto_Update_Manager` class for better code organization and maintainability.
+- Updated Carbon Fields dependency to the latest version for better PHP 8.x+ compatibility.
+- Bug fixes and performance improvements.
+
+# 1.5.1 / 2024-07-24
+- Improved auto-updates. Added a new scheduled task to force WordPress to perform the update routine every 6 hours, only when some auto-updates are enabled.
+
+# 1.4.12 / 2023-11-06
+- Enhanced disabling of XML-RPC API.
+- Disable re-running of the WP setup wizard.
+- Disable execution of PHP files inside uploads folder.
+- Updated Carbon Fields to fix PHP 8.x and WP 6.2 compatibility issues.
+
 # 1.4.4 / 2023-02-20
 - Avoids a PHP Warning when getting the website's domain name.
 

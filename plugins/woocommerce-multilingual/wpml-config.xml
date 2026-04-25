@@ -12,6 +12,7 @@
 		<custom-field action="copy">_featured</custom-field>
 		<custom-field action="copy">_manage_stock</custom-field>
 		<custom-field action="copy">_sku</custom-field>
+		<custom-field action="copy">_global_unique_id</custom-field>
 		<custom-field action="ignore">_stock</custom-field>
 		<custom-field action="copy">_stock_status</custom-field>
 		<custom-field action="copy">_sold_individually</custom-field>
@@ -81,6 +82,7 @@
 		<taxonomy translate="1">product_shipping_class</taxonomy>
 	</taxonomies>
 	<admin-texts>
+		<key name="woocommerce_email_header_image" />
 		<key name="woocommerce_shop_page_title" />
 		<key name="woocommerce_email_footer_text" />
 		<key name="woocommerce_new_order_settings">
@@ -144,6 +146,31 @@
 		<key name="woocommerce_checkout_terms_and_conditions_checkbox_text" />
 	</admin-texts>
 	<gutenberg-blocks>
+		<gutenberg-block type="woocommerce/checkout-contact-information-block" translate="1">
+			<key name="title" />
+			<key name="description" />
+		</gutenberg-block>
+		<gutenberg-block type="woocommerce/checkout-shipping-address-block" translate="1">
+			<key name="title" />
+			<key name="description" />
+		</gutenberg-block>
+		<gutenberg-block type="woocommerce/checkout-shipping-methods-block" translate="1">
+			<key name="title" />
+			<key name="description" />
+		</gutenberg-block>
+		<gutenberg-block type="woocommerce/checkout-payment-block" translate="1">
+			<key name="title" />
+			<key name="description" />
+		</gutenberg-block>
+		<gutenberg-block type="woocommerce/checkout-terms-block" translate="1">
+			<key name="text" />
+		</gutenberg-block>
+		<gutenberg-block type="woocommerce/cart-order-summary-heading-block" translate="1">
+			<key name="content" />
+		</gutenberg-block>
+		<gutenberg-block type="woocommerce/proceed-to-checkout-block" translate="1">
+			<key name="buttonLabel" />
+		</gutenberg-block>
 		<gutenberg-block type="woocommerce/product-search" translate="1">
 			<xpath>//*[contains(@class, "wc-block-product-search__label")]</xpath>
 			<xpath>//*[contains(@class, "wc-block-product-search__field")]/@placeholder</xpath>

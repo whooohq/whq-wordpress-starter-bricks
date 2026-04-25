@@ -27,6 +27,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<?php do_action( 'woocommerce_admin_order_item_values', null, $item, absint( $item_id ) ); ?>
 
+	<?php if ( $cogs_is_enabled ) : ?>
+	<td class="item_cost_of_goods"></td>
+	<?php endif; ?>
+
 	<td class="item_cost" width="1%">&nbsp;</td>
 	<td class="quantity" width="1%">&nbsp;</td>
 
@@ -78,7 +82,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<td class="wc-order-edit-line-item">
 		<?php if ( $order->is_editable() ) : ?>
 			<div class="wc-order-edit-line-item-actions">
-				<a class="edit-order-item" href="#"></a><a class="delete-order-item" href="#"></a>
+				<a class="edit-order-item tips" href="#" data-tip="<?php esc_attr_e( 'Edit fee', 'woocommerce' ); ?>" aria-label="<?php esc_attr_e( 'Edit fee', 'woocommerce' ); ?>"></a><a class="delete-order-item tips" href="#" data-tip="<?php esc_attr_e( 'Delete fee', 'woocommerce' ); ?>" aria-label="<?php esc_attr_e( 'Delete fee', 'woocommerce' ); ?>"></a>
 			</div>
 		<?php endif; ?>
 	</td>

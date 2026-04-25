@@ -66,14 +66,14 @@ class WCML_Settings_UI extends WCML_Templates_Factory {
                                             synchronized, or seperate for each language.',
 						'woocommerce-multilingual'
 					),
-					'value'      => $this->woocommerce_wpml->settings['file_path_sync'],
+					'value'      => $this->woocommerce_wpml->settings[ \WCML_Downloadable_Products::SYNC_MODE_SETTING_KEY ],
 					'label_same' => __( 'Use the same files for translations', 'woocommerce-multilingual' ),
 					'label_diff' => __( 'Add separate download files for translations when translating products', 'woocommerce-multilingual' ),
 				],
 
-				'product_reviews' => [
-					'heading' => __( 'Product reviews', 'woocommerce-multilingual' ),
-					'tip' => __( 'Define how to display product reviews on the product page by default. The customer will be still able to filter reviews by language.', 'woocommerce-multilingual' ),
+				'product_reviews'       => [
+					'heading'                  => __( 'Product reviews', 'woocommerce-multilingual' ),
+					'tip'                      => __( 'Define how to display product reviews on the product page by default. The customer will be still able to filter reviews by language.', 'woocommerce-multilingual' ),
 					'reviews_in_all_languages' => [
 						'value' => $this->woocommerce_wpml->get_setting( 'reviews_in_all_languages', false ),
 						'label' => __( 'By default, show reviews in all languages', 'woocommerce-multilingual' ),
@@ -128,7 +128,7 @@ class WCML_Settings_UI extends WCML_Templates_Factory {
 			'wcml_cart_clear'    => WCML_CART_CLEAR,
 
 			'troubleshooting'    => [
-				'url'   => admin_url( 'admin.php?page=wpml-wcml&tab=troubleshooting' ),
+				'url'   => \WCML\Utilities\AdminUrl::getTroubleshootingTab(),
 				'label' => __( 'Troubleshooting', 'woocommerce-multilingual' ),
 			],
 		];

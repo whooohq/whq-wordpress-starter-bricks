@@ -1,10 +1,9 @@
 <?php
-
-if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed');
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct $wpdb query is required for this operation.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching -- some query operations need to always receive the most up-to-date or actual data directly from the database, reducing the risk of serving stale information.
+if (!defined('ABSPATH')) die('No direct access allowed');
 
 class UpdraftPlus_Search_Replace {
-
-	private $known_incomplete_classes = array();
 
 	private $columns = array();
 
@@ -101,6 +100,7 @@ class UpdraftPlus_Search_Replace {
 			$updraftplus->check_db_connection($this->wpdb_obj, true);
 
 			// Get a list of columns in this table
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- DESCRIBE is a DDL command that cannot be parameterized; $table is a SQL identifier sanitized using backquote().
 			$fields = $wpdb->get_results('DESCRIBE '.UpdraftPlus_Manipulation_Functions::backquote($table), ARRAY_A);
 
 			$prikey_field = false;
@@ -128,15 +128,20 @@ class UpdraftPlus_Search_Replace {
 			if ($prikey_field) $count_rows_sql .= " USE INDEX (PRIMARY)";
 			$count_rows_sql .= $where;
 
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $count_rows_sql is constructed from safe table identifiers; SQL identifiers cannot be parameterized with $wpdb->prepare().
 			$row_countr = $wpdb->get_results($count_rows_sql, ARRAY_N);
 
 			// If that failed, try this
 			if (false !== $prikey_field && $wpdb->last_error) {
-				$row_countr = $wpdb->get_results("SELECT COUNT(*) FROM $table USE INDEX ($prikey_field)".$where, ARRAY_N);
-				if ($wpdb->last_error) $row_countr = $wpdb->get_results("SELECT COUNT(*) FROM $table", ARRAY_N);
+				$escaped_table_name = UpdraftPlus_Database_Utility::escape_table_name($table);
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $escaped_table_name and $prikey_field are SQL identifiers; identifiers cannot be parameterized with $wpdb->prepare(), table name is safely escaped via escape_table_name().
+				$row_countr = $wpdb->get_results("SELECT COUNT(*) FROM $escaped_table_name USE INDEX ($prikey_field)".$where, ARRAY_N);
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is safely escaped via escape_table_name().
+				if ($wpdb->last_error) $row_countr = $wpdb->get_results("SELECT COUNT(*) FROM $escaped_table_name", ARRAY_N);
 			}
 
 			$row_count = $row_countr[0][0];
+			/* translators: %d: Number of rows. */
 			$print_line .= ': '.sprintf(__('rows: %d', 'updraftplus'), $row_count);
 			$updraftplus->log($print_line, 'notice-restore', 'restoring-table-'.$table);
 			$updraftplus->log('Search and replacing table: '.$table.": rows: ".$row_count);
@@ -175,16 +180,16 @@ class UpdraftPlus_Search_Replace {
 						$report['errors'][] = $this->print_error($sql_line);
 					} elseif (true !== $data && null !== $data) {
 						if ($this->use_mysqli) {
-							while ($row = mysqli_fetch_array($data)) {
+							while ($row = mysqli_fetch_array($data)) { // phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_fetch_array -- Using mysqli directly for streaming large result sets during restore to avoid high memory usage with $wpdb
 								$rowrep = $this->process_row($table, $row, $search, $replace, $stripped_table);
 								$report['rows']++;
 								$report['updates'] += $rowrep['updates'];
 								$report['change'] += $rowrep['change'];
 								foreach ($rowrep['errors'] as $err) $report['errors'][] = $err;
 							}
-							mysqli_free_result($data);
+							mysqli_free_result($data); // phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_free_result -- Using mysqli directly for streaming large result sets during restore to avoid high memory usage with $wpdb
 						} else {
-							// phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved -- Ignore removed extension compatibility.
+							// phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved, WordPress.DB.RestrictedFunctions.mysql_mysql_fetch_array -- Ignore removed extension compatibility, direct mysql function used for low-level database operations outside of $wpdb.
 							while ($row = mysql_fetch_array($data)) {
 								$rowrep = $this->process_row($table, $row, $search, $replace, $stripped_table);
 								$report['rows']++;
@@ -192,7 +197,7 @@ class UpdraftPlus_Search_Replace {
 								$report['change'] += $rowrep['change'];
 								foreach ($rowrep['errors'] as $err) $report['errors'][] = $err;
 							}
-							@mysql_free_result($data); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged,PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved -- If an error occurs during mysql free result and it fails to free result, it will not impact anything at all. mysql_* function used in the scenario in which the mysqli extension doesn't exist.
+							@mysql_free_result($data); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged, PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved, WordPress.DB.RestrictedFunctions.mysql_mysql_free_result -- If an error occurs during mysql free result and it fails to free result, it will not impact anything at all. mysql_* function used in the scenario in which the mysqli extension doesn't exist.
 						}
 					}
 				}
@@ -225,13 +230,15 @@ class UpdraftPlus_Search_Replace {
 
 		if ($this->use_wpdb) {
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $sql_line is a SELECT query built from safe table identifiers and paginated offsets; SQL identifiers and LIMIT/OFFSET values cannot be parameterized with $wpdb->prepare().
 			$data = $wpdb->get_results($sql_line, ARRAY_A);
 			if (!$wpdb->last_error) return array($data, $page_size);
 		} else {
 			if ($this->use_mysqli) {
+				// phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_query -- Direct mysqli call required; this uses a dedicated low-level database handle ($this->mysql_dbh) outside $wpdb for search-replace operations.
 				$data = mysqli_query($this->mysql_dbh, $sql_line);
 			} else {
-				// phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved -- Ignore removed extension compatibility.
+				// phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved, WordPress.DB.RestrictedFunctions.mysql_mysql_query -- Ignore removed extension compatibility, direct mysql function used for low-level database operations outside of $wpdb.
 				$data = mysql_query($sql_line, $this->mysql_dbh);
 			}
 			if (false !== $data) return array($data, $page_size);
@@ -288,14 +295,15 @@ class UpdraftPlus_Search_Replace {
 				$report['errors'][] = $log_message;
 				error_log($log_message);
 				$updraftplus->log($log_message);
-				$updraftplus->log(sprintf(__('A PHP exception (%s) has occurred: %s', 'updraftplus'), get_class($e), $e->getMessage()), 'warning-restore');
-				// @codingStandardsIgnoreLine
-			} catch (Error $e) {
+				/* translators: 1: Exception class, 2: Exception message. */
+				$updraftplus->log(sprintf(__('A PHP exception (%1$s) has occurred: %2$s', 'updraftplus'), get_class($e), $e->getMessage()), 'warning-restore');
+			} catch (Error $e) {// phpcs:ignore PHPCompatibility.Classes.NewClasses.errorFound -- The Error class does not exist in PHP below 5.6.
 				$log_message = 'A PHP Fatal error (recoverable, '.get_class($e).') occurred during the recursive search/replace. Exception message: Error message: '.$e->getMessage().' (Code: '.$e->getCode().', line '.$e->getLine().' in '.$e->getFile().')';
 				$report['errors'][] = $log_message;
 				error_log($log_message);
 				$updraftplus->log($log_message);
-				$updraftplus->log(sprintf(__('A PHP fatal error (%s) has occurred: %s', 'updraftplus'), get_class($e), $e->getMessage()), 'warning-restore');
+				/* translators: 1: Fatal error class, 2: Error message. */
+				$updraftplus->log(sprintf(__('A PHP fatal error (%1$s) has occurred: %2$s', 'updraftplus'), get_class($e), $e->getMessage()), 'warning-restore');
 			}
 
 			// Something was changed
@@ -330,37 +338,14 @@ class UpdraftPlus_Search_Replace {
 
 		} elseif ($upd) {
 			$report['errors'][] = sprintf('"%s" has no primary key, manual change needed on row %s.', $table, $this->current_row);
-			$updraftplus->log(__('Error:', 'updraftplus').' '.sprintf(__('"%s" has no primary key, manual change needed on row %s.', 'updraftplus'), $table, $this->current_row), 'warning-restore');
+			$updraftplus->log(__('Error:', 'updraftplus').' '.
+				/* translators: 1: Table name, 2: Row number requiring manual change. */
+				sprintf(__('"%1$s" has no primary key, manual change needed on row %2$s.', 'updraftplus'), $table, $this->current_row),
+			'warning-restore');
 		}
 
 		return $report;
 
-	}
-	
-	/**
-	 * Inspect incomplete class object and make a note in the restoration log if it is a new class
-	 *
-	 * @param object $data Object expected to be of __PHP_Incomplete_Class_Name
-	 */
-	private function unserialize_log_incomplete_class($data) {
-		global $updraftplus;
-		
-		try {
-			$patch_object = new ArrayObject($data);
-			$class_name = $patch_object['__PHP_Incomplete_Class_Name'];
-		} catch (Exception $e) {
-			error_log('unserialize_log_incomplete_class: '.$e->getMessage());
-			// @codingStandardsIgnoreLine
-		} catch (Error $e) {
-			error_log('unserialize_log_incomplete_class: '.$e->getMessage());
-		}
-		
-		// Check if this class is known
-		// Have to serialize incomplete class to find original class name
-		if (!in_array($class_name, $this->known_incomplete_classes)) {
-			$this->known_incomplete_classes[] = $class_name;
-			$updraftplus->log('Incomplete object detected in database: '.$class_name.'; Search and replace will be skipped for these entries');
-		}
 	}
 	
 	/**
@@ -408,56 +393,34 @@ class UpdraftPlus_Search_Replace {
 			}
 
 			// O:8:"DateTime":0:{} : see https://bugs.php.net/bug.php?id=62852
-			if (is_serialized($data) && false === strpos($data, 'O:8:"DateTime":0:{}') && false !== ($unserialized = @unserialize($data))) {// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the function.
+			if (is_serialized($data) && false === strpos($data, 'O:8:"DateTime":0:{}') && false !== ($unserialized = UpdraftPlus::unserialize($data))) {
 				$data = $this->recursive_unserialize_replace($from, $to, $unserialized, true, $recursion_level + 1);
 			} elseif (is_array($data)) {
 				$_tmp = array();
 				foreach ($data as $key => $value) {
-					// Check that we aren't attempting search/replace on an incomplete class
-					// We assume that if $data is an __PHP_Incomplete_Class, it is extremely likely that the original did not contain the domain
-					if (is_a($value, '__PHP_Incomplete_Class')) {
-						// Check if this class is known
-						$this->unserialize_log_incomplete_class($value);
-						
-						// return original data
-						$_tmp[$key] = $value;
-					} else {
-						$_tmp[$key] = $this->recursive_unserialize_replace($from, $to, $value, false, $recursion_level + 1, $visited_data);
-					}
+					$_tmp[$key] = $this->recursive_unserialize_replace($from, $to, $value, false, $recursion_level + 1, $visited_data);
 				}
 
 				$data = $_tmp;
 				unset($_tmp);
 			} elseif (is_object($data)) {
-				$_tmp = $data; // new $data_class();
-				// Check that we aren't attempting search/replace on an incomplete class
-				// We assume that if $data is an __PHP_Incomplete_Class, it is extremely likely that the original did not contain the domain
-				if (is_a($data, '__PHP_Incomplete_Class')) {
-					// Check if this class is known
-					$this->unserialize_log_incomplete_class($data);
-				} else {
-					$props = get_object_vars($data);
-					foreach ($props as $key => $value) {
-						$_tmp->$key = $this->recursive_unserialize_replace($from, $to, $value, false, $recursion_level + 1, $visited_data);
-					}
+				$_tmp = clone $data;
+				$props = get_object_vars($data);
+
+				foreach ($props as $key => $value) {
+					// Skip any representation of a protected property or integer property
+					if (!preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$/', $key)) continue;
+
+					$_tmp->$key = $this->recursive_unserialize_replace($from, $to, $value, false, $recursion_level + 1, $visited_data);
 				}
+
 				$data = $_tmp;
 				unset($_tmp);
 			} elseif (is_string($data) && (null !== ($_tmp = json_decode($data, true)))) {
 
 				if (is_array($_tmp)) {
 					foreach ($_tmp as $key => $value) {
-						// Check that we aren't attempting search/replace on an incomplete class
-						// We assume that if $data is an __PHP_Incomplete_Class, it is extremely likely that the original did not contain the domain
-						if (is_a($value, '__PHP_Incomplete_Class')) {
-							// Check if this class is known
-							$this->unserialize_log_incomplete_class($value);
-							
-							// return original data
-							$_tmp[$key] = $value;
-						} else {
-							$_tmp[$key] = $this->recursive_unserialize_replace($from, $to, $value, false, $recursion_level + 1, $visited_data);
-						}
+						$_tmp[$key] = $this->recursive_unserialize_replace($from, $to, $value, false, $recursion_level + 1, $visited_data);
 					}
 
 					$data = json_encode($_tmp);
@@ -513,7 +476,7 @@ class UpdraftPlus_Search_Replace {
 		if ($this->use_wpdb) {
 			$last_error = $wpdb->last_error;
 		} else {
-			// phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved -- Ignore removed extension compatibility.
+			// phpcs:ignore PHPCompatibility.Extensions.RemovedExtensions.mysql_DeprecatedRemoved, WordPress.DB.RestrictedFunctions.mysql_mysql_error, WordPress.DB.RestrictedFunctions.mysql_mysqli_error -- Ignore removed extension compatibility, direct mysql/mysqli function used for low-level database operations outside of $wpdb.
 			$last_error = ($this->use_mysqli) ? mysqli_error($this->mysql_dbh) : mysql_error($this->mysql_dbh);
 		}
 		$updraftplus->log(__('Error:', 'updraftplus')." ".$last_error." - ".__('the database query being run was:', 'updraftplus').' '.$sql_line, 'warning-restore');

@@ -2,9 +2,11 @@
 
 namespace Automattic\WooCommerce\Admin\Features\OnboardingTasks\Tasks;
 
+use Automattic\Jetpack\Connection\Manager;
 use Automattic\WooCommerce\Admin\Features\Features;
 use Automattic\WooCommerce\Admin\Features\OnboardingTasks\Task;
 use Automattic\WooCommerce\Admin\PluginsHelper;
+use Automattic\WooCommerce\Internal\Jetpack\JetpackConnection;
 
 /**
  * Shipping Task
@@ -25,7 +27,7 @@ class ExperimentalShippingRecommendation extends Task {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Set up shipping', 'woocommerce' );
+		return __( 'Get your products shipped', 'woocommerce' );
 	}
 
 	/**
@@ -79,8 +81,7 @@ class ExperimentalShippingRecommendation extends Task {
 	 * @return bool
 	 */
 	public static function has_plugins_active() {
-		return PluginsHelper::is_plugin_active( 'woocommerce-services' ) &&
-		PluginsHelper::is_plugin_active( 'jetpack' );
+		return PluginsHelper::is_plugin_active( 'woocommerce-shipping' );
 	}
 
 	/**
@@ -89,9 +90,8 @@ class ExperimentalShippingRecommendation extends Task {
 	 * @return bool
 	 */
 	public static function has_jetpack_connected() {
-		if ( class_exists( '\Jetpack' ) && is_callable( '\Jetpack::is_connection_ready' ) ) {
-			return \Jetpack::is_connection_ready();
-		}
-		return false;
+		$jetpack_connection_manager = JetpackConnection::get_manager();
+
+		return $jetpack_connection_manager->is_connected() && $jetpack_connection_manager->has_connected_owner();
 	}
 }

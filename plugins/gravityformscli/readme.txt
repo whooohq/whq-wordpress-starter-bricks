@@ -1,9 +1,9 @@
 === Gravity Forms CLI Add-On ===
-Contributors: rocketgenius, stevehenty
+Contributors: rocketgenius
 Tags: gravity forms
 Requires at least: 4.2
-Tested up to: 5.5.1
-Stable tag: 1.3
+Tested up to: 6.7
+Stable tag: 1.9
 License: GPL-2.0+
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,12 +14,6 @@ Manage Gravity Forms on the command line.
 The Gravity Forms CLI Add-On allows WP-CLI users to manage forms and entries and more on the command line.
 
 [Documentation](https://docs.gravityforms.com/category/add-ons-gravity-forms/wp-cli-add-on/)
-
-Form Management
-[youtube https://www.youtube.com/watch?v=LO3fLW6SWk0]
-
-Entry Management
-[youtube https://www.youtube.com/watch?v=KRI2NIsf75U]
 
 = Getting started =
 
@@ -177,13 +171,33 @@ If you have any ideas for improvements please submit your idea at https://www.gr
 
 == Installation ==
 
-`wp plugin install gravityformscli --activate` or
+`wp plugin install gravityformscli --activate`
+
+or
+
+`wp package install https://github.com/gravityforms/gravityformscli.git`
+
+or
 
 1.  Download the zipped file.
 1.  Extract and upload the contents of the folder to /wp-contents/plugins/ folder
 1.  Go to the Plugin management page of WordPress admin section and enable the 'Gravity Forms CLI' plugin
 
 == ChangeLog ==
+= 1.9 =
+- Updated the plugin to support installing packages through Packagist.
+
+= 1.8 =
+- Fixed a bug where the verify checksums command fails even when it should succeed.
+
+= 1.7 =
+- Fixed a bug that sometimes causes the form ID to be stored as a string.
+
+= 1.6 =
+- Updated the plugin to support installing and updating Gravity SMTP.
+
+= 1.5 =
+- Updated the plugin to allow its usage as a WP-CLI package.
 
 = 1.4 =
 - Fixed an issue where the version comparison performed when using `wp gf update` with an add-on slug uses the Gravity Forms version number.

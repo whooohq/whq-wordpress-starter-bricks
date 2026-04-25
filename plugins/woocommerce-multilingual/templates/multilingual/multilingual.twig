@@ -1,0 +1,46 @@
+
+{% for menuItem in menu %}
+
+    <div class="info-wrap">
+        <a href="{{ menuItem.button.url }}" class="info-content-wrap" aria-label="{{ menuItem.button.label }}">
+            {% if menuItem.icon == 'otgs-ico-tag' %}
+                <span class="otgs-ico {{ menuItem.icon }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"><path fill="#33879E" fill-rule="evenodd" d="M11.333 6a2.667 2.667 0 1 1 5.334 0 2.667 2.667 0 0 1-5.334 0ZM14 7.333a1.333 1.333 0 1 1 0-2.666 1.333 1.333 0 0 1 0 2.666Z" clip-rule="evenodd"/><path fill="#33879E" fill-rule="evenodd" d="M19.233.1h-8.957a.667.667 0 0 0-.471.196L.572 9.529a.667.667 0 0 0 0 .942l8.957 8.957c.26.26.682.26.942 0l9.233-9.233a.667.667 0 0 0 .195-.471V.767a.667.667 0 0 0-.666-.666ZM1.986 10l8.566-8.566h8.014v8.014L10 18.014 1.986 10Z" clip-rule="evenodd"/></svg>
+                </span>
+            {% else %}
+                <span class="otgs-ico {{ menuItem.icon }}"></span>
+            {% endif %}
+            <span class="info-content">
+                <h3 class="heading">{{ menuItem.title }}</h3>
+                <span>{{ menuItem.description | raw }}</span>
+
+                <span class="button-primary" >{{ menuItem.button.label }}</span>
+
+            </span>
+        </a>
+    </div>
+
+{% endfor %}
+
+<div id="translate_manually" class="translate-manually">
+    <button
+        aria-expanded="false"
+        aria-controls="translate_manually_wrapper"
+        id="translate_manually_toggle"
+    >
+        <span>{{ translate_manually.toggle_text }}</span>
+    </button>
+
+    <div
+        role="region"
+        aria-labelledby="translate_manually_toggle"
+        class="steps"
+        id="translate_manually_wrapper"
+    >
+        <ul>
+            <li>{{ translate_manually.products | raw }}</li>
+            <li>{{ translate_manually.product_categories | raw }}</li>
+        </ul>
+    </div>
+</div>
+

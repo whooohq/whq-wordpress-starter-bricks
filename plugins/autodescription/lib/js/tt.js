@@ -8,7 +8,7 @@
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2019 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2019 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -32,7 +32,7 @@
  *
  * @constructor
  */
-window.tsfTT = function() {
+window.tsfTT = function () {
 
 	const _ttBase = 'tsf-tooltip';
 	const ttNames = {
@@ -55,7 +55,7 @@ window.tsfTT = function() {
 			let tooltipText = event.target.querySelector( ttSelectors.text );
 			if ( tooltipText instanceof Element ) {
 				tooltipText.innerHTML = event.target.dataset.desc;
-				event.target.dispatchEvent( new Event( 'mousemove' ) ); // performance: <.3ms
+				event.target.dispatchEvent( new Event( 'mousemove' ) ); // event time: <.3ms.
 			}
 		},
 		pointerEnter: async event => {
@@ -88,7 +88,7 @@ window.tsfTT = function() {
 		},
 	}
 
-	const _events = target => {
+	function _events( target ) {
 		const commonEvents = {
 			mousemove:  _activeToolTipHandles.pointerMove,
 			mouseleave: _activeToolTipHandles.pointerLeave,
@@ -98,16 +98,14 @@ window.tsfTT = function() {
 
 		return {
 			set: () => {
-				for ( const [ event, callBack ] of Object.entries( commonEvents ) ) {
+				for ( const [ event, callBack ] of Object.entries( commonEvents ) )
 					target.addEventListener( event, callBack );
-				}
 
 				target.addEventListener( 'tsf-tooltip-update', _activeToolTipHandles.updateDesc );
 			},
 			unset: () => {
-				for ( const [ event, callBack ] of Object.entries( commonEvents ) ) {
+				for ( const [ event, callBack ] of Object.entries( commonEvents ) )
 					target.removeEventListener( event, callBack );
-				}
 			},
 		};
 	}
@@ -119,7 +117,8 @@ window.tsfTT = function() {
 		reset:   () => {
 			_activeTooltipElements.tooltip = _activeTooltipElements.arrow = _activeTooltipElements.wrap = void 0;
 		}
-	};
+	}
+
 	const _pointer = {
 		lastPos:       { x: void 0 },
 		currPos:       { x: void 0 },
@@ -243,7 +242,7 @@ window.tsfTT = function() {
 		};
 	} )();
 
-	const _clickLocker = element => {
+	function _clickLocker( element ) {
 		return {
 			lock: () => {
 				element.dataset.preventedClick = 1;
@@ -287,12 +286,11 @@ window.tsfTT = function() {
 	 * @since
 	 * @access private
 	 *
-	 * @function
 	 * @param {event?} event
 	 * @param {Element} element
 	 * @param {string} desc
 	 */
-	const _initToolTips = () => {
+	function _initToolTips() {
 
 		// TODO move this test to the main tsf object? This whole file doesn't rely on `window.tsf` though.
 		let passiveSupported = false,
@@ -416,7 +414,7 @@ window.tsfTT = function() {
 		const init = () => {
 			let wraps   = document.querySelectorAll( ttSelectors.wrap ),
 				actions = 'mouseenter pointerdown touchstart focus'.split( ' ' );
-
+			// TODO why not foreach and const?
 			for ( let i = 0; i < wraps.length; i++ ) {
 				actions.forEach( e => {
 					wraps[ i ].addEventListener( e, handleToolTip, options );
@@ -426,14 +424,12 @@ window.tsfTT = function() {
 				wraps[ i ].addEventListener(
 					'click',
 					preventTooltipHandleClick,
-					captureSupported ? { capture: false } : false
+					captureSupported ? { capture: false } : false,
 				);
 			}
 		}
 		window.addEventListener( 'tsf-tooltip-reset', init );
 		triggerReset();
-
-		addBoundary( '#wpwrap' ); //! All pages, but Gutenberg destroys the boundaries.. @see tsfGBC
 	}
 
 	/**
@@ -442,14 +438,13 @@ window.tsfTT = function() {
 	 * @since 4.2.0
 	 * @access private
 	 *
-	 * @function
 	 * @param {event?}  event   Optional. The current mouse/touch event to center
 	 *                                    tooltip position for to make it seem more natural.
 	 * @param {Element} element The element to add the tooltip to.
 	 * @param {string}  desc    The tooltip, may contain renderable HTML.
 	 * @return {Boolean} True on success, false otherwise.
 	 */
-	const _renderTooltip = ( event, element, desc ) => {
+	function _renderTooltip( event, element, desc ) {
 
 		element.dataset.hasTooltip = 1;
 
@@ -458,14 +453,15 @@ window.tsfTT = function() {
 		tooltip.classList.add( ttNames.base );
 		tooltip.insertAdjacentHTML(
 			'afterbegin',
-			`<span class=${ttNames.textWrap}><span class=${ttNames.text}>${desc}</span></span><div class=${ttNames.arrow} style=will-change:left></div>`
+			`<span class=${ttNames.textWrap}><span class=${ttNames.text}>${desc}</span></span><div class=${ttNames.arrow} style=will-change:left></div>`,
 		);
 
 		element.prepend( tooltip );
 
-		const boundary = element.closest( ttSelectors.boundary )
-			|| element.closest( '.edit-post-sidebar' ) // Gutenberg Sidebar
-			// || element.closest( '.postbox-container' ) // Gutenberg Bottom (doesn't seem necessary)
+		const boundary =
+			   element.closest( ttSelectors.boundary )
+			|| element.closest( '#tabs-0-edit-post\\/document-view' ) // Gutenberg sidebar WP 6.9+
+			|| element.closest( '#tabs-1-edit-post\\/document-view' ) // Gutenberg sidebar WP 6.6+
 			|| document.getElementById( 'wpcontent' )
 			|| document.body;
 
@@ -488,7 +484,7 @@ window.tsfTT = function() {
 		resetTextRects();
 
 		let appeal    = 12, // equals parseInt( getComputedStyle( textWrap ).paddingRight ),
-		    horIndent = 0;
+			horIndent = 0;
 
 		// Calculate the appeal with the spacing.
 		if ( textWrapRect.width > ( boundaryWidth - ( appeal / 2 ) ) ) {
@@ -634,18 +630,17 @@ window.tsfTT = function() {
 	 *                 Careful, however, as some CSS queries may be subjected differently.
 	 *              2. Now calculates up/down overflow at the end, so it accounts for squashing and stretching.
 	 * @since 4.2.0 1. Is now asynchronous.
-	 *              2. Now returns boolean whether the tooltip was entered successfully.
+	 *              2. Now returns Boolean whether the tooltip was entered successfully.
 	 *              3. Now removes all other tooltips. Only one may prevail!
 	 * @access public
 	 *
-	 * @function
 	 * @param {event?}  event   Optional. The current mouse/touch event to center
 	 *                                    tooltip position for to make it seem more natural.
 	 * @param {Element} element The element to add the tooltip to.
 	 * @param {string}  desc    The tooltip, may contain renderable HTML.
 	 * @return {Promise<Boolean>} True on success, false otherwise.
 	 */
-	const doTooltip = ( event, element, desc ) => {
+	function doTooltip( event, element, desc ) {
 
 		// Backward compatibility for jQuery vs ES.
 		if ( element?.[0] )
@@ -666,12 +661,14 @@ window.tsfTT = function() {
 	 * Adds tooltip boundaries.
 	 *
 	 * @since 3.1.0
+	 * @since 4.1.1 Now only accepts Element, not jQuery or string.
 	 * @access public
 	 *
-	 * @function
-	 * @param {!jQuery|Element|string} element The jQuery element, DOM Element or query selector.
+	 * @param {Element} element The DOM Element to add the boundary to.
 	 */
-	const addBoundary = element => { element instanceof Element && element.classList.add( ttNames.boundary ) };
+	function addBoundary( element ) {
+		element instanceof Element && element.classList.add( ttNames.boundary );
+	}
 
 	/**
 	 * Removes the description balloon and arrow from element.
@@ -680,10 +677,9 @@ window.tsfTT = function() {
 	 * @since 4.1.0 Now also clears the data of the tooltip.
 	 * @access public
 	 *
-	 * @function
 	 * @param {!jQuery|Element|string} element
 	 */
-	const removeTooltip = element => {
+	function removeTooltip( element ) {
 
 		// Backward compatibility for jQuery vs ES.
 		if ( element?.[0] )
@@ -705,11 +701,10 @@ window.tsfTT = function() {
 	 * @since 4.2.0 Now returns a `HTMLElement` instead of a `jQuery.Element`.
 	 * @access public
 	 *
-	 * @function
 	 * @param {!jQuery|Element|string} element
 	 * @return {(Element|undefined)}
 	 */
-	const getTooltip = element => {
+	function getTooltip( element ) {
 
 		// Backward compatibility for jQuery vs ES.
 		if ( element?.[0] )
@@ -728,14 +723,12 @@ window.tsfTT = function() {
 	 * @since 3.1.0
 	 * @since 4.2.0 Added debouncing.
 	 * @access public
-	 *
-	 * @function
 	 */
-	const triggerReset = () => {
+	function triggerReset() {
 		clearTimeout( _debounceTriggerReset );
 		_debounceTriggerReset = setTimeout(
 			() => window.dispatchEvent( new CustomEvent( 'tsf-tooltip-reset' ) ),
-			100 // Magic number. Low enough not to cause annoyances, high enough not to cause lag.
+			100, // Magic number. Low enough not to cause annoyances, high enough not to cause lag.
 		);
 	}
 
@@ -745,10 +738,9 @@ window.tsfTT = function() {
 	 * @since 3.1.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {Element|NodeList} element
 	 */
-	const triggerUpdate = element => {
+	function triggerUpdate( element ) {
 
 		if ( ! element || ! ( element instanceof Element ) )
 			element = document.querySelectorAll( ttSelectors.item );
@@ -776,7 +768,7 @@ window.tsfTT = function() {
 		 */
 		load: () => {
 			document.body.addEventListener( 'tsf-ready', _initToolTips );
-		}
+		},
 	}, {
 		/**
 		 * Copies internal public functions to tsfTT for public access.

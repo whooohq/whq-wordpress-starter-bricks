@@ -8,6 +8,13 @@
  * @package WooCommerce\Classes\Payment
  */
 
+use Automattic\WooCommerce\Enums\PaymentGatewayFeature;
+use Automattic\WooCommerce\Internal\Admin\Settings\Payments as SettingsPaymentsService;
+use Automattic\WooCommerce\Internal\Admin\Settings\PaymentsProviders;
+use Automattic\WooCommerce\Internal\Logging\SafeGlobalFunctionProxy;
+use Automattic\WooCommerce\Proxies\LegacyProxy;
+use Automattic\WooCommerce\Utilities\ArrayUtil;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -78,11 +85,8 @@ class WC_Payment_Gateways {
 			'WC_Gateway_BACS',
 			'WC_Gateway_Cheque',
 			'WC_Gateway_COD',
+			'WC_Gateway_Paypal',
 		);
-
-		if ( $this->should_load_paypal_standard() ) {
-			$load_gateways[] = 'WC_Gateway_Paypal';
-		}
 
 		// Filter.
 		$load_gateways = apply_filters( 'woocommerce_payment_gateways', $load_gateways );
@@ -97,6 +101,13 @@ class WC_Payment_Gateways {
 				$gateway = new $gateway();
 			}
 
+			if ( is_a( $gateway, 'WC_Gateway_Paypal' ) ) {
+				WC_Gateway_Paypal::set_instance( $gateway );
+				if ( ! $this->should_load_paypal_standard() ) {
+					continue;
+				}
+			}
+
 			// Gateways need to be valid and extend WC_Payment_Gateway.
 			if ( ! is_a( $gateway, 'WC_Payment_Gateway' ) ) {
 				continue;
@@ -108,11 +119,139 @@ class WC_Payment_Gateways {
 			} else {
 				// Add to end of the array.
 				$this->payment_gateways[ $order_end ] = $gateway;
-				$order_end++;
+				++$order_end;
 			}
 		}
 
 		ksort( $this->payment_gateways );
+
+		add_action( 'wc_payment_gateways_initialized', array( $this, 'on_payment_gateways_initialized' ) );
+		/**
+		 * Hook that is called when the payment gateways have been initialized.
+		 *
+		 * @param WC_Payment_Gateways $wc_payment_gateways The payment gateways instance.
+		 * @since 8.5.0
+		 */
+		do_action( 'wc_payment_gateways_initialized', $this );
+	}
+
+	// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.Found
+
+	/**
+	 * Hook into payment gateway settings changes.
+	 *
+	 * @param WC_Payment_Gateways $wc_payment_gateways The WC_Payment_Gateways instance.
+	 * @since 8.5.0
+	 *
+	 * @internal For exclusive usage of WooCommerce core, backwards compatibility not guaranteed.
+	 */
+	public function on_payment_gateways_initialized( WC_Payment_Gateways $wc_payment_gateways ) {
+		foreach ( $this->payment_gateways as $gateway ) {
+			$option_key = $gateway->get_option_key();
+			add_action(
+				'add_option_' . $option_key,
+				function ( $option, $value ) use ( $gateway ) {
+					$this->payment_gateway_settings_option_changed( $gateway, $value, $option );
+				},
+				10,
+				2
+			);
+			add_action(
+				'update_option_' . $option_key,
+				function ( $old_value, $value, $option ) use ( $gateway ) {
+					$this->payment_gateway_settings_option_changed( $gateway, $value, $option, $old_value );
+				},
+				10,
+				3
+			);
+		}
+	}
+
+	// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter.Found
+
+	/**
+	 * Callback for when a gateway settings option was added or updated.
+	 *
+	 * @param WC_Payment_Gateway $gateway   The gateway for which the option was added or updated.
+	 * @param mixed              $value     New value.
+	 * @param string             $option    Option name.
+	 * @param mixed              $old_value Old value. `null` when called via add_option_ hook.
+	 * @since 8.5.0
+	 */
+	private function payment_gateway_settings_option_changed( $gateway, $value, $option, $old_value = null ) {
+		if ( $this->was_gateway_enabled( $value, $old_value ) ) {
+			$logger = wc_get_container()->get( LegacyProxy::class )->call_function( 'wc_get_logger' );
+			$logger->info( sprintf( 'Payment gateway enabled: "%s"', $gateway->get_method_title() ) );
+
+			/**
+			 * Fires when a payment gateway has been enabled.
+			 *
+			 * Used by WC_Email_Admin_Payment_Gateway_Enabled to send an admin notification email.
+			 * This action is registered as a transactional email action in WC_Emails::init_transactional_emails(),
+			 * which ensures WC_Emails is instantiated before the _notification variant is fired.
+			 *
+			 * @param WC_Payment_Gateway $gateway The gateway that was enabled.
+			 *
+			 * @since 10.7.0
+			 */
+			do_action( 'woocommerce_payment_gateway_enabled', $gateway );
+
+			// Track the gateway enable.
+			$this->record_gateway_event( 'enable', $gateway );
+		}
+
+		if ( $this->was_gateway_disabled( $value, $old_value ) ) {
+			// This is a change to a payment gateway's settings and it was just disabled. Let's track it.
+			$this->record_gateway_event( 'disable', $gateway );
+		}
+	}
+
+	/**
+	 * Determines from changes in settings if a gateway was enabled.
+	 *
+	 * @param array $value New value.
+	 * @param array $old_value Old value.
+	 * @return bool Whether the gateway was enabled or not.
+	 */
+	private function was_gateway_enabled( $value, $old_value = null ) {
+		if ( null === $old_value ) {
+			// There was no old value, so this is a new option.
+			if ( ! empty( $value ) && is_array( $value ) && isset( $value['enabled'] ) && 'yes' === $value['enabled'] && isset( $value['title'] ) ) {
+				return true;
+			}
+			return false;
+		}
+		// There was an old value, so this is an update.
+		if (
+			ArrayUtil::get_value_or_default( $value, 'enabled' ) === 'yes' &&
+			ArrayUtil::get_value_or_default( $old_value, 'enabled' ) !== 'yes' ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Determines from changes in settings if a gateway was disabled.
+	 *
+	 * @param array $value New value.
+	 * @param array $old_value Old value.
+	 * @return bool Whether the gateway was disabled or not.
+	 */
+	private function was_gateway_disabled( $value, $old_value = null ) {
+		if ( null === $old_value ) {
+			// There was no old value, so this is a new option.
+			// We don't consider a new option for determining if a gateway was disabled.
+			return false;
+		}
+
+		// There was an old value, so this is an update.
+		if (
+			ArrayUtil::get_value_or_default( $value, 'enabled' ) === 'no' &&
+			ArrayUtil::get_value_or_default( $old_value, 'enabled' ) !== 'no' ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -133,6 +272,33 @@ class WC_Payment_Gateways {
 	}
 
 	/**
+	 * Get readable payment method name from payment method ID.
+	 *
+	 * Retrieves the payment gateway title from the payment method ID by loading
+	 * the payment gateway instance.
+	 *
+	 * @param string $payment_gateway_id Payment method ID (e.g., "stripe", "paypal", "bacs").
+	 * @return string Payment method name or ID if name not found.
+	 */
+	public function get_payment_gateway_name_by_id( string $payment_gateway_id ): string {
+		// Get available payment gateways.
+		$payment_gateways = $this->payment_gateways();
+
+		// Check if the payment method exists and has a title.
+		if ( isset( $payment_gateways[ $payment_gateway_id ] ) ) {
+			$gateway = $payment_gateways[ $payment_gateway_id ];
+			if ( is_object( $gateway ) && method_exists( $gateway, 'get_title' ) ) {
+				return $gateway->get_title();
+			} elseif ( is_object( $gateway ) && isset( $gateway->title ) ) {
+				return $gateway->title;
+			}
+		}
+
+		// Return the ID as fallback if no title found.
+		return $payment_gateway_id;
+	}
+
+	/**
 	 * Get array of registered gateway ids
 	 *
 	 * @since 2.6.0
@@ -143,9 +309,15 @@ class WC_Payment_Gateways {
 	}
 
 	/**
-	 * Get available gateways.
+	 * Get available gateways for checkout.
 	 *
-	 * @return array
+	 * This should be used when displaying the available gateways/payment methods to the user,
+	 * not in the WP admin or REST API contexts where there is no WC session.
+	 * This is because the logic that hooks into the available gateways filter
+	 * may try to rely on the existence of a WC session - a valid thing to do,
+	 * and cause fatal errors when the session is not available.
+	 *
+	 * @return array The available payment gateways.
 	 */
 	public function get_available_payment_gateways() {
 		$_available_gateways = array();
@@ -154,7 +326,7 @@ class WC_Payment_Gateways {
 			if ( $gateway->is_available() ) {
 				if ( ! is_add_payment_method_page() ) {
 					$_available_gateways[ $gateway->id ] = $gateway;
-				} elseif ( $gateway->supports( 'add_payment_method' ) || $gateway->supports( 'tokenization' ) ) {
+				} elseif ( $gateway->supports( PaymentGatewayFeature::ADD_PAYMENT_METHOD ) || $gateway->supports( PaymentGatewayFeature::TOKENIZATION ) ) {
 					$_available_gateways[ $gateway->id ] = $gateway;
 				}
 			}
@@ -216,7 +388,7 @@ class WC_Payment_Gateways {
 			$loop = 0;
 			foreach ( $gateway_order as $gateway_id ) {
 				$order[ esc_attr( $gateway_id ) ] = $loop;
-				$loop++;
+				++$loop;
 			}
 		}
 
@@ -230,7 +402,85 @@ class WC_Payment_Gateways {
 	 * @return bool Whether PayPal Standard should be loaded or not.
 	 */
 	protected function should_load_paypal_standard() {
-		$paypal = new WC_Gateway_Paypal();
+		$paypal = WC_Gateway_Paypal::get_instance();
 		return $paypal->should_load();
+	}
+
+	/**
+	 * Send a Tracks event.
+	 *
+	 * By default, Woo adds `url`, `blog_lang`, `blog_id`, `store_id`, `products_count`, and `wc_version`
+	 * properties to every event.
+	 *
+	 * @param string             $name    The event name.
+	 *                                    If it is not prefixed, it will be with the standard prefix.
+	 * @param WC_Payment_Gateway $gateway The payment gateway object.
+	 *
+	 * @return void
+	 */
+	private function record_gateway_event( string $name, $gateway ) {
+		if ( ! function_exists( 'wc_admin_record_tracks_event' ) ) {
+			return;
+		}
+
+		if ( ! is_a( $gateway, 'WC_Payment_Gateway' ) ) {
+			// If the gateway is not a valid payment gateway, we don't record the event.
+			return;
+		}
+
+		// If the event name is empty, we don't record it.
+		if ( empty( $name ) ) {
+			return;
+		}
+
+		// If the event name is not prefixed, we prefix it.
+		$prefix = SettingsPaymentsService::EVENT_PREFIX . 'provider_';
+		if ( ! str_starts_with( $name, $prefix ) ) {
+			$name = $prefix . $name;
+		}
+
+		$properties = array(
+			'provider_id'      => $gateway->id,
+			'business_country' => WC()->countries->get_base_country(),
+		);
+
+		try {
+			/**
+			 * The Payments Settings [page] service.
+			 *
+			 * @var SettingsPaymentsService $settings_payments_service
+			 */
+			$settings_payments_service = wc_get_container()->get( SettingsPaymentsService::class );
+			// Get the business country from the Payments Settings service.
+			$properties['business_country'] = $settings_payments_service->get_country();
+
+			/**
+			 * The Payments Providers service.
+			 *
+			 * @var PaymentsProviders $payments_providers_service
+			 */
+			$payments_providers_service = wc_get_container()->get( PaymentsProviders::class );
+
+			$gateway_details = $payments_providers_service->get_payment_gateway_details( $gateway, 0, $properties['business_country'] );
+			// If the gateway details have a suggestion ID, we add it to the properties.
+			if ( ! empty( $gateway_details['_suggestion_id'] ) ) {
+				$properties['suggestion_id'] = $gateway_details['_suggestion_id'];
+			}
+			if ( ! empty( $gateway_details['plugin']['slug'] ) ) {
+				$properties['provider_extension_slug'] = $gateway_details['plugin']['slug'];
+			}
+		} catch ( \Throwable $e ) {
+			// Do nothing but log so we can investigate.
+			SafeGlobalFunctionProxy::wc_get_logger()->debug(
+				'Failed to gather provider-specific details for gateway: ' . $e->getMessage(),
+				array(
+					'gateway'   => $gateway->id,
+					'source'    => 'settings-payments',
+					'exception' => $e,
+				)
+			);
+		}
+
+		wc_admin_record_tracks_event( $name, $properties );
 	}
 }

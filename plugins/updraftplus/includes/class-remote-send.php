@@ -1,6 +1,8 @@
 <?php
-
-if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed.');
+// phpcs:disable WordPress.WP.AlternativeFunctions.rename_rename -- rename() usage is intentional and safe within this context
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.file_system_operations_fputs, WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable, WordPress.WP.AlternativeFunctions.file_system_operations_chown, WordPress.WP.AlternativeFunctions.file_system_operations_chgrp, WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- we use the set_error_handler() function to provide a flexible way of handling PHP errors according to our needs; we centralises error handling in one place and customises certain errors based on their severity and context.
+if (!defined('ABSPATH')) die('No direct access allowed');
 
 abstract class UpdraftPlus_RemoteSend {
 
@@ -95,7 +97,8 @@ abstract class UpdraftPlus_RemoteSend {
 	protected function initialise_listener_error_handling($hash) {
 		global $updraftplus;
 		$updraftplus->error_reporting_stop_when_logged = true;
-		set_error_handler(array($updraftplus, 'php_error'), E_ALL & ~E_STRICT);
+		$error_levels = version_compare(PHP_VERSION, '8.4.0', '>=') ? E_ALL : E_ALL & ~E_STRICT;
+		set_error_handler(array($updraftplus, 'php_error'), $error_levels);
 		$this->php_events = array();
 		add_filter('updraftplus_logline', array($this, 'updraftplus_logline'), 10, 4);
 		if (!UpdraftPlus_Options::get_updraft_option('updraft_debug_mode')) return;
@@ -244,7 +247,7 @@ abstract class UpdraftPlus_RemoteSend {
 	}
 
 	/**
-	 * This function will return a response to the remote site to acknowledge that we have recieved the upload_complete message and if this is a clone it call the ready_for_restore action
+	 * This function will return a response to the remote site to acknowledge that we have received the upload_complete message and if this is a clone it call the ready_for_restore action
 	 *
 	 * @param string $response       - a string response
 	 * @param array  $data           - an array of data
@@ -260,8 +263,8 @@ abstract class UpdraftPlus_RemoteSend {
 			
 			$signal_ready_for_restore_now = true;
 			
-			if (class_exists('UpdraftPlus_Remote_Communications')) {
-				$test_udrpc = new UpdraftPlus_Remote_Communications();
+			if (class_exists('UpdraftPlus_Remote_Communications_V2')) {
+				$test_udrpc = new UpdraftPlus_Remote_Communications_V2();
 				if (version_compare($test_udrpc->version, '1.4.21', '>=')) {
 					$signal_ready_for_restore_now = false;
 					$this->job_id = $job_id;
@@ -307,7 +310,7 @@ abstract class UpdraftPlus_RemoteSend {
 			if (!is_array($remotesites)) $remotesites = array();
 
 			if (empty($remotesites[$site_id]) || empty($remotesites[$site_id]['url']) || empty($remotesites[$site_id]['key']) || empty($remotesites[$site_id]['name_indicator'])) {
-				throw new Exception("Remote site id ($site_id) not found - send aborted");
+				throw new Exception("Remote site id ($site_id) not found - send aborted"); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error messages should be escaped when caught and printed.
 			}
 
 			array_push($initial_jobdata, 'remotesend_info', $remotesites[$site_id]);
@@ -362,7 +365,8 @@ abstract class UpdraftPlus_RemoteSend {
 		try {
 		
 			$updraftplus->error_reporting_stop_when_logged = true;
-			set_error_handler(array($updraftplus, 'php_error'), E_ALL & ~E_STRICT);
+			$error_levels = version_compare(PHP_VERSION, '8.4.0', '>=') ? E_ALL : E_ALL & ~E_STRICT;
+			set_error_handler(array($updraftplus, 'php_error'), $error_levels);
 			$this->php_events = array();
 			add_filter('updraftplus_logline', array($this, 'updraftplus_logline'), 10, 4);
 		
@@ -401,14 +405,22 @@ abstract class UpdraftPlus_RemoteSend {
 			restore_error_handler();
 			
 			if (is_wp_error($response)) {
-
+				
 				$err_msg = __('Error:', 'updraftplus').' '.$response->get_error_message();
 				$err_data = $response->get_error_data();
 				$err_code = $response->get_error_code();
 
+				if (!is_numeric($err_code) && isset($err_data['response']['code'])) {
+					$err_code = $err_data['response']['code'];
+					$err_msg = __('Error:', 'updraftplus').' '.UpdraftPlus_HTTP_Error_Descriptions::get_http_status_code_description($err_code);
+				} elseif (is_string($err_data) && preg_match('/captcha|verify.*human|turnstile/i', $err_data)) {
+					$err_msg = __('Error:', 'updraftplus').' '.__('We are unable to proceed with the process due to a bot verification requirement', 'updraftplus');
+				}
 			} elseif (!is_array($response) || empty($response['response']) || 'pong' != $response['response']) {
 
-				$err_msg = __('Error:', 'updraftplus').' '.sprintf(__('You should check that the remote site is online, not firewalled, does not have security modules that may be blocking access, has UpdraftPlus version %s or later active and that the keys have been entered correctly.', 'updraftplus'), '2.10.3');
+				$err_msg = __('Error:', 'updraftplus').' '.
+					/* translators: %s: Required UpdraftPlus version. */
+					sprintf(__('You should check that the remote site is online, not firewalled, bot verification setting is disabled, does not have security modules that may be blocking access, has UpdraftPlus version %s or later active and that the keys have been entered correctly.', 'updraftplus'), '2.10.3');
 				$err_data = $response;
 				$err_code = 'no_pong';
 
@@ -422,11 +434,16 @@ abstract class UpdraftPlus_RemoteSend {
 				$res = array('e' => 1, 'r' => $err_msg);
 
 				if ($this->url_looks_internal($url)) {
-					$res['moreinfo'] = '<p>'.sprintf(__('The site URL you are sending to (%s) looks like a local development website. If you are sending from an external network, it is likely that a firewall will be blocking this.', 'updraftplus'), htmlspecialchars($url)).'</p>';
+					$res['moreinfo'] = '<p>'.sprintf(
+						/* translators: %s: The URL of the site that appears to be a local development website. */
+						__('The site URL you are sending to (%s) looks like a local development website.', 'updraftplus'),
+						htmlspecialchars($url)
+					).' '.
+					__('If you are sending from an external network, it is likely that a firewall will be blocking this.', 'updraftplus').'</p>';
 				}
 
 				// We got several support requests from people who didn't seem to be aware of other methods
-				$msg_try_other_method = '<p>'.__('If sending directly from site to site does not work for you, then there are three other methods - please try one of these instead.', 'updraftplus').' <a href="https://updraftplus.com/faqs/how-do-i-migrate-to-a-new-site-location/#importing" target="_blank">'.__('For longer help, including screenshots, follow this link.', 'updraftplus').'</a></p>';
+				$msg_try_other_method = '<p>'.__('If sending directly from site to site does not work for you, then there are three other methods - please try one of these instead.', 'updraftplus').' <a href="https://teamupdraft.com/documentation/updraftplus/topics/migration/faqs/how-to-migrate-a-wordpress-site-with-updraftplus/" target="_blank">'.__('For longer help, including screenshots, follow this link.', 'updraftplus').'</a></p>';
 
 				$res['moreinfo'] = isset($res['moreinfo']) ? $res['moreinfo'].$msg_try_other_method : $msg_try_other_method;
 
@@ -562,7 +579,18 @@ abstract class UpdraftPlus_RemoteSend {
 		if (extension_loaded('mbstring')) {
 			// phpcs:ignore  PHPCompatibility.IniDirectives.RemovedIniDirectives.mbstring_func_overloadDeprecated -- Commented out as this flags as not compatible with PHP 5.2
 			if (ini_get('mbstring.func_overload') & 2) {
-				echo json_encode(array('e' => 1, 'r' => __('Error:', 'updraftplus').' '.sprintf(__('The setting %s is turned on in your PHP settings. It is deprecated, causes encryption to malfunction, and should be turned off.', 'updraftplus'), 'mbstring.func_overload')));
+				echo json_encode(
+					array(
+						'e' => 1,
+						'r' => __('Error:', 'updraftplus').' '.
+							sprintf(
+								/* translators: %s: PHP setting causing an issue. */
+								__('The setting %s is turned on in your PHP settings.', 'updraftplus'),
+								'mbstring.func_overload'
+							).' '.
+							__('It is deprecated, causes encryption to malfunction, and should be turned off.', 'updraftplus')
+					)
+				);
 				die;
 			}
 		}
@@ -577,6 +605,7 @@ abstract class UpdraftPlus_RemoteSend {
 		$ret = array();
 
 		if (empty($data['key'])) {
+			/* translators: %s: Key. */
 			$ret['e'] = sprintf(__("Failure: No %s was given.", 'updraftplus'), __('key', 'updraftplus'));
 		} else {
 		
@@ -641,66 +670,98 @@ abstract class UpdraftPlus_RemoteSend {
 		die;
 	}
 
-	protected function get_remotesites_selector($remotesites = false) {
+	/**
+	 * Display or return html for selecting receiving remote site.
+	 *
+	 * @param bool|array $remotesites            Remote sites. Default false for fetching from options.
+	 * @param bool       $echo_instead_of_return Whether to display html or return it.
+	 * @return void|string Display or return HTML for selecting remotesites.
+	 */
+	protected function get_remotesites_selector($remotesites = false, $echo_instead_of_return = false) {
 
 		if (false === $remotesites) {
 			$remotesites = UpdraftPlus_Options::get_updraft_option('updraft_remotesites');
 			if (!is_array($remotesites)) $remotesites = array();
 		}
 
-		$ret = '';
+		if (!$echo_instead_of_return) ob_start();
 
 		if (empty($remotesites)) {
-			$ret .= '<p id="updraft_migrate_receivingsites_nonemsg"><em>'.__('No receiving sites have yet been added.', 'updraftplus').'</em></p>';
+			?>
+			<p id="updraft_migrate_receivingsites_nonemsg">
+				<em><?php esc_html_e('No receiving sites have yet been added.', 'updraftplus');?></em>
+			</p>
+			<?php
 		} else {
-			$ret .= '<p class="updraftplus-remote-sites-selector"><label>'.__('Send to site:', 'updraftplus').'</label> <select id="updraft_remotesites_selector">';
-			foreach ($remotesites as $k => $rsite) {
-				if (!is_array($rsite) || empty($rsite['url'])) continue;
-				$ret .= '<option value="'.esc_attr($k).'">'.htmlspecialchars($rsite['url']).'</option>';
-			}
-			$ret .= '</select>';
-			$ret .= ' <button class="button-primary" id="updraft_migrate_send_button" onclick="updraft_migrate_send_backup_options();">'.__('Send', 'updraftplus').'</button>';
-			$ret .= '</p>';
+			?>
+			<p class="updraftplus-remote-sites-selector">
+				<label><?php esc_html_e('Send to site:', 'updraftplus');?></label>
+				<select id="updraft_remotesites_selector">
+					<?php
+					foreach ($remotesites as $k => $rsite) {
+						if (!is_array($rsite) || empty($rsite['url'])) continue;
+						?>
+						<option value="<?php echo esc_attr($k);?>"><?php echo esc_html($rsite['url']);?></option>
+						<?php
+					}
+					?>
+				</select>
+				<button class="button-primary" id="updraft_migrate_send_button" onclick="updraft_migrate_send_backup_options();"><?php esc_html_e('Send', 'updraftplus');?></button>
+			</p>
+			<?php
 		}
+		?>
 
-		$ret .= '<div class="text-link-menu">';
-		$ret .= '<a href="#" class="updraft_migrate_add_site--trigger"><span class="dashicons dashicons-plus"></span>'.__('Add a site', 'updraftplus').'</a>';
-		$ret .= sprintf(
-			'<a href="javascript:void(0)" class="updraft_migrate_clear_sites" %s onclick="updraft_migrate_delete_existingsites(\'%s\');"><span class="dashicons dashicons-trash"></span>%s</a>',
-			empty($remotesites) ? 'style="display: none"' : '',
-			esc_js(__("You are about to permanently delete the list of existing sites. This action cannot be undone. 'Cancel' to stop, 'OK' to delete.")),
-			__('Clear list of existing sites', 'updraftplus')
-		);
-		$ret .= '</div>';
-
-		return $ret;
+		<div class="text-link-menu">
+			<a href="#" class="updraft_migrate_add_site--trigger"><span class="dashicons dashicons-plus"></span><?php esc_html_e('Add a site', 'updraftplus');?></a>
+			<a href="#" class="updraft_migrate_clear_sites" <?php empty($remotesites) ? 'style="display: none"' : '';?>
+				onclick="event.preventDefault();updraft_migrate_delete_existingsites('<?php echo esc_js(__('You are about to permanently delete the list of existing sites.', 'updraftplus').' '.__('This action cannot be undone.', 'updraftplus').' '.__('\'Cancel\' to stop, \'OK\' to delete.', 'updraftplus'));?>');">
+				<span class="dashicons dashicons-trash"></span>
+				<?php esc_html_e('Clear list of existing sites', 'updraftplus');?>
+			</a>
+		</div>
+		<?php
+		if (!$echo_instead_of_return) return ob_get_clean();
 	}
 
-	protected function list_our_keys($our_keys = false) {
+	/**
+	 * Displays or returns html for listing keys for migrating sites.
+	 *
+	 * @param bool|array $our_keys               Keys for site migration.
+	 * @param bool       $echo_instead_of_return Whether to display HTML instead of returning.
+	 * @return void|string Display or return html for key selector for migration.
+	 */
+	protected function list_our_keys($our_keys = false, $echo_instead_of_return = false) {
+		if (!$echo_instead_of_return) ob_start();
 		if (false === $our_keys) {
-			$our_keys = UpdraftPlus_Options::get_updraft_option('updraft_migrator_localkeys');
+			$our_keys = UpdraftPlus_Options::get_updraft_option('updraft_migrator_localkeys', array());
 		}
 
-		if (empty($our_keys)) return '<em>'.__('No keys to allow remote sites to send backup data here have yet been created.', 'updraftplus').'</em>';
-
-		$ret = '';
-		$first_one = true;
-
-		foreach ($our_keys as $k => $key) {
-			if (!is_array($key)) continue;
-			if ($first_one) {
-				$first_one = false;
-				$ret .= '<p><strong>'.__('Existing keys', 'updraftplus').'</strong><br>';
+		if (empty($our_keys)) {
+			?>
+			<em><?php esc_html_e('No keys to allow remote sites to send backup data here have yet been created.', 'updraftplus');?></em>
+			<?php
+		} else {
+			$first_one = true;
+			foreach ($our_keys as $k => $key) {
+				if (!is_array($key)) continue;
+				if ($first_one) {
+					$first_one = false;
+					?>
+					<p><strong><?php esc_html_e('Existing keys', 'updraftplus');?></strong><br>
+					<?php
+				}
+				echo esc_html(($key['name'])).' - ';
+				?>
+				<a href="<?php echo esc_url(UpdraftPlus::get_current_clean_url());?>" onclick="updraft_migrate_local_key_delete('<?php echo esc_js($k);?>'); return false;" class="updraft_migrate_local_key_delete" data-keyid="<?php echo esc_attr($k);?>"><?php esc_html_e('Delete', 'updraftplus');?></a>
+				<br>
+				<?php
 			}
-			$ret .= htmlspecialchars($key['name']);
-			$ret .= ' - <a href="'.esc_url(UpdraftPlus::get_current_clean_url()).'" onclick="updraft_migrate_local_key_delete(\''.esc_attr($k).'\'); return false;" class="updraft_migrate_local_key_delete" data-keyid="'.esc_attr($k).'">'.__('Delete', 'updraftplus').'</a>';
-			$ret .= '<br>';
+	
+			if (!$first_one) echo "</p>"; // Handling the edge case where no <p> tag was opened earlier.
 		}
 
-		if ($ret) $ret .= '</p>';
-
-		return $ret;
-
+		if (!$echo_instead_of_return) return ob_get_clean();
 	}
 
 	/**

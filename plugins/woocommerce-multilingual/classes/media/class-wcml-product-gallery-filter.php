@@ -35,7 +35,7 @@ class WCML_Product_Gallery_Filter implements IWPML_Action {
 
 			if ( ! $image_ids ) {
 
-				remove_filter( 'get_post_metadata', [ $this, 'localize_image_ids' ], 10 );
+				remove_filter( 'get_post_metadata', [ $this, 'localize_image_ids' ] );
 
 				$meta_value = [];
 
@@ -48,7 +48,7 @@ class WCML_Product_Gallery_Filter implements IWPML_Action {
 						$original_gallery = array_filter( $original_gallery );
 
 						foreach ( $original_gallery as $attachment_id ) {
-							$attachment_element    = $this->translation_element_factory->create( $attachment_id, 'post' );
+							$attachment_element    = $this->translation_element_factory->create( (int) $attachment_id, 'post' );
 							$translated_attachment = $attachment_element->get_translation( $post_element->get_language_code() );
 							if ( null !== $translated_attachment ) {
 								$meta_value[] = $translated_attachment->get_id();

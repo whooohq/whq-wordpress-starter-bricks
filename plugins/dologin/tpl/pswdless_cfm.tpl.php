@@ -7,7 +7,7 @@ defined( 'WPINC' ) || exit;
 
 <div class="d-flex justify-content-center mt-5">
 <div class="alert alert-primary alert-dismissible shadow">
-	<h4 class="alert-heading"><?php echo __( 'Notice', 'dologin' ); ?></h4>
+	<h4 class="alert-heading"><?php echo __( 'DoLogin Notice', 'dologin' ); ?></h4>
 
 	<p class="mt-3"><?php echo __( 'You will login as the following user', 'dologin' ); ?>: </p>
 

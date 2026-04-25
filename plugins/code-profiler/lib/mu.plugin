@@ -7,14 +7,14 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 Plugin Name: Code Profiler (mu-plugin)
-Plugin URI: https://code-profiler.com/
+Plugin URI: https://nintechnet.com/codeprofiler/
 Description: Code Profiler's loader. Do not remove.
 Version: 1.0
 Author: Jerome Bruandet
-Author URI: https://code-profiler.com/
+Author URI: https://nintechnet.com/
 License: GPLv3 or later
 */
 define('CODE_PROFILER_MU_ON', true);

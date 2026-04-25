@@ -1,0 +1,326 @@
+.wppb-user-forms .pms-field,
+.wppb-user-forms .wppb-form-field:not(.wppb-recaptcha) {
+    margin-bottom: 16px;
+}
+
+.wppb-user-forms .wppb-form-field.wppb-subscription-plans .pms-group-memberships-field {
+    flex-direction: column;
+}
+
+.wppb-user-forms #pms-subscription-plans-discount input {
+    margin-bottom: 10px;
+}
+
+.wppb-user-forms .pms-field > label,
+.wppb-user-forms #pms-subscription-plans-discount > label,
+.wppb-user-forms .pms-group-memberships-field > label,
+.wppb-form-field:not(.wppb-checkbox-terms-and-conditions, .wppb-gdpr-checkbox, .wppb-mailchimp-subscribe, .wppb-send-credentials-checkbox, .wppb-campaign-monitor-subscribe, .wppb-mailpoet-subscribe, .login-remember) > label,
+.wppb-form-field .wppb-password-subfield > label {
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: 500;
+    color: #090A0B;
+}
+
+.wppb-user-forms .pms-field > label,
+.wppb-user-forms .pms-group-memberships-field label,
+.wppb-form-field label,
+#wppb-login-wrap .login-username label,
+#wppb-login-wrap .login-password label,
+#wppb-login-wrap .login-auth label {
+    width: auto !important;
+    margin-bottom: 5px;
+    display: block;
+    float: none !important;
+}
+
+.wppb-form-field .wppb-password-field-container,
+.wppb-form-field input[type="text"]:not(.pms_pwyw_pricing),
+.wppb-form-field input[type="number"],
+.wppb-form-field input[type="email"],
+.wppb-form-field input[type="url"],
+.wppb-user-forms input[type="tel"],
+.wppb-form-field input[type="password"],
+.wppb-form-field input[type="search"],
+.wppb-form-field select:not(#pms-currency-switcher),
+.wppb-form-field textarea,
+.wppb-user-forms .wppb-wysiwyg .wp-editor-wrap,
+.wppb-checkboxes,
+.wppb-radios,
+#wppb-login-wrap .login-username input,
+#wppb-login-wrap .login-password input,
+#wppb-login-wrap .login-auth input {
+    width: 100% !important;
+    max-width: 100%;
+    float: none !important;
+}
+
+.wppb-form-field input[type="text"]#pms_subscription_plans_discount_code {
+    max-width: calc( 100% - 170px );
+}
+
+.wppb-user-forms input[type="text"],
+.wppb-user-forms input[type="number"],
+.wppb-user-forms input[type="email"],
+.wppb-user-forms input[type="url"],
+.wppb-user-forms input[type="tel"],
+.wppb-user-forms input[type="password"],
+.wppb-user-forms input[type="search"],
+.wppb-user-forms select:not(.custom_field_multiple_select, .custom_field_multiple_select2),
+#select_user_to_edit_form select,
+.wppb-user-forms .select2-selection,
+#select_user_to_edit_form .select2-selection {
+    height: 44px;
+}
+
+.wppb-user-forms input[type="text"],
+.wppb-user-forms input[type="number"],
+.wppb-user-forms input[type="email"],
+.wppb-user-forms input[type="url"],
+.wppb-user-forms input[type="tel"],
+.wppb-user-forms input[type="password"],
+.wppb-user-forms input[type="search"],
+.wppb-user-forms textarea,
+.wppb-user-forms select,
+#select_user_to_edit_form select,
+.wppb-user-forms .select2-selection,
+#select_user_to_edit_form .select2-selection {
+    color: #666;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0 10px;
+}
+
+.wppb-user-forms input[type="text"]:hover,
+.wppb-user-forms input[type="number"]:hover,
+.wppb-user-forms input[type="email"]:hover,
+.wppb-user-forms input[type="url"]:hover,
+.wppb-user-forms input[type="tel"]:hover,
+.wppb-user-forms input[type="password"]:hover,
+.wppb-user-forms input[type="search"]:hover,
+.wppb-user-forms textarea:hover,
+.wppb-user-forms select:hover,
+#select_user_to_edit_form select:hover,
+.wppb-user-forms .select2-selection:hover,
+#select_user_to_edit_form .select2-selection:hover,
+.select2-container--default .select2-search--dropdown .select2-search__field:hover {
+    border-color: #999;
+}
+
+.wppb-user-forms input[type="text"]:focus,
+.wppb-user-forms input[type="number"]:focus,
+.wppb-user-forms input[type="email"]:focus,
+.wppb-user-forms input[type="url"]:focus,
+.wppb-user-forms input[type="tel"]:focus,
+.wppb-user-forms input[type="password"]:focus,
+.wppb-user-forms input[type="search"]:focus,
+.wppb-user-forms textarea:focus,
+.wppb-user-forms select:focus,
+#select_user_to_edit_form select:focus,
+.wppb-user-forms .select2-container--open .select2-selection,
+#select_user_to_edit_form .select2-container--open .select2-selection,
+.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+    color: #111;
+    outline: none;
+    box-shadow: none;
+    border-color: #111;
+}
+
+/* Select2 & Select2 Multiple & Select CPT & Select Taxonomy*/
+.wppb-select-cpt span.select2-container,
+.wppb-select-taxonomy span.select2-container,
+.wppb-select2 span.select2-container,
+.wppb-select2-multiple span.select2-container {
+    width: 100% !important;
+}
+
+.wppb-form-field > span {
+    margin-left: 0;
+}
+
+.wppb-form-field .wppb-description-delimiter {
+    margin-top: 5px;
+}
+
+.wppb-user-forms .select2-selection:not(.select2-selection--multiple) .select2-selection__rendered {
+    line-height: 44px;
+    color: #666;
+}
+
+.wppb-user-forms .wppb-form-field.wppb-international-telephone-input .iti {
+    width: 100%;
+    max-width: 100%;
+}
+
+.wppb-user-forms .wppb-form-field.wppb-international-telephone-input .iti + .wppb-iti-error {
+    float: none !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+}
+
+.wppb-user-forms .select2-container--open .select2-selection .select2-selection__rendered {
+    color: #111;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    height: 35px;
+    border-radius: 3px;
+    padding: 5px 10px;
+}
+
+.wppb-user-forms .select2-selection--multiple .select2-selection__rendered .select2-search--inline {
+    padding: 0;
+}
+
+.wppb-user-forms .select2-selection,
+#select_user_to_edit_form .select2-selection,
+.wppb-user-forms .wppb-form-field:not(.wppb-select-multiple) select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: #fff url('data:image/svg+xml;charset=US-ASCII,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M5 6l5 5 5-5 2 1-7 7-7-7 2-1z" fill="rgba(136,136,136,1)"/></svg>') no-repeat right 5px top 55% !important;
+}
+
+.wppb-user-forms .select2-container--open .select2-selection,
+#select_user_to_edit_form .select2-container--open .select2-selection,
+.wppb-user-forms .wppb-form-field:not(.wppb-select-multiple) select:active {
+    background: #fff url('data:image/svg+xml;charset=US-ASCII,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M15 14l-5-5-5 5-2-1 7-7 7 7-2 1z" fill="rgba(136, 136, 136, 1)"/></svg>') no-repeat right 5px top 55%;
+}
+
+.wppb-user-forms .select2-selection .select2-selection__arrow,
+#select_user_to_edit_form .select2-selection .select2-selection__arrow {
+    display: none;
+}
+
+#select_user_to_edit_form .select2-container {
+    margin-left: 0px;
+}
+
+#select_user_to_edit_form .select2-selection__rendered {
+    padding: 0;
+    padding-top: 7px;
+    font-size: 85%;
+}
+
+/* textarea */
+.wppb-user-forms textarea {
+    padding: 10px !important;
+}
+
+/* checkbox & radio */
+.wppb-user-forms input[type="checkbox"],
+.wppb-user-forms input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+}
+
+.wppb-form-field.wppb-woocommerce-customer-billing-address .wppb-shipping-different-address label,
+.wppb-form-field.wppb-send-credentials-checkbox label,
+.wppb-form-field.wppb-campaign-monitor-subscribe label,
+.wppb-form-field.wppb-mailpoet-subscribe label,
+.wppb-form-field.wppb-checkbox-terms-and-conditions label,
+.wppb-form-field.wppb-gdpr-checkbox label,
+.wppb-form-field.wppb-mailchimp-subscribe label,
+.wppb-user-forms .wppb-checkboxes > li,
+.wppb-user-forms .wppb-radios > li {
+    display: inline-flex !important;
+    align-items: center;
+}
+
+.wppb-user-forms .wppb-checkboxes > li label,
+.wppb-user-forms .wppb-radios > li label {
+    margin: 0;
+}
+
+/* timepicker */
+.wppb-form-field.wppb-timepicker select {
+    min-width: 100px;
+}
+
+.wppb-form-field.wppb-timepicker > span.wppb-timepicker-separator {
+    float: none !important;
+    line-height: 44px;
+}
+
+/* Social Connect buttons */
+div.wppb-sc-buttons-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+}
+
+.wppb-sc-buttons-text-div {
+    flex-basis: 47%;
+}
+
+/* buttons */
+.wppb-upload input[name^=simple_upload]::file-selector-button,
+.wppb-avatar input[name^=simple_upload]::file-selector-button,
+.wppb-user-forms input[type="submit"]:not(.wppb-ul-search .wppb-search-button),
+.wppb-user-forms .wppb-epaa-admin-actions button,
+.wppb-user-forms a.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    text-decoration: none;
+    text-transform: none;
+    padding: 0 15px;
+    font-size: 16px;
+    border: none !important;
+    cursor: pointer;
+}
+
+.wppb-upload input[name^=simple_upload]::file-selector-button,
+.wppb-avatar input[name^=simple_upload]::file-selector-button,
+.wppb-user-forms input[type="submit"]:not(.wppb-delete-account, .wppb-ul-search .wppb-search-button),
+.wppb-user-forms .wppb-epaa-admin-actions button,
+.wppb-user-forms a.button {
+    color: #FFFFFF !important;
+    background: #333333;
+}
+
+.wppb-user-forms input[type="submit"].wppb-delete-account {
+    color: #FFFFFF !important;
+    background: #cb391f;
+}
+
+.wppb-user-forms input[type="submit"].wppb-delete-account,
+.wppb-upload input[name^=simple_upload]::file-selector-button,
+.wppb-avatar input[name^=simple_upload]::file-selector-button,
+.wppb-user-forms .wppb-epaa-admin-actions button,
+.wppb-user-forms a.button {
+    height: 40px;
+    min-width: 120px;
+}
+
+.wppb-user-forms input[type="submit"].wppb-delete-account:hover,
+.wppb-user-forms input[type="submit"].wppb-delete-account:focus {
+    background: #e63145;
+}
+
+.wppb-user-forms input[type="submit"]:not(.wppb-delete-account) {
+    height: 50px;
+    min-width: 150px;
+}
+
+.wppb-upload input[name^=simple_upload]::file-selector-button:hover,
+.wppb-upload input[name^=simple_upload]::file-selector-button:focus,
+.wppb-avatar input[name^=simple_upload]::file-selector-button:hover,
+.wppb-avatar input[name^=simple_upload]::file-selector-button:focus,
+.wppb-user-forms input[type="submit"]:not(.wppb-delete-account):hover,
+.wppb-user-forms input[type="submit"]:not(.wppb-delete-account):focus,
+.wppb-user-forms .wppb-epaa-admin-actions button:hover,
+.wppb-user-forms .wppb-epaa-admin-actions button:focus,
+.wppb-user-forms a.button:hover,
+.wppb-user-forms a.button:focus {
+    background-color: #444444;
+}
+
+.wppb-form-field input:disabled {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #666;
+}

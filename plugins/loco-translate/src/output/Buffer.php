@@ -69,22 +69,22 @@ class Loco_output_Buffer {
     }
 
 
-	/**
-	 * Trash all open buffers, logging any junk output collected
-	 * @return void
-	 */
+    /**
+     * Trash all open buffers, logging any junk output collected
+     * @return void
+     */
     public function discard(){
-    	$this->close();
-	    if( '' !== $this->output ){
-		    self::log_junk( $this->output );
-		    $this->output = '';
-	    }
+        $this->close();
+        if( '' !== $this->output ){
+            self::log_junk( $this->output );
+            $this->output = '';
+        }
     }
 
 
     /**
      * Collect output buffered to a given level
-     * @param int highest buffer to flush, 0 being the root
+     * @param int $min highest buffer to flush, 0 being the root
      * @return string
      */
     public static function collect( $min ){
@@ -113,9 +113,9 @@ class Loco_output_Buffer {
      */
     public static function clear(){
         $junk = self::collect(0);
-	    if( '' !== $junk ){
-		    self::log_junk($junk);
-	    }
+        if( '' !== $junk ){
+            self::log_junk($junk);
+        }
     }
 
 
@@ -124,23 +124,24 @@ class Loco_output_Buffer {
      * @throws Loco_error_Exception
      */
     public static function check(){
-	    if( headers_sent($file,$line) && 'cli' !== PHP_SAPI ){
-		    $file = str_replace( trailingslashit( loco_constant('ABSPATH') ), '', $file );
-		    throw new Loco_error_Exception( sprintf( __('Loco interrupted by output from %s:%u','loco-translate'), $file, $line ) );
-	    }
+        if( headers_sent($file,$line) && 'cli' !== PHP_SAPI ){
+            $file = str_replace( trailingslashit( loco_constant('ABSPATH') ), '', $file );
+            // translators: (1) is the name of a PHP script, (2) is a line number in the file
+            throw new Loco_error_Exception( sprintf( __('Loco was interrupted by output from %1$s:%2$u','loco-translate'), $file?:'Unknown', $line ) );
+        }
     }
 
 
-	/**
-	 * Debug collection of junk output
-	 * @param string $junk
+    /**
+     * Debug collection of junk output
+     * @param string $junk
      * @return void
-	 */
+     */
     private static function log_junk( $junk ){
-    	$bytes = strlen($junk);
-		$message = sprintf("Cleared %s of buffered output", Loco_mvc_FileParams::renderBytes($bytes) );
-		Loco_error_AdminNotices::debug( $message );
-		do_action( 'loco_buffer_cleared', $junk );
-	}
+        $bytes = strlen($junk);
+        $message = sprintf("Cleared %s of buffered output", Loco_mvc_FileParams::renderBytes($bytes) );
+        Loco_error_AdminNotices::debug( $message );
+        do_action( 'loco_buffer_cleared', $junk );
+    }
 
 }

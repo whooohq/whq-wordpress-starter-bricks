@@ -1,0 +1,1926 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Plugin Name by BestWebSoft\n"
+"PO-Revision-Date: 2023-04-18 14:01+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-Flags-xgettext: --add-comments=translators:\n"
+"X-Poedit-WPHeader: plugin-name.php\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: "
+"__;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;esc_attr_e;esc_attr_x:1,"
+"2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;_nx_noop:3c,1,2;__"
+"ngettext_noop:1,2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+
+# automatic translation
+#: bws_menu/bws_functions.php:85 bws_menu/bws_functions.php:283
+msgid "requires"
+msgstr "必要"
+
+# automatic translation
+#: bws_menu/bws_functions.php:87
+msgid ""
+"or higher, that is why it has been deactivated! Please upgrade WordPress "
+"and try again."
+msgstr "それ以上の場合、それが非アクティブ化された理由です! WordPress をアップグレードしてから、もう一度お試しください。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:88
+msgid "Back to the WordPress"
+msgstr "ワードプレスに戻る"
+
+# automatic translation
+#: bws_menu/bws_functions.php:90
+msgid "Plugins page"
+msgstr "プラグインページ"
+
+# automatic translation
+#: bws_menu/bws_functions.php:112
+msgid "Like the plugin?"
+msgstr "プラグインが好きですか？"
+
+# automatic translation
+#: bws_menu/bws_functions.php:113
+#, php-format
+msgid "%s reviews"
+msgstr "%s 件のレビュー"
+
+# automatic translation
+#: bws_menu/bws_functions.php:114
+msgid "Rate it"
+msgstr "それを評価"
+
+# automatic translation
+#: bws_menu/bws_functions.php:123
+msgid "Need help?"
+msgstr "助けが必要？"
+
+# automatic translation
+#: bws_menu/bws_functions.php:124 bws_menu/bws_functions.php:1193
+#: bws_menu/class-bws-settings.php:1193
+msgid "Visit Help Center"
+msgstr "ヘルプセンターにアクセス"
+
+# automatic translation
+#: bws_menu/bws_functions.php:127
+msgid "Want to support the plugin?"
+msgstr "プラグインをサポートしたいですか？"
+
+# automatic translation
+#: bws_menu/bws_functions.php:128 bws_menu/bws_menu.php:659
+msgid "Donate"
+msgstr "寄付"
+
+# automatic translation
+#: bws_menu/bws_functions.php:155
+msgid "WARNING: Illegal use notification"
+msgstr "警告: 不正使用の通知"
+
+# automatic translation
+#: bws_menu/bws_functions.php:155
+msgid ""
+"You can use one license of the Pro plugin for one domain only. Please check "
+"and edit your license or domain if necessary using your personal Client "
+"Area. We strongly recommend you to solve the problem within 24 hours, "
+"otherwise the Pro plugin will be deactivated."
+msgstr ""
+"Pro プラグインの 1 つのライセンスは、1 つのドメインに対してのみ使用できます。必要に応じて、個人のクライアント "
+"エリアを使用して、ライセンスまたはドメインを確認して編集してください。 24 時間以内に問題を解決することを強くお勧めします。そうしないと、Pro "
+"プラグインが無効になります。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:155 bws_menu/bws_functions.php:247
+#: bws_menu/bws_menu.php:754 bws_menu/class-bws-settings.php:189
+msgid "Learn More"
+msgstr "もっと詳しく知る"
+
+# automatic translation
+#: bws_menu/bws_functions.php:174
+msgid ""
+"Notice: Your Pro Trial license has expired. To continue using the plugin, "
+"you should buy a Pro license"
+msgstr "注意: Pro トライアル ライセンスの有効期限が切れています。プラグインを引き続き使用するには、Pro ライセンスを購入する必要があります"
+
+# automatic translation
+#: bws_menu/bws_functions.php:176
+msgid ""
+"Your license has expired. To continue getting top-priority support and "
+"plugin updates, you should extend it."
+msgstr "ライセンスの有効期限が切れています。最優先のサポートとプラグインの更新を引き続き取得するには、延長する必要があります。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:176 bws_menu/bws_functions.php:267
+msgid "Learn more"
+msgstr "もっと詳しく知る"
+
+# automatic translation
+#: bws_menu/bws_functions.php:196
+#, php-format
+msgid "Notice: You are using the Pro Trial license of %s plugin."
+msgstr "注意: %s プラグインのプロ トライアル ライセンスを使用しています。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:198
+msgid "Notice: You are using the Pro Trial license of plugin."
+msgstr "注意: プラグインのプロ トライアル ライセンスを使用しています。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:201
+msgid "The Pro Trial license will expire on"
+msgstr "プロ トライアル ライセンスの有効期限は次のとおりです。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:238 bws_menu/bws_functions.php:263
+#: bws_menu/bws_functions.php:313 bws_menu/bws_functions.php:323
+#: bws_menu/bws_functions.php:560 bws_menu/bws_functions.php:593
+msgid "Close notice"
+msgstr "お知らせを閉じる"
+
+# automatic translation
+#: bws_menu/bws_functions.php:243
+msgid "It’s time to upgrade your"
+msgstr "アップグレードする時が来ました"
+
+# automatic translation
+#: bws_menu/bws_functions.php:243
+msgid "to"
+msgstr "に"
+
+# automatic translation
+#: bws_menu/bws_functions.php:243
+msgid "version!"
+msgstr "バージョン！"
+
+# automatic translation
+#: bws_menu/bws_functions.php:244
+msgid "Extend standard plugin functionality with new great options."
+msgstr "新しい優れたオプションで標準のプラグイン機能を拡張します。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:267
+#, php-format
+msgid ""
+"Your license key for %1$s expires on %2$s and you won't be granted "
+"TOP-PRIORITY SUPPORT or UPDATES."
+msgstr "%1$s のライセンス キーは %2$s に期限切れになり、最優先のサポートまたは更新は許可されません。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:285
+msgid ""
+"or higher! We do not guarantee that our plugin will work correctly. Please "
+"upgrade to WordPress latest version."
+msgstr "以上！プラグインが正しく動作することを保証するものではありません。 WordPress の最新バージョンにアップグレードしてください。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:303
+#, php-format
+msgid "Thank you for installing %s plugin!"
+msgstr "%s プラグインをインストールしていただきありがとうございます!"
+
+# automatic translation
+#: bws_menu/bws_functions.php:305
+msgid "Let's get started"
+msgstr "始めましょう"
+
+# automatic translation
+#: bws_menu/bws_functions.php:306 bws_menu/bws_functions.php:339
+#: bws_menu/bws_menu.php:665 bws_menu/bws_menu.php:667
+#: includes/class-plgnnm-settings.php:21 plugin-name.php:35 plugin-name.php:178
+#: plugin-name.php:219 plugin-name.php:233
+msgid "Settings"
+msgstr "設定"
+
+# automatic translation
+#: bws_menu/bws_functions.php:308 bws_menu/bws_menu.php:377
+#: bws_menu/class-bws-settings.php:908 bws_menu/class-bws-settings.php:1196
+#: bws_menu/class-bws-settings.php:1209 bws_menu/deprecated.php:260
+msgid "or"
+msgstr "また"
+
+# automatic translation
+#: bws_menu/bws_functions.php:309 bws_menu/bws_functions.php:341
+msgid "Add New"
+msgstr "新しく追加する"
+
+# automatic translation
+#: bws_menu/bws_functions.php:328
+msgid "Thank you for installing plugins by BestWebSoft!"
+msgstr "BestWebSoft のプラグインをインストールしていただきありがとうございます。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:330
+msgid "More Details"
+msgstr "詳細"
+
+# automatic translation
+#: bws_menu/bws_functions.php:331
+msgid "Less Details"
+msgstr "詳細を非表示"
+
+# automatic translation
+#: bws_menu/bws_functions.php:362
+msgid "Deprecated function(-s) is used on the site here:"
+msgstr "非推奨の関数 (-s) は、次のサイトで使用されています。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:380
+msgid "This function(-s) will be removed over time. Please update the product(-s)."
+msgstr "この機能 (-s) は、時間の経過とともに削除されます。製品を更新してください(-s)。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:555
+#, php-format
+msgid "Thank you for choosing %s plugin!"
+msgstr "%s プラグインをお選びいただきありがとうございます!"
+
+# automatic translation
+#: bws_menu/bws_functions.php:556
+msgid ""
+"If you have a feature, suggestion or idea you'd like to see in the plugin, "
+"we'd love to hear about it!"
+msgstr "プラグインに追加してほしい機能、提案、またはアイデアがあれば、ぜひお知らせください。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:557
+msgid "Suggest a Feature"
+msgstr "機能を提案する"
+
+# automatic translation
+#: bws_menu/bws_functions.php:598
+msgid "Affiliate Program"
+msgstr "アフィリエイトプログラム"
+
+# automatic translation
+#: bws_menu/bws_functions.php:599
+#, php-format
+msgid "Get %s"
+msgstr "取得"
+
+# automatic translation
+#: bws_menu/bws_functions.php:600
+msgid "from each BestWebSoft plugin and theme sale you refer"
+msgstr "あなたが参照する各BestWebSoftプラグインとテーマの販売から"
+
+# automatic translation
+#: bws_menu/bws_functions.php:604
+msgid "Join affiliate program"
+msgstr "アフィリエイト プログラムに参加する"
+
+# automatic translation
+#: bws_menu/bws_functions.php:608
+msgid "Promote and sell products"
+msgstr "製品の宣伝と販売"
+
+# automatic translation
+#: bws_menu/bws_functions.php:612
+msgid "Get commission!"
+msgstr "コミッションをゲット！"
+
+# automatic translation
+#: bws_menu/bws_functions.php:617
+msgid "Start Now"
+msgstr "今すぐ開始"
+
+# automatic translation
+#: bws_menu/bws_functions.php:634 bws_menu/class-bws-settings.php:640
+#: bws_menu/class-bws-settings.php:645 bws_menu/class-bws-settings.php:714
+#: bws_menu/class-bws-settings.php:719
+msgid "Notice"
+msgstr "知らせ"
+
+# automatic translation
+#: bws_menu/bws_functions.php:634
+msgid "The plugin's settings have been changed."
+msgstr "プラグインの設定が変更されました。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:635 bws_menu/class-bws-settings.php:235
+#: bws_menu/class-bws-settings.php:263
+msgid "Save Changes"
+msgstr "変更内容を保存"
+
+# automatic translation
+#: bws_menu/bws_functions.php:656
+msgid ""
+"You can always look at premium options by checking the \"Pro Options\" in "
+"the \"Misc\" tab."
+msgstr "「その他」タブの「プロ オプション」をチェックすると、いつでもプレミアム オプションを確認できます。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:842
+msgid "Add BWS Shortcode"
+msgstr "BWSショートコードを追加"
+
+# automatic translation
+#: bws_menu/bws_functions.php:843
+msgid "Add BWS Plugins Shortcode"
+msgstr "BWS プラグイン ショートコードを追加する"
+
+# automatic translation
+#: bws_menu/bws_functions.php:865
+msgid "Add shortcode"
+msgstr "ショートコードを追加"
+
+# automatic translation
+#: bws_menu/bws_functions.php:865
+msgid "Add BestWebSoft plugins' shortcodes using this button."
+msgstr "このボタンを使用して、BestWebSoft プラグインのショートコードを追加します。"
+
+# automatic translation
+#: bws_menu/bws_functions.php:974 includes/class-plgnnm-settings.php:99
+msgid "Close"
+msgstr "近い"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1066
+msgid "Are you sure you want to restore default settings?"
+msgstr "デフォルト設定を復元してもよろしいですか?"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1069
+msgid "Yes, restore all settings"
+msgstr "はい、すべての設定を復元します"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1070
+msgid "No, go back to the settings page"
+msgstr "いいえ、設定ページに戻ります"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1132
+msgid "Plugin"
+msgstr "プラグイン"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1141
+msgid "Shortcode settings"
+msgstr "ショートコードの設定"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1146
+msgid "The shortcode will be inserted"
+msgstr "ショートコードが挿入されます"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1198 plugin-name.php:234
+msgid "FAQ"
+msgstr "よくある質問"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1204
+msgid "For more information:"
+msgstr "詳細については："
+
+# automatic translation
+#: bws_menu/bws_functions.php:1205 bws_menu/bws_menu.php:475
+#: bws_menu/class-bws-settings.php:870
+msgid "Documentation"
+msgstr "ドキュメンテーション"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1206 bws_menu/bws_menu.php:477
+#: bws_menu/class-bws-settings.php:872
+msgid "Video Instructions"
+msgstr "ビデオの説明"
+
+# automatic translation
+#: bws_menu/bws_functions.php:1207
+msgid "Submit a Request"
+msgstr "リクエストを送信"
+
+# automatic translation
+#: bws_menu/bws_menu.php:105 bws_menu/class-bws-settings.php:971
+msgid "Wrong license key"
+msgstr "間違ったライセンス キー"
+
+# automatic translation
+#: bws_menu/bws_menu.php:127 bws_menu/class-bws-settings.php:997
+#: bws_menu/class-bws-settings.php:1074 bws_menu/class-bws-settings.php:1112
+msgid ""
+"Something went wrong. Please try again later. If the error appears again, "
+"please contact us"
+msgstr "エラーが発生しました。後でもう一度やり直してください。再度エラーが表示される場合は、弊社までご連絡ください"
+
+# automatic translation
+#: bws_menu/bws_menu.php:127 bws_menu/class-bws-settings.php:997
+#: bws_menu/class-bws-settings.php:1074 bws_menu/class-bws-settings.php:1112
+msgid "We are sorry for inconvenience."
+msgstr "ご不便をおかけして申し訳ございません。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:134 bws_menu/class-bws-settings.php:1003
+#: bws_menu/class-bws-settings.php:1118
+msgid "Wrong license key."
+msgstr "ライセンスキーが間違っています。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:136
+msgid ""
+"This license key is bound to another site. Change it via personal Client "
+"Area."
+msgstr "このライセンス キーは別のサイトにバインドされています。パーソナル クライアント エリアから変更します。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:136
+msgid "Log in"
+msgstr "ログイン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:138 bws_menu/bws_menu.php:385
+#: bws_menu/deprecated.php:172
+msgid "Unfortunately, you have exceeded the number of available tries per day."
+msgstr "残念ながら、1 日に利用できる試行回数を超えました。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:140
+#, php-format
+msgid ""
+"Unfortunately, Your license has expired. To continue getting top-priority "
+"support and plugin updates, you should extend it in your %s"
+msgstr "残念ながら、ライセンスの有効期限が切れています。最優先のサポートとプラグインの更新を引き続き取得するには、%s で拡張する必要があります"
+
+# automatic translation
+#: bws_menu/bws_menu.php:142 bws_menu/class-bws-settings.php:1126
+msgid ""
+"Unfortunately, the Pro licence was already installed to this domain. The "
+"Pro Trial license can be installed only once."
+msgstr "残念ながら、Pro ライセンスは既にこのドメインにインストールされています。 Pro Trial ライセンスは 1 回のみインストールできます。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:148 bws_menu/class-bws-settings.php:1018
+msgid "The license key is valid."
+msgstr "ライセンスキーは有効です。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:150 bws_menu/class-bws-settings.php:1022
+msgid "Your license will expire on"
+msgstr "ライセンスの有効期限は次のとおりです"
+
+# automatic translation
+#: bws_menu/bws_menu.php:153
+msgid "Congratulations! Pro Membership license is activated successfully."
+msgstr "おめでとう！プロ メンバーシップ ライセンスが正常にアクティブ化されました。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:160 bws_menu/class-bws-settings.php:1136
+msgid ""
+"Something went wrong. Try again later or upload the plugin manually. We are "
+"sorry for inconvenience."
+msgstr "エラーが発生しました。後で再試行するか、プラグインを手動でアップロードしてください。ご不便をおかけして申し訳ございません。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:171
+msgid "Please enter your license key."
+msgstr "ライセンスキーを入力してください。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:183
+msgid "Not set"
+msgstr "設定されていません"
+
+# automatic translation
+#: bws_menu/bws_menu.php:186
+msgid "On"
+msgstr "の上"
+
+# automatic translation
+#: bws_menu/bws_menu.php:186
+msgid "Off"
+msgstr "オフ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:187 bws_menu/bws_menu.php:188
+#: bws_menu/bws_menu.php:189 bws_menu/bws_menu.php:190
+#: bws_menu/bws_menu.php:191 bws_menu/bws_menu.php:192
+#: bws_menu/bws_menu.php:201
+msgid "N/A"
+msgstr "なし"
+
+# automatic translation
+#: bws_menu/bws_menu.php:192
+msgid "Mb"
+msgstr "メガバイト"
+
+# automatic translation
+#: bws_menu/bws_menu.php:193 bws_menu/bws_menu.php:194
+#: bws_menu/bws_menu.php:195 bws_menu/bws_menu.php:199
+msgid "Yes"
+msgstr "はい"
+
+# automatic translation
+#: bws_menu/bws_menu.php:193 bws_menu/bws_menu.php:194
+#: bws_menu/bws_menu.php:195 bws_menu/bws_menu.php:199
+msgid "No"
+msgstr "いいえ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:206
+msgid "WordPress Environment"
+msgstr "WordPress 環境"
+
+# automatic translation
+#: bws_menu/bws_menu.php:208
+msgid "Home URL"
+msgstr "ホーム URL"
+
+# automatic translation
+#: bws_menu/bws_menu.php:209
+msgid "Website URL"
+msgstr "ウェブサイトのURL"
+
+# automatic translation
+#: bws_menu/bws_menu.php:210
+msgid "WP Version"
+msgstr "WP版"
+
+# automatic translation
+#: bws_menu/bws_menu.php:211
+msgid "WP Multisite"
+msgstr "WP マルチサイト"
+
+# automatic translation
+#: bws_menu/bws_menu.php:212
+msgid "WP Memory Limit"
+msgstr "WP メモリ制限"
+
+# automatic translation
+#: bws_menu/bws_menu.php:213
+msgid "Active Theme"
+msgstr "アクティブなテーマ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:213 bws_menu/bws_menu.php:258
+#: bws_menu/bws_menu.php:261
+#, php-format
+msgid "by %s"
+msgstr "%sによる"
+
+# automatic translation
+#: bws_menu/bws_menu.php:217
+msgid "Server Environment"
+msgstr "サーバー環境"
+
+# automatic translation
+#: bws_menu/bws_menu.php:219
+msgid "Operating System"
+msgstr "オペレーティング·システム"
+
+# automatic translation
+#: bws_menu/bws_menu.php:220
+msgid "Server"
+msgstr "サーバ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:221
+msgid "PHP Version"
+msgstr "PHP バージョン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:222
+msgid "PHP Allow URL fopen"
+msgstr "PHP 許可 URL fopen"
+
+# automatic translation
+#: bws_menu/bws_menu.php:223
+msgid "PHP Memory Limit"
+msgstr "PHP メモリ制限"
+
+# automatic translation
+#: bws_menu/bws_menu.php:224
+msgid "Memory Usage"
+msgstr "メモリ使用量"
+
+# automatic translation
+#: bws_menu/bws_menu.php:225
+msgid "PHP Max Upload Size"
+msgstr "PHP 最大アップロード サイズ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:226
+msgid "PHP Max Post Size"
+msgstr "PHP 最大投稿サイズ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:227
+msgid "PHP Max Script Execute Time"
+msgstr "PHP スクリプトの最大実行時間"
+
+# automatic translation
+#: bws_menu/bws_menu.php:228
+msgid "PHP Exif support"
+msgstr "PHP Exif のサポート"
+
+# automatic translation
+#: bws_menu/bws_menu.php:229
+msgid "PHP IPTC support"
+msgstr "PHP IPTC サポート"
+
+# automatic translation
+#: bws_menu/bws_menu.php:230
+msgid "PHP XML support"
+msgstr "PHP XML サポート"
+
+# automatic translation
+#: bws_menu/bws_menu.php:236
+msgid "Database"
+msgstr "データベース"
+
+# automatic translation
+#: bws_menu/bws_menu.php:238
+msgid "WP DB version"
+msgstr "WP DB バージョン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:239
+msgid "MySQL version"
+msgstr "MySQL のバージョン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:240
+msgid "SQL Mode"
+msgstr "SQL モード"
+
+# automatic translation
+#: bws_menu/bws_menu.php:244
+msgid "Active Plugins"
+msgstr "アクティブなプラグイン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:249
+msgid "Inactive Plugins"
+msgstr "非アクティブなプラグイン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:270
+msgid "Please enter a valid email address."
+msgstr "有効なメールアドレスを入力してください。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:272
+#, php-format
+msgid "Email with system info is sent to %s."
+msgstr "システム情報を含む電子メールが %s に送信されます。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:276
+msgid "Thank you for contacting us."
+msgstr "ご連絡いただきありがとうございます。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:300
+msgid "Sorry, email message could not be delivered."
+msgstr "申し訳ありませんが、メール メッセージを配信できませんでした。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:321 bws_menu/bws_menu.php:342
+#: bws_menu/bws_menu.php:427 bws_menu/deprecated.php:27
+msgid "Plugins"
+msgstr "プラグイン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:329 bws_menu/bws_menu.php:350
+#: bws_menu/bws_menu.php:739 bws_menu/deprecated.php:28
+msgid "Themes"
+msgstr "テーマ"
+
+# automatic translation
+#: bws_menu/bws_menu.php:334 bws_menu/bws_menu.php:358
+#: bws_menu/bws_menu.php:775
+msgid "System status"
+msgstr "システムステータス"
+
+# automatic translation
+#: bws_menu/bws_menu.php:365 plugin-name.php:235
+msgid "Support"
+msgstr "サポート"
+
+# automatic translation
+#: bws_menu/bws_menu.php:366
+msgid "Manage purchased licenses & subscriptions"
+msgstr "購入したライセンスとサブスクリプションを管理する"
+
+# automatic translation
+#: bws_menu/bws_menu.php:375
+#, php-format
+msgid "Get Access to %s+ Premium Plugins"
+msgstr "%s+ プレミアム プラグインへのアクセスを取得"
+
+# automatic translation
+#: bws_menu/bws_menu.php:377
+msgid "Subscribe to Pro Membership"
+msgstr "プロ会員に申し込む"
+
+# automatic translation
+#: bws_menu/bws_menu.php:387 bws_menu/bws_menu.php:408
+#: bws_menu/class-bws-settings.php:925 bws_menu/deprecated.php:133
+msgid "Check license key"
+msgstr "ライセンスキーの確認"
+
+# automatic translation
+#: bws_menu/bws_menu.php:395
+msgid "Enter your license key"
+msgstr "ライセンスキーを入力してください"
+
+# automatic translation
+#: bws_menu/bws_menu.php:406 bws_menu/bws_menu.php:673
+#: bws_menu/bws_menu.php:682 bws_menu/class-bws-settings.php:898
+#: bws_menu/deprecated.php:170 bws_menu/deprecated.php:178
+#: bws_menu/deprecated.php:268 bws_menu/deprecated.php:281
+msgid "Activate"
+msgstr "活性化"
+
+# automatic translation
+#: bws_menu/bws_menu.php:428
+msgid "Upload Plugin"
+msgstr "アップロードプラグイン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:433
+#, php-format
+msgid ""
+"The plugin generated %d characters of <strong>unexpected output</strong> "
+"during activation. If you notice &#8220;headers already sent&#8221; "
+"messages, problems with syndication feeds or other issues, try deactivating "
+"or removing this plugin."
+msgstr ""
+"プラグインは、アクティブ化中に %d 文字の<strong>予期しない出力</strong>を生成しました。 「headers already "
+"sent」メッセージ、シンジケーション フィードの問題、またはその他の問題に気付いた場合は、このプラグインを無効にするか、削除してみてください。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:435
+msgid ""
+"Plugin could not be activated because it triggered a <strong>fatal "
+"error</strong>."
+msgstr "<strong>致命的なエラーが</strong>発生したため、プラグインをアクティブ化できませんでした。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:440
+msgid "Plugin <strong>activated</strong>."
+msgstr "プラグインが<strong>有効化されました</strong>。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:457
+msgid "Download Pro Plugin"
+msgstr "プロプラグインをダウンロード"
+
+# automatic translation
+#: bws_menu/bws_menu.php:459 bws_menu/class-bws-settings.php:853
+msgid "Your Pro plugin is ready"
+msgstr "Pro プラグインの準備ができました"
+
+# automatic translation
+#: bws_menu/bws_menu.php:461 bws_menu/class-bws-settings.php:855
+msgid "Your plugin has been zipped, and now is ready to download."
+msgstr "プラグインが圧縮され、ダウンロードする準備が整いました。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:464 bws_menu/class-bws-settings.php:858
+msgid "Download Now"
+msgstr "ダウンロード中"
+
+# automatic translation
+#: bws_menu/bws_menu.php:468 bws_menu/class-bws-settings.php:862
+msgid "Need help installing the plugin?"
+msgstr "プラグインのインストールにヘルプが必要ですか?"
+
+# automatic translation
+#: bws_menu/bws_menu.php:470 bws_menu/class-bws-settings.php:864
+msgid "How to install WordPress plugin from your admin Dashboard (ZIP archive)"
+msgstr "管理ダッシュボードから WordPress プラグインをインストールする方法 (ZIP アーカイブ)"
+
+# automatic translation
+#: bws_menu/bws_menu.php:473 bws_menu/class-bws-settings.php:868
+msgid "Get Started"
+msgstr "始めましょう"
+
+# automatic translation
+#: bws_menu/bws_menu.php:479 bws_menu/class-bws-settings.php:874
+msgid "Knowledge Base"
+msgstr "知識ベース"
+
+# automatic translation
+#: bws_menu/bws_menu.php:482
+msgid "Licenses & Domains"
+msgstr "ライセンスとドメイン"
+
+# automatic translation
+#: bws_menu/bws_menu.php:487
+msgid "Client Area"
+msgstr "クライアントエリア"
+
+# automatic translation
+#: bws_menu/bws_menu.php:491
+msgid "Return to BestWebSoft Panel"
+msgstr "BestWebSoft パネルに戻る"
+
+# automatic translation
+#: bws_menu/bws_menu.php:506 bws_menu/bws_menu.php:541
+#: bws_menu/bws_menu.php:714
+msgid "All"
+msgstr "全て"
+
+# automatic translation
+#: bws_menu/bws_menu.php:514 bws_menu/bws_menu.php:762
+msgid "Installed"
+msgstr "インストール済み"
+
+# automatic translation
+#: bws_menu/bws_menu.php:522
+msgid "Not Installed"
+msgstr "インストールされていない"
+
+# automatic translation
+#: bws_menu/bws_menu.php:529
+msgid "Filter results"
+msgstr "結果のフィルタリング"
+
+# automatic translation
+#: bws_menu/bws_menu.php:532 bws_menu/bws_menu.php:705
+msgid "Category"
+msgstr "カテゴリー"
+
+# automatic translation
+#: bws_menu/bws_menu.php:625
+msgid "Not installed"
+msgstr "インストールされていない"
+
+# automatic translation
+#: bws_menu/bws_menu.php:629
+msgid "Renew to get updates"
+msgstr "更新してアップデートを入手する"
+
+# automatic translation
+#: bws_menu/bws_menu.php:632
+#, php-format
+msgid "Update to v %s"
+msgstr "v %s に更新"
+
+# automatic translation
+#: bws_menu/bws_menu.php:647 bws_menu/bws_menu.php:676
+msgid "Get Pro"
+msgstr "プロになる"
+
+# automatic translation
+#: bws_menu/bws_menu.php:653 bws_menu/class-bws-settings.php:202
+#: bws_menu/class-bws-settings.php:1206
+msgid "Upgrade to Pro"
+msgstr "プロ仕様にアップグレードする"
+
+# automatic translation
+#: bws_menu/bws_menu.php:673 bws_menu/bws_menu.php:682
+msgid "Activate this plugin"
+msgstr "このプラグインを有効にする"
+
+# automatic translation
+#: bws_menu/bws_menu.php:687
+msgid "Install this plugin"
+msgstr "このプラグインをインストール"
+
+# automatic translation
+#: bws_menu/bws_menu.php:687
+msgid "Install Now"
+msgstr "今すぐインストール"
+
+# automatic translation
+#: bws_menu/bws_menu.php:700
+msgid "Nothing found. Try another criteria."
+msgstr "何も見つかりません。別の基準を試してください。"
+
+# automatic translation
+#: bws_menu/bws_menu.php:751
+#, php-format
+msgid "By %s"
+msgstr "%s で"
+
+# automatic translation
+#: bws_menu/bws_menu.php:760
+msgid "Already Installed"
+msgstr "すでにインストールされています"
+
+# automatic translation
+#: bws_menu/bws_menu.php:772
+msgid "Browse More WordPress Themes"
+msgstr "他の WordPress テーマを参照する"
+
+# automatic translation
+#: bws_menu/bws_menu.php:791
+msgid "Send to support"
+msgstr "サポートに送信"
+
+# automatic translation
+#: bws_menu/bws_menu.php:798
+msgid "Send to custom email &#187;"
+msgstr "カスタム メールに送信 &#187;"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:174
+msgid "Information"
+msgstr "情報"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:189
+msgid "Inactive"
+msgstr "非活性"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:197
+msgid "Expired"
+msgstr "期限切れ"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:200
+#, php-format
+msgid "%s day(-s) left"
+msgstr "残り %s 日 (-s)"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:206
+#, php-format
+msgid "Expired on %s"
+msgstr "%s に期限切れ"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:206
+msgid "Renew Now"
+msgstr "今すぐ更新"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:208
+msgid "Active"
+msgstr "アクティブ"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:214
+msgid "License"
+msgstr "ライセンス"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:217
+msgid "Status"
+msgstr "スターテス"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:221
+msgid "Version"
+msgstr "バージョン"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:368
+msgid "All plugin settings were restored."
+msgstr "すべてのプラグイン設定が復元されました。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:531 includes/class-plgnnm-settings.php:23
+msgid "Custom Code"
+msgstr "カスタムコード"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:537
+msgid ""
+"The ability to add custom code is available in the Pro version. If the Pro "
+"version is not available please contact us via Help Center"
+msgstr "カスタム コードを追加する機能は、Pro バージョンで利用できます。 Proバージョンが利用できない場合は、ヘルプセンターからお問い合わせください"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:548
+msgid "You do not have sufficient permissions to edit plugins for this site."
+msgstr "このサイトのプラグインを編集するための十分な権限がありません。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:554
+msgid "These styles will be added to the header on all pages of your site."
+msgstr "これらのスタイルは、サイトのすべてのページのヘッダーに追加されます。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:558
+#, php-format
+msgid ""
+"This PHP code will be hooked to the %s Action and will be printed on front "
+"end only."
+msgstr "この PHP コードは %s アクションにフックされ、フロント エンドでのみ出力されます。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:562
+msgid "These code will be added to the header on all pages of your site."
+msgstr "これらのコードは、サイトのすべてのページのヘッダーに追加されます。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:574
+msgid "Browsing"
+msgstr "ブラウジング"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:586
+#, php-format
+msgid "Activate custom %s code."
+msgstr "カスタム %s コードを有効にします。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:597
+#, php-format
+msgid "Learn more about %s"
+msgstr "%s の詳細"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:629
+msgid "Miscellaneous Settings"
+msgstr "その他の設定"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:640 bws_menu/class-bws-settings.php:714
+#, php-format
+msgid ""
+"It is prohibited to change %1$s settings on this site in the %2$s network "
+"settings."
+msgstr "%2$s ネットワーク設定で、このサイトの %1$s 設定を変更することは禁止されています。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:645 bws_menu/class-bws-settings.php:719
+#, php-format
+msgid ""
+"It is prohibited to view %1$s settings on this site in the %2$s network "
+"settings."
+msgstr "%2$s ネットワーク設定で、このサイトの %1$s 設定を表示することは禁止されています。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:656
+msgid "Pro Options"
+msgstr "プロのオプション"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:665
+msgid "Enable to display plugin Pro options."
+msgstr "プラグインの Pro オプションを表示できるようにします。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:671
+msgid "Track Usage"
+msgstr "使用状況の追跡"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:680
+msgid ""
+"Enable to allow tracking plugin usage anonymously in order to make it "
+"better."
+msgstr "プラグインの使用状況を匿名で追跡できるように有効にして、改善します。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:685
+msgid "Default Settings"
+msgstr "デフォルトの設定"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:687
+msgid "Restore Settings"
+msgstr "設定の復元"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:688
+msgid "This will restore plugin settings to defaults."
+msgstr "これにより、プラグイン設定がデフォルトに復元されます。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:703
+msgid "Import / Export"
+msgstr "インポート・エクスポート"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:837 includes/class-plgnnm-settings.php:25
+msgid "License Key"
+msgstr "ライセンスキー"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:901
+#, php-format
+msgid "Enter your license key to activate %s and get premium plugin features."
+msgstr "ライセンス キーを入力して %s をアクティベートし、プレミアム プラグイン機能を取得してください。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:904 bws_menu/class-bws-settings.php:1122
+#: bws_menu/deprecated.php:275
+msgid ""
+"Unfortunately, you have exceeded the number of available tries per day. "
+"Please, upload the plugin manually."
+msgstr "残念ながら、1 日に利用できる試行回数を超えました。プラグインを手動でアップロードしてください。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:908 bws_menu/deprecated.php:260
+#, php-format
+msgid "Start Your Free %s-Day Trial Now"
+msgstr "%s 日間の無料トライアルを今すぐ開始"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:927
+msgid ""
+"If necessary, you can check if the license key is correct or reenter it in "
+"the field below."
+msgstr "必要に応じて、ライセンス キーが正しいかどうかを確認するか、下のフィールドに再入力できます。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:938
+msgid "Manage License Settings"
+msgstr "ライセンス設定の管理"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:940
+msgid "Login to Client Area"
+msgstr "クライアントエリアにログイン"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:942
+msgid ""
+"Manage active licenses, download BWS products, and view your payment "
+"history using BestWebSoft Client Area."
+msgstr "BestWebSoft クライアント エリアを使用して、有効なライセンスを管理し、BWS 製品をダウンロードし、支払い履歴を表示します。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:964
+msgid "Security check"
+msgstr "セキュリティーチェック"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1005 bws_menu/class-bws-settings.php:1120
+msgid "This license key is bound to another site."
+msgstr "このライセンス キーは別のサイトにバインドされています。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1007
+msgid ""
+"This license key is valid, but Your license has expired. If you want to "
+"update our plugin in future, you should extend the license."
+msgstr "このライセンス キーは有効ですが、ライセンスの有効期限が切れています。今後プラグインを更新する場合は、ライセンスを延長する必要があります。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1009
+msgid "Unfortunately, you have exceeded the number of available tries."
+msgstr "残念ながら、利用可能な試行回数を超えました。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1011
+msgid ""
+"Unfortunately, the Pro Trial licence was already installed to this domain. "
+"The Pro Trial license can be installed only once."
+msgstr ""
+"残念ながら、Pro Trial ライセンスはこのドメインに既にインストールされています。 Pro Trial ライセンスは 1 "
+"回のみインストールできます。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1016
+msgid "The Pro Trial license key is valid."
+msgstr "プロ トライアル ライセンス キーは有効です。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1029 bws_menu/deprecated.php:155
+#, php-format
+msgid "In order to continue using the plugin it is necessary to buy a %s license."
+msgstr "プラグインを引き続き使用するには、%s ライセンスを購入する必要があります。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1124
+#, php-format
+msgid ""
+"Unfortunately, Your license has expired. To continue getting top-priority "
+"support and plugin updates, you should extend it in your %s."
+msgstr "残念ながら、ライセンスの有効期限が切れています。最優先のサポートとプラグインの更新を引き続き取得するには、%s で拡張する必要があります。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1173
+msgid "Please, enter Your license key"
+msgstr "ライセンスキーを入力してください"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1189
+msgid "Need Help?"
+msgstr "助けが必要？"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1191
+msgid "Read the Instruction"
+msgstr "指示を読む"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1196
+msgid "Watch the Video"
+msgstr "ビデオを見る"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1210
+msgid "Start Your Free Trial"
+msgstr "無料トライアルを開始する"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1248
+msgid "Request a Feature"
+msgstr "機能をリクエストする"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1254
+#, php-format
+msgid "How can we improve %s?"
+msgstr "%s を改善するにはどうすればよいですか?"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1256
+msgid "We look forward to hear your ideas."
+msgstr "皆様のご意見をお待ちしております。"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1258
+msgid "Describe your idea"
+msgstr "あなたのアイデアを説明してください"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1261 bws_menu/deactivation-form.php:123
+msgid "Send website data and allow to contact me back"
+msgstr "ウェブサイトのデータを送信し、私に連絡することを許可します"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1266
+msgid "Submit"
+msgstr "送信"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1267 bws_menu/deactivation-form.php:130
+msgid "Processing"
+msgstr "処理"
+
+# automatic translation
+#: bws_menu/class-bws-settings.php:1268
+msgid "Thank you!"
+msgstr "ありがとう！"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:25
+msgid "Need help? We are ready to answer your questions."
+msgstr "助けが必要？ご質問にお答えする準備ができています。"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:25
+msgid "Contact Support"
+msgstr "サポート問い合わせ先"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:30
+msgid "The plugin is not working"
+msgstr "プラグインが機能していません"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:32
+msgid "Kindly share what didn't work so we can fix it in future updates..."
+msgstr "今後のアップデートで修正できるように、機能しなかったものを共有してください..."
+
+# automatic translation
+#: bws_menu/deactivation-form.php:36
+msgid "The plugin didn't work as expected"
+msgstr "プラグインが期待どおりに機能しなかった"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:38
+msgid "What did you expect?"
+msgstr "何を期待していましたか？"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:42
+msgid "The plugin suddenly stopped working"
+msgstr "プラグインが突然動かなくなった"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:49
+msgid "The plugin broke my site"
+msgstr "プラグインが私のサイトを壊した"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:56
+msgid "I couldn't understand how to get it work"
+msgstr "それを機能させる方法を理解できませんでした"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:63
+msgid "I found a better plugin"
+msgstr "もっと良いプラグインを見つけた"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:65
+msgid "What's the plugin name?"
+msgstr "プラグイン名は？"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:69
+msgid "The plugin is great, but I need specific feature that you don't support"
+msgstr "プラグインは素晴らしいですが、サポートされていない特定の機能が必要です"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:71
+msgid "What feature?"
+msgstr "何の機能？"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:75
+msgid "I no longer need the plugin"
+msgstr "プラグインが不要になりました"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:81
+msgid "It's a temporary deactivation, I'm just debugging an issue"
+msgstr "これは一時的な非アクティブ化です。問題をデバッグしているだけです"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:87
+msgid "Other"
+msgstr "他の"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:96
+msgid "Quick Feedback"
+msgstr "クイックフィードバック"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:98
+msgid "If you have a moment, please let us know why you are deactivating"
+msgstr "お時間がありましたら、無効にする理由をお知らせください。"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:128
+msgid "Submit and Deactivate"
+msgstr "送信して非アクティブ化"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:129
+msgid "Skip and Deactivate"
+msgstr "スキップして非アクティブ化"
+
+# automatic translation
+#: bws_menu/deactivation-form.php:275
+msgid "Please tell us the reason so we can improve it."
+msgstr "改善できるように理由を教えてください。"
+
+# automatic translation
+#: bws_menu/deprecated.php:29
+msgid "System Status"
+msgstr "システムステータス"
+
+# automatic translation
+#: bws_menu/deprecated.php:129
+msgid ""
+"If necessary, you can check if the license key is correct or reenter it in "
+"the field below. You can find your license key on your personal page - "
+"Client Area - on our website"
+msgstr ""
+"必要に応じて、ライセンス キーが正しいかどうかを確認するか、下のフィールドに再入力できます。ライセンス キーは、当社の Web サイトの個人ページ "
+"(クライアント エリア) で見つけることができます。"
+
+# automatic translation
+#: bws_menu/deprecated.php:129
+msgid ""
+"(your username is the email address specified during the purchase). If "
+"necessary, please submit \"Lost your password?\" request."
+msgstr "(ユーザー名は、購入時に指定したメール アドレスです)。必要に応じて、「パスワードをお忘れですか?」と送信してください。リクエスト。"
+
+# automatic translation
+#: bws_menu/deprecated.php:155
+msgid "After that, you can activate it by entering your license key."
+msgstr "その後、ライセンスキーを入力してアクティベートできます。"
+
+# automatic translation
+#: bws_menu/deprecated.php:158 bws_menu/deprecated.php:253
+msgid "License key can be found in the"
+msgstr "ライセンス キーは"
+
+# automatic translation
+#: bws_menu/deprecated.php:160 bws_menu/deprecated.php:255
+msgid "(your username is the email address specified during the purchase)."
+msgstr "(ユーザー名は、購入時に指定したメール アドレスです)。"
+
+# automatic translation
+#: bws_menu/deprecated.php:187
+msgid "Congratulations! The Pro license of the plugin is activated successfully."
+msgstr "おめでとう！プラグインの Pro ライセンスが正常にアクティブ化されました。"
+
+# automatic translation
+#: bws_menu/deprecated.php:189 bws_menu/deprecated.php:233
+msgid "Please, go to"
+msgstr "に行ってください"
+
+# automatic translation
+#: bws_menu/deprecated.php:189 bws_menu/deprecated.php:233
+msgid "the setting page"
+msgstr "設定ページ"
+
+# automatic translation
+#: bws_menu/deprecated.php:207
+msgid "Restore all plugin settings to defaults"
+msgstr "すべてのプラグイン設定をデフォルトに戻す"
+
+# automatic translation
+#: bws_menu/deprecated.php:209
+msgid "Restore settings"
+msgstr "設定の復元"
+
+# automatic translation
+#: bws_menu/deprecated.php:231
+msgid ""
+"Congratulations! Pro version of the plugin is  installed and activated "
+"successfully."
+msgstr "おめでとう！プラグインの Pro バージョンがインストールされ、正常にアクティブ化されました。"
+
+# automatic translation
+#: bws_menu/deprecated.php:242
+msgid "Show Pro features"
+msgstr "プロの機能を表示"
+
+# automatic translation
+#: bws_menu/deprecated.php:249
+msgid "Enter your license key to install and activate"
+msgstr "ライセンス キーを入力して、インストールとアクティブ化を行います"
+
+# automatic translation
+#: bws_menu/deprecated.php:251
+msgid "version of the plugin."
+msgstr "プラグインのバージョン。"
+
+# automatic translation
+#: bws_menu/product_list.php:9
+msgid "Admin Tools"
+msgstr "管理ツール"
+
+# automatic translation
+#: bws_menu/product_list.php:10
+msgid "Content"
+msgstr "コンテンツ"
+
+# automatic translation
+#: bws_menu/product_list.php:11
+msgid "eCommerce"
+msgstr "eコマース"
+
+# automatic translation
+#: bws_menu/product_list.php:12
+msgid "Marketing"
+msgstr "マーケティング"
+
+# automatic translation
+#: bws_menu/product_list.php:13
+msgid "Navigation"
+msgstr "ナビゲーション"
+
+# automatic translation
+#: bws_menu/product_list.php:14
+msgid "Recommended"
+msgstr "おすすめされた"
+
+# automatic translation
+#: bws_menu/product_list.php:15
+msgid "Security"
+msgstr "安全"
+
+# automatic translation
+#: bws_menu/product_list.php:16
+msgid "SEO"
+msgstr "これ"
+
+# automatic translation
+#: bws_menu/product_list.php:17
+msgid "SMM"
+msgstr "SMM"
+
+# automatic translation
+#: bws_menu/product_list.php:24
+msgid "Give a birth for your bike rental and booking WordPress website."
+msgstr "自転車のレンタルと予約の WordPress ウェブサイトを誕生させましょう。"
+
+# automatic translation
+#: bws_menu/product_list.php:36
+msgid "Best secure captcha plugin to protect your WordPress forms."
+msgstr "WordPress フォームを保護するための最高の安全なキャプチャ プラグイン。"
+
+# automatic translation
+#: bws_menu/product_list.php:46
+msgid "Create your own rental website for car renting and booking."
+msgstr "レンタカーと予約のための独自のレンタル Web サイトを作成します。"
+
+# automatic translation
+#: bws_menu/product_list.php:58
+msgid ""
+"Add columns with custom content to WordPress website pages, posts, widgets, "
+"etc."
+msgstr "カスタム コンテンツを含む列を WordPress Web サイト ページ、投稿、ウィジェットなどに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:65
+msgid ""
+"Allow customers to reach you using secure contact form plugin any website "
+"must have."
+msgstr "Web サイトに必要な安全なコンタクト フォーム プラグインを使用して、顧客があなたに連絡できるようにします。"
+
+# automatic translation
+#: bws_menu/product_list.php:75
+msgid "Add unlimited number of contact forms to WordPress website."
+msgstr "WordPress Web サイトに無制限の数のお問い合わせフォームを追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:85
+msgid "Save and manage Contact Form messages. Never lose important data."
+msgstr "お問い合わせフォームのメッセージを保存して管理します。重要なデータを失うことはありません。"
+
+# automatic translation
+#: bws_menu/product_list.php:95
+msgid "Add unlimited custom pages to WordPress admin dashboard."
+msgstr "WordPress 管理ダッシュボードに無制限のカスタム ページを追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:105
+msgid "Add custom post types and taxonomies to WordPress website search results."
+msgstr "WordPress ウェブサイトの検索結果にカスタム投稿タイプとタクソノミーを追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:115
+msgid "Add PayPal and 2CO donate buttons to receive charity payments."
+msgstr "PayPal と 2CO の寄付ボタンを追加して、チャリティーの支払いを受け取ります。"
+
+# automatic translation
+#: bws_menu/product_list.php:122
+msgid ""
+"Get latest error log messages to diagnose website problems. Define and fix "
+"issues faster."
+msgstr "最新のエラー ログ メッセージを取得して、Web サイトの問題を診断します。問題をより迅速に定義して修正します。"
+
+# automatic translation
+#: bws_menu/product_list.php:129
+msgid ""
+"Add Facebook Follow, Like, and Share buttons to WordPress posts, pages, and "
+"widgets."
+msgstr "Facebook のフォロー、いいね、共有ボタンを WordPress の投稿、ページ、ウィジェットに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:139
+msgid ""
+"Add beautiful galleries, albums & images to your WordPress website in a few "
+"clicks."
+msgstr "数回クリックするだけで、美しいギャラリー、アルバム、画像を WordPress ウェブサイトに追加できます。"
+
+# automatic translation
+#: bws_menu/product_list.php:149
+msgid ""
+"Stronger security solution which protects your WordPress website from hacks "
+"and unauthorized login attempts."
+msgstr "WordPress Web サイトをハッキングや不正なログイン試行から保護する、より強力なセキュリティ ソリューション。"
+
+# automatic translation
+#: bws_menu/product_list.php:159
+msgid ""
+"Add Adsense ads to WordPress website pages, posts, custom posts, search "
+"results, categories, tags, and widgets."
+msgstr "Adsense 広告を WordPress Web サイト ページ、投稿、カスタム投稿、検索結果、カテゴリ、タグ、およびウィジェットに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:169
+msgid "Add Google Analytics code to WordPress website and track basic stats."
+msgstr "Google Analytics コードを WordPress Web サイトに追加して、基本的な統計を追跡します。"
+
+# automatic translation
+#: bws_menu/product_list.php:179
+msgid "Protect WordPress website forms from spam entries with reCaptcha."
+msgstr "reCaptcha を使用して、WordPress Web サイトのフォームをスパム エントリから保護します。"
+
+# automatic translation
+#: bws_menu/product_list.php:189
+msgid "Add customized Google maps to WordPress posts, pages and widgets."
+msgstr "カスタマイズした Google マップを WordPress の投稿、ページ、ウィジェットに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:199
+msgid ""
+"Generate and add XML sitemap to WordPress website. Help search engines "
+"index your blog."
+msgstr "XML サイトマップを生成して WordPress Web サイトに追加します。検索エンジンがあなたのブログをインデックスに登録できるようにします。"
+
+# automatic translation
+#: bws_menu/product_list.php:209
+msgid ""
+"Replace external WordPress website links with Google shortlinks and track "
+"click stats."
+msgstr "外部 WordPress ウェブサイト リンクを Google 短縮リンクに置き換え、クリック統計を追跡します。"
+
+# automatic translation
+#: bws_menu/product_list.php:216
+msgid ""
+"Protect WordPress website – allow and deny access for certain IP addresses, "
+"hostnames, etc."
+msgstr "WordPress ウェブサイトを保護 – 特定の IP アドレス、ホスト名などへのアクセスを許可および拒否します。"
+
+# automatic translation
+#: bws_menu/product_list.php:226
+msgid ""
+"Create your personal job board and listing WordPress website. Search jobs, "
+"submit CV/resumes, choose candidates."
+msgstr "あなたの個人的な求人掲示板とリスティング WordPress Web サイトを作成します。求人の検索、履歴書の提出、候補者の選択。"
+
+# automatic translation
+#: bws_menu/product_list.php:233
+msgid ""
+"Protect WordPress website against brute force attacks. Limit rate of login "
+"attempts."
+msgstr "ブルート フォース攻撃から WordPress Web サイトを保護します。ログイン試行回数を制限します。"
+
+# automatic translation
+#: bws_menu/product_list.php:243
+msgid ""
+"Add LinkedIn Share and Follow buttons to WordPress posts, pages and "
+"widgets. 5 plugins included – profile, insider, etc."
+msgstr ""
+"LinkedIn の共有ボタンとフォロー ボタンを WordPress の投稿、ページ、ウィジェットに追加します。 5 つのプラグインが含まれています "
+"– プロファイル、インサイダーなど。"
+
+# automatic translation
+#: bws_menu/product_list.php:253
+msgid ""
+"Translate WordPress website content to other languages manually. Create "
+"multilingual pages, posts, widgets, menus, etc."
+msgstr "WordPress Web サイトのコンテンツを他の言語に手動で翻訳します。多言語ページ、投稿、ウィジェット、メニューなどを作成します。"
+
+# automatic translation
+#: bws_menu/product_list.php:263
+msgid ""
+"Add customizable pagination to WordPress website. Split long content to "
+"multiple pages for better navigation."
+msgstr ""
+"WordPress Web "
+"サイトにカスタマイズ可能なページネーションを追加します。ナビゲーションを改善するために、長いコンテンツを複数のページに分割します。"
+
+# automatic translation
+#: bws_menu/product_list.php:273
+msgid ""
+"Generate PDF files and print WordPress posts/pages. Customize document "
+"header/footer styles and appearance."
+msgstr "PDF ファイルを生成し、WordPress の投稿/ページを印刷します。ドキュメントのヘッダー/フッターのスタイルと外観をカスタマイズします。"
+
+# automatic translation
+#: bws_menu/product_list.php:283
+msgid ""
+"Add Pinterest Follow, Pin It buttons and profile widgets (Pin, Board, "
+"Profile) to WordPress posts, pages and widgets."
+msgstr ""
+"Pinterest のフォロー、ピン留めボタン、プロフィール ウィジェット (ピン、ボード、プロフィール) を WordPress "
+"の投稿、ページ、ウィジェットに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:293
+msgid ""
+"Create your personal portfolio WordPress website. Manage and showcase past "
+"projects to get more clients."
+msgstr "個人のポートフォリオ WordPress Web サイトを作成します。過去のプロジェクトを管理して紹介し、より多くのクライアントを獲得します。"
+
+# automatic translation
+#: bws_menu/product_list.php:303
+msgid "Export WordPress posts to CSV file format easily. Configure data order."
+msgstr "WordPress の投稿を CSV ファイル形式に簡単にエクスポートします。データの順序を構成します。"
+
+# automatic translation
+#: bws_menu/product_list.php:313
+msgid ""
+"Add extra fields to default WordPress user profile. The easiest way to "
+"create and manage additional custom values."
+msgstr "デフォルトの WordPress ユーザー プロファイルにフィールドを追加します。追加のカスタム値を作成および管理する最も簡単な方法。"
+
+# automatic translation
+#: bws_menu/product_list.php:323
+msgid ""
+"Add and display HTML advertisement banner on WordPress website. Customize "
+"bar styles and appearance."
+msgstr "WordPress ウェブサイトに HTML 広告バナーを追加して表示します。バーのスタイルと外観をカスタマイズします。"
+
+# automatic translation
+#: bws_menu/product_list.php:333
+msgid ""
+"Add customizable quotes and tips blocks to WordPress posts, pages and "
+"widgets."
+msgstr "WordPress の投稿、ページ、ウィジェットにカスタマイズ可能な引用文とヒント ブロックを追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:340
+msgid ""
+"Add rating plugin to your WordPress website to receive feedback from your "
+"customers."
+msgstr "WordPress Web サイトに評価プラグインを追加して、顧客からのフィードバックを受け取ります。"
+
+# automatic translation
+#: bws_menu/product_list.php:350
+msgid ""
+"Create your personal real estate WordPress website. Sell, rent and buy "
+"properties. Add, search and browse listings easily."
+msgstr "個人の不動産 WordPress Web サイトを作成します。不動産の販売、賃貸、購入。リストを簡単に追加、検索、閲覧できます。"
+
+# automatic translation
+#: bws_menu/product_list.php:360
+msgid ""
+"Add related, featured, latest, and popular posts to your WordPress website. "
+"Connect your blog readers with a relevant content."
+msgstr "関連記事、特集記事、最新記事、人気記事を WordPress Web サイトに追加します。ブログの読者を関連するコンテンツにつなげます。"
+
+# automatic translation
+#: bws_menu/product_list.php:367
+msgid ""
+"Send bulk email messages to WordPress users. Custom templates, advanced "
+"settings and detailed reports."
+msgstr "WordPress ユーザーに一括メール メッセージを送信します。カスタム テンプレート、詳細設定、詳細レポート。"
+
+# automatic translation
+#: bws_menu/product_list.php:377
+msgid ""
+"The best responsive slider plugin for your WordPress website. Create "
+"beautifully animated slides just in a few clicks."
+msgstr ""
+"WordPress ウェブサイトに最適なレスポンシブ スライダー "
+"プラグイン。数回クリックするだけで、美しくアニメーション化されたスライドを作成できます。"
+
+# automatic translation
+#: bws_menu/product_list.php:384
+msgid ""
+"Configure SMTP server to receive email messages from WordPress to Gmail, "
+"Yahoo, Hotmail and other services."
+msgstr ""
+"WordPress から Gmail、Yahoo、Hotmail およびその他のサービスへの電子メール メッセージを受信するように SMTP "
+"サーバーを構成します。"
+
+# automatic translation
+#: bws_menu/product_list.php:391
+msgid ""
+"Add social media buttons and widgets to WordPress posts, pages and widgets. "
+"FB, Twitter, Pinterest, LinkedIn."
+msgstr ""
+"ソーシャル メディアのボタンとウィジェットを WordPress の投稿、ページ、ウィジェットに追加します。 "
+"FB、ツイッター、ピンタレスト、リンクトイン。"
+
+# automatic translation
+#: bws_menu/product_list.php:401
+msgid ""
+"Add social media login, registration, and commenting to your WordPress "
+"website."
+msgstr "ソーシャル メディアのログイン、登録、コメントを WordPress Web サイトに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:408
+msgid ""
+"Add email newsletter sign up form to WordPress posts, pages and widgets. "
+"Collect data and subscribe your users."
+msgstr ""
+"WordPress の投稿、ページ、ウィジェットにメール ニュースレターのサインアップ "
+"フォームを追加します。データを収集し、ユーザーをサブスクライブします。"
+
+# automatic translation
+#: bws_menu/product_list.php:418
+msgid ""
+"Add testimonials and feedbacks from your customers to WordPress website "
+"posts, pages, and widgets."
+msgstr "お客様の声やフィードバックを WordPress Web サイトの投稿、ページ、ウィジェットに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:425
+msgid ""
+"Best timesheet plugin for WordPress. Track employee time, streamline "
+"attendance and generate reports."
+msgstr "WordPress に最適なタイムシート プラグイン。従業員の時間を追跡し、出席を合理化し、レポートを生成します。"
+
+# automatic translation
+#: bws_menu/product_list.php:435
+msgid ""
+"Add Twitter Follow, Tweet, Hashtag, and Mention buttons to WordPress posts "
+"and pages."
+msgstr "Twitter のフォロー、ツイート、ハッシュタグ、メンション ボタンを WordPress の投稿やページに追加します。"
+
+# automatic translation
+#: bws_menu/product_list.php:445
+msgid ""
+"Automatically check and update WordPress website core with all installed "
+"plugins and themes to the latest versions."
+msgstr "インストールされているすべてのプラグインとテーマを使用して、WordPress Web サイトのコアを自動的にチェックし、最新バージョンに更新します。"
+
+# automatic translation
+#: bws_menu/product_list.php:455
+msgid ""
+"Powerful user role management plugin for WordPress website. Create, edit, "
+"copy, and delete user roles."
+msgstr "WordPress Web サイト用の強力なユーザー ロール管理プラグイン。ユーザー ロールを作成、編集、コピー、および削除します。"
+
+# automatic translation
+#: bws_menu/product_list.php:465
+msgid ""
+"Display live count of online visitors who are currently browsing your "
+"WordPress website."
+msgstr "現在 WordPress Web サイトを閲覧しているオンライン訪問者の実際の数を表示します。"
+
+# automatic translation
+#: bws_menu/product_list.php:475
+msgid ""
+"Backup and export Zendesk Help Center content automatically to your "
+"WordPress website database."
+msgstr "Zendesk ヘルプ センターのコンテンツを WordPress ウェブサイト データベースに自動的にバックアップおよびエクスポートします。"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:22
+msgid "Misc"
+msgstr "その他"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:57
+msgid "Settings saved."
+msgstr "保存された設定。"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:68 plugin-name.php:34 plugin-name.php:35
+msgid "Plugin Name Settings"
+msgstr "プラグイン名の設定"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:73
+msgid "Display Button"
+msgstr "表示ボタン"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:76
+msgid "My Page"
+msgstr "マイページ"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:78
+msgid "Like"
+msgstr "好き"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:80
+msgid "Share"
+msgstr "共有"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:85
+msgid "Buttons Position"
+msgstr "ボタンの位置"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:88
+msgid "Before"
+msgstr "前"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:89
+msgid "After"
+msgstr "後"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:90
+msgid "Before and After"
+msgstr "前後"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:91
+msgid "Shortcode"
+msgstr "ショートコード"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:103
+msgid "Verification Methods for Non-registered Users "
+msgstr "未登録ユーザーの確認方法"
+
+# automatic translation
+#: includes/class-plgnnm-settings.php:108
+msgid "SMS code"
+msgstr "SMS コード"
+
+# automatic translation
+#: plugin-name.php:189
+msgid "Add buttons to your page or post"
+msgstr "ページまたは投稿にボタンを追加する"
+
+# automatic translation
+#. Plugin Name of the plugin/theme
+msgid "Plugin Name by BestWebSoft"
+msgstr "BestWebSoftによるプラグイン名"
+
+# automatic translation
+#. Plugin URI of the plugin/theme
+msgid "https://bestwebsoft.com/products/wordpress/plugins/plugin-name/"
+msgstr "https://bestwebsoft.com/products/wordpress/plugins/プラグイン名/"
+
+# automatic translation
+#. Description of the plugin/theme
+msgid "***"
+msgstr "***"
+
+# automatic translation
+#. Author of the plugin/theme
+msgid "BestWebSoft"
+msgstr "ベストウェブソフト"
+
+# automatic translation
+#. Author URI of the plugin/theme
+msgid "https://bestwebsoft.com/"
+msgstr "https://bestwebsoft.com/"

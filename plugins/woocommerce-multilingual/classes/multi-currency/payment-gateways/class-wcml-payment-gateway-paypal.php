@@ -89,7 +89,7 @@ class WCML_Payment_Gateway_PayPal extends WCML_Payment_Gateway {
 		foreach ( $woocommerce_currencies as $code => $currency ) {
 
 			if ( $default_currency === $code ) {
-				$currencies_details[ $code ]['value']    = isset( $this->get_gateway()->settings['email'] ) ? $this->get_gateway()->settings['email'] : '';
+				$currencies_details[ $code ]['value']    = $this->get_gateway()->settings['email'] ?? '';
 				$currencies_details[ $code ]['currency'] = $code;
 				$currencies_details[ $code ]['isValid']  = $this->is_valid_for_use( $default_currency );
 			} else {

@@ -16,11 +16,27 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
      */
     private $translated;
 
+    /**
+     * @var Loco_package_Project
+     */
+    private $project;
+
+    /**
+     * @var array[]|null
+     */
+    private $hashes;
+    
+    
+
+    public function __construct( Loco_package_Project $project ){
+        $this->project = $project;
+    }
+
 
     /**
      * Initialize matcher with current valid source strings (ref.pot)
-     * @param Loco_gettext_Data POT reference
-     * @param bool whether copying translations from reference data
+     * @param Loco_gettext_Data $pot POT reference
+     * @param bool $translate Whether copying translations from reference data
      * @return int
      */
     public function loadRefs( Loco_gettext_Data $pot, $translate = false ){
@@ -37,24 +53,57 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
 
     /**
-     * Add further source strings from JSON/JED file
-     * @param Loco_fs_File json file
-     * @return int
+     * Perform a reverse lookup for a file reference from its pre-computed hash
      */
-    public function loadJson( Loco_fs_File $file ){
+    private function findScript( $hash ){
+        $map = $this->hashes;
+        // build full index of all script hashes under configured source locations.
+        if( is_null($map) ){
+            $map = [];
+            $scripts = clone $this->project->getSourceFinder();
+            $scripts->filterExtensions(['js']);
+            $basepath = $this->project->getBundle()->getDirectoryPath();
+            /* @var Loco_fs_File $jsfile */
+            foreach( $scripts->export() as $jsfile ){
+                $ref = $jsfile->getRelativePath($basepath);
+                if( substr($ref,-7) === '.min.js' ) {
+                    $ref = substr($ref,0,-7).'.js';
+                }
+                $map[ md5($ref) ] = $ref;
+            }
+            $this->hashes = $map;
+        }
+        return array_key_exists($hash,$map) ? $map[$hash] : '';
+    }
+
+
+    /**
+     * Add further source strings from JSON/JED file
+     */
+    private function loadJson( Loco_fs_File $file ):int {
         $unique = 0;
         $jed = json_decode( $file->getContents(), true );
         if( ! is_array($jed) || ! array_key_exists('locale_data',$jed) || ! is_array($jed['locale_data']) ){
             throw new Loco_error_Debug( $file->basename().' is not JED formatted');
         }
-        // Without a file reference strings will never be compiled back to the correct JSON.
-        // JSON files will not contain full line references, but we may know the file at least
-        if( ! array_key_exists('source',$jed) || ! $jed['source'] ){
-            throw new Loco_error_Debug( $file->basename().' has no "source" key');
+        // without a file reference, strings will never be compiled back to the correct JSON.
+        // if missing from JED, we'll attempt reverse match from scripts found on disk. 
+        $ref = array_key_exists('source',$jed) ? $jed['source'] : '';
+        if( '' === $ref || ! is_string($ref) ){
+            $name = $file->basename();
+            $ref = preg_match('/-([0-9a-f]{32})\\.json$/',$name,$r) ? $this->findScript($r[1]) : '';
+            if( '' === $ref ){
+                throw new Loco_error_Debug($name.' has no "source" key; script is unknown');
+            }
+            // The hash is pre-computed and .js file is known to exist, so we'll skip filters here.
+            // The compiler will still filter this reference, so it could potentially yield a different hash. 
+            // Loco_error_AdminNotices::debug($name.' has no "source" key; reverse matched '.$ref);
         }
-        $ref = $jed['source'];
+        // We won't search the original script to know the line number, but this must be a valid reference
+        // TODO We could extract the JS here, and search for each string in the JSON, but may not be 100% reliable.
+        $ref .= ':1';
         // not checking domain key. Should be valid if passed here and should only be one.
-        foreach( $jed['locale_data'] as $domain => $keys ){
+        foreach( $jed['locale_data'] as $keys ){
             foreach( $keys as $msgid => $arr ){
                 if( '' === $msgid || ! is_array($arr) || ! isset($arr[0]) ){
                     continue;
@@ -126,7 +175,7 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
     /**
      * Shortcut for loading multiple jsons with error tolerance
-     * @param Loco_fs_File[]
+     * @param Loco_fs_File[] $jsons
      * @return int
      */
     public function loadJsons( array $jsons ){
@@ -145,8 +194,8 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
     /**
      * Update still-valid sources, deferring unmatched (new strings) for deferred fuzzy match
-     * @param LocoPoIterator Existing definitions
-     * @param LocoPoIterator Resultant definitions
+     * @param LocoPoIterator $original Existing definitions
+     * @param LocoPoIterator $merged Resultant definitions
      * @return string[] keys matched exactly
      */
     public function mergeValid( LocoPoIterator $original, LocoPoIterator $merged ){
@@ -173,7 +222,7 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
     /**
      * Perform fuzzy matching after all exact matches have been attempted
-     * @param LocoPoIterator Resultant definitions
+     * @param LocoPoIterator $merged Resultant definitions 
      * @return string[] strings fuzzy-matched
      */
     public function mergeFuzzy( LocoPoIterator $merged ){
@@ -191,7 +240,7 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
     /**
      * Add unmatched strings remaining as NEW source strings
-     * @param LocoPoIterator Resultant definitions to accept new strings
+     * @param LocoPoIterator $merged Resultant definitions to accept new strings
      * @return string[] strings added
      */
     public function mergeAdded( LocoPoIterator $merged ){
@@ -213,8 +262,8 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
     /**
      * Perform full merge and return result suitable from front end.
-     * @param LocoPoIterator Existing definitions
-     * @param LocoPoIterator Resultant definitions
+     * @param LocoPoIterator $original Existing definitions
+     * @param LocoPoIterator $merged Resultant definitions
      * @return array result
      */
     public function merge( LocoPoIterator $original, LocoPoIterator $merged ){
@@ -237,7 +286,7 @@ class Loco_gettext_Matcher extends LocoFuzzyMatcher {
 
 
     /**
-     * @param array
+     * @param array $a
      * @return array
      */
     private function getArrayRef( array $a ){

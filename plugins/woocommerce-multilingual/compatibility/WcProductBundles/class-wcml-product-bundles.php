@@ -4,12 +4,15 @@ use WCML\Options\WPML;
 use WPML\FP\Fns;
 use WPML\FP\Obj;
 use WPML\FP\Str;
+use WCML\Utilities\WCTaxonomies;
 
 class WCML_Product_Bundles implements \IWPML_Action {
 
 	const META_SELL_IDS       = '_wc_pb_bundle_sell_ids';
 	const META_SELLS_TITLE    = '_wc_pb_bundle_sells_title';
 	const META_SELLS_DISCOUNT = '_wc_pb_bundle_sells_discount';
+
+	const BUNDLE_FIELD_PREFIX = 'product_bundles:';
 
 	/**
 	 * @var WPML_Element_Translation_Package
@@ -50,6 +53,9 @@ class WCML_Product_Bundles implements \IWPML_Action {
 		add_action( 'woocommerce_get_cart_item_from_session', [ $this, 'resync_bundle' ], 5, 3 );
 		add_filter( 'woocommerce_cart_loaded_from_session', [ $this, 'resync_bundle_clean' ], 10 );
 
+		$this->tp = new WPML_Element_Translation_Package();
+		add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_bundle_data_translation_package' ], 10, 2 );
+
 		if ( WPML::useAte() ) {
 			add_action( 'wpml_pro_translation_completed', [ $this, 'save_product_bundles_to_translation' ], 10, 3 );
 		} else { // Legacy action for CTE
@@ -57,17 +63,6 @@ class WCML_Product_Bundles implements \IWPML_Action {
 		}
 
 		if ( is_admin() ) {
-			$this->tp = new WPML_Element_Translation_Package();
-
-			add_filter(
-				'wpml_tm_translation_job_data',
-				[
-					$this,
-					'append_bundle_data_translation_package',
-				],
-				10,
-				2
-			);
 
 			if ( ! WPML::useAte() ) {  // Legacy actions/filters for CTE
 				add_action( 'wcml_gui_additional_box_html', [ $this, 'custom_box_html' ], 10, 3 );
@@ -161,7 +156,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 		foreach ( $bundle_items as $item_id => $bundle_item ) {
 
 			$item_meta             = $this->product_bundles_items->get_item_data( $bundle_item );
-			$translated_product_id = apply_filters( 'translate_object_id', $item_meta['product_id'], get_post_type( $item_meta['product_id'] ), false, $target_lang );
+			$translated_product_id = apply_filters( 'wpml_object_id', $item_meta['product_id'], get_post_type( $item_meta['product_id'] ), false, $target_lang );
 
 			if ( $translated_product_id ) {
 				$translated_item_id    = $this->get_item_id_for_language( $item_id, $target_lang );
@@ -258,7 +253,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 
 		foreach ( $allowed_variations as $k => $variation_id ) {
 			$allowed_variations[ $k ] =
-				apply_filters( 'translate_object_id', $variation_id, 'product_variation', true, $lang );
+				apply_filters( 'wpml_object_id', $variation_id, 'product_variation', true, $lang );
 		}
 
 		return $allowed_variations;
@@ -277,9 +272,9 @@ class WCML_Product_Bundles implements \IWPML_Action {
 
 		if ( is_array( $original_default_variation_attributes ) ) {
 			foreach ( $original_default_variation_attributes as $attribute_taxonomy => $attribute_slug ) {
-				if ( 'pa_' === substr( $attribute_taxonomy, 0, 3 ) ) {
+				if ( WCTaxonomies::isProductAttribute( $attribute_taxonomy ) ) {
 					$attribute_term_id            = $this->woocommerce_wpml->terms->wcml_get_term_id_by_slug( $attribute_taxonomy, $attribute_slug );
-					$translated_attribute_term_id = apply_filters( 'translate_object_id', $attribute_term_id, $attribute_taxonomy, true, $target_lang );
+					$translated_attribute_term_id = apply_filters( 'wpml_object_id', $attribute_term_id, $attribute_taxonomy, true, $target_lang );
 					$translated_term              = $this->woocommerce_wpml->terms->wcml_get_term_by_id( $translated_attribute_term_id, $attribute_taxonomy );
 
 					$default_variation_attributes[ $attribute_taxonomy ] = $translated_term->slug;
@@ -366,7 +361,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 
 		foreach ( $bundle_items as $item_id => $bundle_item ) {
 
-			$translated_product = apply_filters( 'translate_object_id', $bundle_item->product_id, get_post_type( $bundle_item->product_id ), false, $obj->get_target_language() );
+			$translated_product = apply_filters( 'wpml_object_id', $bundle_item->product_id, get_post_type( $bundle_item->product_id ), false, $obj->get_target_language() );
 			if ( ! is_null( $translated_product ) ) {
 
 				$add_group = false;
@@ -416,10 +411,10 @@ class WCML_Product_Bundles implements \IWPML_Action {
 	/**
 	 * @deprecated This method is used by CTE only.
 	 *
-	 * @param array      $data
-	 * @param string|int $bundle_id
-	 * @param object     $translation
-	 * @param string     $lang
+	 * @param array        $data
+	 * @param string|int   $bundle_id
+	 * @param object|mixed $translation
+	 * @param string       $lang
 	 *
 	 * @return mixed
 	 */
@@ -427,7 +422,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 
 		$bundle_data = $this->get_product_bundle_data( $bundle_id );
 
-		if ( $translation ) {
+		if ( is_object( $translation ) ) {
 			$translated_bundle_id   = $translation->ID;
 			$translated_bundle_data = $this->get_product_bundle_data( $translated_bundle_id );
 		}
@@ -477,7 +472,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 	 * @return string
 	 */
 	private static function get_job_field_name( $product_id, $item_id, $field ) {
-		return 'product_bundles:' . $product_id . ':' . $item_id . ':' . $field;
+		return self::BUNDLE_FIELD_PREFIX . $product_id . ':' . $item_id . ':' . $field;
 	}
 
 	public function append_bundle_data_translation_package( $package, $post ) {
@@ -594,14 +589,14 @@ class WCML_Product_Bundles implements \IWPML_Action {
 	 * @param callable   $get_field_translation (int, int, string) -> string
 	 * @param string     $target_lang
 	 *
-	 * @return array|void
+	 * @return array|null
 	 */
 	private function apply_translation( $bundle_id, $translated_bundle_id, callable $get_field_translation, $target_lang ) {
 		$bundle_data            = $this->get_product_bundle_data( $bundle_id );
 		$translated_bundle_data = $this->get_product_bundle_data( $translated_bundle_id );
 
 		if ( empty( $bundle_data ) ) {
-			return;
+			return null;
 		}
 
 		$translate_bundled_item_ids = $this->wpdb->get_col(
@@ -614,7 +609,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 		foreach ( $bundle_data as $item_id => $bundle_item_data ) {
 
 			$product_id            = $this->get_product_id_for_item_id( $item_id );
-			$translated_product_id = apply_filters( 'translate_object_id', $product_id, get_post_type( $product_id ), false, $target_lang );
+			$translated_product_id = apply_filters( 'wpml_object_id', $product_id, get_post_type( $product_id ), false, $target_lang );
 
 			if ( $translated_product_id ) {
 
@@ -681,8 +676,6 @@ class WCML_Product_Bundles implements \IWPML_Action {
 	 *
 	 * @param int $bundle_id
 	 * @param int $translated_bundle_id
-	 *
-	 * @return array|null
 	 */
 	public function sync_bundled_ids( $bundle_id, $translated_bundle_id ) {
 
@@ -695,7 +688,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 			foreach ( $bundle_data as $item_id => $product_data ) {
 
 				$product_id            = $this->get_product_id_for_item_id( $item_id );
-				$translated_product_id = apply_filters( 'translate_object_id', $product_id, get_post_type( $product_id ), false, $lang );
+				$translated_product_id = apply_filters( 'wpml_object_id', $product_id, get_post_type( $product_id ), false, $lang );
 
 				if ( $translated_product_id ) {
 
@@ -747,7 +740,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 						$allowed_var = maybe_unserialize( $product_data['allowed_variations'] );
 						$translated_bundle_data[ $translated_item_id ]['allowed_variations'] = maybe_unserialize( $translated_bundle_data[ $translated_item_id ]['allowed_variations'] );
 						foreach ( $allowed_var as $key => $var_id ) {
-							$translated_var_id = apply_filters( 'translate_object_id', $var_id, get_post_type( $var_id ), true, $lang );
+							$translated_var_id = apply_filters( 'wpml_object_id', $var_id, get_post_type( $var_id ), true, $lang );
 							$translated_bundle_data[ $translated_item_id ]['allowed_variations'][ $key ] = $translated_var_id;
 						}
 						$translated_bundle_data[ $translated_item_id ]['allowed_variations'] = maybe_serialize( $translated_bundle_data[ $translated_item_id ]['allowed_variations'] );
@@ -760,7 +753,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 							$term_id = $this->woocommerce_wpml->terms->wcml_get_term_id_by_slug( $tax, $term_slug );
 							if ( $term_id ) {
 								// Global Attribute.
-								$tr_def_id = apply_filters( 'translate_object_id', $term_id, $tax, true, $lang );
+								$tr_def_id = apply_filters( 'wpml_object_id', $term_id, $tax, true, $lang );
 								$tr_term   = $this->woocommerce_wpml->terms->wcml_get_term_by_id( $tr_def_id, $tax );
 								$translated_bundle_data[ $translated_item_id ]['bundle_defaults'][ $tax ] = $tr_term->slug;
 							} else {
@@ -774,7 +767,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 								$variationloop = new WP_Query( $args );
 								while ( $variationloop->have_posts() ) :
 									$variationloop->the_post();
-									$tr_var_id = apply_filters( 'translate_object_id', get_the_ID(), 'product_variation', true, $lang );
+									$tr_var_id = apply_filters( 'wpml_object_id', get_the_ID(), 'product_variation', true, $lang );
 									$tr_meta   = get_post_meta( $tr_var_id, 'attribute_' . $tax, true );
 									$translated_bundle_data[ $translated_item_id ]['bundle_defaults'][ $tax ] = $tr_meta;
 								endwhile;
@@ -793,14 +786,20 @@ class WCML_Product_Bundles implements \IWPML_Action {
 		return null;
 	}
 
+	/**
+	 * @param array{data:WC_Product} $cart_item
+	 * @param array                   $session_values
+	 * @param string                  $cart_item_key
+	 */
 	public function resync_bundle( $cart_item, $session_values, $cart_item_key ) {
-
-		if ( isset( $cart_item['bundled_items'] ) && $cart_item['data']->product_type === 'bundle' ) {
-			$current_bundle_id = apply_filters( 'translate_object_id', $cart_item['product_id'], 'product', true );
+		/* @phpstan-ignore booleanAnd.alwaysFalse, isset.offset  */
+		if ( isset( $cart_item['bundled_items'] ) && $cart_item['data']->get_type() === 'bundle' ) {
+			$current_bundle_id = apply_filters( 'wpml_object_id', $cart_item['product_id'], 'product', true );
 			if ( $cart_item['product_id'] != $current_bundle_id ) {
 				if ( isset( $cart_item['data']->bundle_data ) && is_array( $cart_item['data']->bundle_data ) ) {
 					$old_bundled_item_ids = array_keys( $cart_item['data']->bundle_data );
 					$cart_item['data']    = wc_get_product( $current_bundle_id );
+					/* @phpstan-ignore booleanAnd.rightAlwaysTrue */
 					if ( isset( $cart_item['data']->bundle_data ) && is_array( $cart_item['data']->bundle_data ) ) {
 						$new_bundled_item_ids      = array_keys( $cart_item['data']->bundle_data );
 						$remapped_bundled_item_ids = [];
@@ -808,6 +807,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 							$remapped_bundled_item_ids[ $old_item_id ] = $new_bundled_item_ids[ $old_item_id_index ];
 						}
 						$cart_item['remapped_bundled_item_ids'] = $remapped_bundled_item_ids;
+						/* @phpstan-ignore isset.offset */
 						if ( isset( $cart_item['stamp'] ) ) {
 							$new_stamp = [];
 							foreach ( $cart_item['stamp'] as $bundled_item_id => $stamp_data ) {
@@ -819,16 +819,18 @@ class WCML_Product_Bundles implements \IWPML_Action {
 				}
 			}
 		}
+		/* @phpstan-ignore booleanAnd.alwaysFalse, isset.offset */
 		if ( isset( $cart_item['bundled_by'] ) && isset( WC()->cart->cart_contents[ $cart_item['bundled_by'] ] ) ) {
 			$bundle_cart_item = WC()->cart->cart_contents[ $cart_item['bundled_by'] ];
 			if (
 				isset( $bundle_cart_item['remapped_bundled_item_ids'] ) &&
+				/* @phpstan-ignore isset.offset */
 				isset( $cart_item['bundled_item_id'] ) &&
 				isset( $bundle_cart_item['remapped_bundled_item_ids'][ $cart_item['bundled_item_id'] ] )
 			) {
-				$old_id                       = $cart_item['bundled_item_id'];
 				$remapped_bundled_item_ids    = $bundle_cart_item['remapped_bundled_item_ids'];
 				$cart_item['bundled_item_id'] = $remapped_bundled_item_ids[ $cart_item['bundled_item_id'] ];
+				/* @phpstan-ignore isset.offset */
 				if ( isset( $cart_item['stamp'] ) ) {
 					$new_stamp = [];
 					foreach ( $cart_item['stamp'] as $bundled_item_id => $stamp_data ) {
@@ -879,7 +881,7 @@ class WCML_Product_Bundles implements \IWPML_Action {
 					$item_id    = $matches[2];
 					$field      = $matches[3];
 
-					$translated_product_id = apply_filters( 'translate_object_id', $product_id, get_post_type( $product_id ), false, $job->language_code );
+					$translated_product_id = apply_filters( 'wpml_object_id', $product_id, get_post_type( $product_id ), false, $job->language_code );
 					$translated_item_id    = $this->get_item_id_for_language( $item_id, $job->language_code );
 					if ( empty( $translated_item_id ) ) {
 						$translated_item_id = $this->add_product_to_bundle( $translated_product_id, $translated_bundle_id, $item_id, $job->language_code );
@@ -976,8 +978,8 @@ class WCML_Product_Bundles implements \IWPML_Action {
 
 						if ( $lang['code'] !== $this->woocommerce_wpml->products->get_original_product_language( $bundled_item->bundle_id ) ) {
 
-							$translated_bundle_id  = apply_filters( 'translate_object_id', $bundled_item->bundle_id, get_post_type( $bundled_item->bundle_id ), false, $lang['code'] );
-							$translated_product_id = apply_filters( 'translate_object_id', $bundled_item->product_id, get_post_type( $bundled_item->product_id ), false, $lang['code'] );
+							$translated_bundle_id  = apply_filters( 'wpml_object_id', $bundled_item->bundle_id, get_post_type( $bundled_item->bundle_id ), false, $lang['code'] );
+							$translated_product_id = apply_filters( 'wpml_object_id', $bundled_item->product_id, get_post_type( $bundled_item->product_id ), false, $lang['code'] );
 
 							$translated_item_id = $this->wpdb->get_var(
 								$this->wpdb->prepare(

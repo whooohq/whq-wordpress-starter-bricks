@@ -2,26 +2,30 @@
 /**
  * @package The_SEO_Framework\Compat\Plugin\UltimateMember
  * @subpackage The_SEO_Framework\Compatibility
+ * @access private
  */
 
 namespace The_SEO_Framework;
 
-\defined( 'THE_SEO_FRAMEWORK_PRESENT' ) and \tsf()->_verify_include_secret( $_secret ) or die;
+\defined( 'THE_SEO_FRAMEWORK_PRESENT' ) or die;
 
 // At 9999 the user query should be registered (um\core\Rewrite::locate_user_profile). So, we use 9999+1 = 100000.
-\add_action( 'template_redirect', __NAMESPACE__ . '\\_um_reinstate_title_support', 100000 );
+\add_action( 'template_redirect', __NAMESPACE__ . '\_um_reinstate_title_support', 100000 );
+\add_filter( 'the_seo_framework_query_supports_seo', __NAMESPACE__ . '\_um_determine_support' );
+
 /**
  * Reinstates title support if a UM-controlled profile page is detected.
  *
+ * @hook template_redirect 100000
  * @since 4.2.0
- * @access private
  */
 function _um_reinstate_title_support() {
 
-	if ( ! \tsf()->can_i_use( [
+	if ( ! Helper\Compatibility::can_i_use( [
 		'functions' => [
 			'um_is_core_page',
 			'um_get_requested_user',
+			'um_dynamic_user_profile_pagetitle',
 		],
 	] ) ) return;
 
@@ -32,22 +36,21 @@ function _um_reinstate_title_support() {
 	}
 }
 
-\add_filter( 'the_seo_framework_query_supports_seo', __NAMESPACE__ . '\\_um_determine_support' );
 /**
  * Filters query support on UM pages.
  *
+ * @hook the_seo_framework_query_supports_seo 10
  * @since 4.2.0
- * @access private
  *
  * @param bool $supported Whether the query supports SEO.
- * @return string The filtered title.
+ * @return bool Whether the query is supported.
  */
 function _um_determine_support( $supported = true ) {
 
 	// No need to modify support if it's already not supported.
 	if ( ! $supported ) return $supported;
 
-	if ( ! \tsf()->can_i_use( [
+	if ( ! Helper\Compatibility::can_i_use( [
 		'functions' => [
 			'um_queried_user',
 			'um_is_core_page',

@@ -1,10 +1,10 @@
 <?php
 /*
 Plugin Name: Duplicate Page
-Plugin URI: https://wordpress.org/plugins/duplicate-page/
+Plugin URI: https://duplicatepro.com/
 Description: Duplicate Posts, Pages and Custom Posts using single click.
 Author: mndpsingh287
-Version: 4.5.2
+Version: 4.5.8
 Author URI: https://profiles.wordpress.org/mndpsingh287/
 License: GPLv2
 Text Domain: duplicate-page
@@ -13,7 +13,7 @@ if (!defined('DUPLICATE_PAGE_PLUGIN_DIRNAME')) {
     define('DUPLICATE_PAGE_PLUGIN_DIRNAME', plugin_basename(dirname(__FILE__)));
 }
 if (!defined('DUPLICATE_PAGE_PLUGIN_VERSION')) {
-    define('DUPLICATE_PAGE_PLUGIN_VERSION', '4.5.2');
+    define('DUPLICATE_PAGE_PLUGIN_VERSION', '4.5.8');
 }
 if (!class_exists('duplicate_page')):
     class duplicate_page
@@ -212,8 +212,13 @@ if (!class_exists('duplicate_page')):
                     foreach ( $post_meta_keys as $meta_key ) {
                         $meta_values = get_post_custom_values( $meta_key, $post_id );
                         foreach ( $meta_values as $meta_value ) {
-                            $meta_value = maybe_unserialize( $meta_value );
-                            update_post_meta( $new_post_id, $meta_key, wp_slash( $meta_value ) );
+                           if ( is_string( $meta_value ) && preg_match( '/^O:\d+:/', $meta_value ) ) {
+                            continue; 
+                             }
+                            if ( is_serialized( $meta_value ) ) {
+                                $meta_value = @unserialize($meta_value, ['allowed_classes' => false]);
+                            }
+                            add_post_meta($new_post_id, $meta_key, $meta_value);
                         }
                     }
                 }

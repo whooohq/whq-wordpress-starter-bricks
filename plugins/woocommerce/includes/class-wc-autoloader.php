@@ -6,7 +6,11 @@
  * @version 2.3.0
  */
 
+declare(strict_types=1);
+
 defined( 'ABSPATH' ) || exit;
+
+use Automattic\WooCommerce\Admin\Features\Features;
 
 /**
  * Autoloader class.
@@ -69,6 +73,19 @@ class WC_Autoloader {
 			return;
 		}
 
+		// The Legacy REST API was removed in WooCommerce 9.0, but some servers still have
+		// the includes/class-wc-api.php file after they upgrade, which causes a fatal error when executing
+		// "class_exists('WC_API')". This will prevent this error, while still making the class visible
+		// when it's provided by the WooCommerce Legacy REST API plugin.
+		if ( 'wc_api' === $class ) {
+			return;
+		}
+
+		// If the class is already loaded from a merged package, prevent autoloader from loading it as well.
+		if ( \Automattic\WooCommerce\Packages::should_load_class( $class ) ) {
+			return;
+		}
+
 		$file = $this->get_file_name_from_class( $class );
 		$path = '';
 
@@ -92,11 +109,72 @@ class WC_Autoloader {
 			$path = $this->include_path . 'integrations/' . substr( str_replace( '_', '-', $class ), 15 ) . '/';
 		} elseif ( 0 === strpos( $class, 'wc_notes_' ) ) {
 			$path = $this->include_path . 'admin/notes/';
+		} elseif ( 0 === strpos( $class, 'wc_rest_' ) ) {
+			// Handle REST API controllers in subdirectories.
+			// For V4 controllers, check if the feature is enabled first.
+			if ( false !== strpos( $class, '_v4_' ) ) {
+				// Only load V4 controllers if the feature is enabled.
+				if ( Features::is_enabled( 'rest-api-v4' ) ) {
+					$rest_controller_paths = array(
+						'rest-api/Controllers/Version4/',
+					);
+
+					foreach ( $rest_controller_paths as $rest_path ) {
+						if ( $this->load_file( $this->include_path . $rest_path . $file ) ) {
+							return;
+						}
+					}
+
+					// Also check subdirectories recursively for V4.
+					$this->load_rest_v4_controller_recursively( $file );
+				}
+			} else {
+				// For non-V4 controllers, load normally.
+				$rest_controller_paths = array(
+					'rest-api/Controllers/Version1/',
+					'rest-api/Controllers/Version2/',
+					'rest-api/Controllers/Version3/',
+					'rest-api/Controllers/Telemetry/',
+				);
+
+				foreach ( $rest_controller_paths as $rest_path ) {
+					if ( $this->load_file( $this->include_path . $rest_path . $file ) ) {
+						return;
+					}
+				}
+			}
 		}
 
 		if ( empty( $path ) || ! $this->load_file( $path . $file ) ) {
 			$this->load_file( $this->include_path . $file );
 		}
+	}
+
+	/**
+	 * Recursively load REST API V4 controllers from subdirectories.
+	 *
+	 * @param string $file File name to search for.
+	 */
+	private function load_rest_v4_controller_recursively( $file ): bool {
+		$v4_base_path = $this->include_path . 'rest-api/Controllers/Version4/';
+
+		// Use RecursiveDirectoryIterator to search subdirectories.
+		if ( is_dir( $v4_base_path ) ) {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $v4_base_path, RecursiveDirectoryIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::SELF_FIRST
+			);
+
+			foreach ( $iterator as $dir_info ) {
+				if ( $dir_info->isDir() ) {
+					$subdir_path = $dir_info->getPathname() . '/';
+					if ( $this->load_file( $subdir_path . $file ) ) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 }
 

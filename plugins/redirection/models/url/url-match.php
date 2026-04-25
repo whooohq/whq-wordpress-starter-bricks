@@ -7,14 +7,14 @@ class Red_Url_Match {
 	/**
 	 * URL
 	 *
-	 * @var String
+	 * @var string
 	 */
 	private $url;
 
 	/**
 	 * Constructor
 	 *
-	 * @param String $url The URL to match.
+	 * @param string $url The URL to match.
 	 */
 	public function __construct( $url ) {
 		$this->url = $url;
@@ -58,13 +58,13 @@ class Red_Url_Match {
 		// Lowercase everything
 		$path = Red_Url_Path::to_lower( $path );
 
-		return $path ? $path : '/';
+		return $path === '' ? '/' : $path;
 	}
 
 	/**
 	 * Get the URL with parameters re-ordered into alphabetical order
 	 *
-	 * @return String
+	 * @return string
 	 */
 	public function get_url_with_params() {
 		$query = new Red_Url_Query( $this->url, new Red_Source_Flags( [ Red_Source_Flags::FLAG_CASE => true ] ) );

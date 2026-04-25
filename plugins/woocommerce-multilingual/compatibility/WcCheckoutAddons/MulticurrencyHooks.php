@@ -14,7 +14,7 @@ class MulticurrencyHooks implements \IWPML_Action {
 	 * @return array|mixed
 	 */
 	public function optionWcCheckoutAddOnsFilter( $optionValue ) {
-		$convertPrice = function( $index, $conf ) {
+		$convertPrice = function( $index, $conf, $checkoutAddOnName, $checkoutAddOnId ) {
 			if (
 				isset( $conf['adjustment'], $conf['adjustment_type'] )
 				&& 'fixed' === $conf['adjustment_type']

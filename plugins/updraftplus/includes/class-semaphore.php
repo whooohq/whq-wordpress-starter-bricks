@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct $wpdb query is required for this operation.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching -- some query operations need to always receive the most up-to-date or actual data directly from the database, reducing the risk of serving stale information.
 /**
  * Semaphore Lock Management
  * Adapted from WP Social under the GPL - thanks to Alex King (https://github.com/crowdfavorite/wp-social)
@@ -33,6 +35,7 @@ class UpdraftPlus_Semaphore {
 		global $wpdb, $updraftplus;
 
 		// Attempt to set the lock
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 		$affected = $wpdb->query("
 			UPDATE $wpdb->options
 			   SET option_name = 'updraftplus_locked_".$this->lock_name."'
@@ -45,6 +48,7 @@ class UpdraftPlus_Semaphore {
 		}
 
 		// Check to see if all processes are complete
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 		$affected = $wpdb->query("
 			UPDATE $wpdb->options
 			   SET option_value = CAST(option_value AS UNSIGNED) + 1
@@ -58,6 +62,7 @@ class UpdraftPlus_Semaphore {
 			}
 
 			// Reset the semaphore to 1
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 			$wpdb->query("
 				UPDATE $wpdb->options
 				   SET option_value = '1'
@@ -68,6 +73,7 @@ class UpdraftPlus_Semaphore {
 		}
 
 		// Set the lock time
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 		$wpdb->query($wpdb->prepare("
 			UPDATE $wpdb->options
 			   SET option_value = %s
@@ -82,6 +88,7 @@ class UpdraftPlus_Semaphore {
 	public static function ensure_semaphore_exists($semaphore) {
 		// Make sure the options for semaphores exist
 		global $wpdb, $updraftplus;
+		// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dynamic table name ($wpdb->options) and variable option names cannot be parameterized
 		$results = $wpdb->get_results("
 			SELECT option_id
 				FROM $wpdb->options
@@ -96,16 +103,18 @@ class UpdraftPlus_Semaphore {
 				$updraftplus->log("Semaphore ($semaphore, ".$wpdb->options.") being initialised");
 			}
 			
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dynamic table name ($wpdb->options) and variable option names cannot be parameterized
 			$wpdb->query("
 				DELETE FROM $wpdb->options
 				WHERE option_name IN ('updraftplus_locked_$semaphore', 'updraftplus_unlocked_$semaphore', 'updraftplus_last_lock_time_$semaphore', 'updraftplus_semaphore_$semaphore')
 			");
 			
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dynamic table name ($wpdb->options) and variable option names cannot be parameterized
 			$wpdb->query($wpdb->prepare("
 				INSERT INTO $wpdb->options (option_name, option_value, autoload)
 				VALUES
 				('updraftplus_unlocked_$semaphore', '1', 'no'),
-				('updraftplus_last_lock_time_$semaphore', '%s', 'no'),
+				('updraftplus_last_lock_time_$semaphore', %s, 'no'),
 				('updraftplus_semaphore_$semaphore', '0', 'no')
 			", current_time('mysql', 1)));
 		}
@@ -128,6 +137,7 @@ class UpdraftPlus_Semaphore {
 				}
 			}
 		} else {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 			$wpdb->query("
 				UPDATE $wpdb->options
 				   SET option_value = CAST(option_value AS UNSIGNED) + 1
@@ -147,6 +157,7 @@ class UpdraftPlus_Semaphore {
 	public function decrement() {
 		global $wpdb, $updraftplus;
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 		$wpdb->query("
 			UPDATE $wpdb->options
 			   SET option_value = CAST(option_value AS UNSIGNED) - 1
@@ -167,6 +178,7 @@ class UpdraftPlus_Semaphore {
 		// Decrement for the master process.
 		$this->decrement();
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 		$result = $wpdb->query("
 			UPDATE $wpdb->options
 			   SET option_name = 'updraftplus_unlocked_".$this->lock_name."'
@@ -198,6 +210,7 @@ class UpdraftPlus_Semaphore {
 		$current_time = current_time('mysql', 1);
 		$three_minutes_before = gmdate('Y-m-d H:i:s', time()-(defined('UPDRAFTPLUS_SEMAPHORE_LOCK_WAIT') ? UPDRAFTPLUS_SEMAPHORE_LOCK_WAIT : 180));
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic table name ($wpdb->options) and lock name used in semaphore queries cannot be parameterized
 		$affected = $wpdb->query($wpdb->prepare("
 			UPDATE $wpdb->options
 			   SET option_value = %s
@@ -220,5 +233,15 @@ class UpdraftPlus_Semaphore {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Remove a given lock from the options table in the database
+	 *
+	 * @return Boolean True if the lock has successfully been removed, false otherwise
+	 */
+	public function delete_lock() {
+		global $wpdb;
+		return (bool) $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s", $this->lock_name));
 	}
 } // End UpdraftPlus_Semaphore

@@ -3,7 +3,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Tab_Design extends WPCaptcha
@@ -28,7 +28,11 @@ class WPCaptcha_Tab_Design extends WPCaptcha
         echo '<h3>Templates:</h3>';
         echo '<ul class="design-templates">';
         foreach($templates as $template_id => $template){
-            WPCaptcha_Utility::wp_kses_wf('<li><a class="disable_confirm_action ' . ($template_id == $options['design_template']?'design-template-active':'') . '" data-confirm="Are you sure you want to enable this template? This will overwrite all Design settings." href="' . add_query_arg(array('_wpnonce' => wp_create_nonce('wpcaptcha_install_template'), 'template' => $template_id, 'action' => 'wpcaptcha_install_template', 'redirect' => urlencode($_SERVER['REQUEST_URI'])), admin_url('admin.php')) . '"><img src="' . WPCAPTCHA_PLUGIN_URL . '/images/templates/' . $template_id . '.jpg"></a></li>');
+            $redirect_url = '';
+            if(isset($_SERVER['REQUEST_URI'])){
+                $redirect_url = urlencode(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
+            }
+            WPCaptcha_Utility::wp_kses_wf('<li><a class="disable_confirm_action ' . ($template_id == $options['design_template']?'design-template-active':'') . '" data-confirm="Are you sure you want to enable this template? This will overwrite all Design settings." href="' . add_query_arg(array('_wpnonce' => wp_create_nonce('wpcaptcha_install_template'), 'template' => $template_id, 'action' => 'wpcaptcha_install_template', 'redirect' => $redirect_url), admin_url('admin.php')) . '"><img src="' . WPCAPTCHA_PLUGIN_URL . '/images/templates/' . $template_id . '.jpg"></a></li>');
         }
         echo '</ul>';
 

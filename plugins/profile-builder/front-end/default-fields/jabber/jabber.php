@@ -13,6 +13,7 @@ function wppb_jabber_handler( $output, $form_location, $field, $user_id, $field_
 		$input_value = $field['default-value'];
 		
 	$input_value = ( isset( $request_data['jabber'] ) ? trim( $request_data['jabber'] ) : $input_value );
+	$input_value = apply_filters( 'wppb_form_jabber_field_value', $input_value, $field, $form_location );
 	
 	if ( $form_location != 'back_end' ){
 		$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );

@@ -1,5 +1,5 @@
 <?php
-
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.file_system_operations_fputs, WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable, WordPress.WP.AlternativeFunctions.file_system_operations_chown, WordPress.WP.AlternativeFunctions.file_system_operations_chgrp, WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
 // https://stackoverflow.com/questions/157318/resumable-downloads-when-using-php-to-send-the-file
 // User: DaveRandom
 
@@ -51,7 +51,7 @@ class UpdraftPlus_RangeHeader
 		if (!preg_match('/^\s*([A-Za-z]+)\s*=\s*(\d*)\s*-\s*(\d*)\s*(?:,|$)/', $header, $info)) {
 			throw new UpdraftPlus_InvalidRangeHeaderException('Invalid header format');
 		} else if (strtolower($info[1]) !== 'bytes') {
-			throw new UpdraftPlus_InvalidRangeHeaderException('Unknown range unit: ' . $info[1]);
+			throw new UpdraftPlus_InvalidRangeHeaderException('Unknown range unit: ' . $info[1]); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error messages should be escaped when caught and printed.
 		}
 
 		return new self(
@@ -195,7 +195,7 @@ class UpdraftPlus_PartialFileServlet
 		while ($length) {
 			$read = ($length > $chunkSize) ? $chunkSize : $length;
 			$length -= $read;
-			echo fread($fp, $read);
+			echo fread($fp, $read); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw output intended.
 		}
 	}
 
@@ -226,14 +226,14 @@ class UpdraftPlus_PartialFileServlet
 		$localPath = realpath($path);
 		if ($localPath === false || !is_file($localPath)) {
 			throw new UpdraftPlus_NonExistentFileException(
-				$path . ' does not exist or is not a file'
+				$path . ' does not exist or is not a file' // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error messages should be escaped when caught and printed.
 			);
 		}
 
 		// Make sure we can open the file for reading
 		if (!$fp = fopen($localPath, 'r')) {
 			throw new UpdraftPlus_UnreadableFileException(
-				'Failed to open ' . $localPath . ' for reading'
+				'Failed to open ' . $localPath . ' for reading' // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error messages should be escaped when caught and printed.
 			);
 		}
 

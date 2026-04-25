@@ -32,12 +32,22 @@ class Plugin {
 	private $slug;
 
 	/**
+	 * Users Connection Admin instance.
+	 *
+	 * @var Users_Connection_Admin
+	 */
+	private $users_connection_admin;
+
+	/**
 	 * Initialize the plugin manager.
 	 *
 	 * @param string $slug Plugin slug.
 	 */
 	public function __construct( $slug ) {
 		$this->slug = $slug;
+
+		// Initialize Users_Connection_Admin
+		$this->users_connection_admin = new Users_Connection_Admin();
 	}
 
 	/**
@@ -85,38 +95,15 @@ class Plugin {
 	public function is_only() {
 		$plugins = Plugin_Storage::get_all();
 
+		if ( is_wp_error( $plugins ) ) {
+			if ( 'too_early' === $plugins->get_error_code() ) {
+				_doing_it_wrong( __METHOD__, esc_html( $plugins->get_error_code() . ': ' . $plugins->get_error_message() ), '6.16.1' );
+			} else {
+				wp_trigger_error( __METHOD__, $plugins->get_error_code() . ': ' . $plugins->get_error_message() );
+			}
+			return false;
+		}
+
 		return ! $plugins || ( array_key_exists( $this->slug, $plugins ) && 1 === count( $plugins ) );
-	}
-
-	/**
-	 * Add the plugin to the set of disconnected ones.
-	 *
-	 * @deprecated since 1.39.0.
-	 *
-	 * @return bool
-	 */
-	public function disable() {
-		return true;
-	}
-
-	/**
-	 * Remove the plugin from the set of disconnected ones.
-	 *
-	 * @deprecated since 1.39.0.
-	 *
-	 * @return bool
-	 */
-	public function enable() {
-		return true;
-	}
-
-	/**
-	 * Whether this plugin is allowed to use the connection.
-	 *
-	 * @deprecated since 11.0
-	 * @return bool
-	 */
-	public function is_enabled() {
-		return true;
 	}
 }

@@ -1,23 +1,29 @@
 /* eslint-disable no-unused-vars */
 /**
+ * External dependencies
+ */
+import PropTypes from 'prop-types';
+import { ReactSVG } from 'react-svg'
+import classnames from 'classnames';
+
+/**
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
 import {
 	Placeholder,
-	Button,
 	PanelBody,
 } from '@wordpress/components';
 import {
 	useBlockProps,
-	MediaUpload,
 	BlockControls,
 	AlignmentToolbar,
 	InspectorControls,
 	__experimentalImageSizeControl as ImageSizeControl,
-	MediaReplaceFlow
+	MediaReplaceFlow,
+	MediaPlaceholder,
+	getColorClassName,
 } from '@wordpress/block-editor';
-import PropTypes from 'prop-types';
 
 /**
  * Edit component.
@@ -31,8 +37,8 @@ import PropTypes from 'prop-types';
  * @param {Function} props.setAttributes        Sets the value for block attributes.
  * @return {Function} Render the edit screen
  */
-const SafeSvgBlockEdit = ( props ) => {
-	const { attributes, setAttributes } = props;
+const SafeSvgBlockEdit = ({ attributes, setAttributes }) => {
+
 	const {
 		contentPostType,
 		svgURL,
@@ -43,24 +49,47 @@ const SafeSvgBlockEdit = ( props ) => {
 		imageWidth,
 		imageHeight,
 		dimensionWidth,
-		dimensionHeight
+		dimensionHeight,
+		textColor,
 	} = attributes;
-	const blockProps = useBlockProps();
 
-	const ALLOWED_MEDIA_TYPES = [ 'image/svg+xml' ];
+	const blockProps = useBlockProps(
+		{
+			className: 'wp-block-safe-svg-svg-icon safe-svg-cover',
+			style: {
+				textAlign: alignment,
+			}
+		}
+	);
+
+	const { className, style, ...containerBlockProps } = blockProps;
+
+	// Remove text alignment so we can apply to the parent container.
+	delete style.textAlign;
+	containerBlockProps.style = { textAlign: alignment };
+
+	// Remove core background & text color classes, so we can add our own.
+	const newClassName = className.replace(/has-[\w-]*-color|has-background/g, '').trim();
+	containerBlockProps.className = newClassName;
+
+	// Add the width and height to enforce dimensions and to keep parity with the frontend.
+	style.width = `${dimensionWidth}px`;
+	style.height = `${dimensionHeight}px`;
+
+	const ALLOWED_MEDIA_TYPES = ['image/svg+xml'];
 
 	const onSelectImage = media => {
-		if ( !media.sizes && !media.media_details?.sizes ) {
+		if (!media.sizes && !media.media_details?.sizes) {
 			return;
 		}
 
-		if( media.media_details ) {
+		if (media.media_details) {
 			media.sizes = media.media_details.sizes;
 		}
 
 		const newURL = media.sizes.full.url ?? media.sizes.full.source_url;
 
-		setAttributes( {
+		setAttributes({
 			imageSizes: {
 				full: media.sizes.full,
 				medium: media.sizes.medium,
@@ -73,17 +102,17 @@ const SafeSvgBlockEdit = ( props ) => {
 			imageID: media.id,
 			svgURL: newURL,
 			type: 'full',
-		} );
+		});
 	};
 
-	const onError = ( message ) => {
-		console.log( __(`Something went wrong, please try again. Message: ${message}`, 'safe-svg') );
+	const onError = (message) => {
+		console.log(__(`Something went wrong, please try again. Message: ${message}`, 'safe-svg'));
 	}
 
 	const onChange = (dimensionSizes) => {
-		if( !dimensionSizes.width && !dimensionSizes.height ) {
-			dimensionSizes.width = parseInt( imageSizes[type].width );
-			dimensionSizes.height = parseInt( imageSizes[type].height );
+		if (!dimensionSizes.width && !dimensionSizes.height) {
+			dimensionSizes.width = parseInt(imageSizes[type].width);
+			dimensionSizes.height = parseInt(imageSizes[type].height);
 		}
 		setAttributes({
 			dimensionWidth: dimensionSizes.width ?? dimensionWidth,
@@ -93,13 +122,13 @@ const SafeSvgBlockEdit = ( props ) => {
 
 	const onChangeImage = (newSizeSlug) => {
 		const newUrl = imageSizes[newSizeSlug].url ?? imageSizes[newSizeSlug].source_url;
-		if( ! newUrl ) {
+		if (!newUrl) {
 			return null;
 		}
-		let newWidth = parseInt( imageSizes[newSizeSlug].width );
-		let newHeight = parseInt( imageSizes[newSizeSlug].height );
-		if( 'full' !== newSizeSlug ) {
-			if(imageSizes[newSizeSlug].width >= imageSizes[newSizeSlug].height) {
+		let newWidth = parseInt(imageSizes[newSizeSlug].width);
+		let newHeight = parseInt(imageSizes[newSizeSlug].height);
+		if ('full' !== newSizeSlug) {
+			if (imageSizes[newSizeSlug].width >= imageSizes[newSizeSlug].height) {
 				newHeight = imageSizes[newSizeSlug].height * imageSizes['full'].height / imageSizes['full'].width;
 			} else {
 				newWidth = imageSizes[newSizeSlug].width * imageSizes['full'].width / imageSizes['full'].height;
@@ -116,36 +145,45 @@ const SafeSvgBlockEdit = ( props ) => {
 	}
 
 	const imageSizeOptions = [
-		{ value: 'full', label: 'Full Size' },
-		{ value: 'medium', label: 'Medium' },
-		{ value: 'thumbnail', label: 'Thumbnail' },
+		{
+			value: 'full', label: __('Full Size', 'safe-svg')
+		},
+		{
+			value: 'medium', label: __('Medium', 'safe-svg')
+		},
+		{
+			value: 'thumbnail', label: __('Thumbnail', 'safe-svg')
+		},
 	];
 
 	return (
-		<div { ...blockProps } style={{overflow: 'hidden'}}>
+		<>
 			{svgURL &&
-				<><InspectorControls>
-					<PanelBody
-						title={__(
-							'Image settings',
-							'safe-svg'
-						)}
-					>
-						<ImageSizeControl
-							width={dimensionWidth}
-							height={dimensionHeight}
-							imageWidth={imageWidth}
-							imageHeight={imageHeight}
-							imageSizeOptions={imageSizeOptions}
-							slug={type}
-							onChange={onChange}
-							onChangeImage={onChangeImage} />
-					</PanelBody>
-				</InspectorControls><BlockControls>
+				<>
+					<InspectorControls>
+						<PanelBody
+							title={__(
+								'Image settings',
+								'safe-svg'
+							)}
+						>
+							<ImageSizeControl
+								width={dimensionWidth}
+								height={dimensionHeight}
+								imageWidth={imageWidth}
+								imageHeight={imageHeight}
+								imageSizeOptions={imageSizeOptions}
+								slug={type}
+								onChange={onChange}
+								onChangeImage={onChangeImage} />
+						</PanelBody>
+					</InspectorControls>
+					<BlockControls>
 						<AlignmentToolbar
 							value={alignment}
 							onChange={(newVal) => setAttributes({ alignment: newVal })} />
-					</BlockControls><BlockControls>
+					</BlockControls>
+					<BlockControls>
 						<MediaReplaceFlow
 							mediaId={imageID}
 							mediaURL={svgURL}
@@ -153,62 +191,52 @@ const SafeSvgBlockEdit = ( props ) => {
 							accept={ALLOWED_MEDIA_TYPES}
 							onSelect={onSelectImage}
 							onError={onError} />
-					</BlockControls></>
+					</BlockControls>
+				</>
 			}
-			<MediaUpload
-				onSelect={onSelectImage}
-				allowedTypes={ALLOWED_MEDIA_TYPES}
-				accept={ALLOWED_MEDIA_TYPES}
-				value={imageID}
-				render={({open}) => {
-					return (
-						<div
-							style={{
-								maxWidth: '100%',
-								textAlign: alignment
-							}}
-						>
-							{!svgURL &&
-								<Button variant="tertiary" onClick={open}>
-									{__('Select an SVG icon', 'safe-svg')}
-								</Button>
-							}
-							{svgURL &&
-								<svg
-									style={{
-										width: dimensionWidth,
-										height: dimensionHeight,
-										maxWidth: '100%',
-										maxHeight: '100%'
-									}}
-								>
-									<image
-										xlinkHref={svgURL}
-										src={svgURL}
-										width={dimensionWidth < dimensionHeight ? dimensionWidth : '100%'}
-										style={{
-											height: dimensionWidth > dimensionHeight ? dimensionHeight : 'auto'
-										}}
-									/>
-								</svg>
-							}
-						</div>
-					);
-				}}
-			/>
-			{ contentPostType && (
+
+			{!svgURL &&
+				<MediaPlaceholder
+					onSelect={onSelectImage}
+					allowedTypes={ALLOWED_MEDIA_TYPES}
+					accept={ALLOWED_MEDIA_TYPES}
+					value={imageID}
+					labels={{
+						title: __('Inline SVG', 'safe-svg'),
+						instructions: __('Upload an SVG or pick one from your media library.', 'safe-svg')
+					}}
+				/>
+			}
+
+			{svgURL &&
+				<div {...containerBlockProps}>
+					<div
+						style={style}
+						className={classnames(
+							'safe-svg-inside',
+							getColorClassName('color', textColor) || ''
+						)}
+					>
+						<ReactSVG src={svgURL} beforeInjection={(svg) => {
+							svg.setAttribute('style', `width: ${dimensionWidth}px; height: ${dimensionHeight}px;`);
+						}} />
+					</div>
+				</div>
+			}
+
+			{contentPostType && (
 				<Placeholder
-					label={ __( 'SafeSvg', 'safe-svg' ) }
+					label={__('SafeSvg', 'safe-svg')}
 				>
 					<p>
-						{ __(
+						{__(
 							'Please select the SVG icon.',
 							'safe-svg'
-						) }
+						)}
 					</p>
 				</Placeholder>
-			) }
-		</div>
+			)}
+		</>
 	);
 };
 // Set the propTypes

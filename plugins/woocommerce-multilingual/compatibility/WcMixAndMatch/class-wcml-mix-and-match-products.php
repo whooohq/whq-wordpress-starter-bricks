@@ -25,6 +25,7 @@ class WCML_Mix_And_Match_Products implements \IWPML_Action {
 	 */
 	public function add_hooks() {
 		// Support MNM 2.0 custom tables, cart syncing.
+		/* @phpstan-ignore booleanAnd.leftAlwaysTrue */
 		if ( is_callable( [ 'WC_MNM_Compatibility', 'is_db_version_gte' ] ) && WC_MNM_Compatibility::is_db_version_gte( '2.0' ) ) {
 			add_action( 'wcml_after_sync_product_data', [ $this, 'sync_allowed_contents' ], 10, 2 );
 			add_filter( 'wcml_cart_contents', [ $this, 'sync_cart' ], 10, 4 );
@@ -46,8 +47,7 @@ class WCML_Mix_And_Match_Products implements \IWPML_Action {
 
 		if ( has_term( 'mix-and-match', 'product_type', $container_id ) ) {
 
-			$translated_child_items = [];
-			$lang                   = $this->sitepress->get_language_for_element( $translated_container_id, 'post_product' );
+			$lang  = $this->sitepress->get_language_for_element( $translated_container_id, 'post_product' );
 
 			/** @var WC_Product_Mix_and_Match */
 			$original_product   = wc_get_product( $container_id );
@@ -55,7 +55,7 @@ class WCML_Mix_And_Match_Products implements \IWPML_Action {
 			/** @var WC_Product_Mix_and_Match */
 			$translated_product = wc_get_product( $translated_container_id );
 
-			if ( $original_product ) {
+			if ( $original_product instanceof WC_Product_Mix_and_Match) {
 
 				$original_child_items = $original_product->get_child_items( 'edit' );
 
@@ -74,7 +74,7 @@ class WCML_Mix_And_Match_Products implements \IWPML_Action {
 					}
 				}
 
-				if ( $translated_product && ! empty( $translated_child_items ) ) {
+				if ( ( $translated_product instanceof WC_Product_Mix_and_Match ) && ! empty( $translated_child_items ) ) {
 					$translated_product->set_child_items( $translated_child_items );
 				}
 
@@ -86,7 +86,7 @@ class WCML_Mix_And_Match_Products implements \IWPML_Action {
 					$translated_child_cat_ids[] = apply_filters( 'wpml_object_id', $original_cat_id, 'product_cat', true, $lang );
 				}
 
-				if ( $translated_product && ! empty( $translated_child_cat_ids ) ) {
+				if ( ( $translated_product instanceof WC_Product_Mix_and_Match ) && ! empty( $translated_child_cat_ids ) ) {
 					$translated_product->set_child_category_ids( $translated_child_cat_ids );
 				}
 
@@ -221,7 +221,7 @@ class WCML_Mix_And_Match_Products implements \IWPML_Action {
 				if ( empty( $product_translation->original ) ) {
 					foreach ( $mnm_data as $key => $mnm_element ) {
 
-						$trnsl_prod                = apply_filters( 'translate_object_id', $key, 'product', true, $product_translation->language_code );
+						$trnsl_prod                = apply_filters( 'wpml_object_id', $key, 'product', true, $product_translation->language_code );
 						$mnm_element['product_id'] = $trnsl_prod;
 						$mnm_data[ $trnsl_prod ]   = $mnm_element;
 						unset( $mnm_data[ $key ] );

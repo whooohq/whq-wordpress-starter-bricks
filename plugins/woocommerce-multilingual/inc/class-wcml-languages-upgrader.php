@@ -26,7 +26,7 @@ class WCML_Languages_Upgrader {
 
 		if ( $locale !== 'en_US' && $this->has_available_update( $locale, $wc_version ) ) {
 
-			$wc_version = $wc_version ? $wc_version : WC_VERSION;
+			$wc_version = $wc_version ?: WC_VERSION;
 
 			include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 			require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -135,7 +135,7 @@ class WCML_Languages_Upgrader {
 		$notices = maybe_unserialize( get_option( 'wcml_translations_upgrade_notice' ) );
 
 		// Update the language pack version.
-		update_option( 'woocommerce_language_pack_version_' . $locale, [ $wc_version ? $wc_version : WC_VERSION, $locale ] );
+		update_option( 'woocommerce_language_pack_version_' . $locale, [ $wc_version ?: WC_VERSION, $locale ] );
 
 		if ( is_array( $notices ) ) {
 
@@ -160,7 +160,7 @@ class WCML_Languages_Upgrader {
 	 * @return bool
 	 */
 	public function has_available_update( $locale, $wc_version = false ) {
-		$wc_version = $wc_version ? $wc_version : WC_VERSION;
+		$wc_version = $wc_version ?: WC_VERSION;
 
 		$version = get_option( 'woocommerce_language_pack_version_' . $locale, [ '0', $locale ] );
 
@@ -211,8 +211,6 @@ class WCML_Languages_Upgrader {
 	 * Display Translations upgrade notice message
 	 */
 	public function translation_upgrade_notice() {
-		global $woocommerce_wpml;
-
 		$screen  = get_current_screen();
 		$notices = maybe_unserialize( get_option( 'wcml_translations_upgrade_notice' ) );
 

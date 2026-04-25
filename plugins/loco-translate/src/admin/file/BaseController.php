@@ -21,10 +21,9 @@ abstract class Loco_admin_file_BaseController extends Loco_admin_bundle_BaseCont
 
     /**
      * Check file is valid or return error
-     * @param Loco_fs_File
      * @return string rendered error
      */
-    protected function getFileError( Loco_fs_File $file = null ){
+    protected function getFileError( ?Loco_fs_File $file = null ){
         // file must exist for editing
         if( is_null($file) || ! $file->exists() ){
             return $this->view( 'admin/errors/file-missing', [] );

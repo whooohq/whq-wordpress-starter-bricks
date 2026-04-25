@@ -34,7 +34,6 @@ function relevanssi_register_gutenberg_actions() {
 					'relevanssi_save_gutenberg_postdata'
 				);
 			}
-
 		}
 	);
 }
@@ -85,6 +84,14 @@ function relevanssi_gutenberg_block_rendering( $content, $post_object ) {
 		$block = apply_filters( 'relevanssi_block_to_render', $block );
 
 		if ( ! $block ) {
+			continue;
+		}
+
+		if ( isset( $block['attrs']['ref'] ) ) {
+			// Synced pattern, process the pattern content.
+			$pattern_post    = get_post( $block['attrs']['ref'] );
+			$pattern_content = $pattern_post->post_content;
+			$output         .= relevanssi_gutenberg_block_rendering( $pattern_content, $post_object );
 			continue;
 		}
 

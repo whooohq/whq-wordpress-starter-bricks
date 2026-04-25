@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /*
  * Handle field output.
@@ -41,6 +43,9 @@ function wppb_select2_display_handler($output, $form_location, $field, $user_id,
 
         $input_value = (isset($request_data[wppb_handle_meta_name($field['meta-name'])]) ? esc_attr(stripslashes(trim($request_data[wppb_handle_meta_name($field['meta-name'])]))) : $input_value);
 
+        $input_value = html_entity_decode( htmlspecialchars_decode( $input_value, ENT_QUOTES ), ENT_QUOTES );
+        $input_value = apply_filters( 'wppb_form_select2_field_value', $input_value, $field, $form_location );
+
         if ($form_location != 'back_end') {
             $error_mark = (($field['required'] == 'Yes') ? '<span class="wppb-required" title="' . wppb_required_field_error($field["field-title"]) . '">*</span>' : '');
 
@@ -73,11 +78,11 @@ function wppb_select2_display_handler($output, $form_location, $field, $user_id,
         } else {
             $item_title = (($field['required'] == 'Yes') ? $item_title . ' <span class="description">(' . __('required', 'profile-builder') . ')</span>' : $item_title);
             $output = '
-				<table class="form-table wppb-select2">
+				<table class="form-table">
 					<tr>
 						<th><label for="' . esc_attr($field['meta-name']) . '">' . $item_title . '</label></th>
 						<td>
-							<select name="' . esc_attr($field['meta-name']) . '" class="custom_field_select2" id="' . esc_attr($field['meta-name']) . '" ' . $extra_attr . ' data-wppb-select2-arguments=\'' . json_encode($arguments) . '\'>';
+							<select name="' . esc_attr($field['meta-name']) . '" class="custom_field_select2 wppb-select2" id="' . esc_attr($field['meta-name']) . '" ' . $extra_attr . ' data-wppb-select2-arguments=\'' . json_encode($arguments) . '\'>';
 
             foreach ($select2_values as $key => $value) {
                 $output .= '<option value="' . esc_attr(trim($value)) . '" class="custom_field_select2_option" ';

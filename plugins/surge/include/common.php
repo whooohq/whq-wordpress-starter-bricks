@@ -28,22 +28,29 @@ function config( $key ) {
 	$config = [
 		'ttl' => 600,
 		'ignore_cookies' => [ 'wordpress_test_cookie' ],
+		'fpassthru_alt' => false,
 
 		// https://github.com/mpchadwick/tracking-query-params-registry/blob/master/_data/params.csv
 		'ignore_query_vars' => [
-			'fbclid', 'gclid', 'gclsrc', 'utm_content', 'utm_term', 'utm_campaign',
-			'utm_medium', 'utm_source', 'utm_id', '_ga', 'mc_cid', 'mc_eid',
-			'_bta_tid', '_bta_c', 'trk_contact', 'trk_msg', 'trk_module', 'trk_sid',
-			'gdfms', 'gdftrk', 'gdffi', '_ke', 'redirect_log_mongo_id',
-			'redirect_mongo_id', 'sb_referer_host', 'mkwid', 'pcrid', 'ef_id',
-			's_kwcid', 'msclkid', 'dm_i', 'epik', 'pk_campaign', 'pk_kwd',
-			'pk_keyword', 'piwik_campaign', 'piwik_kwd', 'piwik_keyword', 'mtm_campaign',
-			'mtm_keyword', 'mtm_source', 'mtm_medium', 'mtm_content', 'mtm_cid',
-			'mtm_group', 'mtm_placement', 'matomo_campaign', 'matomo_keyword',
-			'matomo_source', 'matomo_medium', 'matomo_content', 'matomo_cid',
-			'matomo_group', 'matomo_placement', 'hsa_cam', 'hsa_grp', 'hsa_mt',
-			'hsa_src', 'hsa_ad', 'hsa_acc', 'hsa_net', 'hsa_kw', 'hsa_tgt',
-			'hsa_ver', '_branch_match_id',
+			'fbclid', 'gclid', 'gclsrc', 'gPromoCode', 'gQT', 'dclid', 'gbraid', 'wbraid',
+			'gad_source', 'gad_campaignid', 'srsltid', 'twclid', 'yclid', 'utm_content',
+			'utm_term', 'utm_campaign', 'utm_medium', 'utm_source', 'utm_id',
+			'utm_source_platform', 'utm_creative_format', 'utm_marketing_tactic', '_ga',
+			'_gl', 'mc_cid', 'mc_eid', '_bta_tid', '_bta_c', 'trk_contact', 'trk_msg',
+			'trk_module', 'trk_sid', 'gdfms', 'gdftrk', 'gdffi', '_ke', '_kx',
+			'redirect_log_mongo_id', 'redirect_mongo_id', 'sb_referer_host', 'mkwid',
+			'pcrid', 'ef_id', 's_kwcid', 'msclkid', 'dm_i', 'epik', 'pk_campaign',
+			'pk_kwd', 'pk_keyword', 'piwik_campaign', 'piwik_kwd', 'piwik_keyword',
+			'mtm_campaign', 'mtm_keyword', 'mtm_source', 'mtm_medium', 'mtm_content',
+			'mtm_cid', 'mtm_group', 'mtm_placement', 'matomo_campaign',
+			'matomo_keyword', 'matomo_source', 'matomo_medium', 'matomo_content',
+			'matomo_cid', 'matomo_group', 'matomo_placement', 'hsa_cam', 'hsa_grp',
+			'hsa_mt', 'hsa_src', 'hsa_ad', 'hsa_acc', 'hsa_net', 'hsa_kw', 'hsa_tgt',
+			'hsa_ver', '_branch_match_id', 'mkevt', 'mkcid', 'mkrid', 'campid',
+			'toolid', 'customid', 'igshid', 'si', 'sms_source', 'sms_click', 'sms_uph',
+			'ttclid', 'ndclid', 'ScCid', 'rtid', 'irclickid', 'vmcid', 'tw_source',
+			'tw_campaign', 'tw_term', 'tw_content', 'tw_adid', 'klar_source',
+			'klar_cpid', 'klar_adid',
 		],
 
 		// Add items to this array to add a unique cache variant.
@@ -61,6 +68,13 @@ function config( $key ) {
 		} ) ( $config );
 
 		$config = array_merge( $config, $_config );
+	}
+
+	foreach ( $config as $key => $value ) {
+		$const = 'SURGE_' . strtoupper( $key );
+		if ( defined( $const ) ) {
+			$config[ $key ] = constant( $const );
+		}
 	}
 
 	return $config[ $key ];
@@ -265,4 +279,20 @@ function event( $event, $args ) {
 	foreach ( $events[ $event ] as $key => $callback ) {
 		$callback( $args );
 	}
+}
+
+/**
+ * Get or set the status.
+ *
+ * @param string $new_status The status to set.
+ */
+function status( $new_status = null ) {
+	static $status = 'undefined';
+
+	if ( ! $new_status ) {
+		return $status;
+	}
+
+	$status = $new_status;
+	return $status;
 }

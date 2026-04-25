@@ -13,7 +13,7 @@ function bogo_upgrade() {
 	$old_ver = bogo_get_prop( 'version' );
 	$new_ver = BOGO_VERSION;
 
-	if ( $old_ver != $new_ver ) {
+	if ( $old_ver !== $new_ver ) {
 		require_once BOGO_PLUGIN_DIR . '/admin/includes/upgrade.php';
 		do_action( 'bogo_upgrade', $new_ver, $old_ver );
 		bogo_set_prop( 'version', $new_ver );
@@ -35,10 +35,16 @@ function bogo_admin_enqueue_scripts( $hook_suffix ) {
 		);
 	}
 
+	$assets = include BOGO_PLUGIN_DIR . '/admin/includes/js/index.asset.php';
+
 	wp_enqueue_script( 'bogo-admin',
-		plugins_url( 'admin/includes/js/admin.js', BOGO_PLUGIN_BASENAME ),
-		array( 'jquery' ), BOGO_VERSION, true
+		plugins_url( 'admin/includes/js/index.js', BOGO_PLUGIN_BASENAME ),
+		$assets['dependencies'],
+		$assets['version'],
+		array( 'in_footer' => true )
 	);
+
+	wp_set_script_translations( 'bogo-admin', 'bogo' );
 
 	$available_languages = array();
 
@@ -49,34 +55,22 @@ function bogo_admin_enqueue_scripts( $hook_suffix ) {
 			$native_name = bogo_get_short_name( $native_name );
 		}
 
+		$tags = array(
+			bogo_language_tag( $locale ),
+			bogo_lang_slug( $locale ),
+		);
+
 		$available_languages[$locale] = array(
 			'name' => $language,
 			'nativename' => trim( $native_name ),
 			'country' => bogo_get_country_code( $locale ),
-			'tags' => array_unique( array_filter(
-				array(
-					bogo_language_tag( $locale ),
-					bogo_lang_slug( $locale ),
-				)
-			) ),
+			'tags' => array_unique( array_filter( $tags ) ),
 		);
 	}
 
-	$local_args = array(
-		'l10n' => array(
-			/* translators: accessibility text */
-			'targetBlank' => __( '(opens in a new window)', 'bogo' ),
-			'saveAlert' => __( "The changes you made will be lost if you navigate away from this page.", 'bogo' ),
-		),
-		'apiSettings' => array(
-			'root' => esc_url_raw( rest_url( 'bogo/v1' ) ),
-			'namespace' => 'bogo/v1',
-			'nonce' => ( wp_installing() && ! is_multisite() )
-				? '' : wp_create_nonce( 'wp_rest' ),
-		),
+	$bogo_obj = array(
 		'availableLanguages' => $available_languages,
 		'defaultLocale' => bogo_get_default_locale(),
-		'pagenow' => isset( $_GET['page'] ) ? trim( $_GET['page'] ) : '',
 		'currentPost' => array(),
 		'localizablePostTypes' => bogo_localizable_post_types(),
 		'showFlags' => apply_filters( 'bogo_use_flags', true ),
@@ -126,10 +120,16 @@ function bogo_admin_enqueue_scripts( $hook_suffix ) {
 			}
 		}
 
-		$local_args['currentPost'] = $current_post;
+		$bogo_obj['currentPost'] = $current_post;
 	}
 
-	wp_localize_script( 'bogo-admin', 'bogo', $local_args );
+	wp_add_inline_script( 'bogo-admin',
+		sprintf(
+			'var bogo = %s;',
+			wp_json_encode( $bogo_obj, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE )
+		),
+		'before'
+	);
 }
 
 add_action( 'admin_menu', 'bogo_admin_menu', 10, 0 );
@@ -196,17 +196,17 @@ function bogo_set_screen_options( $result, $option, $value ) {
 function bogo_load_tools_page() {
 	require_once( ABSPATH . 'wp-admin/includes/translation-install.php' );
 
-	$action = isset( $_GET['action'] ) ? $_GET['action'] : '';
-	$locale = isset( $_GET['locale'] ) ? $_GET['locale'] : null;
+	$action = $_GET['action'] ?? '';
+	$locale = $_GET['locale'] ?? null;
 
-	if ( 'activate' == $action ) {
+	if ( 'activate' === $action ) {
 		check_admin_referer( 'bogo-tools' );
 
 		if ( ! current_user_can( 'bogo_manage_language_packs' ) ) {
-			wp_die( __( "You are not allowed to manage translations.", 'bogo' ) );
+			wp_die( wp_kses_data( __( 'You are not allowed to manage translations.', 'bogo' ) ) );
 		}
 
-		if ( 'en_US' == $locale ) {
+		if ( 'en_US' === $locale ) {
 			bogo_set_prop( 'enus_deactivated', false );
 
 			$redirect_to = add_query_arg(
@@ -231,14 +231,14 @@ function bogo_load_tools_page() {
 		exit();
 	}
 
-	if ( 'deactivate' == $action ) {
+	if ( 'deactivate' === $action ) {
 		check_admin_referer( 'bogo-tools' );
 
 		if ( ! current_user_can( 'bogo_manage_language_packs' ) ) {
-			wp_die( __( "You are not allowed to manage translations.", 'bogo' ) );
+			wp_die( wp_kses_data( __( 'You are not allowed to manage translations.', 'bogo' ) ) );
 		}
 
-		if ( 'en_US' == $locale ) {
+		if ( 'en_US' === $locale ) {
 			bogo_set_prop( 'enus_deactivated', true );
 
 			$redirect_to = add_query_arg(
@@ -263,15 +263,14 @@ function bogo_load_tools_page() {
 		exit();
 	}
 
-	if ( 'promote' == $action ) {
+	if ( 'promote' === $action ) {
 		check_admin_referer( 'bogo-tools' );
 
 		if ( ! current_user_can( 'bogo_manage_language_packs' ) ) {
-			wp_die( __( "You are not allowed to manage translations.", 'bogo' ) );
+			wp_die( wp_kses_data( __( 'You are not allowed to manage translations.', 'bogo' ) ) );
 		}
 
-		if ( 'en_US' == $locale
-		or ! bogo_is_available_locale( $locale ) ) {
+		if ( 'en_US' === $locale or ! bogo_is_available_locale( $locale ) ) {
 			$locale = '';
 		}
 
@@ -291,19 +290,18 @@ function bogo_load_tools_page() {
 		exit();
 	}
 
-	if ( 'translate' == $action ) {
+	if ( 'translate' === $action ) {
 		check_admin_referer( 'bogo-tools' );
 
 		if ( ! current_user_can( 'bogo_edit_terms_translation', $locale ) ) {
-			wp_die( __( "You are not allowed to edit translations.", 'bogo' ) );
+			wp_die( wp_kses_data( __( 'You are not allowed to edit translations.', 'bogo' ) ) );
 		}
 
-		$is_active = ( 'en_US' == $locale )
+		$is_active = ( 'en_US' === $locale )
 			? ! bogo_is_enus_deactivated()
 			: bogo_is_available_locale( $locale );
 
-		if ( ! bogo_is_default_locale( $locale )
-		and $is_active ) {
+		if ( ! bogo_is_default_locale( $locale ) and $is_active ) {
 			$redirect_to = add_query_arg(
 				array( 'locale' => $locale ),
 				menu_page_url( 'bogo-texts', false ) );
@@ -336,11 +334,11 @@ function bogo_tools_page() {
 	if ( ! empty( $_REQUEST['s'] ) ) {
 		echo sprintf(
 			'<span class="subtitle">%s</span>',
-			sprintf(
+			wp_kses_data( sprintf(
 				/* translators: %s: search query */
-				__( 'Search results for &#8220;%s&#8221;', 'bogo' ),
+				__( 'Search results for: <strong>%s</strong>', 'bogo' ),
 				esc_html( $_REQUEST['s'] )
-			)
+			) )
 		);
 	}
 ?>
@@ -362,23 +360,23 @@ function bogo_tools_page() {
 }
 
 function bogo_load_texts_page() {
-	$action = isset( $_POST['action'] ) ? $_POST['action'] : '';
+	$action = $_POST['action'] ?? '';
 
-	if ( 'save' == $action ) {
+	if ( 'save' === $action ) {
 		check_admin_referer( 'bogo-edit-text-translation' );
 
 		if ( ! current_user_can( 'bogo_edit_terms_translation' ) ) {
-			wp_die( __( "You are not allowed to edit translations.", 'bogo' ) );
+			wp_die( wp_kses_data( __( 'You are not allowed to edit translations.', 'bogo' ) ) );
 		}
 
-		$locale = isset( $_POST['locale'] ) ? $_POST['locale'] : null;
+		$locale = $_POST['locale'] ?? null;
 
 		if ( ! bogo_is_available_locale( $locale ) ) {
 			return;
 		}
 
 		if ( ! current_user_can( 'bogo_access_locale', $locale ) ) {
-			wp_die( __( "You are not allowed to edit terms in this locale.", 'bogo' ) );
+			wp_die( wp_kses_data( __( 'You are not allowed to edit terms in this locale.', 'bogo' ) ) );
 		}
 
 		$entries = array();
@@ -386,12 +384,9 @@ function bogo_load_texts_page() {
 		foreach ( (array) bogo_terms_translation( $locale ) as $item ) {
 			$translation = $item['translated'];
 
-			$cap = isset( $item['cap'] )
-				? $item['cap']
-				: 'bogo_edit_terms_translation';
+			$cap = $item['cap'] ?? 'bogo_edit_terms_translation';
 
-			if ( isset( $_POST[$item['name']] )
-			and current_user_can( $cap ) ) {
+			if ( isset( $_POST[$item['name']] ) and current_user_can( $cap ) ) {
 				$translation = $_POST[$item['name']];
 			}
 
@@ -412,7 +407,7 @@ function bogo_load_texts_page() {
 			array(
 				'locale' => $locale,
 				'message' => $message,
-				'paged' => isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1,
+				'paged' => absint( $_POST['paged'] ?? 1 ),
 			),
 			menu_page_url( 'bogo-texts', false )
 		);
@@ -450,11 +445,11 @@ function bogo_texts_page() {
 	if ( ! empty( $_REQUEST['s'] ) ) {
 		echo sprintf(
 			'<span class="subtitle">%s</span>',
-			sprintf(
+			wp_kses_data( sprintf(
 				/* translators: %s: search query */
-				__( 'Search results for &#8220;%s&#8221;', 'bogo' ),
+				__( 'Search results for: <strong>%s</strong>', 'bogo' ),
 				esc_html( $_REQUEST['s'] )
-			)
+			) )
 		);
 	}
 ?>
@@ -464,8 +459,8 @@ function bogo_texts_page() {
 <?php bogo_admin_notice(); ?>
 
 <form action="" method="get">
-<input type="hidden" name="page" value="<?php echo isset( $_REQUEST['page'] ) ? esc_attr( $_REQUEST['page'] ) : ''; ?>" />
-<input type="hidden" name="locale" value="<?php echo isset( $_REQUEST['locale'] ) ? esc_attr( $_REQUEST['locale'] ) : ''; ?>" />
+<input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ?? '' ); ?>" />
+<input type="hidden" name="locale" value="<?php echo esc_attr( $_REQUEST['locale'] ?? '' ); ?>" />
 <?php
 	$list_table->search_box(
 		__( 'Search Translation', 'bogo' ), 'bogo-terms-translation'
@@ -475,7 +470,7 @@ function bogo_texts_page() {
 
 <form action="" method="post" id="bogo-terms-translation">
 <input type="hidden" name="action" value="save" />
-<input type="hidden" name="paged" value="<?php echo isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : ''; ?>" />
+<input type="hidden" name="paged" value="<?php echo absint( $_GET['paged'] ?? '' ); ?>" />
 <?php
 	wp_nonce_field( 'bogo-edit-text-translation' );
 	$list_table->display();
@@ -490,39 +485,31 @@ function bogo_admin_notice( $reason = '' ) {
 		$reason = $_GET['message'];
 	}
 
-	if ( 'install_success' == $reason ) {
-		$message = __( "Translation installed successfully.", 'bogo' );
-	} elseif ( 'install_failed' == $reason ) {
-		$message = __( "Translation install failed.", 'bogo' );
-	} elseif ( 'promote_success' == $reason ) {
-		$message = __( "Site language set successfully.", 'bogo' );
-	} elseif ( 'promote_failed' == $reason ) {
-		$message = __( "Setting site language failed.", 'bogo' );
-	} elseif ( 'delete_success' == $reason ) {
-		$message = __( "Translation uninstalled successfully.", 'bogo' );
-	} elseif ( 'delete_failed' == $reason ) {
-		$message = __( "Translation uninstall failed.", 'bogo' );
-	} elseif ( 'enus_deactivated' == $reason ) {
-		$message = __( "English (United States) deactivated.", 'bogo' );
-	} elseif ( 'enus_activated' == $reason ) {
-		$message = __( "English (United States) activated.", 'bogo' );
-	} elseif ( 'translation_saved' == $reason ) {
-		$message = __( "Translation saved.", 'bogo' );
-	} elseif ( 'translation_failed' == $reason ) {
-		$message = __( "Saving translation failed.", 'bogo' );
+	if ( 'install_success' === $reason ) {
+		$message = __( 'Translation installed successfully.', 'bogo' );
+	} elseif ( 'install_failed' === $reason ) {
+		$message = __( 'Translation install failed.', 'bogo' );
+	} elseif ( 'promote_success' === $reason ) {
+		$message = __( 'Site language set successfully.', 'bogo' );
+	} elseif ( 'promote_failed' === $reason ) {
+		$message = __( 'Setting site language failed.', 'bogo' );
+	} elseif ( 'delete_success' === $reason ) {
+		$message = __( 'Translation uninstalled successfully.', 'bogo' );
+	} elseif ( 'delete_failed' === $reason ) {
+		$message = __( 'Translation uninstall failed.', 'bogo' );
+	} elseif ( 'enus_deactivated' === $reason ) {
+		$message = __( 'English (United States) deactivated.', 'bogo' );
+	} elseif ( 'enus_activated' === $reason ) {
+		$message = __( 'English (United States) activated.', 'bogo' );
+	} elseif ( 'translation_saved' === $reason ) {
+		$message = __( 'Translation saved.', 'bogo' );
+	} elseif ( 'translation_failed' === $reason ) {
+		$message = __( 'Saving translation failed.', 'bogo' );
 	} else {
 		return false;
 	}
 
-	if ( '_failed' == substr( $reason, -7 ) ) {
-		echo sprintf(
-			'<div class="error notice notice-error is-dismissible"><p>%s</p></div>',
-			esc_html( $message )
-		);
-	} else {
-		echo sprintf(
-			'<div class="updated notice notice-success is-dismissible"><p>%s</p></div>',
-			esc_html( $message )
-		);
-	}
+	wp_admin_notice( $message, array(
+		'type' => str_ends_with( $reason, '_failed' ) ? 'error' : 'success',
+	) );
 }

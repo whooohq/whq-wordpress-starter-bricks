@@ -7,7 +7,7 @@
  * @author      WooThemes
  * @category    Admin
  * @package     WooCommerce\Admin\Meta Boxes
- * @version     2.1.0
+ * @version     x.x.x
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -103,7 +103,8 @@ class WC_Meta_Box_Coupon_Data {
 						array(
 							'id'          => 'free_shipping',
 							'label'       => __( 'Allow free shipping', 'woocommerce' ),
-							'description' => sprintf( __( 'Check this box if the coupon grants free shipping. A <a href="%s" target="_blank">free shipping method</a> must be enabled in your shipping zone and be set to require "a valid free shipping coupon" (see the "Free Shipping Requires" setting).', 'woocommerce' ), 'https://docs.woocommerce.com/document/free-shipping/' ),
+							// translators: %s: URL to free shipping document.
+							'description' => sprintf( __( 'Check this box if the coupon grants free shipping. A <a href="%s" target="_blank">free shipping method</a> must be enabled in your shipping zone and be set to require "a valid free shipping coupon" (see the "Free Shipping Requires" setting).', 'woocommerce' ), 'https://woocommerce.com/document/free-shipping/' ),
 							'value'       => wc_bool_to_string( $coupon->get_free_shipping( 'edit' ) ),
 						)
 					);
@@ -116,7 +117,7 @@ class WC_Meta_Box_Coupon_Data {
 						'id'                => 'expiry_date',
 						'value'             => esc_attr( $expiry_date ),
 						'label'             => __( 'Coupon expiry date', 'woocommerce' ),
-						'placeholder'       => 'YYYY-MM-DD',
+						'placeholder'       => _x( 'YYYY-MM-DD', 'coupon expiry date placeholder', 'woocommerce' ),
 						'description'       => __( 'The coupon will expire at 00:00:00 of this date.', 'woocommerce' ),
 						'desc_tip'          => true,
 						'class'             => 'date-picker',
@@ -181,7 +182,7 @@ class WC_Meta_Box_Coupon_Data {
 					)
 				);
 
-				echo '</div><div class="options_group">';
+				echo '</div><div class="options_group"><div class="hr-section hr-section-coupon_restrictions">' . esc_html__( 'And', 'woocommerce' ) . '</div>';
 
 				// Product ids.
 				?>
@@ -221,7 +222,7 @@ class WC_Meta_Box_Coupon_Data {
 				</p>
 				<?php
 
-				echo '</div><div class="options_group">';
+				echo '</div><div class="options_group"><div class="hr-section hr-section-coupon_restrictions">' . esc_html__( 'And', 'woocommerce' ) . '</div>';
 
 				// Categories.
 				?>
@@ -259,7 +260,7 @@ class WC_Meta_Box_Coupon_Data {
 					<?php echo wc_help_tip( __( 'Product categories that the coupon will not be applied to, or that cannot be in the cart in order for the "Fixed cart discount" to be applied.', 'woocommerce' ) ); ?>
 				</p>
 			</div>
-			<div class="options_group">
+			<div class="options_group"><div class="hr-section hr-section-coupon_restrictions"><?php echo esc_html__( 'And', 'woocommerce' ); ?></div>
 				<?php
 				// Customers.
 				woocommerce_wp_text_input(
@@ -366,7 +367,7 @@ class WC_Meta_Box_Coupon_Data {
 		$exclude_product_categories = isset( $_POST['exclude_product_categories'] ) ? (array) $_POST['exclude_product_categories'] : array();
 
 		$coupon = new WC_Coupon( $post_id );
-		$coupon->set_props(
+		$errors = $coupon->set_props(
 			array(
 				'code'                        => $post->post_title,
 				'discount_type'               => wc_clean( $_POST['discount_type'] ),
@@ -387,6 +388,13 @@ class WC_Meta_Box_Coupon_Data {
 				'email_restrictions'          => array_filter( array_map( 'trim', explode( ',', wc_clean( $_POST['customer_email'] ) ) ) ),
 			)
 		);
+
+		if ( is_wp_error( $errors ) ) {
+			foreach ( $errors->get_error_messages() as $error_message ) {
+				WC_Admin_Meta_Boxes::add_error( $error_message );
+			}
+		}
+
 		$coupon->save();
 		do_action( 'woocommerce_coupon_options_save', $post_id, $coupon );
 	}

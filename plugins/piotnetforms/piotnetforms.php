@@ -3,7 +3,7 @@
  * Plugin Name: Piotnetforms
  * Description: Piotnet Forms - Highly Customizable WordPress Form Builder
  * Plugin URI:  https://piotnetforms.com/
- * Version:     1.0.25
+ * Version:     1.0.30
  * Author:      Piotnet
  * Author URI:  https://piotnet.com/
  * Text Domain: piotnetforms
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 require_once __DIR__ . '/inc/variables.php';
 
-define( 'PIOTNETFORMS_VERSION', '1.0.25' );
+define( 'PIOTNETFORMS_VERSION', '1.0.30' );
 
 class Piotnetforms extends Piotnetforms_Variables {
 
@@ -319,6 +319,7 @@ class Piotnetforms extends Piotnetforms_Variables {
 		if ( isset($_GET['page']) && isset($_GET['post']) ) {
 			if ( $_GET['page'] == 'piotnetforms' ) {
 				wp_enqueue_script( $this->slug . '-editor-script', plugin_dir_url( __FILE__ ) . 'assets/js/minify/editor.min.js', [ 'jquery' ], PIOTNETFORMS_VERSION );
+                wp_localize_script($this->slug . '-editor-script', 'piotnetforms_editor_nonce_obj', ['nonce' => wp_create_nonce('piotnetforms_editor_nonce')]);
 				wp_enqueue_script( $this->slug . '-editor-forms-script', plugin_dir_url( __FILE__ ) . 'assets/js/minify/preview.min.js', [ 'jquery' ], PIOTNETFORMS_VERSION );
 				wp_enqueue_style( $this->slug . '-admin-style', plugin_dir_url( __FILE__ ) . 'assets/css/minify/admin.min.css', [], PIOTNETFORMS_VERSION );
 				wp_enqueue_script( $this->slug . '-script', plugin_dir_url( __FILE__ ) . 'assets/js/minify/frontend.min.js', [ 'jquery' ], PIOTNETFORMS_VERSION );
@@ -368,6 +369,7 @@ class Piotnetforms extends Piotnetforms_Variables {
 		global $typenow;
 		if ("piotnetforms" == $typenow) {
 			wp_enqueue_script( $this->slug . '-admin-forms-script', plugin_dir_url( __FILE__ ) . 'assets/js/admin-forms.js', [ 'jquery' ], PIOTNETFORMS_VERSION );
+            wp_localize_script($this->slug . '-admin-forms-script', 'piotnetforms_admin_nonce_obj', ['nonce' => wp_create_nonce('piotnetforms_admin_nonce')]);
 		}
 
 		if (( $pagenow == 'edit.php' ) && !empty($_GET['post_type'])) {

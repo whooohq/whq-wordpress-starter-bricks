@@ -10,9 +10,7 @@ function wppb_signup_password_random_password_filter( $password ) {
 	$key = ( !empty( $_GET['key'] ) ? sanitize_text_field( $_GET['key'] ) : null );
 	$key = ( !empty( $_POST['key'] ) ? sanitize_text_field( $_POST['key'] ) : $key );
 
-	if ( !empty( $_POST['user_pass'] ) )// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-		$password = $_POST['user_pass'];// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-	elseif ( !is_null( $key ) ) {
+    if ( !is_null( $key ) ) {
 		$signup = ( is_multisite() ? $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . $wpdb->signups . " WHERE activation_key = %s", $key ) ) : $wpdb->get_row( $wpdb->prepare( "SELECT * FROM " . $wpdb->base_prefix . "signups WHERE activation_key = %s", $key ) ) );
 		
 		if ( empty( $signup ) || $signup->active ) {
@@ -46,13 +44,16 @@ function wppb_activate_signup( $key ) {
 
 	$signup = ( is_multisite() ? $wpdb->get_row( $wpdb->prepare("SELECT * FROM $wpdb->signups WHERE activation_key = %s", $key) ) : $wpdb->get_row( $wpdb->prepare( "SELECT * FROM ".$wpdb->base_prefix."signups WHERE activation_key = %s", $key ) ) );
 
+	if( empty( $signup ) )
+		return apply_filters( 'wppb_register_activate_user_error_message6', '<p class="error">'.__( 'Could not find registration. Contact administrator.', 'profile-builder' ).'</p>');
+
     $user_login = ( ( isset( $wppb_general_settings['loginWith'] ) && ( $wppb_general_settings['loginWith'] == 'email' ) ) ? trim( $signup->user_email ) : trim( $signup->user_login ) );
 
     $user_email = esc_sql( $signup->user_email );
-    /* the password is in hashed form in the signup table so we will add it later */
-    $password = NULL;
+    /* Signup meta holds the real password hash, applied after user creation. WordPress requires a non-empty user_pass when creating users. */
+    $password = '';
 
-    $user_id = username_exists( $user_login );
+	$user_id = ( ( isset( $wppb_general_settings['loginWith'] ) && ( $wppb_general_settings['loginWith'] == 'email' ) ) ? email_exists( $user_login ) : username_exists( $user_login ) );
 
 	if ( empty( $signup ) )
 		return apply_filters( 'wppb_register_activate_user_error_message1', '<p class="error">'.__( 'Invalid activation key!', 'profile-builder' ).'</p>');
@@ -72,8 +73,9 @@ function wppb_activate_signup( $key ) {
         $login_after_register = false;
     }
 
-	if ( !$user_id )
-		$user_id = wppb_create_user( $user_login, $password, $user_email );
+	if ( ! $user_id ) {
+		$user_id = wppb_create_user( $user_login, wp_generate_password( 24, true, true ), $user_email );
+	}
 	else
 		$user_already_exists = true;
 
@@ -117,6 +119,7 @@ function wppb_activate_signup( $key ) {
 
             $redirect_delay = apply_filters( 'wppb_success_email_confirmation_redirect_delay', 3, $user_id );
             $redirect_message = wppb_build_redirect( $redirect_url, $redirect_delay, 'after_success_email_confirmation' );
+			$redirect_message = apply_filters( 'wppb_ec_sucess_message_redirect', $redirect_message, $meta );
 
 			$success_message = apply_filters( 'wppb_success_email_confirmation', '<p class="wppb-success">' . __( 'Your email was successfully confirmed.', 'profile-builder' ) . '</p><!-- .success -->', $user_id );
             $admin_approval_message = apply_filters( 'wppb_email_confirmation_with_admin_approval', '<p class="alert">' . __( 'Before you can access your account, an administrator needs to approve it. You will be notified via email.', 'profile-builder' ) . '</p>', $user_id );
@@ -139,6 +142,7 @@ function wppb_activate_signup( $key ) {
                                     $redirect_url = wppb_curpageurl();
                                 }
                                 $redirect_message = wppb_activate_signup_autologin_redirect_url($user_id, $redirect_url, $redirect_delay);
+                                $redirect_message = apply_filters( 'wppb_ec_sucess_message_redirect', $redirect_message, $meta );
                             }
 
 							return $success_message . ( ! empty ( $redirect_message ) ? $redirect_message : '' );
@@ -156,6 +160,7 @@ function wppb_activate_signup( $key ) {
                         $redirect_url = wppb_curpageurl();
                     }
                     $redirect_message = wppb_activate_signup_autologin_redirect_url($user_id, $redirect_url, $redirect_delay);
+                    $redirect_message = apply_filters( 'wppb_ec_sucess_message_redirect', $redirect_message, $meta );
                 }
 
                 return $success_message . ( ! empty ( $redirect_message ) ? $redirect_message : '' );
@@ -180,9 +185,18 @@ function wppb_activate_signup_autologin_redirect_url( $user_id, $redirect_url, $
 
 //function to display the registration page
 function wppb_front_end_register( $atts ){
-	extract( shortcode_atts( array( 'role' => get_option( 'default_role' ), 'form_name' => 'unspecified', 'redirect_url' => '', 'logout_redirect_url' => '', 'automatic_login' => '', 'redirect_priority' => 'normal' ), $atts, 'wppb-register' ) );
-	
-    $form = new Profile_Builder_Form_Creator( array( 'form_type' => 'register', 'form_name' => $form_name, 'role' => ( is_object( get_role( $role ) ) ? $role : get_option( 'default_role' ) ) , 'redirect_url' => $redirect_url, 'logout_redirect_url' => $logout_redirect_url, 'automatic_login' => $automatic_login, 'redirect_priority' => $redirect_priority ) );
+
+	$atts = shortcode_atts( array(
+		'role'                => get_option( 'default_role' ),
+		'form_name'           => 'unspecified',
+		'redirect_url'        => '',
+		'logout_redirect_url' => '',
+		'automatic_login'     => '',
+		'redirect_priority'   => 'normal',
+        'ajax'                => false
+	), $atts, 'wppb-register' );
+
+    $form = new Profile_Builder_Form_Creator( array( 'form_type' => 'register', 'form_name' => $atts['form_name'], 'role' => ( is_object( get_role( $atts['role'] ) ) ? $atts['role'] : get_option( 'default_role' ) ) , 'redirect_url' => $atts['redirect_url'], 'logout_redirect_url' => $atts['logout_redirect_url'], 'automatic_login' => $atts['automatic_login'], 'redirect_priority' => $atts['redirect_priority'], 'ajax' => $atts['ajax'] ) );
 
     return $form;
 }
@@ -203,16 +217,18 @@ function wppbc_disable_admin_approval_for_user_role( $user_id ) {
 /* authors and contributors shouldn't be allowed to create pages with the register shortcode in them */
 add_filter( 'the_content', 'wppb_maybe_remove_register_shortcode' );
 function wppb_maybe_remove_register_shortcode( $content ){
-    if ( has_shortcode( $content, 'wppb-register' ) ){
-        $author_id = get_the_author_meta( 'ID' );
-        if( !empty( $author_id ) ){
-            if( !user_can( $author_id, 'edit_others_posts' ) ) {
-                remove_shortcode('wppb-register');
-            }
-        }
-    }
+	if ( has_shortcode( $content, 'wppb-register' ) ){
+		$author_id = get_the_author_meta( 'ID' );
+		if( !empty( $author_id ) ){
+			if( !user_can( $author_id, 'edit_others_posts' ) ) {
+				remove_shortcode('wppb-register');
 
-    return $content;
+				$content = str_replace('[wppb-register]', __( 'Only an administrator can create pages with the register shortcode.', 'profile-builder' ), $content);
+			}
+		}
+	}
+
+	return $content;
 }
 
 /* custom redirect after registration on wp default register form */

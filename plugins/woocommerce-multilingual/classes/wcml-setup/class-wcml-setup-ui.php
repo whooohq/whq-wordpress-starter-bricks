@@ -2,17 +2,7 @@
 
 class WCML_Setup_UI {
 
-	/** @var  woocommerce_wpml */
-	private $woocommerce_wpml;
-
-	/**
-	 * WCML_Setup_UI constructor.
-	 *
-	 * @param woocommerce_wpml $woocommerce_wpml
-	 */
-	public function __construct( woocommerce_wpml $woocommerce_wpml ) {
-		$this->woocommerce_wpml = $woocommerce_wpml;
-	}
+	const SLUG = 'wcml-setup';
 
 	public function add_hooks() {
 		if ( current_user_can( 'manage_options' ) && $this->is_wcml_setup_page() ) {
@@ -43,11 +33,12 @@ class WCML_Setup_UI {
 	 * @return bool
 	 */
 	private function is_wcml_setup_page() {
-		return isset( $_GET['page'] ) && $_GET['page'] === 'wcml-setup';
+		/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
+		return isset( $_GET['page'] ) && $_GET['page'] === self::SLUG;
 	}
 
 	public function admin_menus() {
-		add_dashboard_page( '', '', 'manage_options', 'wcml-setup', '' );
+		add_dashboard_page( '', '', 'manage_options', self::SLUG, '' );
 	}
 
 	/**
@@ -59,7 +50,7 @@ class WCML_Setup_UI {
 	 * @throws \WPML\Core\Twig_Error_Syntax Exception.
 	 */
 	public function setup_header( $steps, $step ) {
-		set_current_screen( 'wcml-setup' );
+		set_current_screen( self::SLUG );
 		$header = new WCML_Setup_Header_UI( $steps, $step );
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $header->get_view();
@@ -72,18 +63,24 @@ class WCML_Setup_UI {
 	public function setup_steps( array $steps, $current_step ) {
 		$step_keys = array_keys( $steps );
 		array_shift( $steps );
+		$i = 1;
 		?>
 		<ol class="wcml-setup-steps">
 			<?php foreach ( $steps as $step_key => $step ) : ?>
-				<li class="
-				<?php
-				if ( $step_key === $current_step ) {
-					echo 'active';
-				} elseif ( array_search( $current_step, $step_keys ) > array_search( $step_key, $step_keys ) ) {
-					echo 'done';
-				}
-				?>
-				"><?php echo esc_html( $step['name'] ); ?></li>
+				<?php if ( $step['name'] ) : ?>
+					<li class="
+					<?php
+					$step_status = $i;
+					if ( $step_key === $current_step ) {
+						echo 'active';
+					} elseif ( array_search( $current_step, $step_keys ) > array_search( $step_key, $step_keys ) ) {
+						echo 'done';
+						$step_status = '<i class="otgs-ico otgs-ico-ok"></i>';
+					}
+					?>
+					"><span><?php echo $step_status; ?></span><?php echo esc_html( $step['name'] ); ?></li>
+					<?php $i++; ?>
+				<?php endif; ?>
 			<?php endforeach; ?>
 		</ol>
 		<?php

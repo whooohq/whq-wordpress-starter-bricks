@@ -1,0 +1,48 @@
+@use "./base-units.scss" as *;
+@use "./breakpoints.scss" as *;
+
+// Generates desktop-first variables.
+@mixin tu-generate-responsive-variables($prefix, $definitions) {
+    // --- PART 1: Define all base variables in :root ---
+    @at-root :root {
+        @each $name, $bu-ref in $definitions {
+            $variable-name: --#{$prefix}-#{$name};
+
+            @if type-of($bu-ref) == 'map' {
+                // It's responsive, so set the "desktop" value as the base
+                @if map-has-key($bu-ref, "desktop") {
+                    $desktop-value: map-get($base-units, map-get($bu-ref, "desktop"));
+                    #{$variable-name}: #{$desktop-value};
+                } @else {
+                   // Warn developer to add desktop breakpoint value.
+                    @warn "TU Theme: Responsive variable '--#{$prefix}-#{$name}' is missing the required 'desktop' breakpoint value.";
+                }
+            } @else {
+                // It's static, so set its value as the base
+                $static-value: map-get($base-units, $bu-ref);
+                #{$variable-name}: #{$static-value};
+            }
+        }
+    }
+
+    // --- PART 2: Loop through breakpoints to create media queries for overrides ---
+    @each $bp-name, $bp-width in $breakpoints {
+        // We skip "desktop" because that's our base
+        @if $bp-name != "desktop" {
+            @at-root {
+                @media (max-width: #{$bp-width}) {
+                    :root {
+                        @each $name, $bu-ref in $definitions {
+                            // Only create an override if the variable is responsive AND has a value for this breakpoint
+                            @if type-of($bu-ref) == 'map' and map-has-key($bu-ref, $bp-name) {
+                                $variable-name: --#{$prefix}-#{$name};
+                                $breakpoint-value: map-get($base-units, map-get($bu-ref, $bp-name));
+                                #{$variable-name}: #{$breakpoint-value};
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

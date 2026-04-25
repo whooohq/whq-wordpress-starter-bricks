@@ -7,6 +7,7 @@
 
 namespace Cache_Warmer;
 
+use phpUri;
 use WP_Plugins_Core\Action_Scheduler;
 
 /**
@@ -91,6 +92,7 @@ final class Utils {
                 'hook'           => $hook,
                 'status'         => \ActionScheduler_Store::STATUS_PENDING,
                 'posts_per_page' => 1,
+                'args'           => $args,
             ],
             'ids'
         );
@@ -98,9 +100,16 @@ final class Utils {
         if ( ! $actions ) {
             $current_time = time();
 
-            $option_name = "cache-warmer-interval-$hook-next-run-timestamp";
+            $next_run_time_option_name     = "cache-warmer-interval-$hook-next-run-timestamp";
+            $prev_interval_val_option_name = "cache-warmer-interval-$hook-prev-interval-val";
 
-            $prev_next_run_time = get_option( $option_name );
+            if ( $args ) { // Interval per args set.
+                $next_run_time_option_name     .= wp_json_encode( $args );
+                $prev_interval_val_option_name .= wp_json_encode( $args );
+            }
+
+            $prev_next_run_time = (int) get_option( $next_run_time_option_name );
+            $prev_interval_val  = (int) get_option( $prev_interval_val_option_name );
 
             if ( ! $prev_next_run_time ) {
                 $next_run_time = $current_time + $interval_in_seconds;
@@ -111,10 +120,15 @@ final class Utils {
                     $next_run_time += $interval_in_seconds;
                 }
             } else {
-                $next_run_time = $prev_next_run_time;
+                if ( $interval_in_seconds === $prev_interval_val ) {
+                    $next_run_time = $prev_next_run_time;
+                } else {
+                    $next_run_time = $current_time + $interval_in_seconds;
+                }
             }
 
-            update_option( $option_name, $next_run_time );
+            update_option( $next_run_time_option_name, $next_run_time );
+            update_option( $prev_interval_val_option_name, $interval_in_seconds );
 
             Action_Scheduler::schedule_single_action(
                 $next_run_time,
@@ -122,5 +136,38 @@ final class Utils {
                 $args
             );
         }
+    }
+
+    /**
+     * Get unique domains from entry points.
+     *
+     * @return string[] Unique domains from entry points.
+     */
+    public static function get_unique_domains_from_entry_points() {
+        $home_url = home_url();
+
+        $entry_points_links = [];
+
+        $entry_points = Cache_Warmer::$options->get( 'setting-entry-points' );
+        foreach ( $entry_points as $entry_point ) {
+            $entry_points_links[] = phpUri::parse( $home_url )->join( $entry_point['url'] ); // Convert relative URL to absolute.
+        }
+
+        return array_unique(
+            array_filter(
+                array_map(
+                    function( $link ) {
+                        $url_host = wp_parse_url( $link, PHP_URL_HOST );
+
+                        if ( ! $url_host ) {
+                            return false;
+                        }
+
+                        return $url_host;
+                    },
+                    $entry_points_links
+                )
+            )
+        );
     }
 }

@@ -19,7 +19,7 @@ add_filter( 'relevanssi_post_content', 'relevanssi_index_ninja_tables' );
  * the post content and then uses relevanssi_index_ninja_table() to convert the
  * tables into strings.
  *
- * @uses $wpdb WordPress database abstraction.
+ * @global $wpdb WordPress database abstraction.
  * @see relevanssi_index_ninja_table()
  *
  * @param string $content The post content.
@@ -50,7 +50,7 @@ function relevanssi_index_ninja_tables( $content ) {
  * title and description are also included, if they are set visible on the
  * frontend.
  *
- * @uses $wpdb WordPress database abstraction.
+ * @global $wpdb WordPress database abstraction.
  *
  * @param int $table_id The table ID.
  *
@@ -77,14 +77,21 @@ function relevanssi_index_ninja_table( $table_id ) {
 		)
 	);
 	foreach ( $rows as $row ) {
+		if ( empty( $row->value ) ) {
+			continue;
+		}
+		$json_decoded = json_decode( $row->value );
+		if ( ! is_object( $json_decoded ) ) {
+			continue;
+		}
 		$array_values = array_map(
-			function( $value ) {
+			function ( $value ) {
 				if ( is_object( $value ) ) {
 					return '';
 				}
 				return strval( $value );
 			},
-			array_values( get_object_vars( json_decode( $row->value ) ) )
+			array_values( get_object_vars( $json_decoded ) )
 		);
 
 		$table_contents .= ' ' . implode( ' ', $array_values );

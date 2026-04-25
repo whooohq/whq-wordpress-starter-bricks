@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array, WordPress.WP.AlternativeFunctions.curl_curl_setopt, WordPress.WP.AlternativeFunctions.curl_curl_init, WordPress.WP.AlternativeFunctions.curl_curl_exec, WordPress.WP.AlternativeFunctions.curl_curl_getinfo, WordPress.WP.AlternativeFunctions.curl_curl_multi_init, WordPress.WP.AlternativeFunctions.curl_curl_multi_add_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_exec, WordPress.WP.AlternativeFunctions.curl_curl_multi_select, WordPress.WP.AlternativeFunctions.curl_curl_multi_getcontent, WordPress.WP.AlternativeFunctions.curl_curl_multi_remove_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_close, WordPress.WP.AlternativeFunctions.curl_curl_error, WordPress.WP.AlternativeFunctions.curl_curl_close, WordPress.WP.AlternativeFunctions.curl_curl_errno -- Direct cURL usage is intentional to leverage specific low-level options not available via the WordPress HTTP API.
 /*
  * Copyright 2014 Google Inc.
  *
@@ -37,7 +38,7 @@ class UDP_Google_IO_Curl extends UDP_Google_IO_Abstract
     if (!extension_loaded('curl')) {
       $error = 'The cURL IO handler requires the cURL extension to be enabled';
       $client->getLogger()->critical($error);
-      throw new UDP_Google_IO_Exception($error);
+      throw new UDP_Google_IO_Exception($error); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
     }
 
     parent::__construct($client);
@@ -114,7 +115,7 @@ class UDP_Google_IO_Curl extends UDP_Google_IO_Abstract
       $map = $this->client->getClassConfig('UDP_Google_IO_Exception', 'retry_map');
 
       $this->client->getLogger()->error('cURL ' . $error);
-      throw new UDP_Google_IO_Exception($error, $code, null, $map);
+      throw new UDP_Google_IO_Exception($error, $code, null, $map); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
     }
     $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
 

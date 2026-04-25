@@ -134,12 +134,44 @@ return apply_filters(
         ],
 
         /*
-         * Current warm-up leftovers links tree, equal to false is no warm-up currently running.
+         * Current warm-up leftovers links tree, equal to false if no warm-up currently running.
          */
         'cache-warmer-links-tree-leftovers'                => [
             'autoload'  => false,
             'default'   => [],
             'shortTerm' => true,
+        ],
+
+        /*
+         * Last external warmup request args warmup ID.
+         */
+        'cache-warmer-last-external-warmup-request-args-id' => [
+            'autoload' => false,
+            'default'  => false,
+        ],
+
+        /*
+         * Last successful warmup ID.
+         */
+        'cache-warmer-last-success-warmup-id'              => [
+            'autoload' => false,
+            'default'  => false,
+        ],
+
+        /*
+         * Last stopped by hand warmup ID.
+         */
+        'cache-warmer-last-stopped-by-hand-warmup-id'      => [
+            'autoload' => false,
+            'default'  => false,
+        ],
+
+        /*
+         * Last successful warmup: External warmup request args.
+         */
+        'cache-warmer-last-success-warmup-external-warmup-request-args' => [
+            'autoload' => false,
+            'default'  => [],
         ],
 
         /*
@@ -259,6 +291,13 @@ return apply_filters(
         ],
 
         /*
+         * External warmer domain.
+         */
+        'cache-warmer-setting-external-warmer-domain'      => [
+            'default' => '',
+        ],
+
+        /*
          * The list of excluded pages.
          */
         'cache-warmer-setting-excluded-pages'              => [
@@ -305,6 +344,14 @@ return apply_filters(
          * Use RegEx match for excluded sites.
          */
         'cache-warmer-setting-excluded-pages-use-regex-match' => [
+            'autoload' => false,
+            'default'  => '',
+        ],
+
+        /*
+         * Use external warmer servers during the warming.
+         */
+        'cache-warmer-setting-use-external-warmer-servers-during-the-warming' => [
             'autoload' => false,
             'default'  => '',
         ],

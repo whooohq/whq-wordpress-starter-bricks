@@ -35,7 +35,7 @@ class Loco_gettext_SyncOptions {
 
     /**
      * Set *relative* path to alternative template path. 
-     * @param string
+     * @param string $path
      */
     public function setTemplate( $path ){
         $this->head['X-Loco-Template'] = (string) $path;
@@ -44,8 +44,7 @@ class Loco_gettext_SyncOptions {
 
     /**
      * Test if translations (msgstr fields) are to be merged.
-     * 
-     * @return bool
+     * @return bool true if NOT in pot mode
      */
     public function mergeMsgstr(){
         return 0 === preg_match( '/\\bpot\\b/', $this->getSyncMode() );
@@ -76,7 +75,7 @@ class Loco_gettext_SyncOptions {
 
 
     /**
-     * @param string
+     * @param string $mode
      */
     public function setSyncMode( $mode ){
         $this->head['X-Loco-Template-Mode'] = (string) $mode;

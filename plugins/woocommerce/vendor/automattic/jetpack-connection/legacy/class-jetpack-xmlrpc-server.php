@@ -269,7 +269,7 @@ class Jetpack_XMLRPC_Server {
 	 * This XML-RPC method is called from the /jpphp/provision endpoint on WPCOM in order to
 	 * register this site so that a plan can be provisioned.
 	 *
-	 * @param array $request An array containing at minimum nonce and local_user keys.
+	 * @param array|ArrayAccess $request An array containing at minimum nonce and local_user keys.
 	 *
 	 * @return \WP_Error|array
 	 */
@@ -304,7 +304,8 @@ class Jetpack_XMLRPC_Server {
 		$nonce = sanitize_text_field( $request['nonce'] );
 		unset( $request['nonce'] );
 
-		$api_url  = $this->connection->api_url( 'partner_provision_nonce_check' );
+		$api_url = $this->connection->api_url( 'partner_provision_nonce_check' );
+		// @phan-suppress-next-line PhanAccessMethodInternal -- Phan is correct, but the usage is intentional.
 		$response = Client::_wp_remote_request(
 			esc_url_raw( add_query_arg( 'nonce', $nonce, $api_url ) ),
 			array( 'method' => 'GET' ),
@@ -373,7 +374,7 @@ class Jetpack_XMLRPC_Server {
 	 * This XML-RPC method is called from the /jpphp/provision endpoint on WPCOM in order to
 	 * register this site so that a plan can be provisioned.
 	 *
-	 * @param array $request An array containing at minimum a nonce key and a local_username key.
+	 * @param array|ArrayAccess $request An array containing at minimum a nonce key and a local_username key.
 	 *
 	 * @return \WP_Error|array
 	 */
@@ -440,8 +441,8 @@ class Jetpack_XMLRPC_Server {
 	 * Given an array containing a local user identifier and a nonce, will attempt to fetch and set
 	 * an access token for the given user.
 	 *
-	 * @param array       $request    An array containing local_user and nonce keys at minimum.
-	 * @param \IXR_Client $ixr_client The client object, optional.
+	 * @param array|ArrayAccess $request An array containing local_user and nonce keys at minimum.
+	 * @param \IXR_Client       $ixr_client The client object, optional.
 	 * @return mixed
 	 */
 	public function remote_connect( $request, $ixr_client = false ) {
@@ -521,6 +522,7 @@ class Jetpack_XMLRPC_Server {
 	 * Getter for the local user to act as.
 	 *
 	 * @param array $request the current request data.
+	 * @return WP_User|IXR_Error|false IXR_Error if the request is missing a local_user field, WP_User object on success, or false on failure to find a user.
 	 */
 	private function fetch_and_verify_local_user( $request ) {
 		if ( empty( $request['local_user'] ) ) {
@@ -544,6 +546,7 @@ class Jetpack_XMLRPC_Server {
 	 * Gets the user object by its data.
 	 *
 	 * @param string $user_id can be any identifying user data.
+	 * @return WP_User|false WP_User object on success, false on failure.
 	 */
 	private function get_user_by_anything( $user_id ) {
 		$user = get_user_by( 'login', $user_id );
@@ -713,9 +716,9 @@ class Jetpack_XMLRPC_Server {
 			'md5',
 			json_encode( // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 				(object) array(
-					'client_id' => (int) $client_id,
-					'user_id'   => (int) $user_id,
-					'nonce'     => (string) $nonce,
+					'client_id' => $client_id,
+					'user_id'   => $user_id,
+					'nonce'     => $nonce,
 					'code'      => (string) $api_user_code,
 				)
 			),
@@ -762,17 +765,28 @@ class Jetpack_XMLRPC_Server {
 	}
 
 	/**
-	 * Returns the home URL and site URL for the current site which can be used on the WPCOM side for
+	 * Returns the home URL, site URL, and URL secret for the current site which can be used on the WPCOM side for
 	 * IDC mitigation to decide whether sync should be allowed if the home and siteurl values differ between WPCOM
 	 * and the remote Jetpack site.
+	 *
+	 * @since 1.56.0 Additional data may be added via filter `jetpack_connection_validate_urls_for_idc_mitigation_response`.
 	 *
 	 * @return array
 	 */
 	public function validate_urls_for_idc_mitigation() {
-		return array(
+		$response = array(
 			'home'    => Urls::home_url(),
 			'siteurl' => Urls::site_url(),
 		);
+
+		/**
+		 * Allows modifying the response.
+		 *
+		 * @since 1.56.0
+		 *
+		 * @param array $response
+		 */
+		return apply_filters( 'jetpack_connection_validate_urls_for_idc_mitigation_response', $response );
 	}
 
 	/**
@@ -813,42 +827,6 @@ class Jetpack_XMLRPC_Server {
 	/**
 	 * Deprecated: This method is no longer part of the Connection package and now lives on the Jetpack plugin.
 	 *
-	 * Returns what features are available. Uses the slug of the module files.
-	 *
-	 * @deprecated since 1.25.0
-	 * @see Jetpack_XMLRPC_Methods::features_available() in the Jetpack plugin
-	 *
-	 * @return array
-	 */
-	public function features_available() {
-		_deprecated_function( __METHOD__, '1.25.0', 'Jetpack_XMLRPC_Methods::features_available()' );
-		if ( class_exists( 'Jetpack_XMLRPC_Methods' ) ) {
-			return Jetpack_XMLRPC_Methods::features_available();
-		}
-		return array();
-	}
-
-	/**
-	 * Deprecated: This method is no longer part of the Connection package and now lives on the Jetpack plugin.
-	 *
-	 * Returns what features are enabled. Uses the slug of the modules files.
-	 *
-	 * @deprecated since 1.25.0
-	 * @see Jetpack_XMLRPC_Methods::features_enabled() in the Jetpack plugin
-	 *
-	 * @return array
-	 */
-	public function features_enabled() {
-		_deprecated_function( __METHOD__, '1.25.0', 'Jetpack_XMLRPC_Methods::features_enabled()' );
-		if ( class_exists( 'Jetpack_XMLRPC_Methods' ) ) {
-			return Jetpack_XMLRPC_Methods::features_enabled();
-		}
-		return array();
-	}
-
-	/**
-	 * Deprecated: This method is no longer part of the Connection package and now lives on the Jetpack plugin.
-	 *
 	 * Serve a JSON API request.
 	 *
 	 * @deprecated since 1.25.0
@@ -863,5 +841,4 @@ class Jetpack_XMLRPC_Server {
 		}
 		return array();
 	}
-
 }

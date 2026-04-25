@@ -9,9 +9,15 @@
  */
 
 use Automattic\Jetpack\Constants;
+use Automattic\WooCommerce\Enums\ProductStatus;
+use Automattic\WooCommerce\Enums\ProductStockStatus;
+use Automattic\WooCommerce\Enums\ProductType;
+use Automattic\WooCommerce\Enums\CatalogVisibility;
+use Automattic\WooCommerce\Internal\Utilities\ProductUtil;
 use Automattic\WooCommerce\Proxies\LegacyProxy;
 use Automattic\WooCommerce\Utilities\ArrayUtil;
 use Automattic\WooCommerce\Utilities\NumberUtil;
+use Automattic\WooCommerce\Internal\ProductImage\MatchImageBySKU;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
  * This function should be used for product retrieval so that we have a data agnostic
  * way to get a list of products.
  *
- * Args and usage: https://github.com/woocommerce/woocommerce/wiki/wc_get_products-and-WC_Product_Query
+ * Args and usage: https://developer.woocommerce.com/docs/extensions/core-concepts/wc-get-products/
  *
  * @since  3.0.0
  * @param  array $args Array of args (above).
@@ -134,23 +140,64 @@ function wc_delete_product_transients( $post_id = 0 ) {
 
 	if ( $post_id > 0 ) {
 		// Transient names that include an ID - since they are dynamic they cannot be cleaned in bulk without the ID.
-		$post_transient_names = array(
-			'wc_product_children_',
-			'wc_var_prices_',
-			'wc_related_',
-			'wc_child_has_weight_',
-			'wc_child_has_dimensions_',
-		);
-
-		foreach ( $post_transient_names as $transient ) {
-			delete_transient( $transient . $post_id );
-		}
+		wc_get_container()->get( ProductUtil::class )->delete_product_specific_transients( $post_id );
 	}
 
-	// Increments the transient version to invalidate cache.
+	// Kept for compatibility, WooCommerce core doesn't use product transient versions anymore.
 	WC_Cache_Helper::get_transient_version( 'product', true );
 
 	do_action( 'woocommerce_delete_product_transients', $post_id );
+}
+
+/**
+ * Delete all related products transients when a product is updated/created.
+ * This is necessary because changing one product affects all related products too.
+ *
+ * @since 9.8.0
+ * @deprecated 10.1.0 This function is deprecated and will be removed in a future version.
+ * @param int $post_id The product ID updated/created.
+ */
+function wc_delete_related_product_transients( $post_id ) {
+	wc_deprecated_function( 'wc_delete_related_product_transients', '10.1.0', 'This function is deprecated and will be removed in a future version.' );
+
+	if ( ! is_numeric( $post_id ) ) {
+		return;
+	}
+
+	$transient_name          = 'wc_related_' . $post_id;
+	$old_transient           = get_transient( $transient_name );
+	$old_related_product_ids = array();
+
+	if ( is_array( $old_transient ) && ! empty( $old_transient ) ) {
+		$old_related_product_ids = $old_transient[ array_key_first( $old_transient ) ];
+	}
+
+	// Delete current product transient so that it can be refreshed below.
+	delete_transient( $transient_name );
+
+	// Gets new related products and sets current product transient.
+	$new_related_product_ids = wc_get_related_products( $post_id, 1000 );
+
+	// Combine all product IDs that need their transients cleared.
+	$related_product_ids = array_unique(
+		array_merge(
+			$old_related_product_ids,
+			$new_related_product_ids
+		)
+	);
+
+	if ( empty( $related_product_ids ) ) {
+		return;
+	}
+
+	// Create the list of transient names to delete.
+	$related_product_transients = array_map(
+		function ( $id ) {
+			return 'wc_related_' . $id;
+		},
+		$related_product_ids
+	);
+	_wc_delete_transients( $related_product_transients );
 }
 
 /**
@@ -221,34 +268,84 @@ function wc_product_post_type_link( $permalink, $post ) {
 		return $permalink;
 	}
 
-	// Get the custom taxonomy terms in use by this post.
-	$terms = get_the_terms( $post->ID, 'product_cat' );
+	// Only process category if the permalink structure uses category placeholders.
+	$needs_category = strpos( $permalink, '%category%' ) !== false || strpos( $permalink, '%product_cat%' ) !== false;
+	$product_cat    = '';
 
-	if ( ! empty( $terms ) ) {
-		$terms           = wp_list_sort(
-			$terms,
-			array(
-				'parent'  => 'DESC',
-				'term_id' => 'ASC',
-			)
-		);
-		$category_object = apply_filters( 'wc_product_post_type_link_product_cat', $terms[0], $terms, $post );
-		$product_cat     = $category_object->slug;
+	if ( $needs_category ) {
+		// Get the custom taxonomy terms in use by this post.
+		$terms = get_the_terms( $post->ID, 'product_cat' );
 
-		if ( $category_object->parent ) {
-			$ancestors = get_ancestors( $category_object->term_id, 'product_cat' );
-			foreach ( $ancestors as $ancestor ) {
-				$ancestor_object = get_term( $ancestor, 'product_cat' );
-				if ( apply_filters( 'woocommerce_product_post_type_link_parent_category_only', false ) ) {
-					$product_cat = $ancestor_object->slug;
-				} else {
-					$product_cat = $ancestor_object->slug . '/' . $product_cat;
+		if ( ! empty( $terms ) && ! is_wp_error( $terms ) && is_array( $terms ) ) {
+			// Re-index array to ensure sequential keys starting from 0 since filters may remove some keys.
+			$terms = array_values( $terms );
+
+			// Find the deepest category (most ancestors) for the permalink.
+			$deepest_term      = $terms[0];
+			$deepest_ancestors = $deepest_term->parent ? get_ancestors( $deepest_term->term_id, 'product_cat' ) : array();
+
+			foreach ( $terms as $term ) {
+				if ( $term->term_id === $deepest_term->term_id ) {
+					continue;
+				}
+				// Skip root categories - they can't be deeper than current.
+				if ( ! $term->parent ) {
+					continue;
+				}
+				$ancestors = get_ancestors( $term->term_id, 'product_cat' );
+				if ( count( $ancestors ) > count( $deepest_ancestors ) ) {
+					$deepest_ancestors = $ancestors;
+					$deepest_term      = $term;
 				}
 			}
+
+			/**
+			 * Filter the product category used for the product permalink.
+			 *
+			 * By default, the deepest category (most ancestors) is selected. Prior to 9.9.0,
+			 * categories were sorted by parent term ID descending, then term ID ascending.
+			 * This filter allows customization of which category is used in the product permalink.
+			 *
+			 * @since 2.4.0
+			 * @since 9.9.0 Selection algorithm changed to use deepest category instead of sort order.
+			 *
+			 * @param WP_Term   $deepest_term The selected category term object (deepest category since 9.9.0).
+			 * @param WP_Term[] $terms        All category terms assigned to the product.
+			 * @param WP_Post   $post         The product post object.
+			 */
+			$category_object = apply_filters( 'wc_product_post_type_link_product_cat', $deepest_term, $terms, $post );
+			$category_object = ! $category_object instanceof WP_Term ? $deepest_term : $category_object;
+			$product_cat     = $category_object->slug;
+
+			if ( $category_object->parent ) {
+				// Reuse cached ancestors if the filter didn't change the category, otherwise fetch them.
+				$ancestors = ( $category_object->term_id === $deepest_term->term_id )
+					? $deepest_ancestors
+					: get_ancestors( $category_object->term_id, 'product_cat' );
+				foreach ( $ancestors as $ancestor ) {
+					$ancestor_object = get_term( $ancestor, 'product_cat' );
+
+					/**
+					 * Filter whether to use only the top-level parent category in the product permalink.
+					 *
+					 * When true, only the top-level ancestor category slug is used instead of
+					 * the full category hierarchy path (e.g., 'parent' instead of 'parent/child/grandchild').
+					 *
+					 * @since 2.6.5
+					 *
+					 * @param bool $use_parent_only Whether to use only the top-level parent category. Default false.
+					 */
+					if ( apply_filters( 'woocommerce_product_post_type_link_parent_category_only', false ) ) {
+						$product_cat = $ancestor_object->slug;
+					} else {
+						$product_cat = $ancestor_object->slug . '/' . $product_cat;
+					}
+				}
+			}
+		} else {
+			// If no terms are assigned to this post, use a string instead (can't leave the placeholder there).
+			$product_cat = _x( 'uncategorized', 'slug', 'woocommerce' );
 		}
-	} else {
-		// If no terms are assigned to this post, use a string instead (can't leave the placeholder there).
-		$product_cat = _x( 'uncategorized', 'slug', 'woocommerce' );
 	}
 
 	$find = array(
@@ -270,7 +367,7 @@ function wc_product_post_type_link( $permalink, $post ) {
 		date_i18n( 'H', strtotime( $post->post_date ) ),
 		date_i18n( 'i', strtotime( $post->post_date ) ),
 		date_i18n( 's', strtotime( $post->post_date ) ),
-		$post->ID,
+		(string) $post->ID,
 		$product_cat,
 		$product_cat,
 	);
@@ -282,13 +379,56 @@ function wc_product_post_type_link( $permalink, $post ) {
 add_filter( 'post_type_link', 'wc_product_post_type_link', 10, 2 );
 
 /**
+ * Ensure that the product_cat value determined in `wc_product_post_type_link` is the canonical value.
+ *
+ * If other values are used in this part of the permalink, it will be redirected.
+ *
+ * @return void
+ */
+function wc_product_canonical_redirect(): void {
+	global $wp_rewrite;
+
+	if (
+		! did_action( 'woocommerce_init' )
+		|| ! is_product()
+		|| ! is_a( $wp_rewrite, WP_Rewrite::class )
+	) {
+		return;
+	}
+
+	// In the event we are dealing with ugly permalinks, this will be empty.
+	$specified_category_slug = get_query_var( 'product_cat' );
+	$specified_category_slug = urldecode( $specified_category_slug );
+
+	if ( ! is_string( $specified_category_slug ) || strlen( $specified_category_slug ) < 1 ) {
+		return;
+	}
+
+	// What category slug did we expect? Normally this maps back to the first assigned product_cat
+	// term. However, this is filterable so we use the relevant helper function to figure this out.
+	$expected_category_slug = wc_product_post_type_link( '%product_cat%', get_post( get_the_ID() ) );
+	$expected_category_slug = urldecode( $expected_category_slug );
+
+	if ( $specified_category_slug === $expected_category_slug ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$query_vars = isset( $_GET ) && is_array( $_GET ) ? $_GET : array();
+
+	wp_safe_redirect( add_query_arg( $query_vars, wc_get_product( get_the_ID() )->get_permalink() ), 301 );
+	exit();
+}
+add_action( 'template_redirect', 'wc_product_canonical_redirect', 5 );
+
+/**
  * Get the placeholder image URL either from media, or use the fallback image.
  *
  * @param string $size Thumbnail size to use.
  * @return string
  */
 function wc_placeholder_img_src( $size = 'woocommerce_thumbnail' ) {
-	$src               = WC()->plugin_url() . '/assets/images/placeholder.png';
+	$src               = WC()->plugin_url() . '/assets/images/placeholder.webp';
 	$placeholder_image = get_option( 'woocommerce_placeholder_image', 0 );
 
 	if ( ! empty( $placeholder_image ) ) {
@@ -380,7 +520,7 @@ function wc_get_formatted_variation( $variation, $flat = false, $include_names =
 
 	$list_type = $include_names ? 'dl' : 'ul';
 
-	if ( is_array( $variation_attributes ) ) {
+	if ( is_array( $variation_attributes ) && ! empty( $variation_attributes ) ) {
 
 		if ( ! $flat ) {
 			$return = '<' . $list_type . ' class="variation">';
@@ -408,12 +548,10 @@ function wc_get_formatted_variation( $variation, $flat = false, $include_names =
 				} else {
 					$variation_list[] = '<dt>' . wc_attribute_label( $name, $product ) . ':</dt><dd>' . rawurldecode( $value ) . '</dd>';
 				}
-			} else {
-				if ( $flat ) {
+			} elseif ( $flat ) {
 					$variation_list[] = rawurldecode( $value );
-				} else {
-					$variation_list[] = '<li>' . rawurldecode( $value ) . '</li>';
-				}
+			} else {
+				$variation_list[] = '<li>' . rawurldecode( $value ) . '</li>';
 			}
 		}
 
@@ -431,58 +569,273 @@ function wc_get_formatted_variation( $variation, $flat = false, $include_names =
 }
 
 /**
+ * Schedule start/end sale actions for a product based on its sale dates.
+ *
+ * Uses Action Scheduler to fire events at the exact sale start/end times,
+ * rather than relying on the daily cron.
+ *
+ * @since 10.5.0
+ * @param WC_Product $product Product object.
+ * @return void
+ */
+function wc_schedule_product_sale_events( WC_Product $product ): void {
+	$product_id = $product->get_id();
+	$date_from  = $product->get_date_on_sale_from( 'edit' );
+	$date_to    = $product->get_date_on_sale_to( 'edit' );
+
+	if ( $date_from ) {
+		$start_ts = $date_from->getTimestamp();
+		if ( $start_ts > time() ) {
+			as_schedule_single_action(
+				$start_ts,
+				'wc_product_start_scheduled_sale',
+				array( 'product_id' => $product_id ),
+				'woocommerce-sales'
+			);
+		}
+	}
+
+	if ( $date_to ) {
+		$end_ts = $date_to->getTimestamp();
+		if ( $end_ts > time() ) {
+			as_schedule_single_action(
+				$end_ts,
+				'wc_product_end_scheduled_sale',
+				array( 'product_id' => $product_id ),
+				'woocommerce-sales'
+			);
+		}
+	}
+}
+
+/**
+ * Apply the expected sale state for a product.
+ *
+ * This is a shared helper used by both the per-product Action Scheduler
+ * callbacks and the daily cron safety net.
+ *
+ * @since 10.5.0
+ * @param WC_Product $product Product object.
+ * @param string     $mode    'start' or 'end'.
+ * @return void
+ */
+function wc_apply_sale_state_for_product( WC_Product $product, string $mode ): void {
+	$product_id = $product->get_id();
+
+	if ( 'start' === $mode ) {
+		$sale_price = $product->get_sale_price( 'edit' );
+		if ( $sale_price ) {
+			$product->set_price( $sale_price );
+			$product->save();
+
+			// Workaround: `_price` is not in `meta_key_to_props` mapping and only syncs
+			// when date/price props change in `handle_updated_props()`. Since we only
+			// changed `price` prop, we must update `_price` meta directly.
+			// See comment in `WC_Product_Data_Store_CPT::handle_updated_props()`.
+			update_post_meta( $product_id, '_price', $sale_price );
+		}
+	} elseif ( 'end' === $mode ) {
+		$regular_price = $product->get_regular_price( 'edit' );
+		$product->set_price( $regular_price );
+
+		$product->save();
+
+		// Workaround: see above.
+		update_post_meta( $product_id, '_price', $regular_price );
+	}
+
+	wc_delete_product_transients( $product_id );
+
+	// Sync parent variable product price range if this is a variation.
+	if ( $product->is_type( 'variation' ) ) {
+		$parent_id = $product->get_parent_id();
+		if ( $parent_id ) {
+			WC_Product_Variable::sync( $parent_id );
+		}
+	}
+}
+
+/**
+ * Handle scheduled sale start for a product.
+ *
+ * This is the Action Scheduler callback that fires at the exact sale start time.
+ *
+ * @since 10.5.0
+ * @param int $product_id Product ID.
+ * @return void
+ */
+function wc_handle_product_start_scheduled_sale( $product_id ): void {
+	$product = wc_get_product( $product_id );
+	if ( ! $product ) {
+		return;
+	}
+
+	// Skip product types with derived prices.
+	if ( $product->is_type( array( 'variable', 'grouped' ) ) ) {
+		return;
+	}
+
+	// Verify sale should still start (dates/price might have changed since scheduling).
+	if ( ! $product->get_sale_price( 'edit' ) ) {
+		return;
+	}
+
+	$now       = time();
+	$date_from = $product->get_date_on_sale_from( 'edit' );
+	$date_to   = $product->get_date_on_sale_to( 'edit' );
+
+	if ( $date_from && $date_from->getTimestamp() > $now ) {
+		return;
+	}
+
+	if ( $date_to && $date_to->getTimestamp() < $now ) {
+		return;
+	}
+
+	if ( (float) $product->get_price( 'edit' ) === (float) $product->get_sale_price( 'edit' ) ) {
+		return;
+	}
+
+	wc_apply_sale_state_for_product( $product, 'start' );
+}
+add_action( 'wc_product_start_scheduled_sale', 'wc_handle_product_start_scheduled_sale' );
+
+/**
+ * Handle scheduled sale end for a product.
+ *
+ * This is the Action Scheduler callback that fires at the exact sale end time.
+ *
+ * @since 10.5.0
+ * @param int $product_id Product ID.
+ * @return void
+ */
+function wc_handle_product_end_scheduled_sale( $product_id ): void {
+	$product = wc_get_product( $product_id );
+	if ( ! $product ) {
+		return;
+	}
+
+	// Skip product types with derived prices.
+	if ( $product->is_type( array( 'variable', 'grouped' ) ) ) {
+		return;
+	}
+
+	$now     = time();
+	$date_to = $product->get_date_on_sale_to( 'edit' );
+
+	if ( $date_to && $date_to->getTimestamp() > $now ) {
+		return;
+	}
+
+	if ( (float) $product->get_price( 'edit' ) === (float) $product->get_regular_price( 'edit' ) ) {
+		return;
+	}
+
+	wc_apply_sale_state_for_product( $product, 'end' );
+}
+add_action( 'wc_product_end_scheduled_sale', 'wc_handle_product_end_scheduled_sale' );
+
+/**
+ * Schedule sale events when a product is saved with sale dates.
+ *
+ * @since 10.5.0
+ * @param int             $product_id Product ID.
+ * @param WC_Product|null $product    Product object (optional).
+ * @return void
+ */
+function wc_maybe_schedule_product_sale_events( $product_id, $product = null ): void {
+	if ( ! $product ) {
+		$product = wc_get_product( $product_id );
+		if ( ! $product ) {
+			return;
+		}
+	}
+
+	$product_id = $product->get_id();
+
+	// Always clear existing events first.
+	as_unschedule_all_actions( 'wc_product_start_scheduled_sale', array( 'product_id' => $product_id ), 'woocommerce-sales' );
+	as_unschedule_all_actions( 'wc_product_end_scheduled_sale', array( 'product_id' => $product_id ), 'woocommerce-sales' );
+
+	$date_from = $product->get_date_on_sale_from( 'edit' );
+	$date_to   = $product->get_date_on_sale_to( 'edit' );
+
+	if ( $date_from || $date_to ) {
+		wc_schedule_product_sale_events( $product );
+	}
+}
+add_action( 'woocommerce_update_product', 'wc_maybe_schedule_product_sale_events', 10, 2 );
+add_action( 'woocommerce_new_product', 'wc_maybe_schedule_product_sale_events', 10, 2 );
+
+/**
  * Function which handles the start and end of scheduled sales via cron.
+ *
+ * Previously, this daily cron was the only mechanism for starting/ending scheduled
+ * sales, which caused timing issues - sales could be "a day off" depending on when
+ * WP-Cron ran. Now, per-product Action Scheduler events fire at exact sale times.
+ *
+ * This function now acts as a safety net to:
+ * 1. Catch any products missed by the per-product Action Scheduler events
+ * 2. Handle products created before the AS events were introduced
+ *
+ * This function is kept for backwards compatibility. Extenders may hook into the
+ * `woocommerce_scheduled_sales` cron event or the before/after hooks fired within.
+ *
+ * Note: The before/after hooks (wc_before_products_starting_sales, etc.) only fire
+ * when this cron finds products to process. If per-product AS events handled sales
+ * on time, these hooks may not fire.
+ *
+ * @since 3.0.0
  */
 function wc_scheduled_sales() {
 	$data_store = WC_Data_Store::load( 'product' );
 
+	$product_util           = wc_get_container()->get( ProductUtil::class );
+	$must_refresh_transient = false;
+
 	// Sales which are due to start.
 	$product_ids = $data_store->get_starting_sales();
 	if ( $product_ids ) {
+		$must_refresh_transient = true;
 		do_action( 'wc_before_products_starting_sales', $product_ids );
+
 		foreach ( $product_ids as $product_id ) {
 			$product = wc_get_product( $product_id );
 
 			if ( $product ) {
-				$sale_price = $product->get_sale_price();
-
-				if ( $sale_price ) {
-					$product->set_price( $sale_price );
-					$product->set_date_on_sale_from( '' );
-				} else {
-					$product->set_date_on_sale_to( '' );
-					$product->set_date_on_sale_from( '' );
-				}
-
-				$product->save();
+				wc_apply_sale_state_for_product( $product, 'start' );
+				// Note: wc_apply_sale_state_for_product() calls save(), which triggers
+				// woocommerce_update_product hook, which schedules the end AS event.
 			}
+
+			$product_util->delete_product_specific_transients( $product ? $product : $product_id );
 		}
 		do_action( 'wc_after_products_starting_sales', $product_ids );
-
-		WC_Cache_Helper::get_transient_version( 'product', true );
 		delete_transient( 'wc_products_onsale' );
 	}
 
 	// Sales which are due to end.
 	$product_ids = $data_store->get_ending_sales();
 	if ( $product_ids ) {
+		$must_refresh_transient = true;
 		do_action( 'wc_before_products_ending_sales', $product_ids );
+
 		foreach ( $product_ids as $product_id ) {
 			$product = wc_get_product( $product_id );
 
 			if ( $product ) {
-				$regular_price = $product->get_regular_price();
-				$product->set_price( $regular_price );
-				$product->set_sale_price( '' );
-				$product->set_date_on_sale_to( '' );
-				$product->set_date_on_sale_from( '' );
-				$product->save();
+				wc_apply_sale_state_for_product( $product, 'end' );
 			}
+
+			$product_util->delete_product_specific_transients( $product ? $product : $product_id );
 		}
 		do_action( 'wc_after_products_ending_sales', $product_ids );
-
-		WC_Cache_Helper::get_transient_version( 'product', true );
 		delete_transient( 'wc_products_onsale' );
+	}
+
+	if ( $must_refresh_transient ) {
+		// Kept for compatibility, WooCommerce core doesn't use product transient versions anymore.
+		WC_Cache_Helper::get_transient_version( 'product', true );
 	}
 }
 add_action( 'woocommerce_scheduled_sales', 'wc_scheduled_sales' );
@@ -597,10 +950,10 @@ function wc_get_product_types() {
 	return (array) apply_filters(
 		'product_type_selector',
 		array(
-			'simple'   => __( 'Simple product', 'woocommerce' ),
-			'grouped'  => __( 'Grouped product', 'woocommerce' ),
-			'external' => __( 'External/Affiliate product', 'woocommerce' ),
-			'variable' => __( 'Variable product', 'woocommerce' ),
+			ProductType::SIMPLE   => __( 'Simple product', 'woocommerce' ),
+			ProductType::GROUPED  => __( 'Grouped product', 'woocommerce' ),
+			ProductType::EXTERNAL => __( 'External/Affiliate product', 'woocommerce' ),
+			ProductType::VARIABLE => __( 'Variable product', 'woocommerce' ),
 		)
 	);
 }
@@ -614,10 +967,70 @@ function wc_get_product_types() {
  * @return bool
  */
 function wc_product_has_unique_sku( $product_id, $sku ) {
+	/**
+	 * Gives plugins an opportunity to verify SKU uniqueness themselves.
+	 *
+	 * @since 9.0.0
+	 *
+	 * @param bool|null $has_unique_sku Set to a boolean value to short-circuit the default SKU check.
+	 * @param int $product_id The ID of the current product.
+	 * @param string $sku The SKU to check for uniqueness.
+	 */
+	$has_unique_sku = apply_filters( 'wc_product_pre_has_unique_sku', null, $product_id, $sku );
+	if ( ! is_null( $has_unique_sku ) ) {
+		return boolval( $has_unique_sku );
+	}
+
 	$data_store = WC_Data_Store::load( 'product' );
 	$sku_found  = $data_store->is_existing_sku( $product_id, $sku );
 
 	if ( apply_filters( 'wc_product_has_unique_sku', $sku_found, $product_id, $sku ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Check if product unique ID is unique.
+ *
+ * @since 9.1.0
+ * @param int    $product_id Product ID.
+ * @param string $global_unique_id Product Unique ID.
+ * @return bool
+ */
+function wc_product_has_global_unique_id( $product_id, $global_unique_id ) {
+	/**
+	 * Gives plugins an opportunity to verify Unique ID uniqueness themselves.
+	 *
+	 * @since 9.1.0
+	 *
+	 * @param bool|null $has_global_unique_id Set to a boolean value to short-circuit the default Unique ID check.
+	 * @param int $product_id The ID of the current product.
+	 * @param string $sku The Unique ID to check for uniqueness.
+	 */
+	$has_global_unique_id = apply_filters( 'wc_product_pre_has_global_unique_id', null, $product_id, $global_unique_id );
+	if ( ! is_null( $has_global_unique_id ) ) {
+		return boolval( $has_global_unique_id );
+	}
+
+	$data_store = WC_Data_Store::load( 'product' );
+	if ( $data_store->has_callable( 'is_existing_global_unique_id' ) ) {
+		$global_unique_id_found = $data_store->is_existing_global_unique_id( $product_id, $global_unique_id );
+	} else {
+		$logger = wc_get_logger();
+		$logger->error( 'The method is_existing_global_unique_id is not implemented in the data store.', array( 'source' => 'wc_product_has_global_unique_id' ) );
+	}
+	/**
+	 * Gives plugins an opportunity to verify Unique ID uniqueness themselves.
+	 *
+	 * @since 9.1.0
+	 *
+	 * @param boolean $global_unique_id_found Whether the Unique ID is found.
+	 * @param int $product_id The ID of the current product.
+	 * @param string $sku The Unique ID to check for uniqueness.
+	 */
+	if ( apply_filters( 'wc_product_has_global_unique_id', $global_unique_id_found, $product_id, $global_unique_id ) ) {
 		return false;
 	}
 
@@ -678,7 +1091,25 @@ function wc_get_product_id_by_sku( $sku ) {
 }
 
 /**
- * Get attributes/data for an individual variation from the database and maintain it's integrity.
+ * Get product ID by Unique ID.
+ *
+ * @since  9.1.0
+ * @param  string $global_unique_id Product Unique ID.
+ * @return int|null
+ */
+function wc_get_product_id_by_global_unique_id( $global_unique_id ) {
+	$data_store = WC_Data_Store::load( 'product' );
+	if ( $data_store->has_callable( 'get_product_id_by_global_unique_id' ) ) {
+		return $data_store->get_product_id_by_global_unique_id( $global_unique_id );
+	} else {
+		$logger = wc_get_logger();
+		$logger->error( 'The method get_product_id_by_global_unique_id is not implemented in the data store.', array( 'source' => 'wc_get_product_id_by_global_unique_id' ) );
+	}
+	return null;
+}
+
+/**
+ * Get attributes/data for an individual variation from the database and maintain its integrity.
  *
  * @since  2.4.0
  * @param  int $variation_id Variation ID.
@@ -686,7 +1117,7 @@ function wc_get_product_id_by_sku( $sku ) {
  */
 function wc_get_product_variation_attributes( $variation_id ) {
 	// Build variation data from meta.
-	$all_meta                = get_post_meta( $variation_id );
+	$all_meta                = is_array( get_post_meta( $variation_id ) ) ? get_post_meta( $variation_id ) : array();
 	$parent_id               = wp_get_post_parent_id( $variation_id );
 	$parent_attributes       = array_filter( (array) get_post_meta( $parent_id, '_product_attributes', true ) );
 	$found_parent_attributes = array();
@@ -790,34 +1221,58 @@ function wc_get_product_attachment_props( $attachment_id = null, $product = fals
 		$alt_text     = array_filter( $alt_text );
 		$props['alt'] = $alt_text ? reset( $alt_text ) : '';
 
-		// Large version.
+		/**
+		 * Filters the size for the full gallery image.
+		 *
+		 * @param string $size Image size name.
+		 *
+		 * @since 2.6.0
+		 */
 		$full_size           = apply_filters( 'woocommerce_gallery_full_size', apply_filters( 'woocommerce_product_thumbnails_large_size', 'full' ) );
 		$src                 = wp_get_attachment_image_src( $attachment_id, $full_size );
-		$props['full_src']   = $src[0];
-		$props['full_src_w'] = $src[1];
-		$props['full_src_h'] = $src[2];
+		$props['full_src']   = $src[0] ?? null;
+		$props['full_src_w'] = $src[1] ?? null;
+		$props['full_src_h'] = $src[2] ?? null;
 
-		// Gallery thumbnail.
-		$gallery_thumbnail                = wc_get_image_size( 'gallery_thumbnail' );
+		$gallery_thumbnail = wc_get_image_size( 'gallery_thumbnail' );
+		/**
+		 * Filters the size for the gallery thumbnail.
+		 *
+		 * @param array $size Array containing width and height dimensions.
+		 *
+		 * @since 2.6.0
+		 */
 		$gallery_thumbnail_size           = apply_filters( 'woocommerce_gallery_thumbnail_size', array( $gallery_thumbnail['width'], $gallery_thumbnail['height'] ) );
 		$src                              = wp_get_attachment_image_src( $attachment_id, $gallery_thumbnail_size );
-		$props['gallery_thumbnail_src']   = $src[0];
-		$props['gallery_thumbnail_src_w'] = $src[1];
-		$props['gallery_thumbnail_src_h'] = $src[2];
+		$props['gallery_thumbnail_src']   = $src[0] ?? null;
+		$props['gallery_thumbnail_src_w'] = $src[1] ?? null;
+		$props['gallery_thumbnail_src_h'] = $src[2] ?? null;
 
-		// Thumbnail version.
+		/**
+		 * Filters the thumbnail size.
+		 *
+		 * @param string $size Image size name.
+		 *
+		 * @since 2.6.0
+		 */
 		$thumbnail_size       = apply_filters( 'woocommerce_thumbnail_size', 'woocommerce_thumbnail' );
 		$src                  = wp_get_attachment_image_src( $attachment_id, $thumbnail_size );
-		$props['thumb_src']   = $src[0];
-		$props['thumb_src_w'] = $src[1];
-		$props['thumb_src_h'] = $src[2];
+		$props['thumb_src']   = $src[0] ?? null;
+		$props['thumb_src_w'] = $src[1] ?? null;
+		$props['thumb_src_h'] = $src[2] ?? null;
 
-		// Image source.
+		/**
+		 * Filters the size for the gallery image.
+		 *
+		 * @param string $size Image size name.
+		 *
+		 * @since 2.6.0
+		 */
 		$image_size      = apply_filters( 'woocommerce_gallery_image_size', 'woocommerce_single' );
 		$src             = wp_get_attachment_image_src( $attachment_id, $image_size );
-		$props['src']    = $src[0];
-		$props['src_w']  = $src[1];
-		$props['src_h']  = $src[2];
+		$props['src']    = $src[0] ?? null;
+		$props['src_w']  = $src[1] ?? null;
+		$props['src_h']  = $src[2] ?? null;
 		$props['srcset'] = function_exists( 'wp_get_attachment_image_srcset' ) ? wp_get_attachment_image_srcset( $attachment_id, $image_size ) : false;
 		$props['sizes']  = function_exists( 'wp_get_attachment_image_sizes' ) ? wp_get_attachment_image_sizes( $attachment_id, $image_size ) : false;
 	}
@@ -834,10 +1289,10 @@ function wc_get_product_visibility_options() {
 	return apply_filters(
 		'woocommerce_product_visibility_options',
 		array(
-			'visible' => __( 'Shop and search results', 'woocommerce' ),
-			'catalog' => __( 'Shop only', 'woocommerce' ),
-			'search'  => __( 'Search results only', 'woocommerce' ),
-			'hidden'  => __( 'Hidden', 'woocommerce' ),
+			CatalogVisibility::VISIBLE => __( 'Shop and search results', 'woocommerce' ),
+			CatalogVisibility::CATALOG => __( 'Shop only', 'woocommerce' ),
+			CatalogVisibility::SEARCH  => __( 'Search results only', 'woocommerce' ),
+			CatalogVisibility::HIDDEN  => __( 'Hidden', 'woocommerce' ),
 		)
 	);
 }
@@ -871,9 +1326,9 @@ function wc_get_product_stock_status_options() {
 	return apply_filters(
 		'woocommerce_product_stock_status_options',
 		array(
-			'instock'     => __( 'In stock', 'woocommerce' ),
-			'outofstock'  => __( 'Out of stock', 'woocommerce' ),
-			'onbackorder' => __( 'On backorder', 'woocommerce' ),
+			ProductStockStatus::IN_STOCK     => __( 'In stock', 'woocommerce' ),
+			ProductStockStatus::OUT_OF_STOCK => __( 'Out of stock', 'woocommerce' ),
+			ProductStockStatus::ON_BACKORDER => __( 'On backorder', 'woocommerce' ),
 		)
 	);
 }
@@ -899,9 +1354,29 @@ function wc_get_product_backorder_options() {
  * @param  int   $product_id  Product ID.
  * @param  int   $limit       Limit of results.
  * @param  array $exclude_ids Exclude IDs from the results.
+ * @param  array $related_by  Related by category and tags boolean flags.
  * @return array
  */
-function wc_get_related_products( $product_id, $limit = 5, $exclude_ids = array() ) {
+function wc_get_related_products( $product_id, $limit = 5, $exclude_ids = array(), $related_by = array() ) {
+	// Log an error if the limit is not an integer since this is what we expect.
+	// However this is not a problem and we can continue.
+	if ( ! is_int( $limit ) ) {
+		wc_get_logger()->error(
+			sprintf(
+				'Invalid limit type passed to wc_get_related_products. Expected integer, got %s with value: %s',
+				gettype( $limit ),
+				wp_json_encode( $limit )
+			),
+			array( 'source' => 'wc_get_related_products' )
+		);
+	}
+
+	// If the limit is not numeric, set it to null.
+	$limit = is_numeric( $limit ) ? (int) $limit : null;
+
+	if ( null === $limit ) {
+		return array();
+	}
 
 	$product_id     = absint( $product_id );
 	$limit          = $limit >= -1 ? $limit : 5;
@@ -911,6 +1386,7 @@ function wc_get_related_products( $product_id, $limit = 5, $exclude_ids = array(
 		array(
 			'limit'       => $limit,
 			'exclude_ids' => $exclude_ids,
+			'related_by'  => $related_by,
 		)
 	);
 
@@ -949,6 +1425,8 @@ function wc_get_related_products( $product_id, $limit = 5, $exclude_ids = array(
 			'excluded_ids' => $exclude_ids,
 		)
 	);
+
+	$related_posts = is_array( $related_posts ) ? $related_posts : array();
 
 	if ( apply_filters( 'woocommerce_product_related_posts_shuffle', true ) ) {
 		shuffle( $related_posts );
@@ -990,9 +1468,7 @@ function wc_get_price_including_tax( $product, $args = array() ) {
 	$price = '' !== $args['price'] ? max( 0.0, (float) $args['price'] ) : (float) $product->get_price();
 	$qty   = '' !== $args['qty'] ? max( 0.0, (float) $args['qty'] ) : 1;
 
-	if ( '' === $price ) {
-		return '';
-	} elseif ( empty( $qty ) ) {
+	if ( empty( $qty ) ) {
 		return 0.0;
 	}
 
@@ -1068,6 +1544,10 @@ function wc_get_price_including_tax( $product, $args = array() ) {
  * @return float|string Price with tax excluded, or an empty string if price calculation failed.
  */
 function wc_get_price_excluding_tax( $product, $args = array() ) {
+	if ( ! ( $product instanceof WC_Product ) ) {
+		return '';
+	}
+
 	$args = wp_parse_args(
 		$args,
 		array(
@@ -1079,9 +1559,7 @@ function wc_get_price_excluding_tax( $product, $args = array() ) {
 	$price = '' !== $args['price'] ? max( 0.0, (float) $args['price'] ) : (float) $product->get_price();
 	$qty   = '' !== $args['qty'] ? max( 0.0, (float) $args['qty'] ) : 1;
 
-	if ( '' === $price ) {
-		return '';
-	} elseif ( empty( $qty ) ) {
+	if ( empty( $qty ) ) {
 		return 0.0;
 	}
 
@@ -1090,12 +1568,33 @@ function wc_get_price_excluding_tax( $product, $args = array() ) {
 	if ( $product->is_taxable() && wc_prices_include_tax() ) {
 		$order       = ArrayUtil::get_value_or_default( $args, 'order' );
 		$customer_id = $order ? $order->get_customer_id() : 0;
+		$tax_rates   = false;
+
 		if ( apply_filters( 'woocommerce_adjust_non_base_location_prices', true ) ) {
 			$tax_rates = WC_Tax::get_base_tax_rates( $product->get_tax_class( 'unfiltered' ) );
-		} else {
-			$customer  = $customer_id ? wc_get_container()->get( LegacyProxy::class )->get_instance_of( WC_Customer::class, $customer_id ) : null;
+		} elseif ( $customer_id ) {
+			$customer  = wc_get_container()->get( LegacyProxy::class )->get_instance_of( WC_Customer::class, $customer_id );
 			$tax_rates = WC_Tax::get_rates( $product->get_tax_class(), $customer );
+		} elseif ( is_object( $order ) && method_exists( $order, 'get_taxable_location' ) ) {
+			$tax_location = $order->get_taxable_location();
+			if ( is_array( $tax_location ) && isset( $tax_location['country'] ) ) {
+				$tax_rates = WC_Tax::find_rates(
+					array(
+						'country'   => $tax_location['country'],
+						'state'     => $tax_location['state'] ?? '',
+						'postcode'  => $tax_location['postcode'] ?? '',
+						'city'      => $tax_location['city'] ?? '',
+						'tax_class' => $product->get_tax_class(),
+					)
+				);
+			}
 		}
+
+		// Fallback if no tax rates were determined.
+		if ( false === $tax_rates ) {
+			$tax_rates = WC_Tax::get_rates( $product->get_tax_class(), null );
+		}
+
 		$remove_taxes = WC_Tax::calc_tax( $line_price, $tax_rates, true );
 		$return_price = $line_price - array_sum( $remove_taxes ); // Unrounded since we're dealing with tax inclusive prices. Matches logic in cart-totals class. @see adjust_non_base_location_price.
 	} else {
@@ -1196,7 +1695,7 @@ function wc_products_array_filter_visible( $product ) {
  * @return bool
  */
 function wc_products_array_filter_visible_grouped( $product ) {
-	return $product && is_a( $product, 'WC_Product' ) && ( 'publish' === $product->get_status() || current_user_can( 'edit_product', $product->get_id() ) );
+	return $product && is_a( $product, 'WC_Product' ) && ( ProductStatus::PUBLISH === $product->get_status() || current_user_can( 'edit_product', $product->get_id() ) );
 }
 
 /**
@@ -1410,6 +1909,7 @@ function wc_update_product_lookup_tables() {
 		'min_max_price',
 		'stock_quantity',
 		'sku',
+		'global_unique_id',
 		'stock_status',
 		'average_rating',
 		'total_sales',
@@ -1506,6 +2006,7 @@ function wc_update_product_lookup_tables_column( $column ) {
 			);
 			break;
 		case 'sku':
+		case 'global_unique_id':
 		case 'stock_status':
 		case 'average_rating':
 		case 'total_sales':
@@ -1565,13 +2066,17 @@ function wc_update_product_lookup_tables_column( $column ) {
 						{$wpdb->wc_product_meta_lookup} lookup_table
 						LEFT JOIN {$wpdb->postmeta} meta1 ON lookup_table.product_id = meta1.post_id AND meta1.meta_key = '_price'
 						LEFT JOIN {$wpdb->postmeta} meta2 ON lookup_table.product_id = meta2.post_id AND meta2.meta_key = '_sale_price'
+	  					LEFT JOIN {$wpdb->postmeta} meta3 ON lookup_table.product_id = meta3.post_id AND meta3.meta_key = '_regular_price'
 					SET
 						lookup_table.`{$column}` = IF (
 							CAST( meta1.meta_value AS DECIMAL ) >= 0
 							AND CAST( meta2.meta_value AS CHAR ) != ''
 							AND CAST( meta1.meta_value AS DECIMAL( 10, %d ) ) = CAST( meta2.meta_value AS DECIMAL( 10, %d ) )
+							AND CAST( meta3.meta_value AS DECIMAL( 10, %d ) ) > CAST( meta2.meta_value AS DECIMAL( 10, %d ) )
 						, 1, 0 )
 					",
+					$decimals,
+					$decimals,
 					$decimals,
 					$decimals
 				)
@@ -1657,3 +2162,48 @@ function wc_update_product_lookup_tables_rating_count_batch( $offset = 0, $limit
 	}
 }
 add_action( 'wc_update_product_lookup_tables_rating_count_batch', 'wc_update_product_lookup_tables_rating_count_batch', 10, 2 );
+
+/**
+ * Attach product featured image. Use image filename to match a product sku when product is not provided.
+ *
+ * @since 8.5.0
+ * @param int        $attachment_id Media attachment ID.
+ * @param WC_Product $product Optional product object.
+ * @param bool       $save_product If true, the changes in the product will be saved before the method returns.
+ * @return void
+ */
+function wc_product_attach_featured_image( $attachment_id, $product = null, $save_product = true ) {
+	$attachment_post = get_post( $attachment_id );
+	if ( ! $attachment_post ) {
+		return;
+	}
+
+	if ( null === $product && wc_get_container()->get( MatchImageBySKU::class )->is_enabled() ) {
+		// On upload the attachment post title is the uploaded file's filename.
+		$file_name = pathinfo( $attachment_post->post_title, PATHINFO_FILENAME );
+		if ( ! $file_name ) {
+			return;
+		}
+
+		$product_id = wc_get_product_id_by_sku( $file_name );
+		$product    = wc_get_product( $product_id );
+	}
+
+	if ( ! $product ) {
+		return;
+	}
+
+	$product->set_image_id( $attachment_id );
+	if ( $save_product ) {
+		$product->save();
+	}
+	if ( 0 === $attachment_post->post_parent ) {
+		wp_update_post(
+			array(
+				'ID'          => $attachment_id,
+				'post_parent' => $product->get_id(),
+			)
+		);
+	}
+}
+add_action( 'add_attachment', 'wc_product_attach_featured_image' );

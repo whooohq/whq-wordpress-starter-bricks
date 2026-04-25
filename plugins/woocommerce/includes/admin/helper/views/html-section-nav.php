@@ -7,10 +7,12 @@
  * @deprecated 5.7.0
  */
 
+$addons_url = admin_url( 'admin.php?page=wc-admin&path=/extensions&tab=extensions' );
+
 defined( 'ABSPATH' ) || exit(); ?>
 
 <nav class="nav-tab-wrapper woo-nav-tab-wrapper">
-	<a href="<?php echo esc_url( admin_url( 'admin.php?page=wc-addons' ) ); ?>" class="nav-tab"><?php esc_html_e( 'Browse Extensions', 'woocommerce' ); ?></a>
+	<a href="<?php echo esc_url( $addons_url ); ?>" class="nav-tab"><?php esc_html_e( 'Browse Extensions', 'woocommerce' ); ?></a>
 
 	<?php
 		$count_html = WC_Helper_Updater::get_updates_count_html();

@@ -1,7 +1,11 @@
 <?php
 
 /**
- * Class WCML_YIKES_Custom_Product_Tabs
+ * IMPORTANT NOTICE !!!
+ * This target plugin is not maintained anymore.
+ * We are stopping our compatibility maintenance too.
+ *
+ * @deprecated
  */
 class WCML_YIKES_Custom_Product_Tabs implements \IWPML_Action {
 
@@ -17,26 +21,14 @@ class WCML_YIKES_Custom_Product_Tabs implements \IWPML_Action {
 	 */
 	private $sitepress;
 
-	/**
-	 * @var woocommerce_wpml
-	 */
-	private $woocommerce_wpml;
-
-	/**
-	 * WCML_Tab_Manager constructor.
-	 *
-	 * @param woocommerce_wpml                 $woocommerce_wpml
-	 * @param SitePress                        $sitepress
-	 * @param WPML_Element_Translation_Package $tp
-	 */
-	public function __construct( woocommerce_wpml $woocommerce_wpml, SitePress $sitepress, WPML_Element_Translation_Package $tp ) {
-		$this->sitepress        = $sitepress;
-		$this->woocommerce_wpml = $woocommerce_wpml;
-		$this->tp               = $tp;
+	public function __construct( SitePress $sitepress, WPML_Element_Translation_Package $tp ) {
+		$this->sitepress = $sitepress;
+		$this->tp        = $tp;
 	}
 
 	public function add_hooks() {
 
+		add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_custom_tabs_to_translation_package' ], 10, 2 );
 		add_action( 'wpml_translation_job_saved', [ $this, 'save_custom_tabs_translation' ], 10, 3 );
 
 		if ( is_admin() ) {
@@ -45,7 +37,6 @@ class WCML_YIKES_Custom_Product_Tabs implements \IWPML_Action {
 			add_action( 'wcml_update_extra_fields', [ $this, 'sync_tabs' ], 10, 4 );
 			add_filter( 'wpml_duplicate_custom_fields_exceptions', [ $this, 'custom_fields_exceptions' ] );
 			add_filter( 'wcml_do_not_display_custom_fields_for_product', [ $this, 'custom_fields_exceptions' ] );
-			add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_custom_tabs_to_translation_package' ], 10, 2 );
 			add_action( 'woocommerce_product_data_panels', [ $this, 'show_pointer_info' ] );
 			add_action( 'init', [ $this, 'maybe_remove_admin_language_switcher' ] );
 		}
@@ -105,7 +96,7 @@ class WCML_YIKES_Custom_Product_Tabs implements \IWPML_Action {
 				}
 			}
 
-			if ( $translation ) {
+			if ( is_object( $translation ) ) {
 				$tr_prod_tabs = $this->get_product_tabs( $translation->ID );
 				if ( $tr_prod_tabs ) {
 					foreach ( $tr_prod_tabs as $key => $prod_tab ) {
@@ -155,7 +146,7 @@ class WCML_YIKES_Custom_Product_Tabs implements \IWPML_Action {
 	 * @return array
 	 */
 	private function get_product_tabs( $product_id ) {
-		return (array) get_post_meta( $product_id, self::CUSTOM_TABS_FIELD, true );
+		return (array) maybe_unserialize( get_post_meta( $product_id, self::CUSTOM_TABS_FIELD, true ) );
 	}
 
 
@@ -237,20 +228,19 @@ class WCML_YIKES_Custom_Product_Tabs implements \IWPML_Action {
 	}
 
 	public function show_pointer_info() {
-
-		/* translators: %s is an HTML link pointing to WooCommerce product translation page */
-		$a    = __( 'You can translate your custom product tabs on the %s', 'woocommerce-multilingual' );
-		$b    = __( 'WooCommerce product translation page', 'woocommerce-multilingual' );
-		$link = '<a href="' . admin_url( 'admin.php?page=wpml-wcml' ) . '">' . $b . '</a>';
-
-		$pointer_ui = new WCML_Pointer_UI(
-			sprintf( $a, $link ),
-			WCML_Tracking_Link::getWcmlCustomProductTabs(),
-			'yikes_woocommerce_custom_product_tabs',
-			'prepend'
-		);
-
-		$pointer_ui->show();
+		$pointerFactory = new WCML\PointerUi\Factory();
+		$pointerFactory
+			->create( [
+				'content'    => sprintf(
+					/* translators: %1$s and %2$s are opening and closing HTML link tags */
+					esc_html__( 'To translate custom per-product tabs, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation.', 'woocommerce-multilingual' ),
+					'<a href="' . esc_url( \WCML\Utilities\AdminUrl::getWPMLTMDashboardProducts() ) . '">',
+					'</a>'
+				),
+				'selectorId' => 'yikes_woocommerce_custom_product_tabs',
+				'method'     => 'prepend',
+			] )
+			->show();
 	}
 
 	public function maybe_remove_admin_language_switcher() {

@@ -6,17 +6,10 @@
 class WCML_Currencies {
 
 	/**
-	 * The \woocommerce_wpml instance.
-	 *
 	 * @var \woocommerce_wpml
 	 */
 	private $woocommerce_wpml;
 
-	/**
-	 * WCML_Currencies constructor.
-	 *
-	 * @param \woocommerce_wpml $woocommerce_wpml And instance of \woocommerce_wpml.
-	 */
 	public function __construct( woocommerce_wpml $woocommerce_wpml ) {
 		$this->woocommerce_wpml = $woocommerce_wpml;
 	}

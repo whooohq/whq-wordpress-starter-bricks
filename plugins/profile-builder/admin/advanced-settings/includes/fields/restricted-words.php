@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 $affected_fields = wppb_toolbox_get_settings( 'fields', 'restricted-words-fields' );
 

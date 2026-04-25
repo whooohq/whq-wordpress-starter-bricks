@@ -23,11 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @internal
  */
-function cptui_taxonomies_enqueue_scripts() {
+function cptui_taxonomies_enqueue_scripts( $hook ) {
 
-	$current_screen = get_current_screen();
-
-	if ( ! is_object( $current_screen ) || 'cpt-ui_page_cptui_manage_taxonomies' !== $current_screen->base ) {
+	if ( 'cpt-ui_page_cptui_manage_taxonomies' !== $hook ) {
 		return;
 	}
 
@@ -153,6 +151,13 @@ function cptui_manage_taxonomies() {
 
 	<?php
 	/**
+	 * Fires immediately after wrap div started on all of the cptui admin pages.
+	 *
+	 * @since 1.14.0
+	 */
+	do_action( 'cptui_inside_wrap' );
+
+	/**
 	 * Fires right inside the wrap div for the taxonomy editor screen.
 	 *
 	 * @since 1.3.0
@@ -227,7 +232,7 @@ function cptui_manage_taxonomies() {
 	<form class="taxonomiesui" method="post" action="<?php echo esc_url( cptui_get_post_form_action( $ui ) ); ?>">
 		<div class="postbox-container">
 		<div id="poststuff">
-			<div class="cptui-section postbox">
+			<div id="cptui_panel_tax_basic_settings" class="cptui-section postbox">
 				<div class="postbox-header">
 					<h2 class="hndle ui-sortable-handle">
 						<span><?php esc_html_e( 'Basic settings', 'custom-post-type-ui' ); ?></span>
@@ -267,7 +272,7 @@ function cptui_manage_taxonomies() {
 							);
 
 							echo '<p class="cptui-slug-details">';
-							esc_html_e( 'Slugs should only contain alphanumeric, latin characters. Underscores should be used in place of spaces. Set "Custom Rewrite Slug" field to make slug use dashes for URLs.', 'custom-post-type-ui' );
+							esc_html_e( 'Slugs may only contain lowercase alphanumeric characters, dashes, and underscores.', 'custom-post-type-ui' );
 							echo '</p>';
 
 							if ( 'edit' === $tab ) {
@@ -319,7 +324,7 @@ function cptui_manage_taxonomies() {
 							$link_text = ( 'new' === $tab ) ?
 									esc_html__( 'Populate additional labels based on chosen labels', 'custom-post-type-ui' ) :
 									esc_html__( 'Populate missing labels based on chosen labels', 'custom-post-type-ui' );
-							echo $ui->get_tr_end(); // phpcs:ignore.
+							echo $ui->get_tr_start( [ 'id' => 'autolabels', 'style' => 'display:none;' ] ); // phpcs:ignore.
 							echo $ui->get_th_start() . esc_html__( 'Auto-populate labels', 'custom-post-type-ui' ) . $ui->get_th_end(); // phpcs:ignore.
 							echo $ui->get_td_start(); // phpcs:ignore.
 
@@ -372,9 +377,9 @@ function cptui_manage_taxonomies() {
 										],
 										true
 									) ? esc_html__( '(WP Core)', 'custom-post-type-ui' ) : '';
-									echo $ui->get_check_input( // phpcs:ignore.
+									echo $ui->get_check_input( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 										[
-											'checkvalue' => $post_type->name,
+											'checkvalue' => esc_attr( $post_type->name ),
 											'checked'    => ( ! empty( $current['object_types'] ) && is_array( $current['object_types'] ) && in_array( $post_type->name, $current['object_types'], true ) ) ? 'true' : 'false', // phpcs:ignore.
 											'name'       => esc_attr( $post_type->name ),
 											'namearray'  => 'cpt_post_types',
@@ -412,7 +417,7 @@ function cptui_manage_taxonomies() {
 								 * @param string $value Text to use for the button.
 								 */
 								?>
-								<input type="submit" class="button-secondary cptui-delete-top" name="cpt_delete" id="cpt_submit_delete" value="<?php echo esc_attr( apply_filters( 'cptui_taxonomy_submit_delete', __( 'Delete Taxonomy', 'custom-post-type-ui' ) ) ); ?>" />
+								<input type="submit" class="button-secondary cptui-delete-top" name="cpt_delete" id="cpt_submit_delete" value="<?php echo esc_attr( apply_filters( 'cptui_taxonomy_submit_delete', esc_attr__( 'Delete Taxonomy', 'custom-post-type-ui' ) ) ); ?>" />
 							<?php } else { ?>
 								<?php
 
@@ -431,7 +436,7 @@ function cptui_manage_taxonomies() {
 								<input type="hidden" name="tax_original" id="tax_original" value="<?php echo esc_attr( $current['name'] ); ?>" />
 								<?php
 							}
-
+							wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce' );
 							// Used to check and see if we should prevent duplicate slugs.
 							?>
 							<input type="hidden" name="cpt_tax_status" id="cpt_tax_status" value="<?php echo esc_attr( $tab ); ?>" />
@@ -439,7 +444,7 @@ function cptui_manage_taxonomies() {
 					</div>
 				</div>
 			</div>
-			<div class="cptui-section cptui-labels postbox">
+			<div id="cptui_panel_tax_additional_labels" class="cptui-section cptui-labels postbox">
 				<div class="postbox-header">
 					<h2 class="hndle ui-sortable-handle">
 						<span><?php esc_html_e( 'Additional labels', 'custom-post-type-ui' ); ?></span>
@@ -729,6 +734,23 @@ function cptui_manage_taxonomies() {
 							echo $ui->get_text_input( // phpcs:ignore.
 								[
 									'namearray' => 'cpt_tax_labels',
+									'name'      => 'filter_by_item',
+									'textvalue' => isset( $current['labels']['filter_by_item'] ) ? esc_attr( $current['labels']['filter_by_item'] ) : null,
+									// phpcs:ignore.
+									'aftertext' => esc_html__( '(e.g. Filter by actor)', 'custom-post-type-ui' ),
+									'labeltext' => esc_html__( 'Filter by Category', 'custom-post-type-ui' ),
+									'helptext'  => esc_attr__( 'This label is only used for hierarchical taxonomies.', 'custom-post-type-ui' ),
+									'data'      => [
+										/* translators: Used for autofill */
+										'label'     => sprintf( esc_attr__( 'Filter by %s', 'custom-post-type-ui' ), 'item' ),
+										'plurality' => 'singular',
+									],
+								]
+							);
+
+							echo $ui->get_text_input( // phpcs:ignore.
+								[
+									'namearray' => 'cpt_tax_labels',
 									'name'      => 'items_list_navigation',
 									'textvalue' => isset( $current['labels']['items_list_navigation'] ) ? esc_attr( $current['labels']['items_list_navigation'] ) : null, // phpcs:ignore.
 									'aftertext' => esc_html__( '(e.g. Actors list navigation)', 'custom-post-type-ui' ),
@@ -837,12 +859,29 @@ function cptui_manage_taxonomies() {
 									],
 								]
 							);
+
+							echo $ui->get_text_input( // phpcs:ignore.
+								[
+									'namearray' => 'cpt_tax_labels',
+									'name'      => 'template_name',
+									'textvalue' => isset( $current['labels']['template_name'] ) ? esc_attr( $current['labels']['template_name'] ) : null,
+									// phpcs:ignore.
+									'aftertext' => esc_html__( '(e.g. "Category Archives")', 'custom-post-type-ui' ),
+									'labeltext' => esc_html__( 'Template name', 'custom-post-type-ui' ),
+									'helptext'  => esc_attr__( 'Use by the site editor to display on the templates/add new template screens.', 'custom-post-type-ui' ),
+									'data'      => [
+										/* translators: Used for autofill */
+										'label'     => sprintf( esc_attr__( '%s Archives', 'custom-post-type-ui' ), 'item' ),
+										'plurality' => 'singular',
+									],
+								]
+							);
 							?>
 						</table>
 					</div>
 				</div>
 			</div>
-			<div class="cptui-section cptui-settings postbox">
+			<div id="cptui_panel_tax_advanced_settings" class="cptui-section cptui-settings postbox">
 				<div class="postbox-header">
 					<h2 class="hndle ui-sortable-handle">
 						<span><?php esc_html_e( 'Settings', 'custom-post-type-ui' ); ?></span>
@@ -1345,7 +1384,7 @@ function cptui_manage_taxonomies() {
 					 * @param string $value Text to use for the button.
 					 */
 					?>
-					<input type="submit" class="button-secondary cptui-delete-bottom" name="cpt_delete" id="cpt_submit_delete" value="<?php echo esc_attr( apply_filters( 'cptui_taxonomy_submit_delete', __( 'Delete Taxonomy', 'custom-post-type-ui' ) ) ); ?>" />
+					<input type="submit" class="button-secondary cptui-delete-bottom" name="cpt_delete" id="cpt_submit_delete" value="<?php echo esc_attr( apply_filters( 'cptui_taxonomy_submit_delete', esc_attr__( 'Delete Taxonomy', 'custom-post-type-ui' ) ) ); ?>" />
 				<?php } else { ?>
 					<?php
 
@@ -1810,6 +1849,7 @@ function cptui_reserved_taxonomies() {
 		'robots',
 		's',
 		'search',
+		'search_terms',
 		'second',
 		'sentence',
 		'showposts',
@@ -1829,6 +1869,7 @@ function cptui_reserved_taxonomies() {
 		'term',
 		'terms',
 		'theme',
+		'themes',
 		'title',
 		'type',
 		'types',
@@ -1914,6 +1955,10 @@ function cptui_check_existing_taxonomy_slugs( $slug_exists = false, $taxonomy_sl
 		return $slug_exists;
 	}
 
+	if ( ! is_array( $taxonomies ) ) {
+		return $slug_exists;
+	}
+
 	// Check if CPTUI has already registered this slug.
 	if ( array_key_exists( strtolower( $taxonomy_slug ), $taxonomies ) ) { // phpcs:ignore.
 		return true;
@@ -1954,6 +1999,10 @@ add_filter( 'cptui_taxonomy_slug_exists', 'cptui_check_existing_taxonomy_slugs',
  * @since 1.4.0
  */
 function cptui_process_taxonomy() {
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
 
 	if ( wp_doing_ajax() ) {
 		return;

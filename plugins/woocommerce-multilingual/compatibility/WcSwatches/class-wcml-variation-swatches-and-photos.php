@@ -65,8 +65,12 @@ class WCML_Variation_Swatches_And_Photos implements \IWPML_Action {
 			function ( $swatch_attribute, $swatch_attribute_key ) use ( $term, $attribute_term_slug_md5, $taxonomy, $attribute_name_hash, &$translated_swatch_options, $language ) {
 				if ( $attribute_term_slug_md5 === $swatch_attribute_key ) {
 					$translated_term = $this->woocommerce_wpml->terms->wcml_get_translated_term( $term->term_id, $taxonomy, $language );
-					$translated_swatch_options[ $attribute_name_hash ]['attributes'][ md5( $translated_term->slug ) ] = $swatch_attribute;
-					unset( $translated_swatch_options[ $attribute_name_hash ]['attributes'][ $swatch_attribute_key ] );
+					$translated_attribute_value_md5 = md5( $translated_term->slug );
+					$translated_swatch_options[ $attribute_name_hash ]['attributes'][ $translated_attribute_value_md5 ] = $swatch_attribute;
+
+					if ( $translated_attribute_value_md5 !== $swatch_attribute_key ) {
+						unset( $translated_swatch_options[ $attribute_name_hash ]['attributes'][ $swatch_attribute_key ] );
+					}
 				}
 			}
 		);

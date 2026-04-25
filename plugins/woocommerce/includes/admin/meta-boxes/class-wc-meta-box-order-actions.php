@@ -8,7 +8,9 @@
  * @version     2.1.0
  */
 
+use Automattic\WooCommerce\Enums\OrderStatus;
 use Automattic\WooCommerce\Internal\Admin\Orders\PageController;
+use Automattic\WooCommerce\Internal\Orders\OrderNoteGroup;
 use Automattic\WooCommerce\Utilities\OrderUtil;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -73,7 +75,7 @@ class WC_Meta_Box_Order_Actions {
 					?>
 				</div>
 
-				<button type="submit" class="button save_order button-primary" name="save" value="<?php echo 'auto-draft' === $order->get_status() ? esc_attr__( 'Create', 'woocommerce' ) : esc_attr__( 'Update', 'woocommerce' ); ?>"><?php echo 'auto-draft' === $order->get_status() ? esc_html__( 'Create', 'woocommerce' ) : esc_html__( 'Update', 'woocommerce' ); ?></button>
+				<button type="submit" class="button save_order button-primary" name="save" value="<?php echo OrderStatus::AUTO_DRAFT === $order->get_status() ? esc_attr__( 'Create', 'woocommerce' ) : esc_attr__( 'Update', 'woocommerce' ); ?>"><?php echo OrderStatus::AUTO_DRAFT === $order->get_status() ? esc_html__( 'Create', 'woocommerce' ) : esc_html__( 'Update', 'woocommerce' ); ?></button>
 			</li>
 
 			<?php
@@ -103,7 +105,7 @@ class WC_Meta_Box_Order_Actions {
 			$trash_order_url = add_query_arg(
 				array(
 					'action'           => 'trash',
-					'order'            => array( $order_id ),
+					'id'               => array( $order_id ),
 					'_wp_http_referer' => $order_list_url,
 				),
 				$order_list_url
@@ -131,6 +133,11 @@ class WC_Meta_Box_Order_Actions {
 			$action = wc_clean( wp_unslash( $_POST['wc_order_action'] ) ); // @codingStandardsIgnoreLine
 
 			if ( 'send_order_details' === $action ) {
+				/**
+				 * Fires before an order email is resent.
+				 *
+				 * @since 1.0.0
+				 */
 				do_action( 'woocommerce_before_resend_order_emails', $order, 'customer_invoice' );
 
 				// Send the customer invoice email.
@@ -139,8 +146,13 @@ class WC_Meta_Box_Order_Actions {
 				WC()->mailer()->customer_invoice( $order );
 
 				// Note the event.
-				$order->add_order_note( __( 'Order details manually sent to customer.', 'woocommerce' ), false, true );
+				$order->add_order_note( __( 'Order details manually sent to customer.', 'woocommerce' ), false, true, array( 'note_group' => OrderNoteGroup::EMAIL_NOTIFICATION ) );
 
+				/**
+				 * Fires after an order email has been resent.
+				 *
+				 * @since 1.0.0
+				 */
 				do_action( 'woocommerce_after_resend_order_email', $order, 'customer_invoice' );
 
 				// Change the post saved message.
@@ -167,11 +179,9 @@ class WC_Meta_Box_Order_Actions {
 				$data_store->delete_by_order_id( $post_id );
 				wc_downloadable_product_permissions( $post_id, true );
 
-			} else {
+			} elseif ( ! did_action( 'woocommerce_order_action_' . sanitize_title( $action ) ) ) {
 
-				if ( ! did_action( 'woocommerce_order_action_' . sanitize_title( $action ) ) ) {
 					do_action( 'woocommerce_order_action_' . sanitize_title( $action ), $order );
-				}
 			}
 		}
 	}
@@ -199,7 +209,7 @@ class WC_Meta_Box_Order_Actions {
 	 */
 	private static function get_available_order_actions_for_order( $order ) {
 		$actions = array(
-			'send_order_details'              => __( 'Email invoice / order details to customer', 'woocommerce' ),
+			'send_order_details'              => __( 'Send order details to customer', 'woocommerce' ),
 			'send_order_details_admin'        => __( 'Resend new order notification', 'woocommerce' ),
 			'regenerate_download_permissions' => __( 'Regenerate download permissions', 'woocommerce' ),
 		);

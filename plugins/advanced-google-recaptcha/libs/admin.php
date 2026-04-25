@@ -3,7 +3,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Admin extends WPCaptcha
@@ -42,6 +42,8 @@ class WPCaptcha_Admin extends WPCaptcha
       wp_enqueue_script('wp-color-picker');
       wp_enqueue_media();
 
+      $captcha = WPCaptcha_Functions::math_captcha_generate();
+
       $js_localize = array(
         'undocumented_error' => __('An undocumented error has occurred. Please refresh the page and try again.', 'advanced-google-recaptcha'),
         'documented_error' => __('An error has occurred.', 'advanced-google-recaptcha'),
@@ -58,7 +60,9 @@ class WPCaptcha_Admin extends WPCaptcha
         'stats_unavailable' => 'Stats will be available once enough data is collected.',
         'stats_locks' => WPCaptcha_Stats::get_stats('locks'),
         'stats_fails' => WPCaptcha_Stats::get_stats('fails'),
-        'wp301_install_url' => add_query_arg(array('action' => 'wpcaptcha_install_wp301', '_wpnonce' => wp_create_nonce('install_wp301'), 'rnd' => rand()), admin_url('admin.php')),
+        'wp301_install_url' => add_query_arg(array('action' => 'wpcaptcha_install_wp301', '_wpnonce' => wp_create_nonce('install_wp301'), 'rnd' => wp_rand()), admin_url('admin.php')),
+        'captcha_admin_test' => $captcha['img'],
+        'captcha_admin_test_token' => wp_hash($captcha['value']),
       );
 
       $js_localize['chart_colors'] = array('#4285f4', '#ff5429', '#ff7d5c', '#ffac97');
@@ -396,7 +400,7 @@ class WPCaptcha_Admin extends WPCaptcha
 
             <p class="text-center"><a href="#" class="button button-buy install-wp301">Install and activate the <u>free</u> WP 301 Redirects plugin</a></p>
 
-            <p><a href="https://wordpress.org/plugins/eps-301-redirects/" target="_blank">WP 301 Redirects</a> is a free WP plugin maintained by the same team as this WP Captcha plugin. It has <b>+250,000 users, 5-star rating</b>, and is hosted on the official WP repository.</p>
+            <p><a href="https://wordpress.org/plugins/eps-301-redirects/" target="_blank">WP 301 Redirects</a> is a free WP plugin maintained by the same team as this WP Captcha plugin. It has <b>+300,000 users, 5-star rating</b>, and is hosted on the official WP repository.</p>
             </div>';
     }
 
@@ -532,7 +536,7 @@ class WPCaptcha_Admin extends WPCaptcha
   static function footer_save_button()
   {
     echo '<p class="submit">';
-    echo '<button class="button button-primary button-large">' . __('Save Changes', 'advanced-google-recaptcha') . ' <i class="wpcaptcha-icon wpcaptcha-checkmark"></i></button>';
+    echo '<button class="button button-primary button-large save-settings">' . esc_html__('Save Changes', 'advanced-google-recaptcha') . ' <i class="wpcaptcha-icon wpcaptcha-checkmark"></i></button>';
     echo '</p>';
   } // footer_save_button
 } // class

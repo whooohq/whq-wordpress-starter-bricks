@@ -234,8 +234,16 @@ function wppb_generate_new_free_add_ons_setting(){
 
         add_option( 'wppb_free_add_ons_settings', $wppb_free_add_ons_settings );
     }
-}
 
+    // Add an option for the new User Profile Picture add-on
+    if ( !array_key_exists( 'user-profile-picture', $wppb_free_add_ons_settings ) ) {
+
+        $wppb_free_add_ons_settings['user-profile-picture'] = false;
+    }
+
+    update_option( 'wppb_free_add_ons_settings', $wppb_free_add_ons_settings );
+
+}
 
 add_action( 'plugins_loaded', 'wppb_generate_new_advanced_add_ons_setting', 13 );
 function wppb_generate_new_advanced_add_ons_setting(){

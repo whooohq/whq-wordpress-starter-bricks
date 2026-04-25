@@ -4,6 +4,7 @@ namespace WCML\MultiCurrency\Resolver;
 
 use WCML\MultiCurrency\Geolocation;
 use WCML\MultiCurrency\Settings;
+use WCML\StandAlone\NullSitePress;
 use WPML\FP\Fns;
 use function WCML\functions\getSitePress;
 
@@ -36,14 +37,22 @@ class HelperByLanguage {
 
 
 	/**
-	 * @return string|null
+	 * @return string
 	 */
 	public static function getCurrentLanguage() {
-		/** @var string|null $currentLang */
+		/** @var string|null|false $currentLang */
 		$currentLang = getSitePress()->get_current_language();
 
-		return in_array( $currentLang, [ 'all', null ], true )
-			? getSitePress()->get_default_language()
-			: $currentLang;
+		if ( in_array( $currentLang, [ 'all', null, false ], true ) ) {
+			/** @var string|null|false $currentLang */
+			$currentLang = getSitePress()->get_default_language();
+		}
+
+		if ( ! is_string( $currentLang ) ) {
+			/** @var string $currentLang - WPML default language not set/detected, returns the language as if WPML was not active */
+			$currentLang = ( new NullSitePress() )->get_current_language();
+		}
+
+		return $currentLang;
 	}
 }

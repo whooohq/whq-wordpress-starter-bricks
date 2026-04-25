@@ -92,9 +92,10 @@ final class WP_Plugins_Core {
     /**
      * Constructor.
      *
-     * @param Object $plugin A plugin object for which to initialize WP Plugins Core library.
+     * @param Object $plugin              A plugin object for which to initialize WP Plugins Core library.
+     * @param bool   $fetch_notifications Whether to fetch notifications.
      */
-    public function __construct( $plugin ) {
+    public function __construct( $plugin, $fetch_notifications = true ) {
         $this->plugin_name    = $plugin::$name;
         $this->plugin_slug    = $plugin::$slug;
         $this->plugin_version = $plugin::$version;
@@ -113,8 +114,9 @@ final class WP_Plugins_Core {
         // Assets.
         new Assets\Assets;
 
-        // Notifications.
-        new Notifications( $this );
+        if ( $fetch_notifications ) { // Notifications.
+            new Notifications( $this );
+        }
 
         // Required PHP Extensions.
         new Required_PHP_Extensions( $this );

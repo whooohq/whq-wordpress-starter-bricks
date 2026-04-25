@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /*
  * Function that adds the new GDPR Communication Preferences field to the fields list
  * and also the list of fields that skip the meta-name check

@@ -1,4 +1,8 @@
 <?php
+
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* Hide all profile fields in backend */
 add_action('admin_init', 'wppb_toolbox_remove_all_fields_from_backend');
 function wppb_toolbox_remove_all_fields_from_backend(){

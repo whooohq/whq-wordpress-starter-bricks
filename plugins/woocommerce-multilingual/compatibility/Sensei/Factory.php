@@ -13,6 +13,8 @@ class Factory extends ComponentFactory {
 	 * @inheritDoc
 	 */
 	public function create() {
-		return new WCML_Sensei( getSitePress(), self::getWpdb(), new WPML_Custom_Columns( getSitePress() ) );
+		$sitepress = getSitePress();
+
+		return new WCML_Sensei( $sitepress, new WPML_Custom_Columns( $sitepress ) );
 	}
 }

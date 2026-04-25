@@ -2,26 +2,24 @@
 
 namespace WCML\Media\Wrapper;
 
-use WCML\Media\Wrapper\Translatable;
-use woocommerce_wpml;
-use WPML_Element_Sync_Settings_Factory;
+use WCML\StandAlone\NullSitePress;
 
 class Factory {
 
 	/**
 	 * @return IMedia
 	 */
-	public static function create( woocommerce_wpml $woocommerce_wpml ) {
+	public static function create() {
 		/**
 		 * @var \SitePress $sitepress
 		 * @var \wpdb      $wpdb
 		 */
 		global $sitepress, $wpdb;
 
-		$settingsFactory = new WPML_Element_Sync_Settings_Factory();
+		$settingsFactory = new \WPML_Element_Sync_Settings_Factory();
 
 		if ( $settingsFactory->create( 'post' )->is_sync( 'attachment' ) ) {
-			return new Translatable( $woocommerce_wpml, $sitepress, $wpdb );
+			return new Translatable( $sitepress, $wpdb );
 		}
 
 		return new NonTranslatable();

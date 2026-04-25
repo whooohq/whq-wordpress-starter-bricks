@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -119,7 +119,7 @@ if (! defined( 'ABSPATH' ) ) { die( 'Forbidden' ); }
 
 	</div>
 
-	<h3><b><a href="https://code-profiler.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Learn more about Code Profiler Pro.', 'code-profiler') ?></a></b></h3>
+	<h3><b><a href="https://nintechnet.com/codeprofiler/" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Learn more about Code Profiler Pro.', 'code-profiler') ?></a></b></h3>
 
 	<hr />
 </div>

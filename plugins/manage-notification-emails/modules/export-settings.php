@@ -24,11 +24,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return void
  */
 function load_mod_famne_export_settings() {
+
 	FAMNE::AddModule(
 		'export_settings',
 		array(
 			'name'      => 'Export and import settings',
-			'version'   => '1.0.0',
+			'version'   => '1.1.0',
 			'option_id' => array( 'export_settings' ),
 			'card'      => 'card_famne_export_settings',
 		)
@@ -59,6 +60,14 @@ function load_mod_famne_export_settings() {
 		<div class="spacer"></div>
 	</div>
 		<?php
+	}
+
+	/**
+	 * Added capability check for export
+	 * @since 1.8.6
+	 */
+	if( ! current_user_can( 'manage_options' ) ) {
+		return;
 	}
 
 	$get_export_settings = ! empty( $_GET['export-settings'] ) ? sanitize_text_field( $_GET['export-settings'] ) : '';

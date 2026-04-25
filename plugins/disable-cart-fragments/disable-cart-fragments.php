@@ -4,13 +4,13 @@
  * Plugin Name: Disable Cart Fragments
  * Plugin URI: https://wordpress.org/plugins/disable-cart-fragments/
  * Description: A better way to disable WooCommerce's cart fragments script, and re-enqueue it when the cart is updated. Works with all caching plugins.
- * Version: 2.2
+ * Version: 2.4.1
  * Author: Optimocha
  * Author URI: https://optimocha.com/
  * License: GPL v3
  * Requires PHP: 5.6 or later
  * WC requires at least: 2.0
- * WC tested up to: 7.3.0
+ * WC tested up to: 10.1.2
  * Text Domain: disable-cart-fragments
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,19 +29,7 @@
 
 defined( 'ABSPATH' ) or die();
 
-if( !defined( 'OPTIMOCHA_DCF_PATH' ) ) {
-	define( 'OPTIMOCHA_DCF_PATH', plugin_dir_path( __FILE__ ) );
-}
-
-if( !defined( 'OPTIMOCHA_DCF_BASENAME' ) ) {
-	define( 'OPTIMOCHA_DCF_BASENAME', plugin_basename( __FILE__ ) );
-}
-
-if( !defined( 'OPTIMOCHA_DCF_DOMAIN' ) ) {
-	define( 'OPTIMOCHA_DCF_DOMAIN', 'disable-cart-fragments' );
-}
-
-require OPTIMOCHA_DCF_PATH . "/DCF_Notice_Manager.php";
+require plugin_dir_path( __FILE__ ) . "/DCF_Notice_Manager.php";
 
 add_action( 'before_woocommerce_init', function() {
 	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
@@ -54,9 +42,10 @@ if ( ! class_exists( 'Optimocha_Disable_Cart_Fragments' ) ) {
 	class Optimocha_Disable_Cart_Fragments {
 
 		function __construct(){
-			add_filter( "plugin_action_links_" . OPTIMOCHA_DCF_BASENAME, array( $this, 'settings_links' ) );
 
-			add_action('admin_init', [ $this, 'set_pro_service_notice' ]);
+			add_filter( "plugin_action_links_" . plugin_basename( __FILE__ ), array( $this, 'settings_links' ) );
+
+			add_action( 'admin_init', [ $this, 'set_pro_service_notice' ] );
 
 			if( $this->dcf_is_plugin_active( 'speed-booster-pack/speed-booster-pack.php' ) ) {
 
@@ -83,9 +72,11 @@ if ( ! class_exists( 'Optimocha_Disable_Cart_Fragments' ) ) {
 
 		function sbp_active_warning() {
 
+			if( ! current_user_can( 'manage_options' ) ) return false;
+
 			?>
 			<div class="notice notice-error">
-				<p><?php _e( "We detected that you're already using another plugin of ours: Speed Booster Pack. Since SBP already has the same \"Disable cart fragments\" feature, you can safely deactivate the Disable Cart Fragments plugin and keep using Speed Booster Pack! :)", OPTIMOCHA_DCF_DOMAIN ); ?>
+				<p><?php _e( "We detected that you're already using another plugin of ours: Speed Booster Pack. Since SBP already has the same \"Disable cart fragments\" feature, you can safely deactivate the Disable Cart Fragments plugin and keep using Speed Booster Pack! :)", 'disable-cart-fragments' ); ?>
 				</p>
 			</div>
 			<?php
@@ -137,15 +128,18 @@ if ( ! class_exists( 'Optimocha_Disable_Cart_Fragments' ) ) {
 		}
 
 		function settings_links( $links ) {
-			$pro_link = ' <a href="https://optimocha.com/?ref=disable-cart-fragments" target="_blank">Pro Help</a > ';
+			$pro_link = ' <a href="https://optimocha.com/?ref=disable-cart-fragments" target="_blank">Pro Help</a> ';
 			array_unshift( $links, $pro_link );
 
 			return $links;
 		}
 
         public function set_pro_service_notice() {
+
+        	if( ! current_user_can( 'manage_options' ) ) return false;
+
             new \DCF\DCF_Notice_Manager();
-            \DCF\DCF_Notice_Manager::display_notice('dcf_pro_service', '<p><a href="https://optimocha.com/?ref=disable-cart-fragments" target="_blank">' . __( "If you need any help optimizing your website speed, if you're ready to <em>invest in</em> speed optimization, you can visit Optimocha.com by clicking here, and have us speed up your site!", OPTIMOCHA_DCF_DOMAIN ) . '</a></p>', 'info');
+            \DCF\DCF_Notice_Manager::display_notice( 'dcf_pro_service', '<p><a href="https://optimocha.com/?ref=disable-cart-fragments" target="_blank">' . __( "If you need any help optimizing your website speed, if you're ready to <em>invest in</em> speed optimization, you can visit Optimocha.com by clicking here, and have us speed up your site!", 'disable-cart-fragments' ) . '</a></p>', 'info' );
 		}
 	}
 

@@ -2,11 +2,11 @@
 Contributors: optimocha
 Tags: disable cart fragments, woocommerce, cart fragments, woocommerce cart fragments
 Requires at least: 4.6
-Tested up to: 6.1
+Tested up to: 6.8.2
 Requires PHP: 5.6
 WC requires at least: 2.0
-WC tested up to: 7.3.0
-Stable tag: 2.2
+WC tested up to: 10.1.2
+Stable tag: 2.4.1
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -43,6 +43,17 @@ Feel free to reach out to us at [Optimocha.com](https://optimocha.com/?ref=disab
 5. When activated, it will start working. There's no settings page, simply activate and use.
 
 == Changelog ==
+
+= 2.4.1 =
+* Bug fix.
+
+= 2.4 =
+* Tested and ensured compatibility with the latest versions of WordPress, WooCommerce and PHP.
+* Cleaned up the code a bit.
+
+= 2.3 =
+* Tested and ensured compatibility with WordPress 6.2 and WooCommerce 7.8.0.
+* Fixed an issue: Store managers were unable to dismiss the notices.
 
 = 2.2 =
 * Tested and ensured compatibility with PHP 8.1, WordPress 6.1.1 and WooCommerce 7.3.0.

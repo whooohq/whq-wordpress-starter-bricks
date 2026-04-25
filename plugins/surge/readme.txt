@@ -3,9 +3,9 @@ Contributors: kovshenin
 Donate link: https://github.com/kovshenin/surge
 Tags: cache, performance, caching
 Requires at least: 5.7
-Tested up to: 6.4
+Tested up to: 7.0
 Requires PHP: 7.3
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.en.html
 
@@ -58,13 +58,20 @@ Of course. If you pass a "Cache-Control: no-cache" header (or max-age=0) the req
 
 = fpassthru() has been disabled for security reasons =
 
-It seems like your hosting provider disabled the fpassthru() function, likely by mistake. This is a requirement for Surge. Please get in touch with them and kindly ask them to enable it.
+It seems like your hosting provider disabled the fpassthru() function, likely by mistake. You can use the fpassthru_alt configuration option for compatibility with such hosts.
 
 = How can I support Surge? =
 
 If you like Surge, consider giving us a [star on GitHub](https://github.com/kovshenin/surge) and a review on WordPress.org.
 
 == Changelog ==
+
+= 1.2.0 =
+* Added fpassthru_alt configuration option for compatibility with hosts that do not support fpassthru
+* Added the cache status to the event system
+* Added a CLI status command
+* Added support for SURGE_ configuration constants
+* Updated ignore_query_vars
 
 = 1.1.0 =
 * Improved Multisite compatibility

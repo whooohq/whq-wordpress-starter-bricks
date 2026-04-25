@@ -51,7 +51,7 @@ abstract class UpdraftCentral_Host {
 		if (empty($key) || !isset($this->translations[$key])) return '';
 
 		if ($echo) {
-			echo $this->translations[$key];
+			echo esc_html($this->translations[$key]);
 			return;
 		}
 
@@ -97,13 +97,12 @@ abstract class UpdraftCentral_Host {
 	 */
 	public function updraft_central_ajax_handler() {
 		global $updraftcentral_main;
-
-		$nonce = empty($_REQUEST['nonce']) ? '' : $_REQUEST['nonce'];
-		if (empty($nonce) || !wp_verify_nonce($nonce, 'updraftcentral-request-nonce') || !$this->current_user_can_ajax() || empty($_REQUEST['subaction'])) die('Security check');
+		$nonce = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'nonce', '');
+		$subaction = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'subaction');
+		if (empty($nonce) || !wp_verify_nonce($nonce, 'updraftcentral-request-nonce') || !$this->current_user_can_ajax() || empty($subaction)) die('Security check');
 
 		if (is_a($updraftcentral_main, 'UpdraftCentral_Main')) {
 
-			$subaction = $_REQUEST['subaction'];
 			if ($this->is_action_whitelisted($subaction) && is_callable(array($updraftcentral_main, $subaction))) {
 
 				// Undo WP's slashing of POST data
@@ -143,7 +142,7 @@ abstract class UpdraftCentral_Host {
 
 				if (is_string($results)) {
 					// A handful of legacy methods, and some which are directly the source for iframes, for which JSON is not appropriate.
-					echo $results;
+					echo $results; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- We don't escape here to avoid double escaping and keep the HTML code needed by the receiver of this request. 
 				} else {
 					echo json_encode($results);
 				}
@@ -181,8 +180,11 @@ abstract class UpdraftCentral_Host {
 	 * @return array
 	 */
 	public function get_udrpc($indicator_name = 'migrator.updraftplus.com') {
-		if (!class_exists('UpdraftPlus_Remote_Communications')) include_once($this->get_host_dir().'/vendor/team-updraft/common-libs/src/updraft-rpc/class-udrpc.php');
-		$ud_rpc = new UpdraftPlus_Remote_Communications($indicator_name);
+		global $updraftplus;
+		if ($updraftplus && is_a($updraftplus, 'UpdraftPlus')) $updraftplus->ensure_phpseclib();
+
+		if (!class_exists('UpdraftPlus_Remote_Communications_V2')) include_once($this->get_host_dir().'/vendor/team-updraft/common-libs/src/updraft-rpc/class-udrpc2.php');
+		$ud_rpc = new UpdraftPlus_Remote_Communications_V2($indicator_name);
 		$ud_rpc->set_can_generate(true);
 		return $ud_rpc;
 	}
@@ -217,7 +219,7 @@ abstract class UpdraftCentral_Host {
 	 * @param Integer $errno   Error number
 	 * @param String  $errstr  Error string
 	 * @param String  $errfile Error file
-	 * @param String  $errline Line number where the error occured
+	 * @param String  $errline Line number where the error occurred
 	 *
 	 * @return string|bool
 	 */
@@ -295,12 +297,12 @@ abstract class UpdraftCentral_Host {
 	 * @param Integer $errno   Error number
 	 * @param String  $errstr  Error string
 	 * @param String  $errfile Error file
-	 * @param String  $errline Line number where the error occured
+	 * @param String  $errline Line number where the error occurred
 	 *
 	 * @return bool
 	 */
 	public function php_error($errno, $errstr, $errfile, $errline) {
-		if (0 == error_reporting()) return true;
+		if (0 == error_reporting()) return true; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting -- The error_reporting() function is used to get the current PHP error level.
 		$logline = $this->php_error_to_logline($errno, $errstr, $errfile, $errline);
 		if (false !== $logline) $this->log($logline, 'notice', 'php_event');
 		// Pass it up the chain

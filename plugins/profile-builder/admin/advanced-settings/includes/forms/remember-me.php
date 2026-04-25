@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_action( 'wppb_login_form_bottom', 'wppb_toolbox_rememberme_checked', 99, 2 );
 function wppb_toolbox_rememberme_checked( $form_part, $args ) {

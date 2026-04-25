@@ -4,20 +4,22 @@ namespace WCML\Reviews\Translations;
 
 use IWPML_Action;
 use WPML\FP\Obj;
-use WPML\FP\Relation;
 
 class FrontEndHooks implements IWPML_Action {
 
-	const CONTEXT      = 'wcml-reviews';
-	const COMMENT_TYPE = 'review';
+	const CONTEXT             = 'wcml-reviews';
+	const COMMENT_TYPES       = [ self::COMMENT_TYPE_REVIEW, self::COMMENT_TYPE_REPLY ];
+	const COMMENT_TYPE_REVIEW = 'review';
+	const COMMENT_TYPE_REPLY  = 'comment';
+	const HOOK_ENABLE         = 'wcml_enable_product_review_translation';
 
 	public function add_hooks() {
 		/**
 		 * Allows disabling product reviews translation.
 		 *
-		 * @param bool Whether translation of product reviews should be enabled
+		 * @param bool $true
 		 */
-		if ( apply_filters( 'wcml_enable_product_review_translation', true ) ) {
+		if ( apply_filters( self::HOOK_ENABLE, true ) ) {
 			add_action( 'wp_insert_comment', [ $this, 'insertCommentAction' ], 10, 2 );
 			add_action( 'woocommerce_review_before', [ $this, 'translateReview' ] );
 		}
@@ -36,6 +38,10 @@ class FrontEndHooks implements IWPML_Action {
 	 */
 	public function translateReview( $comment ) {
 		if ( self::isNonEmptyReview( $comment ) ) {
+			if ( \WCML_Comments::is_translated( $comment ) ) {
+				return;
+			}
+
 			$reviewTranslation = apply_filters(
 				'wpml_translate_single_string',
 				$comment->comment_content,
@@ -55,32 +61,35 @@ class FrontEndHooks implements IWPML_Action {
 	 */
 	public static function registerReviewString( $review ) {
 		if ( self::isNonEmptyReview( $review ) ) {
+			$language = Obj::prop( 'language_code', $review ) ?: apply_filters( 'wpml_current_language', null );
 			do_action(
 				'wpml_register_single_string',
 				self::CONTEXT,
 				self::getReviewStringName( $review ),
 				$review->comment_content,
 				false,
-				Obj::prop( 'language_code', $review ) ?: apply_filters( 'wpml_current_language', null )
+				$language
 			);
 		}
 	}
 
 	/**
 	 * @param \WP_Comment|\stdClass $comment
-	 *
-	 * @return bool
 	 */
-	private static function isNonEmptyReview( $comment ) {
-		return Obj::prop( 'comment_content', $comment )
-		       && Relation::propEq( 'comment_type', self::COMMENT_TYPE, $comment );
+	private static function isNonEmptyReview( $comment ): bool {
+		if ( ! Obj::prop( 'comment_content', $comment ) ) {
+			return false;
+		}
+
+		return in_array( Obj::prop( 'comment_type', $comment ), self::COMMENT_TYPES, true );
 	}
+
 	/**
 	 * @param \WP_Comment|\stdClass $review
 	 *
-	 * @return string (e.g. "product/123/review/456")
+	 * @return string (e.g. "product-123-review-456")
 	 */
-	private static function getReviewStringName( $review ) {
-		return 'product-' . Obj::prop( 'comment_post_ID', $review ) . '-review-' . Obj::prop( 'comment_ID', $review );
+	private static function getReviewStringName( $review ): string {
+		return 'product-' . \WCML_Comments::getOriginalPostId( $review ) . '-review-' . Obj::prop( 'comment_ID', $review );
 	}
 }

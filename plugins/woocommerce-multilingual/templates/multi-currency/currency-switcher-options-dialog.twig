@@ -2,7 +2,7 @@
 
     <div id="wcml_currency_switcher_options_form_{{ args.currency_switcher }}" class="wcml-currency-switcher-options-form">
 
-        <div id="wcml_curr_sel_preview_wrap" class="wcml-currency-preview-wrapper">
+        <div id="wcml_curr_sel_preview_wrap" class="wcml-currency-preview-wrapper wcml-currency-preview-diaglog">
             <strong class="wcml-currency-preview-label">{{ form.preview }}</strong>
             <input type="hidden" id="wcml_currencies_switcher_preview_nonce" value="{{ form.preview_nonce }}"/>
             <div id="wcml_curr_sel_preview" class="wcml-currency-preview {{ args.currency_switcher }}">
@@ -49,8 +49,22 @@
                 <span class="display-block">{{ form.template.template_tip }}</span>
                 <span class="display-block">{{ form.template.parameters }}: {{  form.template.parameters_list }}</span>
                 <span class="display-block js-toggle-cs-style" {% if(args.style != 'list') %}style="display: none;"{% endif %}>{{ form.switcher_style.allowed_tags }}</span>
+                <a href="#" class="js-wcml-learn-more-button">
+                    <span class="js-wcml-learn-more-text">{{ form.template.learn_more }}</span>
+                    <span class="js-wcml-hide-more-text" style="display:none;">{{ form.template.hide_more }}</span>
+                    <span class="otgs-ico-caret-down js-arrow-toggle"></span>
+                </a>
             </p>
             <input type="hidden" id="currency_switcher_default" value="{{ args.template_default }}"/>
+            <div class="js-wcml-learn-more-content learn-more-content-wrap hidden">
+                <p>{{ form.template.parameters_description}}</p>
+                <ul>
+                    <li>{{ form.template.parameter_name|raw }}</li>
+                    <li>{{ form.template.parameter_symbol|raw }}</li>
+                    <li>{{ form.template.parameter_code|raw }}</li>
+                </ul>
+                <p>{{ form.template.HTML_tags_available|raw }}</p>
+            </div>
 
             {% if args.currency_switcher != 'product' %}
                 <h4>{{ form.widgets.widget_title }}</h4>

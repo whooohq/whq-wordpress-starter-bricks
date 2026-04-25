@@ -43,3 +43,35 @@
     border-top: 1px solid #d4d4d4;
     border-bottom: 1px solid #eeeeee;
 }
+
+#pble-id-side .inside,
+#pble-id-side-impexp .inside,
+#pble-id-side-info .inside  {
+    padding: 24px 12px;
+}
+
+#pble-id-side .cozmoslabs-form-field-wrapper:first-of-type,
+#pble-id-side-info .cozmoslabs-form-field-wrapper:first-of-type {
+    margin-top: 0 !important;
+}
+
+.profile-builder_page_pb-labels-edit #normal-sortables {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-builder_page_pb-labels-edit #normal-sortables #pble-id {
+    order: 4;
+}
+
+.profile-builder_page_pb-labels-edit #normal-sortables #pble-id-side {
+    order: 1;
+}
+
+.profile-builder_page_pb-labels-edit #normal-sortables #pble-id-side-info {
+    order: 3;
+}
+
+.profile-builder_page_pb-labels-edit #normal-sortables #pble-id-side-impexp {
+    order: 2;
+}

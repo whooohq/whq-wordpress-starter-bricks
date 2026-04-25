@@ -1,107 +1,101 @@
 <?php
 /**
+ * GenTime
+ *
+ * @package   GenTime
+ * @author    Sybre Waaijer
+ * @copyright 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * @license   GPLv3
+ * @link      https://github.com/sybrew/gentime/
+ * @access    private
+ *
+ * @troy-repo
+ * Troy: repo.cyberwire.nl
+ *
+ * @wordpress-plugin
  * Plugin Name: GenTime
- * Plugin URI: https://wordpress.org/plugins/gentime/
+ * Plugin URI: https://wordpress.org/plugins/gentime
  * Description: GenTime shows the page generation time in the WordPress admin bar.
+ * Version: 2.0.0
  * Author: Sybre Waaijer
  * Author URI: https://cyberwire.nl/
- * Version: 1.1.0
- * License: GLPv3
+ * License: GPLv3
  * Text Domain: gentime
- * Domain Path: /language
+ * Requires at least: 5.3
+ * Tested up to: 6.9
+ * Requires PHP: 7.4
  */
 
-add_action( 'plugins_loaded', 'gentime_locale_init' );
+namespace GenTime;
+
+\defined( 'ABSPATH' ) or die;
+
 /**
- * Loads plugin locale 'gentime'.
- * File located in plugin folder gentime/language/
+ * Gentime plugin
+ * Copyright (C) 2015 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
- * @since 1.0.0
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-function gentime_locale_init() {
-	load_plugin_textdomain(
-		'gentime',
-		false,
-		dirname( plugin_basename( __FILE__ ) ) . '/language'
-	);
-}
 
-add_action( 'admin_bar_menu', 'gentime_admin_item', 912 );
+\add_action( 'admin_bar_menu', __NAMESPACE__ . '\add_admin_item', 912 );
+
 /**
  * Adds admin node for the generation time.
  *
- * @since 1.0.0
- * @since 1.1.0 Added timer_float() test, which is more accurate.
- * @global object $wp_admin_bar
+ * @hook admin_bar_menu 912
+ * @since 2.0.0
  *
- * @return void
+ * @param \WP_Admin_Bar $wp_admin_bar The WP_Admin_Bar instance
  */
-function gentime_admin_item() {
+function add_admin_item( $wp_admin_bar ) {
 
-	if ( ! gentime_can_run() ) return;
+	\defined( 'GENTIME_VIEW_CAPABILITY' )
+		or \define( 'GENTIME_VIEW_CAPABILITY', 'manage_options' );
 
-	/**
-	 * @param int $decimals The generation time decimals amount
-	 * @since 1.0.0
-	 */
-	$decimals = (int) apply_filters( 'gentime_decimals', 3 );
+	if ( ! \current_user_can( \GENTIME_VIEW_CAPABILITY ) )
+		return;
 
-	if ( function_exists( 'timer_float' ) ) {
-		$time = timer_float();
-		$time = number_format_i18n( $time, $decimals );
-	} else {
-		$time = timer_stop( 0, $decimals );
-	}
+	// Redundant for most sites, but the plugin may be loaded via Composer
+	\load_plugin_textdomain(
+		'gentime',
+		false,
+		\dirname( \plugin_basename( __FILE__ ) ) . '/language',
+	);
 
-	$args = [
-		'id'    => 'gentime',
-		'title' => '<span class="ab-icon"></span><span class="ab-label">' . $time . esc_html_x( 's', 'seconds', 'gentime' ) . '</span>',
-		'href'  => '',
-		'meta'  => [
-			'title' => esc_attr__( 'Page Generation Time', 'gentime' ),
+	echo '<style>#wp-admin-bar-gentime .ab-icon:before{font-family:dashicons;content:"\f469";top:2px}</style>';
+
+	// Enqueued with print_late_styles(). Dashicons is a 'common' script, but WP appears to be phasing it out
+	\wp_enqueue_style( 'dashicons' );
+
+	$wp_admin_bar->add_node(
+		[
+			'id'    => 'gentime',
+			'title' => \sprintf(
+				'<span class=ab-icon></span><span class=ab-label>%s</span>',
+				\number_format_i18n(
+					\timer_float(),
+					/**
+					 * @since 1.0.0
+					 * @param int $decimals The generation time decimals amount
+					 */
+					\apply_filters( 'gentime_decimals', 3 ),
+				)
+				. \esc_html_x( 's', 'seconds', 'gentime' ),
+			),
+			'href'  => '',
+			'meta'  => [
+				'title' => \esc_attr__( 'Page Generation Time', 'gentime' ),
+			],
 		],
-	];
-
-	$GLOBALS['wp_admin_bar']->add_node( $args );
-}
-
-add_action( 'wp_head', 'gentime_echo_css' );
-add_action( 'admin_head', 'gentime_echo_css' );
-/**
- * Echos a single line to output the clock in the admin bar next to the gentime.
- *
- * @since 1.0.0
- */
-function gentime_echo_css() {
-	gentime_can_run()
-		and print( '<style>#wp-admin-bar-gentime .ab-icon:before{font-family:"dashicons";content:"\f469";top:2px}</style>' );
-}
-
-/**
- * Checks whether we can run the plugin. Memoizes the return value.
- *
- * @since 1.0.2
- *
- * @return bool
- */
-function gentime_can_run() {
-	static $cache = null;
-	return isset( $cache )
-		? $cache
-		: ( $cache = function_exists( 'is_admin_bar_showing' ) && is_admin_bar_showing() && current_user_can( gentime_capability() ) );
-}
-
-/**
- * Returns the minimum gentime usage role.
- *
- * @since 1.0.0
- *
- * @return string
- */
-function gentime_capability() {
-	/**
-	 * @since 1.0.0
-	 * @param string $capability The minimum role for the admin bar item is shown to the user.
-	 */
-	return (string) apply_filters( 'gentime_minimum_role', 'install_plugins' );
+	);
 }

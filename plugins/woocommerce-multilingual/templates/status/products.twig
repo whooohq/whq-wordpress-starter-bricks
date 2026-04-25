@@ -6,9 +6,7 @@
     </div>
     <div class="wcml-section-content">
         <ul class="wcml-status-list wcml-plugins-status-list">
-            {% if auto_trnsl_products %}
-                <div class="notice wpml-notice inline">{{ strings.auto_trnsl_prod|raw }}</div>
-            {% elseif products is empty %}
+            {% if products is empty %}
                 <li>
                     <i class="otgs-ico-ok"></i>
                     {{ strings.not_to_trnsl }}

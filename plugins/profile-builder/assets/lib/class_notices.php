@@ -40,7 +40,7 @@ class WPPB_Add_General_Notices{
         if ( current_user_can( 'manage_options' ) ){
             // Check that the user hasn't already clicked to ignore the message
             if ( ! get_user_meta($user_id, $this->notificationId.'_dismiss_notification' ) ) {
-                echo wp_kses_post( apply_filters($this->notificationId.'_notification_message','<div class="'. $this->notificationClass .'" >'.$this->notificationMessage.'</div>', $this->notificationMessage) );
+                echo wp_kses_post( apply_filters($this->notificationId.'_notification_message','<div class="'. $this->notificationClass .'" style="position:relative">'.$this->notificationMessage.'</div>', $this->notificationMessage) );
             }
             do_action( $this->notificationId.'_notification_displayed', $current_user, $pagenow );
         }
@@ -48,6 +48,10 @@ class WPPB_Add_General_Notices{
     }
 
     function dismiss_notification() {
+
+        if( empty( $_GET['_wpnonce'] ) || !wp_verify_nonce( sanitize_text_field( $_GET['_wpnonce'] ), 'wppb_general_notice_dismiss' ) )
+            return;
+
         global $current_user;
 
         $user_id = $current_user->ID;
@@ -59,6 +63,7 @@ class WPPB_Add_General_Notices{
             add_user_meta( $user_id, $this->notificationId.'_dismiss_notification', 'true', true );
 
         do_action( $this->notificationId.'_after_notification_dismissed', $current_user );
+
     }
 }
 
@@ -68,7 +73,7 @@ Class WPPB_Plugin_Notifications {
     private static $_instance = null;
     private $prefix = 'wppb';
     private $menu_slug = 'profile-builder';
-    public $pluginPages = array( 'profile-builder-', 'manage-fields', 'wppb-', 'admin-email-customizer', 'user-email-customizer' );
+    public $pluginPages = array( 'profile-builder-', 'manage-fields', 'wppb-', 'admin-email-customizer', 'user-email-customizer', 'pb-labels-edit', 'profile-user-profile-picture', 'pbie-import-export' );
 
     protected function __construct() {
         add_action( 'admin_init', array( $this, 'dismiss_admin_notifications' ), 200 );
@@ -79,8 +84,13 @@ Class WPPB_Plugin_Notifications {
 
     function dismiss_admin_notifications() {
         if( ! empty( $_GET[$this->prefix.'_dismiss_admin_notification'] ) ) {
+
+            if( empty( $_GET['_wpnonce'] ) || !wp_verify_nonce( sanitize_text_field( $_GET['_wpnonce'] ), 'wppb_plugin_notice_dismiss' ) )
+                return;
+
             $notifications = self::get_instance();
             $notifications->dismiss_notification( sanitize_text_field( $_GET[$this->prefix.'_dismiss_admin_notification'] ) );
+
         }
 
     }
@@ -113,11 +123,6 @@ Class WPPB_Plugin_Notifications {
 
     /* handle other plugin notifications on our plugin pages */
     function remove_other_plugin_notices(){
-
-        //remove all notifications from start page
-        if( isset( $_GET['page'] ) && ( $_GET['page'] == 'profile-builder-basic-info' || ( $_GET['page'] == 'profile-builder-add-ons' && !isset( $_GET['cl_add_ons_listing_success'] ) ) ) ) {//on addons page we use notices to display success mesage so we can't remove it in that case
-            remove_all_actions('admin_notices');
-        }
 
         /* remove all other plugin notifications except our own from the rest of the PB pages */
         if( $this->is_plugin_page() ) {
@@ -163,7 +168,7 @@ Class WPPB_Plugin_Notifications {
      *
      *
      */
-    public function add_notification( $notification_id = '', $notification_message = '', $notification_class = 'update-nag', $count_in_menu = true, $count_in_submenu = array() ) {
+    public function add_notification( $notification_id = '', $notification_message = '', $notification_class = 'update-nag', $count_in_menu = true, $count_in_submenu = array(), $show_in_all_backend = false ) {
 
         if( empty( $notification_id ) )
             return;
@@ -184,8 +189,7 @@ Class WPPB_Plugin_Notifications {
             'count_in_submenu' => $count_in_submenu
         );
 
-
-        if( $this->is_plugin_page() ) {
+		if( $this->is_plugin_page() || $show_in_all_backend == true ) {
             new WPPB_Add_General_Notices( $notification_id, $notification_message, $notification_class );
         }
 

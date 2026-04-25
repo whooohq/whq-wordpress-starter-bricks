@@ -25,7 +25,7 @@ class Factory extends ComponentFactory implements IStandAloneAction {
 		}
 
 		if ( ! isStandAlone() ) {
-			$hooks[] = new \WCML_The_Events_Calendar( getSitePress(), getWooCommerceWpml() );
+			$hooks[] = new \WCML_The_Events_Calendar( getSitePress(), getWooCommerceWpml(), new \WPML_Translation_Job_Helper() );
 		}
 
 		return $hooks;

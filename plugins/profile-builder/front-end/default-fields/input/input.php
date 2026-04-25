@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* handle field output */
 function wppb_input_handler( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){
 	if ( $field['field'] == 'Input' ){
@@ -12,7 +15,11 @@ function wppb_input_handler( $output, $form_location, $field, $user_id, $field_c
 		else
             $input_value = ( isset( $field['default-value'] ) ? trim( $field['default-value'] ) : '' );
 
-        $input_value = ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ? trim( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) : $input_value );
+        $input_value = ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ? trim( stripslashes( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ) : $input_value );
+
+        //Add WPML support
+        $input_value = wppb_icl_t( 'plugin profile-builder-pro', 'custom_field_input_'.$field['id'].'_default_value_translation', $input_value, true );
+		$input_value = apply_filters( 'wppb_form_input_field_value', $input_value, $field, $form_location );
 
 		if ( $form_location != 'back_end' ){
 			$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );
@@ -50,7 +57,7 @@ add_filter( 'wppb_admin_output_form_field_input', 'wppb_input_handler', 10, 6 );
 function wppb_save_input_value( $field, $user_id, $request_data, $form_location ){
 	if( $field['field'] == 'Input' ){
 		if ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) )
-			update_user_meta( $user_id, $field['meta-name'], $request_data[wppb_handle_meta_name( $field['meta-name'] )] );
+			update_user_meta( $user_id, $field['meta-name'], sanitize_text_field( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) );
 	}
 }
 add_action( 'wppb_save_form_field', 'wppb_save_input_value', 10, 4 );

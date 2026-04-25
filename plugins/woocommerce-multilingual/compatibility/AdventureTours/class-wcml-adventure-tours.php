@@ -1,6 +1,8 @@
 <?php
 
-class WCML_Adventure_tours implements \IWPML_Action {
+use WCML\Utilities\AdminPages;
+
+class WCML_Adventure_Tours implements \IWPML_Action {
 
 	/**
 	 * @var woocommerce_wpml
@@ -17,7 +19,7 @@ class WCML_Adventure_tours implements \IWPML_Action {
 	private $tp;
 
 	/**
-	 * WCML_Adventure_tours constructor.
+	 * WCML_Adventure_Tours constructor.
 	 *
 	 * @param woocommerce_wpml                 $woocommerce_wpml
 	 * @param SitePress                        $sitepress
@@ -31,24 +33,22 @@ class WCML_Adventure_tours implements \IWPML_Action {
 
 	public function add_hooks() {
 		add_action( 'updated_post_meta', [ $this, 'sync_tour_data_across_translations' ], 10, 4 );
-		add_filter( 'get_post_metadata', [ $this, 'product_price_filter' ], 9, 4 );
+
+		add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_tour_data_translation_package' ], 10, 2 );
 		add_action( 'wpml_translation_job_saved', [ $this, 'save_tour_data_translation' ], 10, 3 );
 
-		if ( is_admin() ) {
+		add_filter( 'wcml_is_variable_product', [ $this, 'is_variable_tour' ], 10, 2 );
+		add_filter( 'wcml_variation_term_taxonomy_ids', [ $this, 'add_tour_tax_id' ] );
 
+		if ( is_admin() ) {
 			add_action( 'wcml_gui_additional_box_html', [ $this, 'custom_box_html' ], 10, 3 );
 			add_filter( 'wcml_gui_additional_box_data', [ $this, 'custom_box_html_data' ], 10, 4 );
 			add_action( 'wcml_update_extra_fields', [ $this, 'tour_data_update' ], 10, 3 );
-
-			add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_tour_data_translation_package' ], 10, 2 );
 
 			add_action( 'admin_footer', [ $this, 'load_assets' ] );
 			add_action( 'wcml_after_custom_prices_block', [ $this, 'add_custom_prices_block' ] );
 			add_action( 'wcml_after_save_custom_prices', [ $this, 'save_custom_costs' ] );
 
-			add_filter( 'wcml_is_variable_product', [ $this, 'is_variable_tour' ], 10, 2 );
-			add_filter( 'wcml_variation_term_taxonomy_ids', [ $this, 'add_tour_tax_id' ] );
-			add_filter( 'wcml_is_attributes_page', [ $this, 'is_attributes_page' ] );
 			add_filter( 'wcml_is_attributes_page', [ $this, 'is_attributes_page' ] );
 
 			add_filter(
@@ -58,6 +58,8 @@ class WCML_Adventure_tours implements \IWPML_Action {
 					'replace_tm_editor_custom_fields_with_own_sections',
 				]
 			);
+		} elseif ( WCML_MULTI_CURRENCIES_INDEPENDENT === $this->woocommerce_wpml->settings['enable_multi_currency'] ) {
+			add_filter( 'get_post_metadata', [ $this, 'product_price_filter' ], 9, 4 );
 		}
 	}
 
@@ -70,6 +72,7 @@ class WCML_Adventure_tours implements \IWPML_Action {
 		$post = get_post( $post_id );
 
 		// Skip auto-drafts // skip autosave.
+		/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
 		if ( 'auto-draft' === $post->post_status || isset( $_POST['autosave'] ) ) {
 			return false;
 		}
@@ -81,7 +84,7 @@ class WCML_Adventure_tours implements \IWPML_Action {
 			$original_product_id = $post_id;
 			if ( ! $this->woocommerce_wpml->products->is_original_product( $post_id ) ) {
 				$original_product_language = $this->woocommerce_wpml->products->get_original_product_language( $post_id );
-				$original_product_id       = apply_filters( 'translate_object_id', $post_id, 'product', true, $original_product_language );
+				$original_product_id       = apply_filters( 'wpml_object_id', $post_id, 'product', true, $original_product_language );
 			}
 
 			$product_trid         = $this->sitepress->get_element_trid( $original_product_id, 'post_product' );
@@ -308,8 +311,6 @@ class WCML_Adventure_tours implements \IWPML_Action {
 
 		if (
 			$meta_key === 'tour_booking_periods' &&
-			$this->woocommerce_wpml->settings['enable_multi_currency'] === WCML_MULTI_CURRENCIES_INDEPENDENT &&
-			! is_admin() &&
 			get_post_type( $object_id ) === 'product' &&
 			( $currency = $this->woocommerce_wpml->multi_currency->get_client_currency() ) !== wcml_get_woocommerce_currency_option()
 		) {
@@ -317,7 +318,7 @@ class WCML_Adventure_tours implements \IWPML_Action {
 			remove_filter( 'get_post_metadata', [ $this, 'product_price_filter' ], 9 );
 
 			$original_language = $this->woocommerce_wpml->products->get_original_product_language( $object_id );
-			$original_product  = apply_filters( 'translate_object_id', $object_id, 'product', true, $original_language );
+			$original_product  = apply_filters( 'wpml_object_id', $object_id, 'product', true, $original_language );
 
 			if ( get_post_meta( $original_product, '_wcml_custom_prices_status' ) ) {
 				$custom_periods_prices = get_post_meta( $object_id, 'custom_booking_periods_prices', true );
@@ -368,7 +369,7 @@ class WCML_Adventure_tours implements \IWPML_Action {
 
 	public function is_attributes_page( $is_attributes_page ) {
 
-		if ( isset( $_GET['page'] ) && 'product_attributes_extended' === $_GET['page'] && isset( $_GET['post_type'] ) && 'product' === $_GET['post_type'] ) {
+		if ( AdminPages::isPage( 'product_attributes_extended' ) && isset( $_GET['post_type'] ) && 'product' === $_GET['post_type'] ) {
 			$is_attributes_page = true;
 		}
 

@@ -2,117 +2,154 @@
 /**
  * @package The_SEO_Framework\Compat\Plugin\WPML
  * @subpackage The_SEO_Framework\Compatibility
+ * @access private
  */
 
 namespace The_SEO_Framework;
 
-\defined( 'THE_SEO_FRAMEWORK_PRESENT' ) and \tsf()->_verify_include_secret( $_secret ) or die;
+\defined( 'THE_SEO_FRAMEWORK_PRESENT' ) or die;
+
+use The_SEO_Framework\{
+	Helper\Query,
+	Meta\URI,
+};
+
+\add_filter( 'the_seo_framework_sitemap_endpoint_list', __NAMESPACE__ . '\_wpml_register_sitemap_languages', 20 );
+\add_action( 'the_seo_framework_cleared_sitemap_transients', __NAMESPACE__ . '\_wpml_flush_sitemap', 10 );
+\add_action( 'the_seo_framework_sitemap_header', __NAMESPACE__ . '\_wpml_sitemap_filter_display_translatables' );
+\add_action( 'the_seo_framework_sitemap_hpt_query_args', __NAMESPACE__ . '\_wpml_sitemap_filter_non_translatables' );
+\add_action( 'the_seo_framework_sitemap_nhpt_query_args', __NAMESPACE__ . '\_wpml_sitemap_filter_non_translatables' );
 
 /**
- * Warns homepage global title and description about receiving input.
+ * Registeres more sitemaps for the robots.txt to parse.
  *
- * @since 2.8.0
- */
-\add_filter( 'the_seo_framework_warn_homepage_global_title', '__return_true' );
-\add_filter( 'the_seo_framework_warn_homepage_global_description', '__return_true' );
-\add_filter( 'the_seo_framework_tell_multilingual_sitemap', '__return_true' );
-
-\add_action( 'current_screen', __NAMESPACE__ . '\\_wpml_do_current_screen_action' );
-/**
- * Adds WPML filters based on current screen.
+ * This has no other intended effect. But default permalinks may react more tsf_sitemap query values,
+ * specifically ?tsf_sitemap=_base_wpml_es&lang=es" (assumed, untested).
  *
- * @since 2.8.0
- * @access private
+ * @hook the_seo_framework_sitemap_endpoint_list 20
+ * @since 5.0.5
+ * @param array[] $list {
+ *     A list of sitemap endpoints keyed by ID.
+ *
+ *     @type string|false $lock_id  Optional. The cache key to use for locking. Defaults to index 'id'.
+ *                                  Set to false to disable locking.
+ *     @type string|false $cache_id Optional. The cache key to use for storing. Defaults to index 'id'.
+ *                                  Set to false to disable caching.
+ *     @type string       $endpoint The expected "pretty" endpoint, meant for administrative display.
+ *     @type string       $epregex  The endpoint regex, following the home path regex.
+ *     @type callable     $callback The callback for the sitemap output.
+ *     @type bool         $robots   Whether the endpoint should be mentioned in the robots.txt file.
+ * }
+ * @return array[]
  */
-function _wpml_do_current_screen_action() {
+function _wpml_register_sitemap_languages( $list ) {
+	global $sitepress;
 
-	if ( \tsf()->is_seo_settings_page() ) {
-		\add_filter( 'wpml_admin_language_switcher_items', __NAMESPACE__ . '\\_wpml_remove_all_languages' );
+	if ( empty( $list['base'] ) )
+		return $list;
+
+	if (
+		   empty( $sitepress )
+		|| ! Helper\Compatibility::can_i_use(
+			[
+				'methods'   => [
+					[ $sitepress, 'get_default_language' ],
+					[ $sitepress, 'get_active_languages' ],
+					[ $sitepress, 'get_setting' ],
+				],
+				'constants' => [
+					'WPML_LANGUAGE_NEGOTIATION_TYPE_DIRECTORY',
+					'WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER',
+				],
+			],
+		)
+	) return $list;
+
+	// Do most work outside of a loop. We have two loops because of this.
+	// We fall back to -1 because null/false match with '0'
+	switch ( $sitepress->get_setting( 'language_negotiation_type' ) ) {
+		case \WPML_LANGUAGE_NEGOTIATION_TYPE_PARAMETER: // 3
+			foreach (
+				array_diff(
+					array_column( $sitepress->get_active_languages(), 'code' ),
+					[ $sitepress->get_default_language() ],
+				)
+				as $language
+			) {
+				$list[ "base_wpml_$language" ] = [
+					'endpoint' => URI\Utils::append_query_to_url(
+						$list['base']['endpoint'],
+						"lang=$language",
+					),
+				] + $list['base'];
+			}
+			break;
+		case \WPML_LANGUAGE_NEGOTIATION_TYPE_DIRECTORY: // 1
+			foreach (
+				array_diff(
+					array_column( $sitepress->get_active_languages(), 'code' ),
+					[ $sitepress->get_default_language() ],
+				)
+				as $language
+			) {
+				$list[ "base_wpml_$language" ] = [
+					'endpoint' => "$language/{$list['base']['endpoint']}",
+				] + $list['base'];
+			}
 	}
+
+	return $list;
 }
 
-/**
- * Removes "All languages" option from WPML admin switcher.
- *
- * FIXME: Why did we do this again? Does it even affect the settings? Does it fix the home query? Remove me?
- *
- * @since 2.8.0
- * @access private
- *
- * @param array $languages_links A list of selectable languages.
- * @return array
- */
-function _wpml_remove_all_languages( $languages_links = [] ) {
-
-	unset( $languages_links['all'] );
-
-	return $languages_links;
-}
-
-\add_action( 'the_seo_framework_delete_cache_sitemap', __NAMESPACE__ . '\\_wpml_flush_sitemap', 10, 4 );
 /**
  * Deletes all sitemap transients, instead of just one.
- * Can only clear once per request.
  *
+ * We didn't implement this in our default APIs because we want to trigger WP hooks.
+ * Executing database queries directly bypass those. So, we do this afterward.
+ *
+ * @hook the_seo_framework_cleared_sitemap_transients 10
  * @since 3.1.0
+ * @since 5.0.0 Removed clearing once-per-request restriction.
  * @global \wpdb $wpdb
- * @access private
- *
- * @param string $type    The flush type. Comes in handy when you use a catch-all function.
- * @param int    $id      The post, page or TT ID. Defaults to tsf()->get_the_real_ID().
- * @param array  $args    Additional arguments. They can overwrite $type and $id.
- * @param bool   $success Whether the action cleared.
  */
-function _wpml_flush_sitemap( $type, $id, $args, $success ) {
+function _wpml_flush_sitemap() {
+	global $wpdb;
 
-	static $cleared = false;
-	if ( $cleared ) return;
+	$transient_prefix = Sitemap\Cache::get_transient_prefix();
 
-	if ( $success ) {
-		global $wpdb;
+	$wpdb->query( $wpdb->prepare(
+		"DELETE FROM $wpdb->options WHERE option_name LIKE %s",
+		$wpdb->esc_like( "_transient_$transient_prefix" ) . '%',
+	) );
 
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM $wpdb->options WHERE option_name LIKE %s",
-				$wpdb->esc_like( '_transient_tsf_sitemap_' ) . '%'
-			)
-		); // No cache OK. DB call ok.
-
-		// We didn't use a wildcard after "_transient_" to reduce scans.
-		// A second query is faster on saturated sites.
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM $wpdb->options WHERE option_name LIKE %s",
-				$wpdb->esc_like( '_transient_timeout_tsf_sitemap_' ) . '%'
-			)
-		); // No cache OK. DB call ok.
-
-		$cleared = true;
-	}
+	// We didn't use a wildcard after "_transient_" to reduce scans.
+	// A second query is faster on saturated sites.
+	$wpdb->query( $wpdb->prepare(
+		"DELETE FROM $wpdb->options WHERE option_name LIKE %s",
+		$wpdb->esc_like( "_transient_timeout_$transient_prefix" ) . '%',
+	) );
 }
 
-\add_action( 'the_seo_framework_sitemap_header', __NAMESPACE__ . '\\_wpml_sitemap_filter_display_translatables' );
 /**
  * Filters "display translatable" post types from the sitemap query arguments.
  * Only appends actually translated posts to the translated sitemap.
  *
+ * @hook the_seo_framework_sitemap_header 10
  * @since 4.1.4
- * @access private
  */
 function _wpml_sitemap_filter_display_translatables() {
 	// ez.
 	\add_filter( 'wpml_should_use_display_as_translated_snippet', '__return_false' );
 }
 
-\add_action( 'the_seo_framework_sitemap_hpt_query_args', __NAMESPACE__ . '\\_wpml_sitemap_filter_non_translatables' );
-\add_action( 'the_seo_framework_sitemap_nhpt_query_args', __NAMESPACE__ . '\\_wpml_sitemap_filter_non_translatables' );
 /**
  * Filters nontranslatable post types from the sitemap query arguments.
  * Only appends when the default sitemap language is not displayed.
  *
+ * @hook the_seo_framework_sitemap_hpt_query_args 10
+ * @hook the_seo_framework_sitemap_nhpt_query_args 10
  * @since 4.1.4
- * @access private
- * @global $sitepress \SitePress
+ * @global \SitePress $sitepress
  *
  * @param array $args The query arguments.
  * @return array The augmented query arguments.
@@ -120,11 +157,18 @@ function _wpml_sitemap_filter_display_translatables() {
 function _wpml_sitemap_filter_non_translatables( $args ) {
 	global $sitepress;
 
-	if ( empty( $sitepress )
-	|| ! method_exists( $sitepress, 'get_default_language' )
-	|| ! method_exists( $sitepress, 'get_current_language' )
-	|| ! method_exists( $sitepress, 'is_translated_post_type' ) )
-		return $args;
+	if (
+		   empty( $sitepress )
+		|| ! Helper\Compatibility::can_i_use(
+			[
+				'methods' => [
+					[ $sitepress, 'get_default_language' ],
+					[ $sitepress, 'get_current_language' ],
+					[ $sitepress, 'is_translated_post_type' ],
+				],
+			],
+		)
+	) return $args;
 
 	if ( $sitepress->get_default_language() === $sitepress->get_current_language() ) return $args;
 

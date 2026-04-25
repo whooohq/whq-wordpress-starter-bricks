@@ -64,6 +64,10 @@ class PB_WP_List_Table {
 	 */
 	var $_pagination;
 
+	var $_column_headers;
+	
+	var $dataArray;
+
 	/**
 	 * Constructor. The child class should call this constructor from its own constructor
 	 *
@@ -455,7 +459,11 @@ class PB_WP_List_Table {
 	 * @param int $pending_comments
 	 */
 	function comments_bubble( $post_id, $pending_comments ) {
-		$pending_phrase = sprintf( __( '%s pending' ), number_format( $pending_comments ) );//phpcs:ignore
+
+		if( !empty( $pending_comments ) )
+			$pending_phrase = sprintf( __( '%s pending' ), number_format( $pending_comments ) );//phpcs:ignore
+		else
+			$pending_phrase = __( '0 pending' );//phpcs:ignore	
 
 		if ( $pending_comments )
 			echo '<strong>';

@@ -1,5 +1,6 @@
 <?php
 
+if (!defined('ABSPATH')) die('No direct access allowed');
 if (class_exists('UpdraftPlus_Host')) return;
 
 if (!defined('UPDRAFTCENTRAL_CLIENT_DIR')) define('UPDRAFTCENTRAL_CLIENT_DIR', dirname(__FILE__));
@@ -39,6 +40,7 @@ class UpdraftPlus_Host extends UpdraftCentral_Host {
 		parent::__construct();
 		
 		add_action('updraftplus_debugtools_dashboard', array($this, 'debugtools_dashboard'), 20);
+		add_action('updraftplus_load_translations_for_udcentral', array($this, 'load_updraftplus_translations'));
 
 		$this->maybe_initialize_required_objects();
 	}
@@ -267,10 +269,15 @@ class UpdraftPlus_Host extends UpdraftCentral_Host {
 				updraft_try_include_file('includes/class-filesystem-functions.php', 'require_once');
 			}
 		}
+	}
 
+	/**
+	 * Load translations which are based on UpdraftPlus domain text
+	 */
+	public function load_updraftplus_translations() {
 		// Load updraftplus translations
 		if (defined('UPDRAFTCENTRAL_CLIENT_DIR') && file_exists(UPDRAFTCENTRAL_CLIENT_DIR.'/translations-central.php')) {
-			$this->translations = include_once(UPDRAFTCENTRAL_CLIENT_DIR.'/translations-central.php');
+			$this->translations = include(UPDRAFTCENTRAL_CLIENT_DIR.'/translations-central.php');
 		}
 	}
 }

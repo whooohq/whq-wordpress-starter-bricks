@@ -1,5 +1,5 @@
 <?php
-
+// phpcs:disable Squiz.PHP.DiscouragedFunctions.Discouraged -- some functions, like set_time_limit() and ini_set(), are used to temporarily change PHP configuration values based on the script's needs (e.g., processing large datasets or performing long operations).
 if (!defined('UPDRAFTPLUS_DIR')) die('No access.');
 
 /**
@@ -144,7 +144,7 @@ class UpdraftPlus_Storage_Methods_Interface {
 					
 						// Try to recover by getting a default set of options for display
 						if (is_callable(array($remote_storage, 'get_default_options'))) {
-							$uuid = 's-'.md5(rand().uniqid().microtime(true));
+							$uuid = 's-'.md5(wp_rand().uniqid().microtime(true));
 							$settings['settings'] = array($uuid => $remote_storage->get_default_options());
 						}
 						
@@ -338,7 +338,7 @@ class UpdraftPlus_Storage_Methods_Interface {
 						$updraftplus->log(__('Error', 'updraftplus'), 'notice-restore');
 					} else {
 						clearstatcache();
-						if (0 === @filesize($fullpath)) @unlink($fullpath);// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the function.
+						if (0 === @filesize($fullpath)) @unlink($fullpath);// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise if the file doesn't exist.
 						$updraftplus->log('Remote fetch failed');
 					}
 				}
@@ -375,21 +375,28 @@ class UpdraftPlus_Storage_Methods_Interface {
 				// @codingStandardsIgnoreLine
 				$log_message .= ' Backtrace: '.str_replace(array(ABSPATH, "\n"), array('', ', '), $e->getTraceAsString());
 				$updraftplus->log($log_message);
-				$updraftplus->log(sprintf(__('A PHP exception (%s) has occurred: %s', 'updraftplus'), get_class($e), $e->getMessage()), 'error');
+				/* translators: 1: Exception class, 2: Exception message. */
+				$message = sprintf(__('A PHP exception (%1$s) has occurred: %2$s', 'updraftplus'), get_class($e), $e->getMessage());
+				$updraftplus->log($message, 'error');
 				return false;
-			// @codingStandardsIgnoreLine
-			} catch (Error $e) {
+			} catch (Error $e) { //phpcs:ignore PHPCompatibility.Classes.NewClasses.errorFound -- This Error class will only get triggered during runtime but we don't explicitly throw this class in our code; so we only catch it when PHP throws it.
 				$log_message = 'PHP Fatal error ('.get_class($e).') has occurred during download. Error Message: '.$e->getMessage().' (Code: '.$e->getCode().', line '.$e->getLine().' in '.$e->getFile().')';
 				error_log($log_message);
 				// @codingStandardsIgnoreLine
 				$log_message .= ' Backtrace: '.str_replace(array(ABSPATH, "\n"), array('', ', '), $e->getTraceAsString());
 				$updraftplus->log($log_message);
-				$updraftplus->log(sprintf(__('A PHP fatal error (%s) has occurred: %s', 'updraftplus'), get_class($e), $e->getMessage()), 'error');
+				/* translators: 1: Fatal error class, 2: Error message. */
+				$message = sprintf(__('A PHP fatal error (%1$s) has occurred: %2$s', 'updraftplus'), get_class($e), $e->getMessage());
+				$updraftplus->log($message, 'error');
 				return false;
 			}
 		} else {
 			$updraftplus->log("Automatic backup restoration is not available with the method: $service.");
-			$updraftplus->log("$file: ".sprintf(__("The backup archive for this file could not be found. The remote storage method in use (%s) does not allow us to retrieve files. To perform any restoration using UpdraftPlus, you will need to obtain a copy of this file and place it inside UpdraftPlus's working folder", 'updraftplus'), $service)." (".UpdraftPlus_Manipulation_Functions::prune_updraft_dir_prefix($updraftplus->backups_dir_location()).")", 'error');
+			$message = "$file: ".__('The backup archive for this file could not be found.', 'updraftplus').' ';
+			/* translators: %s: Remote storage service name. */
+			$message .= sprintf(__('The remote storage method in use (%s) does not allow us to retrieve files.', 'updraftplus'), $service).' ';
+			$message .= __("To perform any restoration using UpdraftPlus, you will need to obtain a copy of this file and place it inside UpdraftPlus's working folder", 'updraftplus')." (".UpdraftPlus_Manipulation_Functions::prune_updraft_dir_prefix($updraftplus->backups_dir_location()).")";
+			$updraftplus->log($message, 'error');
 			return false;
 		}
 
@@ -426,6 +433,6 @@ class UpdraftPlus_Storage_Methods_Interface {
 	 */
 	private static function generate_instance_id() {
 		// Cryptographic randomness not required. The prefix helps avoid potential for type-juggling issues.
-		return 's-'.md5(rand().uniqid().microtime(true));
+		return 's-'.md5(wp_rand().uniqid().microtime(true));
 	}
 }

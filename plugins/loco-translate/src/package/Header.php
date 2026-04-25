@@ -27,7 +27,7 @@ class Loco_package_Header {
 
 
     /**
-     * @param string
+     * @param string $prop
      * @return string
      */
     public function __get( $prop ){
@@ -49,8 +49,8 @@ class Loco_package_Header {
 
 
     /**
-     * @param string
-     * @param mixed
+     * @param string $prop  
+     * @param mixed $value
      * @codeCoverageIgnore
      */
     public function __set( $prop, $value ){
@@ -62,7 +62,7 @@ class Loco_package_Header {
      * Get bundle author as linked text, just like the WordPress plugin list does
      * @return string escaped HTML
      */
-    public function getAuthorLink(){
+    public function getAuthorLink():string {
         if( ( $link = $this->AuthorURI ) || ( $link = $this->PluginURI ) || ( $link = $this->ThemeURI ) ){
             $author = $this->Author or $author = $link;
             return '<a href="'.esc_url($link).'" target="_blank">'.esc_html($author).'</a>';
@@ -75,7 +75,7 @@ class Loco_package_Header {
      * Get "name" by <author> credit
      * @return string escaped HTML
      */
-    public function getAuthorCredit(){
+    public function getAuthorCredit(): string {
         if( $author = $this->Author ){
             $author = esc_html( strip_tags($author) );
             if( $link = $this->AuthorURI ){
@@ -85,11 +85,12 @@ class Loco_package_Header {
         else {
             $author = __('Unknown author','loco-translate');
         }
-        // translators: Author credit: "<product>" <version> by <author>
-        $html = sprintf( __('"%s" %s by %s','default'), esc_html($this->Name), $this->Version, $author );
+        // translators: Author credit: (1) Product name (2) version number, (3) author name.
+        $html = wp_kses( sprintf( __('"%1$s" %2$s by %3$s','loco-translate'), $this->Name, $this->Version, $author ), ['a'=>['href'=>true,'target'=>true]], ['http','https'] );
         
-        if( ( $link = $this->PluginURI ) || ( $link = $this->ThemeURI ) ){
-            $html .= sprintf( ' &mdash; <a href="%s" target="_blank">%s</a>', esc_url($link), __('Visit official site','loco-translate') );
+        $link = $this->PluginURI ?: $this->ThemeURI;
+        if( $link ){
+            $html .= sprintf( ' &mdash; <a href="%s" target="_blank">%s</a>', esc_url($link), esc_html(__('Visit official site','loco-translate')) );
         }
         
         return $html;
@@ -100,7 +101,7 @@ class Loco_package_Header {
      * Get hostname of vendor that hosts theme/plugin
      * @return string e.g. "wordpress.org"
      */
-    public function getVendorHost(){
+    public function getVendorHost(): string {
         $host = '';
         if( ( $url = $this->PluginURI ) || ( $url = $this->ThemeURI ) ){
             if( $host = parse_url($url,PHP_URL_HOST) ){

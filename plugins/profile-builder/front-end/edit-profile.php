@@ -51,20 +51,25 @@ function wppb_autologin_after_password_changed(){
                     }
 
                     if( !isset( $_GET['edit_user'] ) ) {
-                        wp_clear_auth_cookie();
-                        /* set the new password for the user */
-                        wp_set_password($_POST['passw1'], $user_id);//phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                        // Here we calculate the expiration length of the current auth cookie and compare it to the default expiration.
-                        // If it's greater than this, then we know the user checked 'Remember Me' when they logged in.
+                        // Parse the logged-in cookie before clearing it; wp_parse_auth_cookie() can return false when no cookie exists.
                         $logged_in_cookie = wp_parse_auth_cookie('', 'logged_in');
                         /** This filter is documented in wp-includes/pluggable.php */
                         $default_cookie_life = apply_filters('auth_cookie_expiration', (2 * DAY_IN_SECONDS), $user_id, false);
-                        $remember = (($logged_in_cookie['expiration'] - time()) > $default_cookie_life);
+                        $remember = false;
+                        if ( is_array( $logged_in_cookie ) && isset( $logged_in_cookie['expiration'] ) ) {
+                            // If expiration is greater than the default, the user checked 'Remember Me' when they logged in.
+                            $remember = ( ( $logged_in_cookie['expiration'] - time() ) > $default_cookie_life );
+                        }
+
+                        wp_clear_auth_cookie();
+                        /* set the new password for the user */
+                        wp_set_password($_POST['passw1'], $user_id);//phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
                         wp_set_auth_cookie($user_id, $remember, '', wp_get_session_token() );
                     }
                     else{
                         wp_set_password($_POST['passw1'], $user_id); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                        do_action( 'wppb_edit_profile_password_changed', $user_id );
                     }
 
                     /* log out of other sessions or all sessions if the admin is editing the profile */
@@ -83,10 +88,18 @@ function wppb_autologin_after_password_changed(){
 		
 		
 function wppb_front_end_profile_info( $atts ){
-	// get value set in the shortcode as parameter, still need to default to something else than empty string
-	extract( shortcode_atts( array( 'form_name' => 'unspecified', 'redirect_url' => '', 'redirect_priority' => 'normal' ), $atts, 'wppb-edit-profile' ) );
 
-    $form = new Profile_Builder_Form_Creator( array( 'form_type' => 'edit_profile', 'form_name' => $form_name, 'redirect_url' => $redirect_url, 'redirect_priority' => $redirect_priority ) );
+    $atts = shortcode_atts( array(
+        'form_name'         => 'unspecified',
+        'redirect_url'      => '',
+        'redirect_priority' => 'normal',
+        'ajax'              => false,
+        'admin_edit_roles' => ''
+    ), $atts, 'wppb-edit-profile' );
+
+    $form = new Profile_Builder_Form_Creator(
+        array( 'form_type' => 'edit_profile', 'form_name' => $atts['form_name'], 'redirect_url' => $atts['redirect_url'], 'redirect_priority' => $atts['redirect_priority'], 'ajax' => $atts['ajax'], 'admin_edit_roles' => $atts['admin_edit_roles'] )
+    );
 
     return $form;
 }

@@ -17,12 +17,16 @@
 	max-height:37px;
 }
 
-.dologin-err {
-	color:red;
+.dologin-danger {
+	color:red !important;
+}
+
+.dologin-warn {
+	color:#e59544 !important;;
 }
 
 .dologin-success {
-	color: green;
+	color: green !important;;
 }
 
 #dologin-process {
@@ -89,6 +93,10 @@
 
 .dologin-row-flex {
 	display: inline-flex;
+}
+
+.dologin-code-break {
+	overflow-wrap: anywhere;
 }
 
 .dologin-wrap .field-col {
@@ -562,6 +570,13 @@ h3 .dologin-learn-more {
 	top: -0.125em;
 }
 
+.dologin-mt5 {
+	margin-top: 5px !important;
+}
+.dologin-mb10 {
+	margin-bottom: 10px !important;
+}
+
 /* =======================================
    BUTTONS - sizes
 ======================================= */
@@ -895,6 +910,10 @@ input.dologin-input-warning {
 .dologin-textarea-recommended {
 	display: flex;
 	margin-top: -5px;
+}
+
+.dologin-p10 {
+	padding: 10px;
 }
 
 .dologin-textarea-recommended .dologin-desc {

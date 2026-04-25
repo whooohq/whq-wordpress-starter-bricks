@@ -13,7 +13,7 @@
  * Plugin Name: Relevanssi
  * Plugin URI: https://www.relevanssi.com/
  * Description: This plugin replaces WordPress search with a relevance-sorting search.
- * Version: 4.20.0
+ * Version: 4.26.1
  * Author: Mikko Saari
  * Author URI: http://www.mikkosaari.fi/
  * Text Domain: relevanssi
@@ -22,7 +22,7 @@
  */
 
 /**
- * Copyright 2023 Mikko Saari  (email: mikko@mikkosaari.fi)
+ * Copyright 2026 Mikko Saari  (email: mikko@mikkosaari.fi)
  * This file is part of Relevanssi, a search plugin for WordPress.
  *
  * Relevanssi is free software: you can redistribute it and/or modify
@@ -63,11 +63,11 @@ $relevanssi_variables['comment_boost_default']                 = 0.75;
 $relevanssi_variables['post_type_weight_defaults']['post_tag'] = 0.75;
 $relevanssi_variables['post_type_weight_defaults']['category'] = 0.75;
 $relevanssi_variables['post_type_index_defaults']              = array( 'post', 'page' );
-$relevanssi_variables['database_version']                      = 7;
+$relevanssi_variables['database_version']                      = 9;
 $relevanssi_variables['file']                                  = __FILE__;
 $relevanssi_variables['plugin_dir']                            = plugin_dir_path( __FILE__ );
 $relevanssi_variables['plugin_basename']                       = plugin_basename( __FILE__ );
-$relevanssi_variables['plugin_version']                        = '4.20.0';
+$relevanssi_variables['plugin_version']                        = '4.26.1';
 
 require_once 'lib/admin-ajax.php';
 require_once 'lib/common.php';

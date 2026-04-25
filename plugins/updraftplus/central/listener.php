@@ -1,6 +1,6 @@
 <?php
-
-if (!defined('UPDRAFTCENTRAL_CLIENT_DIR')) die('No access.');
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- we use the set_error_handler() function to provide a flexible way of handling PHP errors according to our needs; we centralises error handling in one place and customises certain errors based on their severity and context.
+if (!defined('ABSPATH')) die('No direct access allowed');
 
 /**
  * This class is the basic glue between the lower-level Remote Communications (RPC) class in UpdraftCentral, and the host plugin. It does not contain actual commands themselves; the class names to use for actual commands are passed in as a parameter to the constructor.
@@ -22,6 +22,8 @@ class UpdraftCentral_Listener {
 	private $current_udrpc = null;
 
 	private $command_classes;
+
+	private $auto_logged_in_cookie;
 
 	/**
 	 * Class constructor
@@ -58,7 +60,7 @@ class UpdraftCentral_Listener {
 				$mothership = $key['extra_info']['mothership'];
 				$url = '';
 				if ('__updraftpluscom' == $mothership) {
-					$url = 'https://updraftplus.com';
+					$url = 'https://teamupdraft.com';
 				} elseif (false != ($parsed = parse_url($key['extra_info']['mothership'])) && is_array($parsed)) {
 					$url = $parsed['scheme'].'://'.$parsed['host'];
 				}
@@ -68,22 +70,24 @@ class UpdraftCentral_Listener {
 		}
 		
 		// If we ever need to expand beyond a single GET action, this can/should be generalised and put into the commands class
-		if (!empty($_GET['udcentral_action']) && 'login' == $_GET['udcentral_action']) {
+		$udcentral_action = UpdraftPlus_Manipulation_Functions::fetch_superglobal('get', 'udcentral_action');
+		if (!empty($udcentral_action) && 'login' == $udcentral_action) {
 			// auth_redirect() does not return, according to the documentation; but the code shows that it can
 			// auth_redirect();
-
-			if (!empty($_GET['login_id']) && is_numeric($_GET['login_id']) && !empty($_GET['login_key'])) {
-				$login_user = get_user_by('id', $_GET['login_id']);
+			$login_id = UpdraftPlus_Manipulation_Functions::fetch_superglobal('get', 'login_id', 0, false, 'integer', 'intval');
+			$get_login_key = UpdraftPlus_Manipulation_Functions::fetch_superglobal('get', 'login_key');
+			if (!empty($login_id) && !empty($get_login_key)) {
+				$login_user = get_user_by('id', $login_id);
 				
 				// THis is included so we can get $wp_version
 				include_once(ABSPATH.WPINC.'/version.php');
 
-				if (is_a($login_user, 'WP_User') || (version_compare($wp_version, '3.5', '<') && !empty($login_user->ID))) {// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable
-					// Allow site implementers to disable this functionality -- The variable is defined inside the ABSPATH.WPINC.'/version.php'.
+				if (is_a($login_user, 'WP_User') || (version_compare($wp_version, '3.5', '<') && !empty($login_user->ID))) {// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable -- The variable is defined inside the ABSPATH.WPINC.'/version.php'.
+					// Allow site implementers to disable this functionality
 					$allow_autologin = apply_filters('updraftcentral_allow_autologin', true, $login_user);
 					if ($allow_autologin) {
 						$login_key = get_user_meta($login_user->ID, 'updraftcentral_login_key', true);
-						if (is_array($login_key) && !empty($login_key['created']) && $login_key['created'] > time() - 60 && !empty($login_key['key']) && $login_key['key'] == $_GET['login_key']) {
+						if (is_array($login_key) && !empty($login_key['created']) && $login_key['created'] > time() - 60 && !empty($login_key['key']) && $login_key['key'] == $get_login_key) {
 							$autologin = empty($login_key['redirect_url']) ? network_admin_url() : $login_key['redirect_url'];
 						}
 					}
@@ -168,6 +172,21 @@ class UpdraftCentral_Listener {
 			'command' => $command
 		);
 	}
+
+	/**
+	 * In response to auto logging in the user; set a corresponding logged_in cookie to the $login_user_cookie class variable
+	 *
+	 * @param String  $cookie     Authentication cookie
+	 * @param Integer $user_id    User ID
+	 * @param Integer $expiration The time the cookie expires as a UNIX timestamp
+	 * @param String  $scheme     Cookie scheme used. Accepts 'auth', 'secure_auth', or 'logged_in'
+	 */
+	public function set_global_logged_in_cookie($cookie, $user_id, $expiration, $scheme) {
+		if ('logged_in' === $scheme) {
+			$this->auto_logged_in_cookie = $cookie;
+		}
+		return $cookie;
+	}
 	
 	/**
 	 * Do verification before calling this method
@@ -181,10 +200,17 @@ class UpdraftCentral_Listener {
 			// Don't check that it's a WP_User - that's WP 3.5+ only
 			if (!is_object($user) || empty($user->ID)) return;
 			wp_set_current_user($user->ID, $user->user_login);
+			add_filter('auth_cookie', array($this, 'set_global_logged_in_cookie'), 10, 4);
 			wp_set_auth_cookie($user->ID);
+			remove_filter('auth_cookie', array($this, 'set_global_logged_in_cookie'), 10, 4);
 			do_action('wp_login', $user->user_login, $user);
 		}
 		if ($redirect_url) {
+			// the wp_set_auth_cookie() above uses setcookie() function but the corresponding LOGGED_IN_COOKIE variable is visible and can only be accessible on the next page load
+			// so we set the auth cookie into the superglobal $_COOKIE variable manually, we do this because the previously non logged-in user is now being auto-logged in and wp_create_nonce() needs the value of LOGGED_IN_COOKIE variable to produce a correct nonce
+			if ($this->auto_logged_in_cookie) $_COOKIE[LOGGED_IN_COOKIE] = $this->auto_logged_in_cookie;
+			$redirect_url = add_query_arg('restore_initiation_nonce', wp_create_nonce('updraftplus_udcentral_initiate_restore'), $redirect_url);
+			if ($this->auto_logged_in_cookie) unset($_COOKIE[LOGGED_IN_COOKIE]);
 			wp_safe_redirect($redirect_url);
 			exit;
 		}
@@ -217,9 +243,13 @@ class UpdraftCentral_Listener {
 			//
 			// This will give UpdraftCentral a proper way of disabling the backup feature
 			// for this site if the UpdraftPlus plugin is currently not installed or activated.
+			//
+			// In addition, we need to attached the host plugin who is handling the UpdraftCentral requests
+			global $updraftcentral_host_plugin;
 			$extra = apply_filters('updraftcentral_get_updraftplus_status', array(
 				'is_updraftplus_installed' => false,
-				'is_updraftplus_active' => false
+				'is_updraftplus_active' => false,
+				'host_plugin' => $updraftcentral_host_plugin->plugin_name,
 			));
 
 			$command_info = apply_filters('updraftcentral_get_command_info', false, $command);
@@ -275,8 +305,7 @@ class UpdraftCentral_Listener {
 			error_log($log_message);
 
 			return $this->return_rpc_message(array('response' => 'rpcerror', 'data' => array('code' => 'rpc_fatal_error', 'data' => array('command' => $command, 'message' => $log_message))));
-		// @codingStandardsIgnoreLine
-		} catch (Error $e) {
+		} catch (Error $e) { // phpcs:ignore PHPCompatibility.Classes.NewClasses.errorFound -- The Error class does not exist in PHP below 5.6.
 			$log_message = 'PHP Fatal error ('.get_class($e).') has occurred during UpdraftCentral command execution. Error Message: '.$e->getMessage().' (Code: '.$e->getCode().', line '.$e->getLine().' in '.$e->getFile().')';
 			error_log($log_message);
 
@@ -292,7 +321,8 @@ class UpdraftCentral_Listener {
 		global $updraftcentral_host_plugin;
 
 		$this->host->error_reporting_stop_when_logged = true;
-		set_error_handler(array($this->host, 'php_error'), E_ALL & ~E_STRICT);
+		$error_levels = version_compare(PHP_VERSION, '8.4.0', '>=') ? E_ALL : E_ALL & ~E_STRICT;
+		set_error_handler(array($this->host, 'php_error'), $error_levels);
 		$this->php_events = array();
 		@ob_start();// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Might be a bigger picture that I am missing but do we need to silence errors here?
 		add_filter($updraftcentral_host_plugin->get_logline_filter(), array($this, 'updraftcentral_logline'), 10, 4);

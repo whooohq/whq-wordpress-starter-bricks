@@ -3,7 +3,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Tab_Firewall extends WPCaptcha

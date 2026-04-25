@@ -20,6 +20,20 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
 
 
     /**
+     * Autoloader for polyfills and warnings when important classes are requested, but missing.
+     * This must be loaded after `loco_autoload` which is responsible for loading Loco_* classes.
+     */
+    public static function autoload_compat( $name ){
+        if( strlen($name) < 20 && 'Loco_' !== substr($name,0,5) ){
+            $path = loco_plugin_root().'/src/compat/'.$name.'.php';
+            if( file_exists($path) ){
+                require $path;
+            }
+        }
+    }
+
+
+    /**
      * {@inheritdoc}
      */
     public function __construct(){
@@ -30,9 +44,10 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
         // Ajax router will be called directly in tests
         // @codeCoverageIgnoreStart
         if( loco_doing_ajax() ){
-            $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+            $action = $_REQUEST['action'] ?? '';
             // initialize Ajax router before hook fired so we can handle output buffering
-            if( 'loco_' === substr($action,0,5)  && isset($_REQUEST['route']) ){
+            if( isset($_REQUEST['route']) && str_starts_with($action,'loco_') ){
+                spl_autoload_register( [__CLASS__,'autoload_compat'] );
                 $this->router = new Loco_mvc_AjaxRouter;
                 Loco_package_Listener::create();
             }
@@ -41,14 +56,24 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
         // page router required on all pages as it hooks in the menu
         else {
             $this->router = new Loco_mvc_AdminRouter;
-            // we don't know we will render a page yet, but we need to listen for text domain hooks as early as possible
+            // we don't know we will render a page yet, but we know it'll be ours if it exists.
             if( isset($_GET['page']) && 'loco' === substr($_GET['page'],0,4) ){
+                spl_autoload_register( [__CLASS__,'autoload_compat'] );
                 Loco_package_Listener::create();
                 // trigger post-upgrade process if required
                 Loco_data_Settings::get()->migrate();
             }
         }
     }
+
+
+    /**
+     * @inheritdoc
+     */
+    public function unhook(){
+        spl_autoload_unregister( [__CLASS__,'autoload_compat'] );
+        parent::unhook();
+    }    
 
 
 	/**
@@ -62,7 +87,8 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
 		    wp_add_privacy_policy_content(
 		    	__('Loco Translate','loco-translate'),
 			    esc_html( __("This plugin doesn't collect any data from public website visitors.",'loco-translate') ).'<br />'. 
-                wp_kses( 
+                wp_kses(
+                    // translators: %s will be replaced with a URL which may change without affecting the translation.
                     sprintf( __('Administrators and auditors may wish to review Loco\'s <a href="%s">plugin privacy notice</a>.','loco-translate'), esc_url($url) ),
                     ['a'=>['href'=>true]], ['https']
                 )
@@ -87,8 +113,8 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
 
     /**
      * plugin_action_links action callback
-     * @param string[]
-     * @param string
+     * @param string[] $links
+     * @param string $plugin
      * @return string[]
      */
     public function on_plugin_action_links( $links, $plugin = '' ){
@@ -123,10 +149,8 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
 
     /**
      * pre_update_option_{$option} filter callback for $option = "active_plugins"
-     * @param array active plugins
-     * @return array
      */
-    public function filter_pre_update_option_active_plugins( $value = null ){
+    public function filter_pre_update_option_active_plugins( ?array $value = null ){
         $this->purge_wp_cache();
         return $value;
     }
@@ -134,12 +158,29 @@ class Loco_hooks_AdminHooks extends Loco_hooks_Hookable {
 
     /**
      * pre_update_site_option_{$option} filter callback for $option = "active_sitewide_plugins"
-     * @param array active sitewide plugins
-     * @return array
      */
-    public function filter_pre_update_site_option_active_sitewide_plugins( $value = null ){
+    public function filter_pre_update_site_option_active_sitewide_plugins( ?array $value = null ){
         $this->purge_wp_cache();
         return $value;
+    }
+
+
+    /**
+     * heartbeat_received filter callback 
+     */
+    public function filter_heartbeat_received( ?array $response = null, ?array $data = null ){
+        if( is_array($data) && array_key_exists('loco-translate',$data) ){
+            $nonces = $data['loco-translate']['nonces'] ?? [];
+            foreach( $nonces as $action => $value ){
+                // Refresh nonce if it's either expired, or in its second tick.
+                // Ajax controllers check user permissions before nonce is checked.
+                if( 1 !== wp_verify_nonce($value,$action) ){
+                    $nonces[$action] = wp_create_nonce($action);
+                }
+            }
+            $response['loco-translate']['nonces'] = $nonces;
+        }
+        return $response;
     }
 
 

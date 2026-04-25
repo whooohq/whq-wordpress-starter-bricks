@@ -1,6 +1,11 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 function wppb_toolbox_check_email_domain( $message, $field, $request_data, $form_location ) {
+
+    if( empty( $request_data['email'] ) )
+        return $message;
 
     $type = wppb_toolbox_get_settings( 'forms', 'restricted-email-domains-type' );
 
@@ -10,8 +15,9 @@ function wppb_toolbox_check_email_domain( $message, $field, $request_data, $form
 
     if ( $restricted_domains == false ) return $message;
 
-    $domain = strtolower( substr( strrchr( $request_data['email'], '@' ), 1 ) );
+    $domain = strtolower( substr( strrchr( trim( $request_data['email'] ), '@' ), 1 ) );
     $validation_message = wppb_toolbox_get_settings( 'forms', 'restricted-email-domains-message' );
+    $validation_message = wppb_icl_t( 'plugin profile-builder-pro', 'restricted_email_domains_message_translation', $validation_message, true );
 
     if ( $type == 'allow' ) {
 

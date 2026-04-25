@@ -2,21 +2,22 @@
 
 use WPML\Core\Twig_SimpleFunction;
 
-/**
- * Created by OnTheGo Systems
- */
 class WCML_Store_URLs_Translation_Statuses_UI extends WCML_Templates_Factory {
 
 	private $base;
 	private $active_languages;
 	private $value;
+	/**
+	 * @var woocommerce_wpml
+	 */
 	private $woocommerce_wpml;
+	/**
+	 * @var SitePress
+	 */
 	private $sitepress;
 
 
 	/**
-	 * WCML_Store_URLs_Translation_Statuses_UI constructor.
-	 *
 	 * @param string           $base
 	 * @param array            $active_languages
 	 * @param bool             $value
@@ -74,7 +75,7 @@ class WCML_Store_URLs_Translation_Statuses_UI extends WCML_Templates_Factory {
 		foreach ( $languages as $key => $language ) {
 
 			if ( $this->base == 'shop' ) {
-				$translated_base = apply_filters( 'translate_object_id', wc_get_page_id( 'shop' ), 'page', false, $language['code'] );
+				$translated_base = apply_filters( 'wpml_object_id', wc_get_page_id( 'shop' ), 'page', false, $language['code'] );
 
 			} else {
 				$translated_base_info = $this->woocommerce_wpml->url_translation->get_base_translation( $this->base, $language['code'] );

@@ -104,4 +104,35 @@ final class Migrations {
             get_option( 'cache-warmer-setting-depth' ) + 1
         );
     }
+
+    /**
+     * Fix the scheduled interval.
+     */
+    private function v_1_3_4() {
+        $function = function() {
+            as_unschedule_all_actions( Cache_Warmer::INTERVAL_HOOK_NAME );
+            Intervals_Scheduler::fix_missing_intervals();
+        };
+
+        if ( did_action( 'action_scheduler_init' ) ) {
+            $function();
+        } else {
+            add_action( 'action_scheduler_init', $function );
+        }
+    }
+
+    /**
+     * Fix the scheduled interval.
+     */
+    private function v_1_3_8() {
+        $function = function() {
+            as_unschedule_all_actions( 'cache_warmer_fix_missing_intervals' );
+        };
+
+        if ( did_action( 'action_scheduler_init' ) ) {
+            $function();
+        } else {
+            add_action( 'action_scheduler_init', $function );
+        }
+    }
 }

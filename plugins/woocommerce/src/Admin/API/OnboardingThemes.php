@@ -7,8 +7,6 @@
 
 namespace Automattic\WooCommerce\Admin\API;
 
-use Automattic\WooCommerce\Internal\Admin\Onboarding\OnboardingThemes as Themes;
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -83,12 +81,7 @@ class OnboardingThemes extends \WC_REST_Data_Controller {
 	 * @return WP_Error|array Theme installation status.
 	 */
 	public function install_theme( $request ) {
-		$allowed_themes = Themes::get_allowed_themes();
-		$theme          = sanitize_text_field( $request['theme'] );
-
-		if ( ! in_array( $theme, $allowed_themes, true ) ) {
-			return new \WP_Error( 'woocommerce_rest_invalid_theme', __( 'Invalid theme.', 'woocommerce' ), 404 );
-		}
+		$theme = sanitize_text_field( $request['theme'] );
 
 		$installed_themes = wp_get_themes();
 
@@ -120,7 +113,7 @@ class OnboardingThemes extends \WC_REST_Data_Controller {
 			return new \WP_Error(
 				'woocommerce_rest_theme_install',
 				sprintf(
-					/* translators: %s: theme slug (example: woocommerce-services) */
+				/* translators: %s: theme slug (example: woocommerce-services) */
 					__( 'The requested theme `%s` could not be installed. Theme API call failed.', 'woocommerce' ),
 					$theme
 				),
@@ -135,7 +128,7 @@ class OnboardingThemes extends \WC_REST_Data_Controller {
 			return new \WP_Error(
 				'woocommerce_rest_theme_install',
 				sprintf(
-					/* translators: %s: theme slug (example: woocommerce-services) */
+				/* translators: %s: theme slug (example: woocommerce-services) */
 					__( 'The requested theme `%s` could not be installed.', 'woocommerce' ),
 					$theme
 				),
@@ -157,11 +150,7 @@ class OnboardingThemes extends \WC_REST_Data_Controller {
 	 * @return WP_Error|array Theme activation status.
 	 */
 	public function activate_theme( $request ) {
-		$allowed_themes = Themes::get_allowed_themes();
-		$theme          = sanitize_text_field( $request['theme'] );
-		if ( ! in_array( $theme, $allowed_themes, true ) ) {
-			return new \WP_Error( 'woocommerce_rest_invalid_theme', __( 'Invalid theme.', 'woocommerce' ), 404 );
-		}
+		$theme = sanitize_text_field( $request['theme'] );
 
 		require_once ABSPATH . 'wp-admin/includes/theme.php';
 

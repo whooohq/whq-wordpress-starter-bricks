@@ -258,9 +258,18 @@ function acfe_is_object_type_performance_enabled($type, $object){
                 return true;
             }
             
-            // post type not allowed
-            if(!empty($post_types) && !in_array($object, $post_types)){
-                return false;
+            // array of specific post types
+            if(!empty($post_types)){
+                
+                // always append 'revision' to allowed post types
+                if(!in_array('revision', $post_types)){
+                    $post_types[] = 'revision';
+                }
+                
+                if(!in_array($object, $post_types)){
+                    return false;
+                }
+                
             }
     
             // allowed (empty array)
@@ -818,6 +827,15 @@ function acfe_delete_object_performance_meta($post_id){
  */
 function acfe_is_single_meta_enabled($post_id = 0){
     
+    // return global setting
+    if(!$post_id){
+        
+        acfe_deprecated_function('acfe_is_single_meta_enabled()', '0.8.9.3', 'acfe_is_performance_enabled()');
+        return acfe_is_performance_enabled() && acfe_get_performance_config('engine') === 'ultra';
+        
+    }
+    
+    // return object performance setting
     acfe_deprecated_function('acfe_is_single_meta_enabled()', '0.8.9.3', 'acfe_is_object_performance_enabled()');
     return acfe_get_object_performance_engine_name($post_id) === 'ultra';
     

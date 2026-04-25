@@ -42,7 +42,7 @@ class Elm_PhpErrorLog {
 			if ( file_exists($logFile) ) {
 				return new WP_Error(
 					'error_log_not_accessible',
-					sprintf (
+					sprintf(
 						__('The log file <code>%s</code> exists, but is not accessible. Please check file permissions.', 'error-log-monitor'),
 						esc_html($logFile)
 					)
@@ -50,7 +50,7 @@ class Elm_PhpErrorLog {
 			} else {
 				return new WP_Error(
 					'error_log_not_found',
-					sprintf (
+					sprintf(
 						__('The log file <code>%s</code> does not exist or is inaccessible.', 'error-log-monitor'),
 						esc_html($logFile)
 					)
@@ -81,11 +81,23 @@ class Elm_PhpErrorLog {
 
 	/**
 	 * Clear the log.
-	 * @return void
+	 *
+	 * @return WP_Error|true
 	 */
 	public function clear() {
-		$handle = fopen($this->filename, 'w');
+		//phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle = @fopen($this->filename, 'w');
+		if ( !$handle ) {
+			return new \WP_Error(sprintf(
+				__(
+					'Failed to open the log file "%s" for writing. Please check file permissions.',
+					'error-log-monitor'
+				),
+				esc_html($this->filename)
+			));
+		}
 		fclose($handle);
+		return true;
 	}
 
 	public function getFilename() {

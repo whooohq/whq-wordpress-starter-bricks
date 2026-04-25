@@ -9,9 +9,11 @@ jQuery(document).ready(function(){
         })
     }
 
-    //scroll to top on success message
-    if( jQuery("#wppb_form_general_message").length ){
-        jQuery([document.documentElement, document.body]).animate({ scrollTop: jQuery("#wppb_form_general_message").offset().top }, 500);
+    if( !window.wppb_disable_automatic_scrolling || window.wppb_disable_automatic_scrolling != 1 ){
+        //scroll to top on success message
+        if( jQuery("#wppb_form_general_message").length ){
+            jQuery([document.documentElement, document.body]).animate({ scrollTop: jQuery("#wppb_form_general_message").offset().top }, 500);
+        }
     }
 
     // Fix for Select2 search not focusing

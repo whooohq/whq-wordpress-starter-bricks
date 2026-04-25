@@ -68,7 +68,7 @@ final class Posts_Enqueue {
                 )
             );
             Cache_Warmer::$options->delete( 'cache-warmer-posts-enqueue' );
-            AJAX::start_warm_up( true, $posts_urls );
+            AJAX::start_warm_up( false, true, $posts_urls );
         }
     }
 }

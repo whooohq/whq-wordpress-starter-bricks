@@ -11,11 +11,6 @@ class WCML_xDomain_Data implements \IWPML_Backend_Action, \IWPML_Frontend_Action
 	 */
 	private $cookie_handler;
 
-	/**
-	 * WCML_xDomain_Data constructor.
-	 *
-	 * @param WPML_Cookie $cookie_handler
-	 */
 	public function __construct( WPML_Cookie $cookie_handler ) {
 		$this->cookie_handler = $cookie_handler;
 	}
@@ -32,7 +27,7 @@ class WCML_xDomain_Data implements \IWPML_Backend_Action, \IWPML_Frontend_Action
 	 */
 	public function pass_data_to_domain( $data ) {
 
-		$wcml_session_id = md5( microtime() . uniqid( mt_rand(), true ) );
+		$wcml_session_id = md5( microtime() . uniqid( (string) mt_rand(), true ) );
 		$data['wcsid']   = $wcml_session_id;
 		$session_data    = [];
 

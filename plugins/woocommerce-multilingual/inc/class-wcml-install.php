@@ -1,5 +1,6 @@
 <?php
 
+use WCML\COT\Helper as COTHelper;
 use function WCML\functions\isStandAlone;
 
 class WCML_Install {
@@ -7,8 +8,8 @@ class WCML_Install {
 	const CHUNK_SIZE = 1000;
 
 	/**
-	 * @param woocommerce_wpml $woocommerce_wpml
-	 * @param SitePress        $sitepress
+	 * @param woocommerce_wpml      $woocommerce_wpml
+	 * @param \WPML\Core\ISitePress $sitepress
 	 */
 	public static function initialize( $woocommerce_wpml, $sitepress ) {
 		if ( is_admin() ) {
@@ -25,7 +26,7 @@ class WCML_Install {
 	 * @param woocommerce_wpml $woocommerce_wpml
 	 * @param SitePress        $sitepress
 	 */
-	private static function initialize_full( $woocommerce_wpml, $sitepress ) {
+	private static function initialize_full( $woocommerce_wpml, SitePress $sitepress ) {
 		// Install routine.
 		if ( empty( $woocommerce_wpml->settings['set_up'] ) ) { // from 3.2.
 
@@ -105,15 +106,11 @@ class WCML_Install {
 			]
 		);
 
-		$WCML_Setup_UI = new WCML_Setup_UI( $woocommerce_wpml );
+		$WCML_Setup_UI = new WCML_Setup_UI();
 		$WCML_Setup_UI->add_hooks();
 		$WCML_Setup = new WCML_Setup( $WCML_Setup_UI, new WCML_Setup_Handlers( $woocommerce_wpml ), $woocommerce_wpml, $sitepress );
 		$WCML_Setup->setup_redirect();
 		$WCML_Setup->add_hooks();
-
-		if ( ! empty( $woocommerce_wpml->settings['set_up_wizard_run'] ) ) {
-			add_action( 'admin_notices', [ __CLASS__, 'admin_notice_after_install' ] );
-		}
 
 		$translated_product_type_terms = self::translated_product_type_terms();
 		if ( ! empty( $translated_product_type_terms ) ) {
@@ -131,7 +128,7 @@ class WCML_Install {
 	 * @param woocommerce_wpml $woocommerce_wpml
 	 */
 	private static function initialize_standalone( $woocommerce_wpml ) {
-		if ( empty( $woocommerce_wpml->settings['set_up_standalone'] ) ) { //
+		if ( empty( $woocommerce_wpml->settings['set_up_standalone'] ) ) {
 			if ( ! isset( $woocommerce_wpml->settings['display_custom_prices'] ) ) {
 				$woocommerce_wpml->settings['display_custom_prices'] = 0;
 			}
@@ -186,7 +183,9 @@ class WCML_Install {
 		}
 	}
 
-	// handle situation when product_type terms translated before activating WCML.
+	/**
+	 * Handle situation when product_type terms translated before activating WCML.
+	 */
 	public static function check_product_type_terms() {
 		global $wpdb;
 		// check if terms were translated.
@@ -266,47 +265,6 @@ class WCML_Install {
 		}
 	}
 
-	public static function admin_notice_after_install() {
-		global $woocommerce_wpml;
-
-		$tracking_link = new WCML_Tracking_Link();
-		if ( ! $woocommerce_wpml->settings['dismiss_doc_main'] ) {
-
-			$url = $_SERVER['REQUEST_URI'];
-			$pos = strpos( $url, '?' );
-
-			if ( $pos !== false ) {
-				$url .= '&wcml_action=dismiss';
-			} else {
-				$url .= '?wcml_action=dismiss';
-			}
-			?>
-			<div id="message" class="updated message fade otgs-is-dismissible">
-				<p>
-					<?php
-					printf(
-					    /* translators: %1$s and %2$s are opening and closing HTML strong tags */
-						esc_html__( "You've successfully installed %1\$sWooCommerce Multilingual & Multicurrency%2\$s. Would you like to see a quick overview?", 'woocommerce-multilingual' ),
-						'<strong>',
-						'</strong>'
-					);
-					?>
-				</p>
-				<p>
-					<a class="button-primary align-right" href="
-					<?php
-					echo esc_url( $tracking_link->getWcmlMainDoc() );
-					?>
-							" target="_blank">
-						<?php _e( 'Learn how to turn your e-commerce site multilingual', 'woocommerce-multilingual' ); ?>
-					</a>
-				</p>
-				<a class="notice-dismiss" href="<?php echo $url; ?>"><span class="screen-reader-text"><?php _e( 'Dismiss', 'woocommerce-multilingual' ); ?></span></a>
-			</div>
-			<?php
-		}
-	}
-
 	public static function admin_translated_product_type_notice() {
 		?>
 
@@ -314,8 +272,8 @@ class WCML_Install {
 			<p>
 				<?php
 				/* translators: %1$s and %2$s are opening and closing HTML italic tags and %3$s and %4$s are opening and closing HTML link tags */
-                printf( __( 'We detected a problem in your WPML configuration: the %1$sproduct_type%2$s taxonomy is set as translatable and this would cause problems with translated products. You can fix this in the %3$sMultilingual Content Setup page%4$s.', 'woocommerce-multilingual' ), '<i>', '</i>', '<a href="' . admin_url( 'admin.php?page=' . WPML_TM_FOLDER . '/menu/main.php&sm=mcsetup#ml-content-setup-sec-8' ) . '">', '</a>' );
-                ?>
+				printf( esc_html__( 'We detected a problem in your WPML configuration: the %1$sproduct_type%2$s taxonomy is set as translatable and this would cause problems with translated products. You can fix this in the %3$sMultilingual Content Setup page%4$s.', 'woocommerce-multilingual' ), '<i>', '</i>', '<a href="' . esc_url( admin_url( 'admin.php?page=' . WPML_TM_FOLDER . '/menu/main.php&sm=mcsetup#ml-content-setup-sec-8' ) ) . '">', '</a>' );
+				?>
 			</p>
 		</div>
 
@@ -328,9 +286,15 @@ class WCML_Install {
 		<div id="message" class="updated error">
 			<p>
 				<?php
-				/* translators: %1$s and %2$s are opening and closing HTML italic tags and %3$s and %4$s are opening and closing HTML link tags */
-                printf( __( 'We detected that the %1$sproduct_type%2$s field was set incorrectly for some product translations. This happened because the product_type taxonomy was translated. You can fix this in the WooCommerce Multilingual & Multicurrency %3$stroubleshooting page%4$s.', 'woocommerce-multilingual' ), '<i>', '</i>', '<a href="' . admin_url( 'admin.php?page=wpml-wcml&tab=troubleshooting' ) . '">', '</a>' );
-                ?>
+				printf(
+					/* translators: %1$s and %2$s are opening and closing HTML italic tags and %3$s and %4$s are opening and closing HTML link tags */
+					esc_html__( 'We detected that the %1$sproduct_type%2$s field was set incorrectly for some product translations. This happened because the product_type taxonomy was translated. You can fix this in the WPML Multilingual & Multicurrency for WooCommerce %3$stroubleshooting page%4$s.', 'woocommerce-multilingual' ),
+					'<i>',
+					'</i>',
+					'<a href="' . esc_url( \WCML\Utilities\AdminUrl::getTroubleshootingTab() ) . '">',
+					'</a>'
+				);
+				?>
 			</p>
 		</div>
 
@@ -348,7 +312,7 @@ class WCML_Install {
 		$settings = $woocommerce_wpml->get_settings();
 
 		$default_language   = $sitepress->get_default_language();
-		$default_categories = isset( $settings['default_categories'] ) ? $settings['default_categories'] : [];
+		$default_categories = $settings['default_categories'] ?? [];
 
 		foreach ( $sitepress->get_active_languages() as $language ) {
 			if ( isset( $default_categories[ $language['code'] ] ) ) {
@@ -357,7 +321,7 @@ class WCML_Install {
 
 			$sitepress->switch_locale( $language['code'] );
 			$translated_cat_name = __( 'Uncategorized', 'sitepress' );
-			$translated_cat_name = $translated_cat_name === 'Uncategorized' && $language['code'] !== 'en' ? 'Uncategorized @' . $language['code'] : $translated_cat_name;
+			$translated_cat_name = 'Uncategorized' === $translated_cat_name && 'en' !== $language['code'] ? 'Uncategorized @' . $language['code'] : $translated_cat_name;
 			$translated_term     = get_term_by( 'name', $translated_cat_name, 'product_cat', ARRAY_A );
 			$sitepress->switch_locale();
 
@@ -366,7 +330,7 @@ class WCML_Install {
 				$translated_term = wp_insert_term( $translated_cat_name, 'product_cat' );
 			}
 
-			if ( $translated_term && ! is_wp_error( $translated_term ) ) {
+			if ( ! is_wp_error( $translated_term ) && is_array( $translated_term ) ) {
 				// add it to settings.
 				$settings['default_categories'][ $language['code'] ] = $translated_term['term_taxonomy_id'];
 
@@ -392,33 +356,54 @@ class WCML_Install {
 	 * @param string $default_language
 	 */
 	public static function set_language_to_existing_orders( $default_language ) {
+		/** @var \wpdb $wpdb */
 		global $wpdb;
 
-		// Set default language for old orders before WCML was installed
+		// Set default language for old orders before WCML was installed.
 		$orders_needs_set_language = $wpdb->get_col(
 			"SELECT DISTINCT( pm.post_id ) FROM {$wpdb->postmeta} AS pm 
 					INNER JOIN {$wpdb->posts} AS p ON pm.post_id = p.ID 
 					WHERE p.post_type = 'shop_order' AND pm.post_id NOT IN 
-					( SELECT DISTINCT( post_id ) FROM {$wpdb->postmeta} WHERE meta_key = 'wpml_language' )"
+					( SELECT DISTINCT( post_id ) FROM {$wpdb->postmeta} WHERE meta_key = '" . WCML_Orders::KEY_LANGUAGE . "' )"
 		);
 
 		$values_query = function ( $order_id ) use ( $wpdb, $default_language ) {
 			return $wpdb->prepare(
 				'(%d, %s, %s)',
 				$order_id,
-				'wpml_language',
+				WCML_Orders::KEY_LANGUAGE,
 				$default_language
 			);
 		};
 
 		wpml_collect( array_chunk( $orders_needs_set_language, self::CHUNK_SIZE ) )->each( function ( $chunk ) use ( $values_query, $wpdb ) {
 
-			$query = "INSERT IGNORE INTO {$wpdb->postmeta} "
-			         . '(`post_id`, `meta_key`, `meta_value`) VALUES ';
+			$query  = "INSERT IGNORE INTO {$wpdb->postmeta} (`post_id`, `meta_key`, `meta_value`) VALUES ";
 			$query .= implode( ',', array_map( $values_query, $chunk ) );
 
 			$wpdb->query( $query );
 		} );
+
+		if ( COTHelper::getTableExists() ) {
+			$orderTable     = COTHelper::getTableName();
+			$orderMetaTable = COTHelper::getMetaTableName();
+
+			// phpcs:disable WordPress.WP.PreparedSQL.NotPrepared
+			// phpcs:disable WordPress.VIP.DirectDatabaseQuery.NoCaching
+			$wpdb->query(
+				$wpdb->prepare(
+					"
+						INSERT IGNORE INTO {$orderMetaTable} (order_id, meta_key, meta_value)
+						SELECT o.id, '" . WCML_Orders::KEY_LANGUAGE . "' AS meta_key, %s AS meta_value
+						FROM {$orderTable} o
+						LEFT JOIN {$orderMetaTable} om ON o.id = om.order_id AND om.meta_key = '" . WCML_Orders::KEY_LANGUAGE . "'
+						WHERE om.id IS NULL
+					",
+					$default_language
+				)
+			);
+			// phpcs::enable.
+		}
 	}
 
 }

@@ -4,6 +4,7 @@ defined( 'WPINC' ) || exit;
 
 
 $menu_list = array(
+	'site'=> __( 'Site Connections', 'dologin' ),
 	'setting'	=> __( 'Settings', 'dologin' ),
 	'pswdless'	=> __( 'Passwordless Login', 'dologin' ),
 	'log'		=> __( 'Login Attempts Log', 'dologin' ),

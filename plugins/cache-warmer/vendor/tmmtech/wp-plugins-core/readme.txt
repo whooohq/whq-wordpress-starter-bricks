@@ -1,5 +1,35 @@
 == Changelog ==
 
+= 0.1.52 2024-09-13 =
+
+#### Enhancements
+
+* Do not check for missing extensions when running from WP CLI (as can use a different config with different extensions than on the web server).
+
+= 0.1.51 2024-09-13 =
+
+#### Enhancements
+
+* Improve action scheduler methods: add support for args and group.
+
+= 0.1.50 2024-06-19 =
+
+#### Enhancements
+
+* Improved logic for notifications fetch.
+
+= 0.1.49 2024-06-05 =
+
+#### Bugfixes
+
+* Fix interval bug.
+
+= 0.1.48 2024-05-07 =
+
+#### Enhancements
+
+* Minor bug fix.
+
 = 0.1.47 2024-05-02 =
 
 #### Bugfixes

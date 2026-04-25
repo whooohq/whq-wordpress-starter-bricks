@@ -75,6 +75,7 @@ final class Logging {
      * @param string     $log_extra                 Extra log information (for success - page code (usually 200), for failure - error description).
      * @param int        $log_phase                 Log phase. @see Cache_Warmer\DB::get_schema() method for description of this column.
      * @param string     $user_agent                User-agent the page was visited with.
+     * @param array      $external_warmer_results   External warmer results.
      * @param string     $log_content_type          Content type.
      * @param string     $log_content_length        Content length.
      * @param string     $log_cf_cache_status       "cf-cache-status" response header.
@@ -93,6 +94,7 @@ final class Logging {
         $log_extra,
         $log_phase = 0,
         $user_agent = '',
+        array $external_warmer_results = [],
         $log_content_type = '',
         $log_content_length = '',
         $log_cf_cache_status = '',
@@ -125,12 +127,14 @@ final class Logging {
                 INSERT INTO $table_name (
                    list_id, log_is_success, log_date, log_depth, log_url, log_post_id,
                    log_time_spent, log_time_afterwards, log_extra, log_phase, log_content_type, log_content_length, 
-                   log_cf_cache_status, log_wp_super_cache_status, log_x_cache_header, log_visit_type, user_agent_id, canonical
+                   log_cf_cache_status, log_wp_super_cache_status, log_x_cache_header, log_visit_type, user_agent_id, canonical,
+                   external_warmer_results
                )
                 VALUES (
                     %d, %d, %s, %d, %s, %d,
                     $log_time_spent_value, $log_time_spent_afterwards_value, %s, %d, %s, %s,
-                    %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s,
+                    %s
                 )
             ",
             $warm_up_id,
@@ -148,7 +152,8 @@ final class Logging {
             $x_cache_header,
             $visit_type,
             self::get_user_agent_id( $user_agent ),
-            $canonical
+            $canonical,
+            wp_json_encode( $external_warmer_results ),
         );
 
         $wpdb->query( $query ); // @codingStandardsIgnoreLine
@@ -165,6 +170,7 @@ final class Logging {
      * @param string     $response_code             Response code.
      * @param int        $log_phase                 Log phase. @see Cache_Warmer\DB::get_schema() method for description of this column.
      * @param string     $user_agent                User-agent the page was visited with.
+     * @param array      $external_warmer_results   External warmer results.
      * @param string     $log_content_type          Content type.
      * @param string     $log_content_length        Content length.
      * @param string     $log_cf_cache_status       "cf-cache-status" response header.
@@ -182,6 +188,7 @@ final class Logging {
         $response_code,
         $log_phase = 0,
         $user_agent = '',
+        array $external_warmer_results = [],
         $log_content_type = '',
         $log_content_length = '',
         $log_cf_cache_status = '',
@@ -200,13 +207,14 @@ final class Logging {
             $response_code,
             $log_phase,
             $user_agent,
+            $external_warmer_results,
             $log_content_type,
             $log_content_length,
             $log_cf_cache_status,
             $log_wp_super_cache_status,
             $x_cache_header,
             $visit_type,
-            $canonical
+            $canonical,
         );
     }
 
@@ -220,6 +228,7 @@ final class Logging {
      * @param string     $error_description Error description.
      * @param int        $log_phase         Log phase. @see Cache_Warmer\DB::get_schema() method for description of this column.
      * @param string     $user_agent        User-agent the page was visited with.
+     * @param array      $external_warmer_results External warmer results.
      */
     public static function log_failure(
         $link,
@@ -228,18 +237,20 @@ final class Logging {
         $fetch_time,
         $error_description,
         $log_phase = 0,
-        $user_agent = ''
+        $user_agent = '',
+        array $external_warmer_results = []
     ) {
         self::log(
             $warm_up_id,
             0,
             $depth,
             $fetch_time,
-            0,
+            null,
             $link,
             $error_description,
             $log_phase,
-            $user_agent
+            $user_agent,
+            $external_warmer_results
         );
     }
 
@@ -254,7 +265,7 @@ final class Logging {
         $table_name = DB::get_tables_prefix() . 'warm_ups_list';
         $results    = $wpdb->get_results( "SELECT warmed_at FROM $table_name ORDER BY warmed_at DESC;", ARRAY_A ); // @codingStandardsIgnoreLine
 
-        $to_exclude = [ '0000-00-00 00:00:00' ]; // Exclude warm-up 0 which for unscheduled warm-ups.
+        $to_exclude = [ '0000-00-00 00:00:00', '2000-01-01 00:00:00' ]; // Exclude warm-up 0 which for unscheduled warm-ups.
 
         return $results ? array_diff( array_column( $results, 'warmed_at' ), $to_exclude ) : [];
     }
@@ -383,8 +394,13 @@ final class Logging {
         $skipped                       = Summary::get_log_skipped_count( $warmed_at );
         $avg_page_load_time            = Summary::get_warm_up_page_average_load_time( $warmed_at );
         $avg_page_load_time_afterwards = Summary::get_warm_up_page_average_load_time_afterwards( $warmed_at );
-        $duration                      = Summary::get_warm_up_duration( $warmed_at );
-        $speed                         = Summary::get_warm_up_speed( $warmed_at );
+
+        $warmed_at_first_part = explode( ' ', $warmed_at )[0];
+
+        if ( ! in_array( $warmed_at_first_part, [ External_Warmer::WARMUP_ID, '0', '0000-00-00' ] ) ) {
+            $duration = Summary::get_warm_up_duration( $warmed_at );
+            $speed    = Summary::get_warm_up_speed( $warmed_at );
+        }
 
         $cf_status_values_count = array_count_values( array_column( $log_content, 'log_cf_cache_status' ) );
         $has_cf_cache_statuses  = ! array_key_exists( '', $cf_status_values_count ) || count( $cf_status_values_count ) > 1;
@@ -403,10 +419,17 @@ final class Logging {
 
         $has_several_user_agents = count( array_unique( array_values( array_column( $log_content, 'user_agent' ) ) ) ) > 1;
 
+        $times_spent = array_filter(
+            array_unique( array_values( array_column( $log_content, 'log_time_spent' ) ) ),
+            function( $val ) {
+                return ! in_array( $val, [ '0', '' ], true );
+            }
+        );
+
         $times_afterwards = array_filter(
             array_unique( array_values( array_column( $log_content, 'log_time_afterwards' ) ) ),
             function( $val ) {
-                return '0' !== $val;
+                return ! in_array( $val, [ '0', '' ], true );
             }
         );
 
@@ -437,12 +460,16 @@ final class Logging {
                         <?php if ( $has_skipped_warms ) : ?>
                             <th><?php esc_html_e( 'Skipped', 'cache-warmer' ); ?></th>
                         <?php endif; ?>
-                        <th><?php esc_html_e( 'Avg. page load (sec.)', 'cache-warmer' ); ?></th>
-                        <?php if ( $times_afterwards ) : ?>
+                        <?php if ( $times_spent ) : ?>
+                            <th><?php esc_html_e( 'Avg. page load (sec.)', 'cache-warmer' ); ?></th>
+                        <?php endif; ?>
+                        <?php if ( $times_afterwards && External_Warmer::WARMUP_ID !== $warmed_at_first_part ) : ?>
                             <th><?php esc_html_e( 'Avg. page load after warming (sec.)', 'cache-warmer' ); ?></th>
                         <?php endif; ?>
-                        <th><?php esc_html_e( 'Duration', 'cache-warmer' ); ?></th>
-                        <th><?php esc_html_e( 'Speed (pages / minute)', 'cache-warmer' ); ?></th>
+                        <?php if ( ! in_array( $warmed_at_first_part, [ External_Warmer::WARMUP_ID, '0', '0000-00-00' ] ) ) : ?>
+                            <th><?php esc_html_e( 'Duration', 'cache-warmer' ); ?></th>
+                            <th><?php esc_html_e( 'Speed (pages / minute)', 'cache-warmer' ); ?></th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -453,12 +480,16 @@ final class Logging {
                         <?php if ( $has_skipped_warms ) : ?>
                             <td><?php echo esc_html( $skipped ); ?></td>
                         <?php endif; ?>
-                        <td><?php echo esc_html( $avg_page_load_time ); ?></td>
-                        <?php if ( $times_afterwards ) : ?>
+                        <?php if ( $times_spent ) : ?>
+                            <td><?php echo esc_html( $avg_page_load_time ); ?></td>
+                        <?php endif; ?>
+                        <?php if ( $times_afterwards && External_Warmer::WARMUP_ID !== $warmed_at_first_part ) : ?>
                             <td><?php echo esc_html( $avg_page_load_time_afterwards ); ?></td>
                         <?php endif; ?>
-                        <td><?php echo esc_html( $duration ); ?></td>
-                        <td><?php echo esc_html( $speed ); ?></td>
+                        <?php if ( ! in_array( $warmed_at_first_part, [ External_Warmer::WARMUP_ID, '0', '0000-00-00' ] ) ) : ?>
+                            <td><?php echo esc_html( $duration ); ?></td>
+                            <td><?php echo esc_html( $speed ); ?></td>
+                        <?php endif; ?>
                     </tr>
                 </tbody>
             </table>
@@ -469,15 +500,55 @@ final class Logging {
                 <thead>
                     <tr>
                         <th><?php esc_html_e( 'Time', 'cache-warmer' ); ?></th>
-                        <th><?php esc_html_e( 'Depth', 'cache-warmer' ); ?></th>
+                        <?php
+                        if ( ! in_array( $warmed_at_first_part, [ External_Warmer::WARMUP_ID, '0', '0000-00-00' ], true ) ) :
+                            ?>
+                            <th><?php esc_html_e( 'Depth', 'cache-warmer' ); ?></th>
+                            <?php
+                        endif;
+                        ?>
                         <th><?php esc_html_e( 'URL', 'cache-warmer' ); ?></th>
+                        <?php
+                        if ( External_Warmer::WARMUP_ID === $warmed_at_first_part ) :
+                            ?>
+                            <th><?php esc_html_e( 'External Server', 'cache-warmer' ); ?></th>
+                            <?php
+                        endif;
+                        ?>
                         <?php if ( $has_several_user_agents ) : ?>
                             <th><?php esc_html_e( 'User-Agent', 'cache-warmer' ); ?></th>
                         <?php endif; ?>
-                        <th><?php esc_html_e( 'Loading time', 'cache-warmer' ); ?><br><?php esc_html_e( '(seconds)', 'cache-warmer' ); ?></th>
-                        <?php if ( $times_afterwards ) : ?>
+                        <?php if ( $times_spent ) : ?>
+                            <th><?php esc_html_e( 'Loading time', 'cache-warmer' ); ?><br><?php esc_html_e( '(seconds)', 'cache-warmer' ); ?></th>
+                        <?php endif; ?>
+                        <?php if ( $times_afterwards && External_Warmer::WARMUP_ID !== $warmed_at_first_part ) : ?>
                             <th><?php esc_html_e( 'Loading time afterwards', 'cache-warmer' ); ?><br><?php esc_html_e( '(seconds)', 'cache-warmer' ); ?></th>
                         <?php endif; ?>
+                        <?php
+                        $warming_results_for_heading = array_column( $log_content, 'external_warmer_results' );
+                        if ( $warming_results_for_heading ) {
+                            $servers = array_values(
+                                array_unique(
+                                    array_column(
+                                        array_merge(
+                                            ...array_map(
+                                                fn( $result ) => (array) json_decode( $result, true ),
+                                                $warming_results_for_heading
+                                            )
+                                        ),
+                                        'server'
+                                    )
+                                )
+                            );
+
+                            foreach ( $servers as $server ) {
+                                echo '<th>' . esc_html__( 'External Warmer', 'cache-warmer' ) .
+                                    '<br>' . esc_html__( '(seconds)', 'cache-warmer' ) .
+                                    '<br><br>' . strtoupper( $server ) . '<br>' .
+                                    '</th>';
+                            }
+                        }
+                        ?>
                         <th><?php echo str_replace( '/', '/<br>', esc_html__( 'Response code / Error text', 'cache-warmer' ) ); // @codingStandardsIgnoreLine ?></th>
                         <?php if ( $has_content_type ) : ?>
                             <th>content-type</th>
@@ -502,32 +573,82 @@ final class Logging {
                 <tbody>
                 <?php
                 foreach ( $log_content as $log_entity ) :
+                    $external_warmer_results = (array) json_decode( $log_entity['external_warmer_results'], true );
+
                     ?>
                     <tr class="<?php echo ( ! $log_entity['log_is_success'] && 2 !== (int) $log_entity['log_phase'] ) ? 'cache-warmer-log-failure' : ( 2 === (int) $log_entity['log_phase'] ? 'cache-warmer-log-skipped' : '' ); ?>">
                         <td><?php echo str_replace( '-', '&#x2011;', esc_html( $log_entity['log_date'] ) ); // @codingStandardsIgnoreLine ?></td>
-                        <td><?php echo esc_html( $log_entity['log_depth'] ); ?></td>
+                        <?php
+                        if ( ! in_array( $warmed_at_first_part, [ External_Warmer::WARMUP_ID, '0', '0000-00-00' ], true ) ) :
+                            ?>
+                            <td><?php echo esc_html( $log_entity['log_depth'] ); ?></td>
+                            <?php
+                        endif;
+                        ?>
                         <td>
-                        <a href="<?php echo esc_attr( $log_entity['log_url'] ); ?>" target="_blank"><?php
+                        <a href="
+                        <?php
+                        echo esc_attr(
+                            External_Warmer::WARMUP_ID !== $warmed_at_first_part ? $log_entity['log_url'] : explode( ' ', $log_entity['log_url'] )[1]
+                        );
+                        ?>
+                        " target="_blank">
+                        <?php
                             echo '<span class="cache-warmer-link-content">' . preg_replace(
                                 '@/@',
                                 '/<wbr>',
-                                 esc_html( $log_entity['log_url'] )
+                                esc_html( External_Warmer::WARMUP_ID !== $warmed_at_first_part ? $log_entity['log_url'] : explode( ' ', $log_entity['log_url'] )[1] )
                             ) . '</span>' . (
                                     $log_entity['canonical'] ?
-                                        '<span class="cache-warmer-warning-message" data-warning-message="' .
+                                        '<span class="cache-warmer-popup-message" data-popup-message="' .
                                         /* translators: %s is the canonical URL. */
                                         esc_attr( sprintf( __( 'Has a canonical: %s', 'cache-warmer' ), $log_entity['canonical'] ) ) .
                                         '"> ⚠</span>️' : ''
                                 );
-                        ?></a>
+                        ?>
+                        </a>
                         </td>
+                        <?php
+                        if ( External_Warmer::WARMUP_ID === $warmed_at_first_part ) :
+                            ?>
+                            <td><?php echo esc_html( strtoupper( explode( ' ', $log_entity['log_url'] )[0] ) ); ?></td>
+                            <?php
+                        endif;
+                        ?>
                         <?php if ( $has_several_user_agents ) : ?>
                             <td><?php echo esc_html( $log_entity['user_agent'] ); ?></td>
                         <?php endif; ?>
-                        <td><?php echo esc_html( $log_entity['log_time_spent'] ); ?></td>
-                        <?php if ( $times_afterwards ) : ?>
+                        <?php if ( $times_spent ) : ?>
+                            <td><?php echo esc_html( $log_entity['log_time_spent'] ); ?></td>
+                        <?php endif; ?>
+                        <?php if ( $times_afterwards && External_Warmer::WARMUP_ID !== $warmed_at_first_part ) : ?>
                             <td><?php echo esc_html( $log_entity['log_time_afterwards'] ); ?></td>
                         <?php endif; ?>
+                        <?php
+
+                        $external_warmer_results_servers = array_column( $external_warmer_results, 'server' );
+
+                        foreach ( $servers as $server ) {
+                            $server_index = array_search( $server, $external_warmer_results_servers );
+
+                            if ( false !== $server_index ) {
+                                $external_warmer_result = $external_warmer_results[ $server_index ];
+
+                                echo '<td class="' . ( 200 !== $external_warmer_result['code'] ? 'cache-warmer-log-failure' : '' ) . '">' .
+                                    '<span class="cache-warmer-popup-message" data-popup-message="' . esc_attr( wp_date( 'Y-m-d H:i:s', $external_warmer_result['at'] ) ) . '">' . esc_html(
+                                        200 === $external_warmer_result['code'] ?
+                                            $external_warmer_result['time'] :
+                                            (
+                                            $external_warmer_result['status'] ?
+                                                $external_warmer_result['status'] :
+                                                '-'
+                                            )
+                                    ) . '</span></td>';
+                            } else {
+                                echo '<td>-</td>';
+                            }
+                        }
+                        ?>
                         <td>
                         <?php
                             // @codingStandardsIgnoreLine
@@ -693,7 +814,7 @@ final class Logging {
                 $wpdb->prepare(
                     "
                         DELETE FROM $list_table
-                        WHERE warmed_at NOT IN (%s, '0000-00-00 00:00:00')
+                        WHERE warmed_at NOT IN (%s, '0000-00-00 00:00:00', '2000-01-01')
                     ",
                     $warm_up_start_date
                 )
@@ -704,7 +825,7 @@ final class Logging {
                     "
                     DELETE FROM $list_table
                     WHERE warmed_at < %s
-                    AND warmed_at <> '0000-00-00 00:00:00'
+                    AND warmed_at NOT IN ('0000-00-00 00:00:00', '2000-01-01')
                     ",
                     $date_threshold
                 )
@@ -721,6 +842,21 @@ final class Logging {
                         INNER JOIN $logs_table ON $list_table.id = $logs_table.list_id
                         WHERE $logs_table.log_date < %s
                         AND $list_table.warmed_at = '0000-00-00 00:00:00'
+                        ",
+                $date_threshold
+            )
+        );
+
+        // Delete External Warmups.
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "
+                        DELETE $list_table
+                        FROM $list_table
+                        INNER JOIN $logs_table ON $list_table.id = $logs_table.list_id
+                        WHERE $logs_table.log_date < %s
+                        AND $list_table.warmed_at = '2000-01-01 00:00:00'
                         ",
                 $date_threshold
             )

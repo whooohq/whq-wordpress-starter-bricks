@@ -1,0 +1,61 @@
+{
+    "packages": [
+        {
+            "name": "estebanforge/hyperfields",
+            "version": "1.2.2",
+            "version_normalized": "1.2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/EstebanForge/HyperFields.git",
+                "reference": "7aae4f39478630e10826f2faecbb174dfc166e25"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/EstebanForge/HyperFields/zipball/7aae4f39478630e10826f2faecbb174dfc166e25",
+                "reference": "7aae4f39478630e10826f2faecbb174dfc166e25",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "brain/monkey": "^2",
+                "friendsofphp/php-cs-fixer": "^3",
+                "mockery/mockery": "^1",
+                "pestphp/pest": "^4",
+                "phpunit/phpunit": "^12"
+            },
+            "time": "2026-04-25T00:29:33+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "files": [
+                    "includes/helpers.php",
+                    "includes/backward-compatibility.php",
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "HyperFields\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Esteban Cuevas",
+                    "email": "esteban@actitud.xyz"
+                }
+            ],
+            "description": "HyperFields: A powerful custom field system for WordPress, providing metaboxes, options pages, and conditional logic.",
+            "support": {
+                "issues": "https://github.com/EstebanForge/HyperFields/issues",
+                "source": "https://github.com/EstebanForge/HyperFields/tree/1.2.2"
+            },
+            "install-path": "../estebanforge/hyperfields"
+        }
+    ],
+    "dev": false,
+    "dev-package-names": []
+}

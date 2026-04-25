@@ -48,7 +48,7 @@ class Query implements \IWPML_REST_Action {
 		if( empty( $results->data ) || ! is_array( $results->data ) ) {
 			return false;
 		}
-		foreach ( $results->data as $key => $val ) {
+		foreach ( $results->data as $val ) {
 			if ( ! isset( $val['product_id'] ) ) {
 				return false;
 			}

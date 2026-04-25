@@ -1,16 +1,19 @@
 <?php
 
-use WCML\Utilities\AdminPages;
-use WPML\API\Sanitize;
-use WPML\FP\Relation;
-
 use function WCML\functions\isStandAlone;
+use WCML\Utilities\AdminPages;
+use WCML\Utilities\AdminUrl;
+use WPML\FP\Relation;
 
 class WCML_Resources {
 
+	/** @var string */
 	private static $pagenow;
 
+	/** @var woocommerce_wpml */
 	private static $woocommerce_wpml;
+
+	/** @var SitePress */
 	private static $sitepress;
 
 	public static function add_hooks() {
@@ -19,8 +22,8 @@ class WCML_Resources {
 	}
 
 	/**
-	 * @param woocommerce_wpml $woocommerce_wpml
-	 * @param SitePress        $sitepress
+	 * @param woocommerce_wpml      $woocommerce_wpml
+	 * @param SitePress $sitepress
 	 */
 	public static function set_up_resources( $woocommerce_wpml, $sitepress ) {
 		global $pagenow;
@@ -35,9 +38,11 @@ class WCML_Resources {
 			return;
 		}
 
-		$is_edit_product     = self::$pagenow == 'post.php' && isset( $_GET['post'] ) && get_post_type( $_GET['post'] ) == 'product';
-		$is_original_product = isset( $_GET['post'] ) && ! is_array( $_GET['post'] ) && self::$woocommerce_wpml->products->is_original_product( $_GET['post'] );
-		$is_new_product      = self::$pagenow == 'post-new.php' && isset( $_GET['source_lang'] ) && isset( $_GET['post_type'] ) && $_GET['post_type'] == 'product';
+		/** phpcs:disable WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
+		$is_edit_product     = 'post.php' === self::$pagenow && isset( $_GET['post'] ) && 'product' === get_post_type( (int) $_GET['post'] );
+		$is_original_product = isset( $_GET['post'] ) && ! is_array( $_GET['post'] ) && self::$woocommerce_wpml->products->is_original_product( (int) $_GET['post'] );
+		$is_new_product      = 'post-new.php' === self::$pagenow && isset( $_GET['source_lang'] ) && isset( $_GET['post_type'] ) && 'product' === $_GET['post_type'];
+		/** phpcs:enable WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
 
 		if ( self::$woocommerce_wpml->is_wpml_prior_4_2() ) {
 			$is_using_native_editor = ! self::$woocommerce_wpml->settings['trnsl_interface'];
@@ -46,10 +51,10 @@ class WCML_Resources {
 			if ( $is_edit_product ) {
 				$is_using_native_editor = WPML_TM_Post_Edit_TM_Editor_Mode::is_using_tm_editor( self::$sitepress, filter_var( $_GET['post'], FILTER_SANITIZE_NUMBER_INT ) );
 			} else {
-				$is_using_native_editor = isset( $tm_settings[ WPML_TM_Post_Edit_TM_Editor_Mode::TM_KEY_FOR_POST_TYPE_USE_NATIVE ]['product'] ) ? $tm_settings[ WPML_TM_Post_Edit_TM_Editor_Mode::TM_KEY_FOR_POST_TYPE_USE_NATIVE ]['product'] : false;
+				$is_using_native_editor = $tm_settings[ WPML_TM_Post_Edit_TM_Editor_Mode::TM_KEY_FOR_POST_TYPE_USE_NATIVE ]['product'] ?? false;
 
 				if ( ! $is_using_native_editor ) {
-					$is_using_native_editor = isset( $tm_settings[ WPML_TM_Post_Edit_TM_Editor_Mode::TM_KEY_GLOBAL_USE_NATIVE ] ) ? $tm_settings[ WPML_TM_Post_Edit_TM_Editor_Mode::TM_KEY_GLOBAL_USE_NATIVE ] : false;
+					$is_using_native_editor = $tm_settings[ WPML_TM_Post_Edit_TM_Editor_Mode::TM_KEY_GLOBAL_USE_NATIVE ] ?? false;
 				}
 			}
 		}
@@ -66,17 +71,12 @@ class WCML_Resources {
 
 			self::load_management_css();
 
-			if ( AdminPages::isMultiCurrency() || AdminPages::isTab( 'slugs' ) ) {
+			if ( AdminPages::isMultiCurrency() || AdminPages::isTab( AdminUrl::TAB_STORE_URL ) ) {
 				wp_register_style( 'wcml-dialogs', WCML_PLUGIN_URL . '/res/css/dialogs.css', [ 'wpml-dialog' ], WCML_VERSION );
 				wp_enqueue_style( 'wcml-dialogs' );
 			}
 
 			wp_enqueue_style( 'wp-color-picker' );
-		}
-
-		if ( self::$pagenow == 'options-permalink.php' ) {
-			wp_register_style( 'wcml_op', WCML_PLUGIN_URL . '/res/css/options-permalink.css', null, WCML_VERSION );
-			wp_enqueue_style( 'wcml_op' );
 		}
 
 		if ( is_admin() ) {
@@ -155,16 +155,6 @@ class WCML_Resources {
 			wp_enqueue_script( 'exchange-rates' );
 		}
 
-		if ( AdminPages::isWcmlSettings() && AdminPages::isTab( 'product-attributes' ) ) {
-			wp_register_script( 'product-attributes', WCML_PLUGIN_URL . '/res/js/product-attributes' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
-			wp_enqueue_script( 'product-attributes' );
-		}
-
-		if ( AdminPages::isWcmlSettings() && AdminPages::isTab( 'custom-taxonomies' ) ) {
-			wp_register_script( 'custom-taxonomies', WCML_PLUGIN_URL . '/res/js/product-custom-taxonomies' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
-			wp_enqueue_script( 'custom-taxonomies' );
-		}
-
 		wp_enqueue_script(
 			'wcml-pointer',
 			WCML_PLUGIN_URL . '/res/js/pointer' . WCML_JS_MIN . '.js',
@@ -176,7 +166,7 @@ class WCML_Resources {
 		wp_register_script( 'wcml-messages', WCML_PLUGIN_URL . '/res/js/wcml-messages' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
 		wp_enqueue_script( 'wcml-messages' );
 
-		$is_attr_page = apply_filters( 'wcml_is_attributes_page', AdminPages::isPage( 'product_attributes' ) && Relation::propEq( 'post_type', 'product', $_GET ) );
+		$is_attr_page = apply_filters( 'wcml_is_attributes_page', AdminPages::isWcProductAttributesPage() );
 
 		if ( $is_attr_page ) {
 			wp_register_script( 'wcml-attributes', WCML_PLUGIN_URL . '/res/js/wcml-attributes' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
@@ -214,12 +204,9 @@ class WCML_Resources {
 
 		if ( self::$pagenow !== 'wp-login.php' ) {
 
-			wp_register_script( 'wcml-front-scripts', WCML_PLUGIN_URL . '/res/js/front-scripts' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
-			wp_enqueue_script( 'wcml-front-scripts' );
+			$referer = $_SERVER['HTTP_REFERER'] ?? '';
 
-			$referer = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : '';
-
-			wp_register_script( 'cart-widget', WCML_PLUGIN_URL . '/res/js/cart_widget' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
+			wcml_register_script( 'cart-widget', 'res/js/cart_widget' . WCML_JS_MIN . '.js', [], [ 'strategy' => 'defer', 'in_footer' => true ] );
 			wp_enqueue_script( 'cart-widget' );
 			wp_localize_script(
 				'cart-widget',
@@ -236,11 +223,25 @@ class WCML_Resources {
 	public static function load_tooltip_resources() {
 
 		if ( class_exists( 'WooCommerce' ) && function_exists( 'WC' ) ) {
-			wp_register_script( 'jquery-tiptip', WC()->plugin_url() . '/assets/js/jquery-tiptip/jquery.tipTip.min.js', [ 'jquery' ], WC_VERSION, true );
-			wp_register_script( 'wcml-tooltip-init', WCML_PLUGIN_URL . '/res/js/tooltip_init' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
-			wp_enqueue_script( 'jquery-tiptip' );
-			wp_enqueue_script( 'wcml-tooltip-init' );
-			wp_enqueue_style( 'woocommerce_admin_styles', WC()->plugin_url() . '/assets/css/admin.css', [], WC_VERSION );
+			// After self::admin_scripts() at admin_enqueue_scripts:10
+			// After WC_Admin_Assets::admin_scripts at admin_enqueue_scripts:10
+			add_action( 'admin_enqueue_scripts', function() {
+				$jQueryTipTipHandler = 'wc-jquery-tiptip';
+
+				/* @phpstan-ignore booleanAnd.rightAlwaysTrue */
+				if ( defined( 'WC_VERSION' ) && version_compare( WC_VERSION, '10.3', '<' ) ) {
+					$jQueryTipTipHandler = 'jquery-tiptip';
+				}
+
+				if ( wp_script_is( $jQueryTipTipHandler, 'registered' ) ) {
+					wp_register_script( 'wcml-tooltip-init', WCML_PLUGIN_URL . '/res/js/tooltip_init' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
+					wp_enqueue_script( $jQueryTipTipHandler );
+					wp_enqueue_script( 'wcml-tooltip-init' );
+				}
+				if ( wp_style_is( 'woocommerce_admin_styles', 'registered') ) {
+					wp_enqueue_style( 'woocommerce_admin_styles' );
+				}
+			}, 11 );
 		}
 
 	}
@@ -251,8 +252,6 @@ class WCML_Resources {
 		wp_register_script( 'wcml-lock-script', WCML_PLUGIN_URL . '/res/js/lock_fields' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
 		wp_enqueue_script( 'wcml-lock-script' );
 
-		$file_path_sync = self::$woocommerce_wpml->settings['file_path_sync'];
-
 		$product_id = false;
 		if ( $pagenow === 'post.php' && isset( $_GET['post'] ) ) {
 			$product_id = $_GET['post'];
@@ -260,15 +259,7 @@ class WCML_Resources {
 			$product_id = $_POST['product_id'];
 		}
 
-		if ( $product_id ) {
-			$original_id         = self::$woocommerce_wpml->products->get_original_product_id( $product_id );
-			$custom_product_sync = get_post_meta( $original_id, 'wcml_sync_files', true );
-			if ( $custom_product_sync && $custom_product_sync == 'self' ) {
-				$file_path_sync = false;
-			} elseif ( $custom_product_sync && $custom_product_sync == 'auto' ) {
-				$file_path_sync = true;
-			}
-		}
+		$file_path_sync = WCML_Downloadable_Products::isDownloadableFilesSetToUseSame( $product_id );
 
 		wp_localize_script(
 			'wcml-lock-script',
@@ -291,19 +282,6 @@ class WCML_Resources {
 		do_action( 'wcml_after_load_lock_fields_js' );
 
 	}
-	/**
-	 * @param int    $original_id
-	 * @param string $language
-	 *
-	 * @return string
-	 */
-	private static function linkToTranslation( $original_id, $language ) {
-		$status_display_factory = new WPML_Post_Status_Display_Factory( self::$sitepress );
-		$status_display         = $status_display_factory->create();
-		list( $text, $link, $trid, $css_class ) = $status_display->get_status_data( $original_id, $language );
-
-		return apply_filters( 'wpml_link_to_translation', $link, $original_id, $language, $trid, $css_class );
-	}
 
 	public static function hidden_label() {
 		global $sitepress;
@@ -323,18 +301,16 @@ class WCML_Resources {
 			return;
 		}
 
-		$language = Sanitize::stringProp( 'lang', $_GET );
-
 		echo '<h3 class="wcml_prod_hidden_notice">' .
 			sprintf(
-				/* translators: %1$s and %2$s are HTML links pointing to post edit screen and translation edit screen */
-				__(
-					"This is a translation of %1\$s. Some of the fields are not editable. It's recommended to use the %2\$s for translating products.",
+				/* translators: %1$s is the post title inside a HTML link pointing to the post edit screen, %2$s and %3$s are opening and closing HTML link tags */
+				esc_html__(
+					"This is a translation of %1\$s. Some of the fields are not editable. It's recommended that you translate products from the %2\$sTranslation Dashboard%3\$s.",
 					'woocommerce-multilingual'
 				),
-				'<a href="' . get_edit_post_link( $original_id ) . '" >' . get_the_title( $original_id ) . '</a>',
-				'<a href="' . self::linkToTranslation( $original_id, $language ) . '" >' .
-				__( 'WooCommerce Multilingual & Multicurrency products translator', 'woocommerce-multilingual' ) . '</a>'
+				'<a href="' . esc_url( get_edit_post_link( $original_id ) ) . '" >' . get_the_title( $original_id ) . '</a>',
+				'<a href="' . esc_url( AdminUrl::getWPMLTMDashboardProducts() ) . '">',
+				'</a>'
 			) . '</h3>';
 	}
 }

@@ -4,10 +4,30 @@
  * @subpackage The_SEO_Framework\Sitemap\XSL
  */
 
-// phpcs:disable, VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable -- includes.
-// phpcs:disable, WordPress.WP.GlobalVariablesOverride -- This isn't the global scope.
+namespace The_SEO_Framework;
 
-defined( 'THE_SEO_FRAMEWORK_PRESENT' ) and tsf()->_verify_include_secret( $_secret ) or die;
+( \defined( 'THE_SEO_FRAMEWORK_PRESENT' ) and Helper\Template::verify_secret( $secret ) ) or die;
+
+use The_SEO_Framework\Helper\Format\Minify;
+
+// phpcs:disable WordPress.WP.GlobalVariablesOverride -- This isn't the global scope.
+
+/**
+ * The SEO Framework plugin
+ * Copyright (C) 2021 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 $styles = <<<'CSS'
 	html {
@@ -40,12 +60,8 @@ $styles = <<<'CSS'
 	}
 	h1 img {
 		vertical-align: bottom;
-		margin-right: 1.4rem;
+		margin-inline-end: 1.4rem;
 		image-rendering: -webkit-optimize-contrast;
-	}
-	.rtl h1 img {
-		margin-right: unset;
-		margin-left: 1.4rem;
 	}
 	#description {
 		background-color: <xsl:value-of select="$colorMain" />;
@@ -72,16 +88,14 @@ $styles = <<<'CSS'
 		border: 0px solid;
 		padding: 1rem 1.5rem;
 		width: 100%;
-		max-width: <xsl:value-of select="concat( $tableMinWidth - 159, 'px' )" />;
-		min-width: 99px;
+		/* Magic numbers: sexy primes. Either of these work on their own (+ a few extra pixels): */
+		max-width: <xsl:value-of select="concat( $tableMinWidth - 173, 'px' )" />;
+		min-width: 113px;
 		overflow-wrap: anywhere;
 	}
 	th {
-		text-align: left;
+		text-align: start;
 		border-bottom: 1px solid <xsl:value-of select="$colorAccent" />;
-	}
-	.rtl th {
-		text-align: right;
 	}
 	tr:nth-of-type(2n) {
 		background-color: #eaeaea;
@@ -105,12 +119,15 @@ CSS;
 ?>
 <style style="text/css">
 <?php
-// phpcs:disable, WordPress.Security.EscapeOutput
+// phpcs:disable WordPress.Security.EscapeOutput
 /**
  * @since 3.1.0
  * @param string $styles The sitemap XHTML styles. Must be escaped.
  */
-echo apply_filters( 'the_seo_framework_sitemap_styles', $styles );
-// phpcs:enable, WordPress.Security.EscapeOutput
+echo Minify::css( \apply_filters(
+	'the_seo_framework_sitemap_styles',
+	$styles,
+) );
+// phpcs:enable WordPress.Security.EscapeOutput
 ?>
 </style>

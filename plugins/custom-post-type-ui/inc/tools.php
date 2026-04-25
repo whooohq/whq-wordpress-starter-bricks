@@ -23,10 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @return void
  */
-function cptui_tools_assets() {
-	$current_screen = get_current_screen();
+function cptui_tools_assets( $hook ) {
 
-	if ( ! is_object( $current_screen ) || 'cpt-ui_page_cptui_tools' !== $current_screen->base ) {
+	if ( 'cpt-ui_page_cptui_tools' !== $hook ) {
 		return;
 	}
 
@@ -55,31 +54,48 @@ function cptui_tools_tabs( $tabs = [], $current_page = '' ) {
 	if ( 'tools' === $current_page ) {
 		$classes = [ 'nav-tab' ];
 
-		$tabs['page_title']         = get_admin_page_title();
+		$page_title = esc_html( get_admin_page_title() );
+		$tabs['page_title'] = '';
+		if ( empty( $_GET['action'] ) ) {
+			$tabs['page_title'] .= esc_html__( 'Post types', 'custom-post-type-ui' ) . ' - ' . $page_title;
+		}
+
+		if ( ! empty( $_GET['action'] ) && 'taxonomies' === sanitize_text_field( $_GET['action'] ) ) {
+			$tabs['page_title'] .= esc_html__( 'Taxonomies', 'custom-post-type-ui' ) . ' - ' . $page_title;
+		}
+
+		if ( ! empty( $_GET['action'] ) && 'get_code' === sanitize_text_field( $_GET['action'] ) ) {
+			$tabs['page_title'] .= esc_html__( 'Get code', 'custom-post-type-ui' ) . ' - ' . $page_title;
+		}
+
+		if ( ! empty( $_GET['action'] ) && 'debuginfo' === sanitize_text_field( $_GET['action'] ) ) {
+			$tabs['page_title'] .= esc_html__( 'Debug info', 'custom-post-type-ui' ) . ' - ' . $page_title;
+		}
+
 		$tabs['tabs']               = [];
 		$tabs['tabs']['post_types'] = [
-			'text'          => __( 'Post Types', 'custom-post-type-ui' ),
+			'text'          => esc_html__( 'Post types', 'custom-post-type-ui' ),
 			'classes'       => $classes,
 			'url'           => cptui_admin_url( 'admin.php?page=cptui_' . $current_page ),
 			'aria-selected' => 'false',
 		];
 
 		$tabs['tabs']['taxonomies'] = [
-			'text'          => __( 'Taxonomies', 'custom-post-type-ui' ),
+			'text'          => esc_html__( 'Taxonomies', 'custom-post-type-ui' ),
 			'classes'       => $classes,
 			'url'           => esc_url( add_query_arg( [ 'action' => 'taxonomies' ], cptui_admin_url( 'admin.php?page=cptui_' . $current_page ) ) ),
 			'aria-selected' => 'false',
 		];
 
 		$tabs['tabs']['get_code'] = [
-			'text'          => __( 'Get Code', 'custom-post-type-ui' ),
+			'text'          => esc_html__( 'Get code', 'custom-post-type-ui' ),
 			'classes'       => $classes,
 			'url'           => esc_url( add_query_arg( [ 'action' => 'get_code' ], cptui_admin_url( 'admin.php?page=cptui_' . $current_page ) ) ),
 			'aria-selected' => 'false',
 		];
 
 		$tabs['tabs']['debuginfo'] = [
-			'text'          => __( 'Debug Info', 'custom-post-type-ui' ),
+			'text'          => esc_html__( 'Debug info', 'custom-post-type-ui' ),
 			'classes'       => $classes,
 			'url'           => esc_url( add_query_arg( [ 'action' => 'debuginfo' ], cptui_admin_url( 'admin.php?page=cptui_' . $current_page ) ) ),
 			'aria-selected' => 'false',
@@ -140,6 +156,12 @@ function cptui_tools() {
 	}
 
 	echo '<div class="wrap">';
+	/**
+	 * Fires immediately after wrap div started on all of the cptui admin pages.
+	 *
+	 * @since 1.14.0
+	 */
+	do_action( 'cptui_inside_wrap' );
 
 	/**
 	 * Fires right inside the wrap div for the import/export pages.
@@ -391,7 +413,9 @@ function cptui_render_posttypes_taxonomies_section() {
 					$cptui_post_types = cptui_get_post_type_data();
 					if ( ! empty( $cptui_post_types ) ) {
 						foreach ( $cptui_post_types as $type => $values ) {
-							$cptui_post_types[ $type ]['description'] = wp_slash( html_entity_decode( $values['description'] ) );
+							if ( ! empty( $values['description'] ) ) {
+								$cptui_post_types[ $type ]['description'] = wp_slash( html_entity_decode( $values['description'] ) );
+							}
 						}
 						$content = wp_json_encode( $cptui_post_types );
 					} else {
@@ -433,7 +457,9 @@ function cptui_render_posttypes_taxonomies_section() {
 					$cptui_taxonomies = cptui_get_taxonomy_data();
 					if ( ! empty( $cptui_taxonomies ) ) {
 						foreach ( $cptui_taxonomies as $tax => $values ) {
-							$cptui_taxonomies[ $tax ]['description'] = wp_slash( html_entity_decode( $values['description'] ) );
+							if ( ! empty( $values['description'] ) ) {
+								$cptui_taxonomies[ $tax ]['description'] = wp_slash( html_entity_decode( $values['description'] ) );
+							}
 						}
 						$content = wp_json_encode( $cptui_taxonomies );
 					} else {

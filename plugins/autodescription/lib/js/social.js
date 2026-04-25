@@ -8,7 +8,7 @@
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2019 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2019 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -34,15 +34,15 @@
  *
  * @constructor
  */
-window.tsfSocial = function() {
+window.tsfSocial = function () {
 
 	/**
 	 * @since 4.2.0
 	 * @access private
 	 * @type {(Map<string,{
-	 *   group:  string,
-	 *   inputs: {ogTitle:Element,twTitle:Element,ogDesc:Element,twDesc:Element}
-	 *   refs:   {titleInput:Element,descInput:Element,title:Element,titleNa:Element,desc:Element}
+	 *     group:  string,
+	 *     inputs: {ogTitle:Element,twTitle:Element,ogDesc:Element,twDesc:Element}
+	 *     refs:   {titleInput:Element,descInput:Element,title:Element,titleNa:Element,desc:Element}
 	 * }>)} The input element instances.
 	 */
 	const inputInstances = new Map();
@@ -60,14 +60,13 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access private
 	 *
-	 * @function
 	 * @param {string} group
 	 * @param {string} part
 	 */
-	const _tickState = ( group, part ) => {
+	function _tickState( group, part ) {
 		switch ( part ) {
 			case 'addAdditions':
-				let titleRef = getInputInstance( group ).refs.title.dataset?.for;
+				const titleRef = getInputInstance( group ).refs.title?.dataset?.for;
 				titleRef && tsfTitle.enqueueUnregisteredInputTrigger( titleRef );
 				break;
 			default:
@@ -81,12 +80,13 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {string}             group The group ID.
 	 * @param {(string|undefined)} part  The part to return. Leave empty to return the whole state.
-	 * @return {(Object<string, *>)|*|null}
+	 * @return {(Object<string,*>)|*|null}
 	 */
-	const getStateOf = ( group, part ) => part ? states[ group ]?.[ part ] : states[ group ];
+	function getStateOf( group, part ) {
+		return part ? states[ group ]?.[ part ] : states[ group ];
+	}
 
 	/**
 	 * Updates state of ID.
@@ -97,12 +97,11 @@ window.tsfSocial = function() {
 	 * @access public
 	 * @TODO Allow part to be string[], so we can get 'substates'?
 	 *
-	 * @function
 	 * @param {string} group The group ID.
 	 * @param {string} part  The state index to change.
 	 * @param {*}      value The value to set the state to.
 	 */
-	const updateStateOf = ( group, part, value ) => {
+	function updateStateOf( group, part, value ) {
 
 		if ( states[ group ][ part ] === value ) return;
 
@@ -119,12 +118,11 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {string}          part   The state index to change.
 	 * @param {*}               value  The value to set the state to.
 	 * @param {string|string[]} except The input group IDs to exclude from updates.
 	 */
-	const updateStateAll = ( part, value, except ) => {
+	function updateStateAll( part, value, except ) {
 
 		except = Array.isArray( except ) ? except : [ except ];
 
@@ -141,15 +139,14 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {string} group    The group ID.
 	 * @param {string} titleRef The group's title reference ID.
 	 * @param {string} descRef  The group's description reference ID.
 	 */
-	 const setInputInstance = ( group, titleRef, descRef ) => {
+	function setInputInstance( group, titleRef, descRef ) {
 
 		const _getElement = type => document.querySelector(
-			`[data-tsf-social-group="${group}"][data-tsf-social-type="${type}"]`
+			`[data-tsf-social-group="${group}"][data-tsf-social-type="${type}"]`,
 		);
 
 		const inputs = {
@@ -189,7 +186,7 @@ window.tsfSocial = function() {
 				ogDesc:  false,
 				twDesc:  false,
 			},
-		}
+		};
 
 		_loadTitleActions( group );
 		_loadDescriptionActions( group );
@@ -203,10 +200,11 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {string} group The group ID.
 	 */
-	const getInputInstance = group => inputInstances.get( group );
+	function getInputInstance( group ) {
+		return inputInstances.get( group );
+	}
 
 	/**
 	 * Loads Title actions for group.
@@ -214,10 +212,9 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access private
 	 *
-	 * @function
 	 * @param {string} group The group ID.
 	 */
-	const _loadTitleActions = group => {
+	function _loadTitleActions( group ) {
 
 		const { inputs, refs } = getInputInstance( group );
 
@@ -231,7 +228,7 @@ window.tsfSocial = function() {
 				case 'twitter':
 					yield locks.twTitle
 						? getState( 'defaults' ).twTitle
-						: inputs.twTitle.value.trim();
+						: ( inputs.twTitle?.value.trim() ?? '' );
 
 					if ( locks.twTitle || phLocks.twTitle ) {
 						yield getState( 'defaults' ).twTitle;
@@ -240,7 +237,7 @@ window.tsfSocial = function() {
 				case 'og':
 					yield locks.ogTitle
 						? getState( 'defaults' ).ogTitle
-						: inputs.ogTitle.value.trim();
+						: ( inputs.ogTitle?.value.trim() ?? '' );
 
 					if ( locks.ogTitle || phLocks.ogTitle ) {
 						yield getState( 'defaults' ).ogTitle;
@@ -250,9 +247,9 @@ window.tsfSocial = function() {
 					// All is handled by ref due to the title's complexity.
 				case 'ref':
 					if ( getState( 'addAdditions' ) )  {
-						yield refs.title.innerHTML;
+						yield refs.title?.innerHTML ?? '';
 					} else {
-						yield refs.titleNa.innerHTML;
+						yield refs.titleNa?.innerHTML ?? '';
 					}
 					break;
 			}
@@ -265,13 +262,7 @@ window.tsfSocial = function() {
 			while ( 'undefined' !== typeof val && ! val.length ) {
 				val = generator.next().value;
 				if ( val?.length )
-					val = tsf.sDoubleSpace(
-						tsf.sTabs(
-							tsf.sSingleLine(
-								val
-							)
-						)
-					);
+					val = tsf.sDoubleSpace( tsf.sTabs( tsf.sSingleLine( val ) ) );
 			}
 
 			return val?.length ? val : '';
@@ -281,18 +272,18 @@ window.tsfSocial = function() {
 				  phLocks = getState( 'placeholderLocks' );
 
 			// Security OK. All getActiveValue is escaped.
-			inputs.ogTitle.placeholder
-				= locks.ogTitle || phLocks.ogTitle
+			if ( inputs.ogTitle )
+				inputs.ogTitle.placeholder = locks.ogTitle || phLocks.ogTitle
 					? tsf.decodeEntities( getState( 'defaults' ).ogTitle )
 					: tsf.decodeEntities( getActiveValue( 'meta' ) );
-			inputs.twTitle.placeholder
-				= locks.twTitle || phLocks.twTitle
-					? tsf.decodeEntities( getState( 'defaults' ).twTitle )
-					: tsf.decodeEntities( getActiveValue( 'og' ) );
+			if ( inputs.twTitle )
+				inputs.twTitle.placeholder = locks.twTitle || phLocks.twTitle
+						? tsf.decodeEntities( getState( 'defaults' ).twTitle )
+						: tsf.decodeEntities( getActiveValue( 'og' ) );
 		}
 		const updateCounter = ( target, text, type ) => {
-			let counter = document.getElementById( `${target.id}_chars` );
-			counter && tsfC.updateCharacterCounter( {
+			const counter = document.getElementById( `${target.id}_chars` );
+			counter && tsfC?.updateCharacterCounter( {
 				e:     counter,
 				text:  text,
 				field: 'title',
@@ -300,29 +291,28 @@ window.tsfSocial = function() {
 			} );
 		}
 		const updateSocialCounters = () => {
-			updateCounter( inputs.ogTitle, getActiveValue( 'og' ), 'opengraph' );
-			updateCounter( inputs.twTitle, getActiveValue( 'twitter' ), 'twitter' );
+			inputs.ogTitle && updateCounter( inputs.ogTitle, getActiveValue( 'og' ), 'opengraph' );
+			inputs.twTitle && updateCounter( inputs.twTitle, getActiveValue( 'twitter' ), 'twitter' );
 		}
-		let updateRefTitleBuffer = void 0;
-		const updateRefTitle = () => {
-			clearTimeout( updateRefTitleBuffer );
-			updateRefTitleBuffer = setTimeout( () => {
+		const updateRefTitle = tsfUtils.debounce(
+			() => {
 				setPlaceholders();
 				updateSocialCounters();
-			}, 1000/60 ); // 60fps
-		};
-		refs.title.addEventListener( 'change', updateRefTitle );
-		refs.titleNa.addEventListener( 'change', updateRefTitle );
-		let updateTitleBuffer = void 0;
-		const updateTitle = () => {
-			clearTimeout( updateTitleBuffer );
-			updateTitleBuffer = setTimeout( () => {
+			},
+			1000/60, // 60fps.
+		);
+		refs.title?.addEventListener( 'change', updateRefTitle );
+		refs.titleNa?.addEventListener( 'change', updateRefTitle );
+
+		const updateTitle = tsfUtils.debounce(
+			() => {
 				setPlaceholders();
 				updateSocialCounters();
-			}, 1000/60 ); // 60fps
-		}
-		inputs.ogTitle.addEventListener( 'input', updateTitle );
-		inputs.twTitle.addEventListener( 'input', updateTitle );
+			},
+			1000/60, // 60fps.
+		);
+		inputs.ogTitle?.addEventListener( 'input', updateTitle );
+		inputs.twTitle?.addEventListener( 'input', updateTitle );
 	}
 
 	/**
@@ -331,10 +321,9 @@ window.tsfSocial = function() {
 	 * @since 4.2.0
 	 * @access private
 	 *
-	 * @function
 	 * @param {string} group The group ID.
 	 */
-	const _loadDescriptionActions = group => {
+	function _loadDescriptionActions( group ) {
 
 		const { inputs, refs } = getInputInstance( group );
 
@@ -349,7 +338,7 @@ window.tsfSocial = function() {
 				case 'twitter':
 					yield locks.twDesc
 						? getState( 'defaults' ).twDesc
-						: inputs.twDesc.value.trim();
+						: ( inputs.twDesc?.value.trim() ?? '' );
 
 					if ( locks.twDesc || phLocks.twDesc ) {
 						yield getState( 'defaults' ).twDesc;
@@ -359,7 +348,7 @@ window.tsfSocial = function() {
 				case 'og':
 					yield locks.ogDesc
 						? getState( 'defaults' ).ogDesc
-						: inputs.ogDesc.value.trim();
+						: ( inputs.ogDesc?.value.trim() ?? '' );
 
 					if ( locks.ogDesc || phLocks.ogDesc ) {
 						yield getState( 'defaults' ).ogDesc;
@@ -376,7 +365,7 @@ window.tsfSocial = function() {
 					}
 					// get next if not set.
 				case 'ref':
-					yield refs.desc.innerHTML;
+					yield refs.desc?.innerHTML ?? '';
 					break;
 			}
 		}
@@ -385,16 +374,11 @@ window.tsfSocial = function() {
 
 			let val = '';
 
+			// 'undefined' means end of generator
 			while ( 'undefined' !== typeof val && ! val.length ) {
 				val = generator.next().value;
 				if ( val?.length )
-					val = tsf.sDoubleSpace(
-						tsf.sTabs(
-							tsf.sSingleLine(
-								val
-							)
-						)
-					);
+					val = tsf.sDoubleSpace( tsf.sTabs( tsf.sSingleLine( val ) ) );
 			}
 
 			return val?.length ? val : '';
@@ -404,19 +388,19 @@ window.tsfSocial = function() {
 				  phLocks = getState( 'placeholderLocks' );
 
 			// Security OK. All getActiveValue is escaped.
-			inputs.ogDesc.placeholder
-				= locks.ogDesc || phLocks.ogDesc
+			if ( inputs.ogDesc )
+				inputs.ogDesc.placeholder = locks.ogDesc || phLocks.ogDesc
 					? tsf.decodeEntities( getState( 'defaults' ).ogDesc )
 					: tsf.decodeEntities( getActiveValue( 'meta', 'og' ) );
 			// Security OK. All getActiveValue is escaped.
-			inputs.twDesc.placeholder
-				= locks.twDesc || phLocks.twDesc
+			if ( inputs.twDesc )
+				inputs.twDesc.placeholder = locks.twDesc || phLocks.twDesc
 					? tsf.decodeEntities( getState( 'defaults' ).twDesc )
 					: tsf.decodeEntities( getActiveValue( 'og', 'twitter' ) );
 		}
 		const updateCounter = ( target, text, type ) => {
-			let counter = document.getElementById( `${target.id}_chars` );
-			counter && tsfC.updateCharacterCounter( {
+			const counter = document.getElementById( `${target.id}_chars` );
+			counter && tsfC?.updateCharacterCounter( {
 				e:     counter,
 				text:  text,
 				field: 'description',
@@ -424,29 +408,27 @@ window.tsfSocial = function() {
 			} );
 		}
 		const updateSocialCounters = () => {
-			updateCounter( inputs.ogDesc, getActiveValue( 'og', 'og' ), 'opengraph' );
-			updateCounter( inputs.twDesc, getActiveValue( 'twitter', 'twitter' ), 'twitter' );
+			inputs.ogDesc && updateCounter( inputs.ogDesc, getActiveValue( 'og', 'og' ), 'opengraph' );
+			inputs.twDesc && updateCounter( inputs.twDesc, getActiveValue( 'twitter', 'twitter' ), 'twitter' );
 		}
-		let updateRefDescBuffer = void 0;
-		const updateRefDesc = () => {
-			clearTimeout( updateRefDescBuffer );
-			updateRefDescBuffer = setTimeout( () => {
+		const updateRefDesc = tsfUtils.debounce(
+			() => {
 				setPlaceholders();
 				updateSocialCounters();
-			}, 1000/60 ); // 60fps
-		};
-		refs.desc.addEventListener( 'change', updateRefDesc );
+			},
+			1000/60, // 60fps.
+		);
+		refs.desc?.addEventListener( 'change', updateRefDesc );
 
-		let updateDescBuffer = void 0;
-		const updateDesc = () => {
-			clearTimeout( updateDescBuffer );
-			updateDescBuffer = setTimeout( () => {
+		const updateDesc = tsfUtils.debounce(
+			() => {
 				setPlaceholders();
 				updateSocialCounters();
-			}, 1000/60 ); // 60fps
-		}
-		inputs.ogDesc.addEventListener( 'input', updateDesc );
-		inputs.twDesc.addEventListener( 'input', updateDesc );
+			},
+			1000/60, // 60fps.
+		);
+		inputs.ogDesc?.addEventListener( 'input', updateDesc );
+		inputs.twDesc?.addEventListener( 'input', updateDesc );
 	}
 
 	return {

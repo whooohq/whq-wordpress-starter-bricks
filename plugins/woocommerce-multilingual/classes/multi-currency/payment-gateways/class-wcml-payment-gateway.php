@@ -47,33 +47,8 @@ abstract class WCML_Payment_Gateway {
 		$this->settings         = get_option( self::OPTION_KEY . $this->get_id(), [] );
 	}
 
-	/**
-	 * @param string $current_currency
-	 * @param array  $active_currencies
-	 *
-	 * @return string
-	 *
-	 * @deprecated since 4.9.0, use React component instead.
-	 */
-	public function get_settings_output( $current_currency, $active_currencies ) {
-		return '';
-	}
-
-	/**
-	 * @deprecated since 4.9.0, use React component instead.
-	 */
-	public function show() {
-		return '';
-	}
-
 	abstract public function get_output_model();
 
-	protected function is_current_currency_default() {
-		if ( $this->current_currency === $this->default_currency ) {
-			return true;
-		}
-		return false;
-	}
 	/**
 	 * @return WC_Payment_Gateway
 	 */
@@ -112,9 +87,7 @@ abstract class WCML_Payment_Gateway {
 	 * @return array|null
 	 */
 	public function get_setting( $currency ) {
-		$setting = isset( $this->settings[ $currency ] )
-			? $this->settings[ $currency ]
-			: null;
+		$setting = $this->settings[ $currency ] ?? null;
 
 		return $this->set_currency( $setting, $currency );
 	}

@@ -8,8 +8,6 @@ class WCML_Status_Store_Pages_UI extends WCML_Templates_Factory {
 	private $sitepress;
 
 	/**
-	 * WCML_Status_Store_Pages_UI constructor.
-	 *
 	 * @param SitePress        $sitepress
 	 * @param woocommerce_wpml $woocommerce_wpml
 	 */
@@ -34,7 +32,7 @@ class WCML_Status_Store_Pages_UI extends WCML_Templates_Factory {
 
 		$model = [
 			'miss_lang'    => $this->woocommerce_wpml->store->get_missing_store_pages(),
-			'install_link' => admin_url( 'admin.php?page=wc-status&tab=tools' ),
+			'install_link' => \WCML\Utilities\AdminUrl::getWooStatus( 'tools' ),
 			'request_uri'  => $_SERVER['REQUEST_URI'],
 			'strings'      => [
 				'store_pages'     => __( 'WooCommerce Store Pages', 'woocommerce-multilingual' ),
@@ -47,7 +45,7 @@ class WCML_Status_Store_Pages_UI extends WCML_Templates_Factory {
 				'translated'      => __( "WooCommerce store pages are translated to all the site's languages.", 'woocommerce-multilingual' ),
 			],
 			'nonces'       => [
-				'create_pages' => wp_nonce_field( 'create_pages', 'wcml_nonce' ),
+				'create_pages' => wp_nonce_field( 'create_pages', 'wcml_nonce', true, false ),
 			],
 		];
 

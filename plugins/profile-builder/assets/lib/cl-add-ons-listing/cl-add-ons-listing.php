@@ -12,11 +12,12 @@ class CL_Addons_List_Table extends WP_List_Table {
     public $header;
 
     public $section_header;
+    public $section_header_free;
     public $section_versions;
     public $sections;
 
     public $images_folder;
-    public $text_domain;
+    public $text_domain = 'profile-builder';
 
     public $all_addons;
     public $all_plugins;
@@ -25,6 +26,7 @@ class CL_Addons_List_Table extends WP_List_Table {
 
     public $tooltip_header;
     public $tooltip_content;
+    public $tooltip_content_license_inactive;
 
     function __construct(){
 
@@ -50,7 +52,18 @@ class CL_Addons_List_Table extends WP_List_Table {
     function cl_print_assets(){
         wp_enqueue_style('wp-pointer');
         wp_enqueue_script('wp-pointer');
-        wp_localize_script( 'wp-pointer', 'cl_add_ons_pointer', array( 'tooltip_header' => $this->tooltip_header, 'tooltip_content' => $this->tooltip_content ) );
+
+        wp_localize_script( 
+            'wp-pointer', 
+            'cl_add_ons_pointer', 
+            array( 
+                'tooltip_header'                   => $this->tooltip_header,
+                'tooltip_content'                  => $this->tooltip_content,
+                'tooltip_content_license_inactive' => $this->tooltip_content_license_inactive,
+                'license_status'                   => wppb_get_serial_number_status(),
+                'paid_version'                     => defined( 'WPPB_PAID_PLUGIN_DIR' ) ? true : false
+                ) 
+            );
 
         wp_enqueue_style('cl-add-ons-listing-css', plugin_dir_url(__FILE__) . '/assets/css/cl-add-ons-listing.css', false);
         wp_enqueue_script('cl-add-ons-listing-js', plugin_dir_url(__FILE__) . '/assets/js/cl-add-ons-listing.js', array('jquery'));
@@ -143,12 +156,40 @@ class CL_Addons_List_Table extends WP_List_Table {
         }
         elseif ( $item['type'] === 'add-on' ){//this is more complicated as there are multiple cases, I think it should be done through filters in each plugin
 
+            //get license status
+            $license_status = wppb_get_serial_number_status();
+
+            //set some default values
             in_array( $this->current_version, $this->section_versions ) ? $disabled = '' : $disabled = 'disabled'; //add disabled if the current version isn't eligible
 
+            $onclick = '';
+
+            //construct the action URL based on the add-on status
+            $base_url = admin_url( 'admin.php?page='. sanitize_text_field( $_REQUEST['page'] ) );
+
+            if ( $this->is_add_on_active( $item['slug'] ) )
+                $base_url .= '&cl_add_ons_action=deactivate';
+            else
+                $base_url .= '&cl_add_ons_action=activate';
+
+            $action_url = esc_url( wp_nonce_url( add_query_arg( 'cl_add_ons', $item['slug'], $base_url ), 'cl_add_ons_action' ) );
+
+            //if we don't have a valid license we can't activate the add-on and throw a confirmation dialog
+            if ( $license_status !== 'valid' && ( !isset( $item['version'] ) || $item['version'] != 'free' ) ) {
+
+                if( $this->is_add_on_active( $item['slug'] ) ) {
+                    $onclick    = 'onclick="return confirm(\'' . esc_js( __( 'This add-on can not be activated back without a valid license. Are you sure you want to deactivate it?', 'profile-builder' ) ) . '\')"';
+                    // $action_url = '';
+                } else {
+                    $disabled = 'disabled'; //if the license is not valid, disable the button
+                }
+
+            }
+
             if ( $this->is_add_on_active( $item['slug'] ) ) {
-                $action = '<a class="right button button-secondary" '.$disabled.' href="'. esc_url( wp_nonce_url( add_query_arg( 'cl_add_ons', $item['slug'], admin_url( 'admin.php?page='. sanitize_text_field( $_REQUEST['page'] ). '&cl_add_ons_action=deactivate' ) ), 'cl_add_ons_action' ) ) .'">' . __('Deactivate', $this->text_domain) . '</a>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralDomain
+                $action = '<a class="right button button-secondary" '.$disabled.' href="'. $action_url .'" '.$onclick.'>' . __('Deactivate', $this->text_domain) . '</a>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralDomain
             } else {
-                $action = '<a class="right button button-primary" '.$disabled.' href="'. esc_url( wp_nonce_url( add_query_arg( 'cl_add_ons', $item['slug'], admin_url( 'admin.php?page='. sanitize_text_field( $_REQUEST['page'] ). '&cl_add_ons_action=activate' ) ), 'cl_add_ons_action' ) ) .'">' . __('Activate', $this->text_domain) . '</a>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralDomain
+                $action = '<a class="right button button-primary" '.$disabled.' href="'. $action_url .'">' . __('Activate', $this->text_domain) . '</a>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralDomain
             }
         }
 
@@ -209,9 +250,13 @@ class CL_Addons_List_Table extends WP_List_Table {
             <?php if( !empty( $this->section_header ) ): ?>
 
                 <h2><?php echo esc_html ( $this->section_header['title'] );?></h2>
-                <?php if( !empty( $this->section_header ) ): ?>
+                
+                <?php if( !$this->current_version != 'Profile Builder Free' && !empty( $this->section_header_free ) && !in_array( $this->current_version, $this->section_versions ) ) : ?>
+                    <p class="description cozmoslabs-description-upsell"><?php echo wp_kses_post( $this->section_header_free['description'] ); ?></p>
+                <?php elseif( !empty( $this->section_header['description'] ) ) : ?>
                     <p class="description"><?php echo esc_html( $this->section_header['description'] ); ?></p>
                 <?php endif; ?>
+
             <?php endif; ?>
 
             <?php
@@ -240,13 +285,8 @@ class CL_Addons_List_Table extends WP_List_Table {
     function display_addons(){
         ?>
         <div class="wrap" id="cl-add-ons-listing">
-            <h1 class="cl-main-header"><?php echo esc_html( $this->header['title'] );?></h1>
 
             <form id="cl-addons" method="post">
-
-                <?php $this->show_search_box(); ?>
-
-                <?php $this->show_sumbit_button(); ?>
 
                 <?php
 
@@ -256,7 +296,6 @@ class CL_Addons_List_Table extends WP_List_Table {
                     }
                 }
                 ?>
-                <?php $this->show_sumbit_button(); ?>
 
                 <!-- For plugins, we also need to ensure that the form posts back to our current page -->
                 <input type="hidden" name="cl_all_add_ons" value="<?php echo esc_attr( implode( '|' ,$this->all_addons ) ); ?>" />

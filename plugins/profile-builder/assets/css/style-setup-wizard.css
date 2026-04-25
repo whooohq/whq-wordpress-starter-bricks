@@ -1,0 +1,399 @@
+.wppb-setup-holder {
+    background: white;
+}
+
+.wppb-setup-background {
+    border-radius: 50px 0 200px 0;
+    background: #E8F2FF;
+    width: 1124px;
+    /* 100% - top padding + logo - height difference between the two - bottom padding + skip */
+    height: calc( 100% - 112px - 64px - 58px );
+
+    position: absolute;
+    top: 112px;
+    left: -180px;
+    z-index: 1;
+}
+
+.wppb-setup-wrap, .wppb-setup-skip {
+    display: flex;
+    flex-direction: column;
+    width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.wppb-setup-wrap {
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.wppb-setup-logo {
+    width: 350px;
+    margin: 0 auto 40px auto;
+}
+
+.wppb-setup-steps {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    z-index: 2;
+    margin-top: 0;
+    margin-bottom: 24px;
+}
+
+.wppb-setup-steps li {
+    list-style-type: none;
+    width: 25%;
+    font-size: 14px;
+    position: relative;
+    text-align: center;
+    color: #757575;
+    counter-increment: tab;
+}
+
+.wppb-setup-steps li a:hover {
+    opacity: 0.8;
+}
+
+.wppb-setup-steps li:after {
+    width: 30px;
+    height: 30px;
+    content: counter( tab );
+    line-height: 30px;
+    border: 1px solid #fff;
+    display: block;
+    text-align: center;
+    margin: 10px auto 0 auto;
+    border-radius: 50%;
+    background-color: white;
+}
+
+.wppb-setup-steps li:before {
+    width: 100%;
+    height: 3px;
+    content: '';
+    position: absolute;
+    background-color: #fff;
+    top: 43px;
+    left: -50%;
+    z-index: -1;
+}
+
+.wppb-setup-steps li:first-child:before {
+    content: none;
+}
+
+.wppb-setup-steps li.active, .wppb-setup-steps li.active a {
+    color: #1E1E1E;
+}
+
+.wppb-setup-steps li.active:after {
+    border-color: #0F15B0;
+}
+
+.wppb-setup-steps li.active:before {
+    background-color: #0F15B0;
+}
+
+.wppb-setup-steps li.active.completed:after {
+    color: white;
+    background: #0F15B0;
+}
+
+.wppb-setup-content {
+    z-index: 2;
+    background: white;
+    padding: 32px;
+    padding-bottom: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.13);
+}
+
+.wppb-setup-content h3:first-child {
+    margin-top: 0;
+}
+
+.wppb-setup-content h3 {
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 400;
+    text-align: center;
+    margin-bottom: 6px;
+}
+
+.wppb-setup-content p {
+    color: #1E1E1E;
+    margin-bottom: 24px;
+}
+
+.wppb-setup-content .cozmoslabs-description {
+    text-align: center;
+    width: 100%;
+    font-weight: 600;
+    font-size: 14px !important;
+    color: #939393 !important;
+}
+
+/* User Pages Tab */
+.wppb-setup-form-user-pages {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.wppb-setup-form-user-pages .wppb-setup-form-button {
+    margin-left: -48px;
+    margin-right: -48px;
+}
+
+.wppb-setup-user-pages-field {
+    display: flex;
+    margin-bottom: 24px;
+}
+
+.wppb-setup-user-pages-field h4 {
+    margin-top: 0;
+    margin-bottom: 4px !important;
+    text-transform: uppercase;
+}
+
+.wppb-setup-user-pages-field__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #E8F2FF;
+    border-radius: 2px;
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+}
+
+.wppb-setup-form-user-pages .cozmoslabs-toggle-switch,
+.wppb-setup-user-pages-field .button-secondary {
+    margin-left: auto !important;
+}
+
+.wppb-setup-form-user-pages .cozmoslabs-toggle-switch .cozmoslabs-toggle-container {
+    margin-right: 0;
+}
+
+.wppb-setup-user-pages-field__title {
+    margin-right: 16px;
+}
+
+.wppb-setup-user-pages-field__title p {
+    margin-top: 0;
+    margin-bottom: 0;
+    color: #757575;
+}
+
+/* Design & User Experience Tab */
+.wppb-setup-form .wppb-setup-form-styles {
+    margin: 50px auto;
+}
+
+.wppb-setup-form .wppb-setup-form-styles .cozmoslabs-description {
+    display: none;
+}
+
+.wppb-setup-form .wppb-setup-form-styles #wppb-forms-design-browser {
+    padding-bottom: 0;
+}
+
+.wppb-setup-form-styles__upsell {
+    color: #3c434a;
+    text-align: center;
+    background: #fdf9d1;
+    padding: 6px;
+}
+
+.wppb-setup-general-settings__heading {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.wppb-setup-general-settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.wppb-setup-general-settings__item {
+    display: flex;
+}
+
+.wppb-setup-general-settings__item label {
+    font-style: normal;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 18px;
+    color: rgba( 30, 30, 30, 0.8 );
+}
+
+.wppb-setup-general-settings__item .cozmoslabs-toggle-switch .cozmoslabs-toggle-container {
+    margin-right: 22px;
+}
+
+/* Addons Tab */
+.wppb-setup-addons-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 50px;
+}
+
+.wppb-setup-addon {
+    border-radius: 2px;
+    border: 1px solid #CCC;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.wppb-setup-addon__content {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 20px 15px 15px 20px;
+}
+
+.wppb-setup-addon__logo {
+    width: 40px;
+}
+
+.wppb-setup-addon__details h3 {
+    color: #1E1E1E;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 16px;
+    text-transform: uppercase;
+    text-align: left;
+}
+
+.wppb-setup-addon__details p {
+    color: #1E1E1E;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    margin: 0;
+}
+
+.wppb-setup-addon__selector {
+    border-top: 1px solid #CCC;
+    box-sizing: border-box;
+    background: #F8FBFF;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.wppb-setup-addons-info {
+    text-align: center;
+    margin: 30px 0 25px 0;
+}
+
+.wppb-setup-addon.disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.wppb-setup-form-button {
+    display: flex;
+    justify-content: center;
+    padding-top: 33px;
+    padding-bottom: 33px;
+    border-radius: 2px;
+    border-top: 1px solid #CCC;
+    background: #E8F2FF;
+    position: relative;
+    margin-left: -32px;
+    margin-right: -32px;
+    margin-top: 32px;
+}
+
+.wppb-setup-skip {
+    margin-bottom: 20px;
+}
+
+.wppb-setup-skip__action {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.wppb-setup-skip a {
+    color: #969696 !important;
+    text-decoration: underline !important;
+}
+
+.wppb-setup-next {
+    margin-top: 40px;
+}
+
+.wppb-setup-next h3, .wppb-setup-next .cozmoslabs-description  {
+    margin-bottom: 10px !important;
+}
+
+.wppb-setup-newsletter {
+    border-radius: 2px;
+    background: #E8F2FF;
+    padding: 16px 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 50px;
+    margin-bottom: 28px;
+}
+
+.wppb-setup-newsletter p, .wppb-setup-newsletter .wppb-setup-newsletter__form {
+    flex: 1;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.wppb-setup-newsletter .wppb-setup-newsletter__form a {
+    display: inline-flex;
+}
+
+.wppb-setup-progress h3 {
+    text-align: left;
+    margin-bottom: 4px;
+}
+
+.wppb-setup-newsletter__form input {
+    border-radius: 2px;
+    border: 1px solid #949494;
+    background: #fff;
+    margin-right: 12px;
+    height: 40px;
+    padding: 12px 16px 12px 28px;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 400;
+    color: #757575;
+    width: 200px;
+}
+
+.wppb-setup-newsletter__form input:focus, .wppb-setup-newsletter__form input:active {
+    color: black;
+}
+
+.wppb-setup-newsletter__form {
+    position: relative;
+}
+
+.wppb-setup-newsletter__form svg {
+    position: absolute;
+    top: 9px;
+    left: 4px;
+}
+
+.wppb-setup-newsletter__success {
+    color: green;
+    display: none;
+}

@@ -24,7 +24,7 @@ class WCML_Woo_Var_Table implements \IWPML_Action {
 
 	public function filter_add_to_cart_product_id( $product_id ) {
 
-		$product_id = apply_filters( 'translate_object_id', $product_id, get_post_type( $product_id ), true, $this->current_language );
+		$product_id = apply_filters( 'wpml_object_id', $product_id, get_post_type( $product_id ), true, $this->current_language );
 
 		return $product_id;
 	}

@@ -20,6 +20,28 @@ if ( ! class_exists( 'WC_Email', false ) ) {
  * ReportCSVEmail Class.
  */
 class ReportCSVEmail extends \WC_Email {
+
+	/**
+	 * Report labels.
+	 *
+	 * @var array
+	 */
+	protected $report_labels;
+
+	/**
+	 * Report type (e.g. 'customers').
+	 *
+	 * @var string
+	 */
+	protected $report_type;
+
+	/**
+	 * Download URL.
+	 *
+	 * @var string
+	 */
+	protected $download_url;
+
 	/**
 	 * Constructor.
 	 */
@@ -28,17 +50,30 @@ class ReportCSVEmail extends \WC_Email {
 		$this->template_base  = WC()->plugin_path() . '/includes/react-admin/emails/';
 		$this->template_html  = 'html-admin-report-export-download.php';
 		$this->template_plain = 'plain-admin-report-export-download.php';
-		$this->report_labels  = array(
-			'categories' => __( 'Categories', 'woocommerce' ),
-			'coupons'    => __( 'Coupons', 'woocommerce' ),
-			'customers'  => __( 'Customers', 'woocommerce' ),
-			'downloads'  => __( 'Downloads', 'woocommerce' ),
-			'orders'     => __( 'Orders', 'woocommerce' ),
-			'products'   => __( 'Products', 'woocommerce' ),
-			'revenue'    => __( 'Revenue', 'woocommerce' ),
-			'stock'      => __( 'Stock', 'woocommerce' ),
-			'taxes'      => __( 'Taxes', 'woocommerce' ),
-			'variations' => __( 'Variations', 'woocommerce' ),
+
+		/**
+		 * Used to customise report email labels.
+		 *
+		 * @since 9.9.0
+		 *
+		 * @param string[] $labels An array of labels.
+		 *
+		 * @return string[] An Array of labels.
+		 */
+		$this->report_labels = apply_filters(
+			'woocommerce_report_export_email_labels',
+			array(
+				'categories' => __( 'Categories', 'woocommerce' ),
+				'coupons'    => __( 'Coupons', 'woocommerce' ),
+				'customers'  => __( 'Customers', 'woocommerce' ),
+				'downloads'  => __( 'Downloads', 'woocommerce' ),
+				'orders'     => __( 'Orders', 'woocommerce' ),
+				'products'   => __( 'Products', 'woocommerce' ),
+				'revenue'    => __( 'Revenue', 'woocommerce' ),
+				'stock'      => __( 'Stock', 'woocommerce' ),
+				'taxes'      => __( 'Taxes', 'woocommerce' ),
+				'variations' => __( 'Variations', 'woocommerce' ),
+			)
 		);
 
 		// Call parent constructor.

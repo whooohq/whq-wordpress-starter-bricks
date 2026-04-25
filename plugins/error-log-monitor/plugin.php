@@ -3,11 +3,13 @@
 Plugin Name: Error Log Monitor
 Plugin URI: http://w-shadow.com/blog/2012/07/25/error-log-monitor-plugin/
 Description: Adds a Dashboard widget that displays the last X lines from your PHP error log, and can also send you email notifications about newly logged errors.
-Version: 1.7.7
+Version: 1.7.12
 Author: Janis Elsts
 Author URI: http://w-shadow.com/
 Text Domain: error-log-monitor
-Requires PHP: 5.6
+Requires PHP: 7.4
+License: GPLv3
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 */
 
 if ( !defined('ABSPATH') ) {

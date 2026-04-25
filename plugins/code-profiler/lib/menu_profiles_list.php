@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -34,11 +34,6 @@ if (! empty( $_REQUEST['action'] ) && $_REQUEST['action'] == 'view_profile' &&
 		$section = (int) $_REQUEST['section'];
 		$id = sanitize_text_field( $_REQUEST['id'] );
 	}
-}
-
-// Search query: get rid of slashes added by WordPress
-if (! empty( $_REQUEST['s'] ) ) {
-	$_REQUEST['s'] = sanitize_text_field ( stripslashes( $_REQUEST['s'] ) );
 }
 
 if (! empty( $section ) ) {
@@ -89,7 +84,7 @@ if (! empty( $section ) ) {
 		// Search query
 		if (! empty( $_REQUEST['s'] ) ) {
 			echo '<span class="subtitle">';
-			printf( esc_html__('Filter: %s'), '<code>' . esc_html( $_REQUEST['s'] ) . '</code>');
+			printf( esc_html__('Filter: %s'), '<code>' . esc_html( stripslashes( $_REQUEST['s'] ) ) . '</code>');
 			echo '</span>';
 		}
 		$CPTableProfiles->prepare_items();
@@ -107,7 +102,7 @@ if (! empty( $section ) ) {
 			<br />
 		</div>
 		<div class="alignleft actions bulkactions">
-			<input type="button" class="button-primary" style="min-width:100px" value="<?php esc_attr_e('Help', 'code-profiler')?>" onclick="jQuery('#cp-footer-help').slideToggle(500);"/>
+			<input type="button" class="button button-primary" style="min-width:100px" value="<?php esc_attr_e('Help', 'code-profiler')?>" onclick="jQuery('#cp-footer-help').slideToggle(500);"/>
 		</div>
 	</div>
 <?php

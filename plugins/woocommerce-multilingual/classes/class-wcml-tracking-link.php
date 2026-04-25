@@ -15,14 +15,23 @@ class WCML_Tracking_Link {
 	const WCML_MULTI_CURRENCY_DOC        = 'https://wpml.org/documentation/related-projects/woocommerce-multilingual/multi-currency-support-woocommerce/';
 	const WCML_CLEAR_CART_DOC            = 'https://wpml.org/documentation/related-projects/woocommerce-multilingual/clearing-cart-contents-when-language-or-currency-change/';
 	const WCML_DISPLAY_AS_TRANSLATED_DOC = 'https://wpml.org/documentation/related-projects/woocommerce-multilingual/displaying-untranslated-products-in-secondary-languages/';
+	const WCML_TRANSLATE_EMAILS_DOC      = 'https://wpml.org/documentation/related-projects/woocommerce-multilingual/how-to-translate-woocommerce';
+	const WCML_TRANSLATE_EMAILS_CAMPAIGN = 'woocommerce-emails';
 
 	// WCML compatibility links.
-	const WCML_BOOKINGS_DOC            = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-bookings-woocommerce-multilingual/';
-	const WCML_PRODUCT_ADDONS_DOC      = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-product-add-ons-woocommerce-multilingual/';
-	const WCML_TAB_MANAGER_DOC         = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-tab-manager-woocommerce-multilingual/';
-	const WCML_TABLE_RATE_SHIPPING_DOC = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-table-rate-shipping-woocommerce-multilingual/';
-	const WCML_SUBSCRIPTIONS_DOC       = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-subscriptions-woocommerce-multilingual/';
-	const WCML_CUSTOM_PRODUCT_TABS     = 'https://wpml.org/plugin/custom-product-tabs-for-woocommerce/';
+	const WCML_BOOKINGS_DOC                 = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-bookings-woocommerce-multilingual/';
+	const WCML_BOOKINGS_CAMPAIGN            = 'woocommerce-bookings';
+	const WCML_PRODUCT_ADDONS_DOC           = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-product-add-ons-woocommerce-multilingual/';
+	const WCML_PRODUCT_ADDONS_CAMPAIGN      = 'woocommerce-product-addons';
+	const WCML_TAB_MANAGER_DOC              = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-tab-manager-woocommerce-multilingual/';
+	const WCML_TAB_MANAGER_CAMPAIGN         = 'woocommerce-tab-manager';
+	const WCML_TABLE_RATE_SHIPPING_DOC      = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-table-rate-shipping-woocommerce-multilingual/';
+	const WCML_TABLE_RATE_SHIPPING_CAMPAIGN = 'woocommerce-table-rate-shipping';
+	const WCML_SUBSCRIPTIONS_DOC            = 'https://wpml.org/documentation/woocommerce-extensions-compatibility/translating-woocommerce-subscriptions-woocommerce-multilingual/';
+	const WCML_SUBSCRIPTIONS_CAMPAIGN       = 'woocommerce-product-subscriptions';
+	const WCML_CUSTOM_PRODUCT_TABS_DOC      = 'https://wpml.org/plugin/custom-product-tabs-for-woocommerce/';
+
+	const UTM_TERM_WIZARD = 'wcml-setup-wizard';
 
 	/**
 	 * @param string       $link
@@ -106,20 +115,22 @@ class WCML_Tracking_Link {
 
 	/**
 	 * @param false|string $id e.g. '#some-section'.
+	 * @param array        $params
 	 *
 	 * @return string
 	 */
-	public static function getWcmlMainDoc( $id = false ) {
-		return self::generate( self::WCML_MAIN_DOC, $id );
+	public static function getWcmlMainDoc( $id = false, $params = [] ) {
+		return self::generate( self::WCML_MAIN_DOC, $id, $params );
 	}
 
 	/**
 	 * @param false|string $id e.g. '#some-section'.
+	 * @param array        $params
 	 *
 	 * @return string
 	 */
-	public static function getWcmlMultiCurrencyDoc( $id = false ) {
-		return self::generate( self::WCML_MULTI_CURRENCY_DOC, $id );
+	public static function getWcmlMultiCurrencyDoc( $id = false, $params = [] ) {
+		return self::generate( self::WCML_MULTI_CURRENCY_DOC, $id, $params );
 	}
 
 	/**
@@ -130,52 +141,73 @@ class WCML_Tracking_Link {
 	}
 
 	/**
+	 * @param array $params
+	 *
 	 * @return string
 	 */
-	public static function getWcmlDisplayAsTranslatedDoc() {
-		return self::generate( self::WCML_DISPLAY_AS_TRANSLATED_DOC );
+	public static function getWcmlDisplayAsTranslatedDoc( $params = [] ) {
+		return self::generate( self::WCML_DISPLAY_AS_TRANSLATED_DOC, false, $params );
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function getWcmlTranslateEmailsDoc() {
+		return self::generate( self::WCML_TRANSLATE_EMAILS_DOC, false, [
+			'utm_campaign' => self::WCML_TRANSLATE_EMAILS_CAMPAIGN,
+		] ) . '#translate-woocommerce-emails';
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getWcmlBookingsDoc() {
-		return self::generate( self::WCML_BOOKINGS_DOC );
+		return self::generate( self::WCML_BOOKINGS_DOC, false, [
+			'utm_campaign' => self::WCML_BOOKINGS_CAMPAIGN,
+		] );
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getWcmlProductAddonsDoc() {
-		return self::generate( self::WCML_PRODUCT_ADDONS_DOC );
+		return self::generate( self::WCML_PRODUCT_ADDONS_DOC, false, [
+			'utm_campaign' => self::WCML_PRODUCT_ADDONS_CAMPAIGN,
+		] );
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getWcmlTabManagerDoc() {
-		return self::generate( self::WCML_TAB_MANAGER_DOC );
+		return self::generate( self::WCML_TAB_MANAGER_DOC, false, [
+			'utm_campaign' => self::WCML_TAB_MANAGER_CAMPAIGN,
+		] );
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getWcmlTableRateShippingDoc() {
-		return self::generate( self::WCML_TABLE_RATE_SHIPPING_DOC );
+		return self::generate( self::WCML_TABLE_RATE_SHIPPING_DOC, false, [
+			'utm_campaign' => self::WCML_TABLE_RATE_SHIPPING_CAMPAIGN,
+		] );
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getWcmlSubscriptionsDoc() {
-		return self::generate( self::WCML_SUBSCRIPTIONS_DOC );
+		return self::generate( self::WCML_SUBSCRIPTIONS_DOC, false, [
+			'utm_campaign' => self::WCML_SUBSCRIPTIONS_CAMPAIGN,
+		] );
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getWcmlCustomProductTabs() {
-		return self::generate( self::WCML_CUSTOM_PRODUCT_TABS );
+		return self::generate( self::WCML_CUSTOM_PRODUCT_TABS_DOC );
 	}
 
 }

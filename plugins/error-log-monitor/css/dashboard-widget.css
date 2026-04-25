@@ -1,3 +1,4 @@
+@charset "UTF-8";
 #ws_php_error_log .elm-log-table {
   table-layout: fixed;
   overflow: hidden;
@@ -73,7 +74,11 @@
   color: #555;
 }
 #ws_php_error_log .elm-context-group h3 {
-  margin: 8px 0;
+  margin: 0;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 #ws_php_error_log .elm-context-group .elm-stacktrace {
   margin: 0;
@@ -92,6 +97,25 @@
 }
 #ws_php_error_log .elm-show-mundane-context:hover {
   text-decoration: underline;
+}
+#ws_php_error_log .elm-collapsible-context-group h3 {
+  padding-left: 0.5em;
+  margin-left: -0.5em;
+  cursor: pointer;
+}
+#ws_php_error_log .elm-collapsible-context-group h3:before {
+  display: inline-block;
+  width: 12px;
+  margin-right: 0.4em;
+  content: "▼";
+  font-size: 10px;
+  color: #787c82;
+}
+#ws_php_error_log .elm-collapsible-context-group.elm-closed-context-group h3:before {
+  content: "▶";
+}
+#ws_php_error_log .elm-closed-context-group .elm-context-group-content {
+  display: none;
 }
 #ws_php_error_log table.elm-context-group-content {
   border-spacing: 0;
@@ -166,7 +190,9 @@
 }
 #ws_php_error_log #elm_regex_filter_text {
   width: 100%;
-  margin-bottom: 1em;
+}
+#ws_php_error_log #elm-group-visibility-options {
+  margin-bottom: 1.5em;
 }
 #ws_php_error_log .elm-upgrade-to-pro-footer {
   margin: 10px -12px -12px -12px;

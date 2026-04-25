@@ -2,9 +2,9 @@
 Contributors: wpengine, deliciousbrains, bradt, ahmedgeek, philwebs, dalewilliams, tysonreeder, kevinwhoffman
 Tags: migrate, push pull, clone, import site, export site, transfer, restore, backup, wordpress migration plugin, move site, database migration, site migration
 Requires at least: 5.2
-Tested up to: 6.2.2
+Tested up to: 6.8
 Requires PHP: 5.6
-Stable tag: 2.6.8
+Stable tag: 2.7.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,6 +116,49 @@ Yes, WP Migrate Lite includes `export` and `find-replace` commands. Qualifying l
 10. Saved migration profiles
 
 == Changelog ==
+
+= WP Migrate 2.7.7 - 2025-11-11 =
+* Security: Improved security of the cache flush functionality, thanks to security researcher Dmitrii Ignatyev
+
+= WP Migrate 2.7.6 - 2025-10-15 =
+* New: Dependencies have been updated for improved security and stability
+* Fixed: The removal of temporary tables after a migration is cancelled is now more robust
+
+= WP Migrate 2.7.5 - 2025-09-22 =
+* Fixed: "Implicitly marking parameter $wpdb as nullable is deprecated" warning introduced with PHP 8.4 is no longer logged
+* Note: On PHP 8.4, a related deprecation warning from the php-di library may still appear, this is intentional to maintain compatibility with PHP 5.6-7.4
+
+= WP Migrate 2.7.4 - 2025-06-09 =
+* Pro only release
+
+= WP Migrate 2.7.3 - 2025-04-24 =
+* New: Dependencies have been updated for improved security and stability
+* Fixed: Notices about loading textdomains incorrectly are prevented
+
+= WP Migrate 2.7.2 - 2025-02-12 =
+* Fixed: Export command initiated via WP-CLI once again operates without errors related to unknown column keys, fixing a regression introduced in version 2.7.1
+
+= WP Migrate 2.7.1 - 2025-02-11 =
+* New: Dependencies have been updated for improved security and stability
+* Fixed: Compatibility with WP Go Maps has been improved through support for the MySQL `POINT` data type
+
+= WP Migrate 2.7.0 - 2024-10-04 =
+* Security: The plugin can now serve updates from WP Engine servers, however this update mechanism is not included when installed directly from WordPress.org
+* New: PHP and JS dependencies have been updated
+
+= WP Migrate 2.6.11 - 2024-05-30 =
+* Added: A new filter `wpmdb_check_table_column_for_reference` now helps to avoid memory errors by excluding columns from the find and replace operation when a serialized reference is detected
+
+= WP Migrate 2.6.10 - 2024-02-08 =
+* Security: Plugin configuration data now uses JSON encoding instead of serialization to prevent PHP Object Injection (thanks to Patchstack for responsible disclosure on January 15, 2024 followed by development and testing of the fix by WP Engine)
+* Security: Unserializing an object during find and replace operations now passes `'allowed_classes' => false` to avoid instantiating the complete object and potentially running malicious code stored in the database
+* Security: The wp-queue library now ensures that only its own classes can be unserialized via `allowed_classes`
+* Fix: Sites with "bundle" or "runtime" in the domain name can now load plugin pages in WP Admin
+
+= WP Migrate 2.6.9 - 2023-08-29 =
+* New: Links to plugin documentation, support, feedback, and changelog are now available in the footer of WP Admin
+* Improvement: Migration performance is now improved for sites that do not organize uploads into month- and year-based folders
+* Bug: Form data types are now consistent when using default fallbacks
 
 = WP Migrate 2.6.8 - 2023-07-10 =
 * Improvement: PHP 8.2 and WP Migrate are now compatible

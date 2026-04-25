@@ -96,7 +96,7 @@ class WC_Privacy_Erasers {
 		 *
 		 * @since 3.4.0
 		 * @param array    $response Array response data. Must include messages, num_items_removed, num_items_retained, done.
-		 * @param WC_Order $order A customer object.
+		 * @param WC_Customer $customer A customer object.
 		 */
 		return apply_filters( 'woocommerce_privacy_erase_personal_data_customer', $response, $customer );
 	}
@@ -357,7 +357,7 @@ class WC_Privacy_Erasers {
 		 * Allow extensions to remove their own personal data for this order.
 		 *
 		 * @since 3.4.0
-		 * @param WC_Order $order A customer object.
+		 * @param WC_Order $order Order instance.
 		 */
 		do_action( 'woocommerce_privacy_remove_order_personal_data', $order );
 	}

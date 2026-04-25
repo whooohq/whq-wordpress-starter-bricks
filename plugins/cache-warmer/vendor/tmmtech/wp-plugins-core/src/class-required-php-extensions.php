@@ -41,6 +41,12 @@ final class Required_PHP_Extensions {
      * @param WP_Plugins_Core $core Plugins core.
      */
     public function __construct( WP_Plugins_Core $core ) {
+
+        // Skip the extension check if running in WP-CLI.
+        if ( defined( 'WP_CLI' ) && WP_CLI ) {
+            return;
+        }
+
         $this->core = $core;
 
         if ( property_exists( $core->plugin, 'polyfilled_extensions' ) ) {

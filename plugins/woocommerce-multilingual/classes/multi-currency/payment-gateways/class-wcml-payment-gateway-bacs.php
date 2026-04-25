@@ -33,6 +33,10 @@ class WCML_Payment_Gateway_Bacs extends WCML_Payment_Gateway {
 
 		$allowed_accounts = [];
 
+		if ( $gateway_setting && ! isset( $gateway_setting['value'] ) ) {
+			$gateway_setting['value'] = '0';
+		}
+
 		if ( $gateway_setting && 'all' !== $gateway_setting['value'] ) {
 
 			if ( 'all_in' === $gateway_setting['value'] ) {
@@ -47,7 +51,7 @@ class WCML_Payment_Gateway_Bacs extends WCML_Payment_Gateway {
 			}
 		}
 
-		return $allowed_accounts ? $allowed_accounts : $accounts;
+		return $allowed_accounts ?: $accounts;
 	}
 
 }

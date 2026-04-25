@@ -83,8 +83,8 @@ function wppb_add_on_activate( $button ) {
 
             $activate_button
                 .blur()
-                .removeClass('wppb-add-on-activate')
-                .addClass('wppb-add-on-deactivate')
+                .removeClass('wppb-add-on-activate button-primary')
+                .addClass('wppb-add-on-deactivate button-secondary')
                 .removeAttr('disabled')
                 .text( jQuery('#wppb-add-on-deactivate-button-text').text() );
 
@@ -136,8 +136,8 @@ function wppb_add_on_deactivate( $button ) {
 
         $button
             .blur()
-            .removeClass('wppb-add-on-is-active')
-            .addClass('wppb-add-on-activate')
+            .removeClass('wppb-add-on-is-active button-secondary')
+            .addClass('wppb-add-on-activate button-primary')
             .attr( 'disabled', false )
             .text( jQuery('#wppb-add-on-activate-button-text').text() );
 

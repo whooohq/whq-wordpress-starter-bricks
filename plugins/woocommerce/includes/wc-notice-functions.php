@@ -29,14 +29,16 @@ function wc_notice_count( $notice_type = '' ) {
 	$notice_count = 0;
 	$all_notices  = WC()->session->get( 'wc_notices', array() );
 
-	if ( isset( $all_notices[ $notice_type ] ) ) {
+	if ( isset( $all_notices[ $notice_type ] ) && is_array( $all_notices[ $notice_type ] ) ) {
 
 		$notice_count = count( $all_notices[ $notice_type ] );
 
 	} elseif ( empty( $notice_type ) ) {
 
 		foreach ( $all_notices as $notices ) {
-			$notice_count += count( $notices );
+			if ( is_countable( $notices ) ) {
+				$notice_count += count( $notices );
+			}
 		}
 	}
 
@@ -77,6 +79,13 @@ function wc_add_notice( $message, $notice_type = 'success', $data = array() ) {
 		return;
 	}
 
+	// If this is called before the session is initialized, for example if a plugin includes this file incorrectly on
+	// the admin, skip doing anything to prevent errors.
+	if ( ! WC()->session ) {
+		wc_doing_it_wrong( __FUNCTION__, __( 'This function should not be called before the WooCommerce session is initialized, or places where there is no session, e.g. WordPress admin.', 'woocommerce' ), '10.5' );
+		return;
+	}
+
 	$notices = WC()->session->get( 'wc_notices', array() );
 
 	// Backward compatibility.
@@ -108,7 +117,7 @@ function wc_set_notices( $notices ) {
 		return;
 	}
 
-	WC()->session->set( 'wc_notices', $notices );
+	WC()->session->set( 'wc_notices', empty( $notices ) ? null : $notices );
 }
 
 /**
@@ -129,7 +138,7 @@ function wc_clear_notices() {
  *
  * @since 2.1
  * @param bool $return true to return rather than echo. @since 3.5.0.
- * @return string|null
+ * @return string|void
  */
 function wc_print_notices( $return = false ) {
 	if ( ! did_action( 'woocommerce_init' ) ) {
@@ -137,7 +146,14 @@ function wc_print_notices( $return = false ) {
 		return;
 	}
 
-	$all_notices  = WC()->session->get( 'wc_notices', array() );
+	$session = WC()->session;
+
+	// If the session handler has not initialized, there will be no notices for us to read.
+	if ( null === $session ) {
+		return;
+	}
+
+	$all_notices  = $session->get( 'wc_notices', array() );
 	$notice_types = apply_filters( 'woocommerce_notice_types', array( 'error', 'success', 'notice' ) );
 
 	// Buffer output.
@@ -228,14 +244,17 @@ function wc_get_notices( $notice_type = '' ) {
 		return;
 	}
 
+	$notices = array();
+	if ( ! WC()->session ) {
+		return $notices;
+	}
+
 	$all_notices = WC()->session->get( 'wc_notices', array() );
 
 	if ( empty( $notice_type ) ) {
 		$notices = $all_notices;
 	} elseif ( isset( $all_notices[ $notice_type ] ) ) {
 		$notices = $all_notices[ $notice_type ];
-	} else {
-		$notices = array();
 	}
 
 	return $notices;

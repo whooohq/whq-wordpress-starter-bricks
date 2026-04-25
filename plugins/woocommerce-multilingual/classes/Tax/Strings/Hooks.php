@@ -4,6 +4,8 @@ namespace WCML\Tax\Strings;
 
 use IWPML_Backend_Action;
 use IWPML_Frontend_Action;
+use WCML_Orders;
+use WPML\Collect\Support\Collection;
 
 class Hooks implements IWPML_Backend_Action, IWPML_Frontend_Action {
 
@@ -17,7 +19,7 @@ class Hooks implements IWPML_Backend_Action, IWPML_Frontend_Action {
 
 	/**
 	 * @param string $label
-	 * @param int $taxId
+	 * @param int    $taxId
 	 *
 	 * @return string
 	 */
@@ -29,11 +31,18 @@ class Hooks implements IWPML_Backend_Action, IWPML_Frontend_Action {
 			$this->migrateStringToTaxIdName( $taxId, $label );
 		}
 
-		return icl_translate( self::STRINGS_CONTEXT, $this->getStringName( $taxId ), $label );
+		return icl_translate(
+			self::STRINGS_CONTEXT,
+			$this->getStringName( $taxId ),
+			$label,
+			false,
+			$label,
+			$this->getTargetLanguage()
+		);
 	}
 
 	/**
-	 * @param int $taxId
+	 * @param int   $taxId
 	 * @param array $taxRate
 	 */
 	public function registerLabelString( $taxId, $taxRate ) {
@@ -43,7 +52,7 @@ class Hooks implements IWPML_Backend_Action, IWPML_Frontend_Action {
 	}
 
 	/**
-	 * @param int $taxId
+	 * @param int    $taxId
 	 * @param string $label
 	 *
 	 * @return int
@@ -53,9 +62,9 @@ class Hooks implements IWPML_Backend_Action, IWPML_Frontend_Action {
 	}
 
 	/**
-	 * migration from WCML < 4.9.0
+	 * Migration from WCML < 4.9.0
 	 *
-	 * @param int $taxId
+	 * @param int    $taxId
 	 * @param string $label
 	 */
 	private function migrateStringToTaxIdName( $taxId, $label ) {
@@ -82,6 +91,31 @@ class Hooks implements IWPML_Backend_Action, IWPML_Frontend_Action {
 	 */
 	private function getStringName( $taxId ) {
 		return 'tax_label_' . $taxId;
+	}
+
+	/**
+	 * @param Collection $postData
+	 *
+	 * @return bool
+	 */
+	private function isSendingOrderDetails( $postData ) {
+		return $postData->get( 'post_ID' )
+			&& 'shop_order' === $postData->get( 'post_type' )
+			&& 'send_order_details' === $postData->get( 'wc_order_action' );
+	}
+
+	/**
+	 * @return string|null
+	 */
+	private function getTargetLanguage() {
+		/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
+		$postData = wpml_collect( $_POST );
+
+		if ( $this->isSendingOrderDetails( $postData ) ) {
+			return WCML_Orders::getLanguage( (int) $postData->get( 'post_ID' ) );
+		}
+
+		return null;
 	}
 
 }

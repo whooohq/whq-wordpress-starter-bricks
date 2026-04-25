@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -17,6 +17,8 @@ if (! defined('ABSPATH') ) {
 
 // =====================================================================
 // Display the profiler's log.
+
+require __DIR__.'/class-logs.php';
 
 // Delete the log?
 if (! empty( $_POST['cp-delete-log'] ) ) {
@@ -88,6 +90,7 @@ if ( defined('CODE_PROFILER_TEXTAREA_HEIGHT') ) {
 
 echo code_profiler_display_tabs( 4 );
 ?>
+<h3><?php esc_html_e('Code Profiler log', 'code-profiler'); ?></h3>
 <form name="cplogform" method="post">
 	<table class="form-table">
 		<tr>
@@ -132,13 +135,33 @@ echo code_profiler_display_tabs( 4 );
 						<span style="display: inline-block"><?php esc_html_e('Debug', 'code-profiler') ?></span>&nbsp;
 					</label>
 				</p>
-				<input type="submit" onclick="return cpjs_delete_log();" name="cp-delete-log" class="button-primary" value="<?php esc_attr_e('Delete log', 'code-profiler') ?>"<?php disabled( $logline, '') ?> />
+				<input type="submit" onclick="return cpjs_delete_log();" name="cp-delete-log" class="button button-primary" value="<?php esc_attr_e('Delete log', 'code-profiler') ?>"<?php disabled( $logline, '') ?> />
 				<?php wp_nonce_field('cp_delete_log', 'cp_nonce', 0); ?>
 				<p class="description"><?php esc_html_e('The log is deleted automatically when it reaches 100KB.', 'code-profiler') ?></p>
 			</td>
 		</tr>
 	</table>
 </form>
+
+<h3><?php esc_html_e('HTTP response log', 'code-profiler'); ?></h3>
+<table class="form-table">
+	<tr>
+		<td width="100%">
+			<textarea dir="auto" name="cptxtlog" class="large-text code" style="height:<?php echo $th; ?>px;" wrap="off" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><?php
+			/**
+			 * Display the last HTTP response log.
+			 */
+			$log = CodeProfiler_Logs::get_HTTP_log();
+			if ( $log === false ) {
+				echo "\n\n > " . esc_html__('The HTTP response log is empty.', 'code-profiler');
+			} else {
+				echo esc_textarea( $log );
+			}
+			?></textarea>
+			<p class="description"><?php esc_html_e('The log shows the HTTP request and its payload, the response headers and body for the last profile.', 'code-profiler') ?></p>
+		</td>
+	</tr>
+</table>
 <?php
 
 // =====================================================================

@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -34,12 +34,14 @@ echo code_profiler_display_tabs( 5 );
 	</tr>
 	<tr>
 		<td style="border-bottom:1px solid #c3c4c7">
-			<h4><?php esc_html_e('Why does the execution time returned by Code Profiler seem higher than when I load my site in my browser?', 'code-profiler') ?></h4>
+			<h4><?php esc_html_e('Why does the execution time and memory returned by Code Profiler seem higher than when I load my site in my browser?', 'code-profiler') ?></h4>
 			<?php esc_html_e('Because the profiler needs to analyze your PHP code, it must exclude and disable any kind of website optimization: caching, CDN and PHP OPcache.', 'code-profiler') ?>
 			<br />
 			<?php esc_html_e('A caching sofware and a CDN service will prevent execution of your code and thus must be disabled by the profiler.', 'code-profiler') ?>
 			<br />
-			<?php esc_html_e('Regarding the opcode cache, PHP includes an opcode optimizer (since v7.0): after creating the first set of opcodes, it forwards it to the optimizer where it will get through 13 passes that will optimize it (peephole, jump, call, literal optimizations etc). That means that at the end of the day, the code in the opcache may have been optimized and thus may not match the original code found in your scripts. For that reason, it must be disabled. That problem occurs with other profilers too such as the xdebug extension, which cannot run well when the optimizer is turned on because it removes some virtual machine instructions needed by them.', 'code-profiler') ?>
+			<?php esc_html_e('Regarding the opcode cache, PHP includes an opcode optimizer since version 7.0: after creating the first set of opcodes, it forwards it to the optimizer where it will get through 13 passes that will optimize it (peephole, jump, call, literal optimizations etc). That means that at the end of the day, the code in the opcache may have been optimized and thus may not match the original code found in your scripts. For that reason, it must be disabled. That problem occurs with other profilers too such as the xdebug extension, which cannot run well when the optimizer is turned on because it removes some virtual machine instructions needed by them.', 'code-profiler') ?>
+			<br />
+			<?php esc_html_e('Note that disabling the opcode cache also increases the memory usage because PHP needs to open, read, parse and compile all scripts instead of serving them from the cache.', 'code-profiler') ?>
 		</td>
 	</tr>
 	<tr>
@@ -53,7 +55,7 @@ echo code_profiler_display_tabs( 5 );
 			<h4><?php esc_html_e('Do I need to deactivate or uninstall Code Profiler when I\'m not using it ?', 'code-profiler') ?></h4>
 			<?php esc_html_e('There\'s no need to deactivate Code Profiler when you don\'t use it, it has no performance impact on your site.', 'code-profiler') ?>
 			<br />
-			<?php esc_html_e('Because an update can affect the performance of your site, you should run it after every plugin or theme update.', 'code-profiler') ?>
+			<?php esc_html_e('Because an update can affect the performance of your site, consider running it after every plugin or theme update.', 'code-profiler') ?>
 		</td>
 	</tr>
 	<tr>
@@ -78,25 +80,6 @@ echo code_profiler_display_tabs( 5 );
 		<td style="border-bottom:1px solid #c3c4c7">
 			<h4><?php esc_html_e('Why do some scripts show an execution time of 0 second?', 'code-profiler') ?></h4>
 			<?php esc_html_e('That can happen if your PHP version is 7.1 or 7.2. With those versions, Code Profiler can only use microseconds for its metrics, while with versions 7.3 and above it can use the system\'s high resolution time in nanoseconds. It can also happen if a PHP script has only a couple of lines of code, its execution time is too quick to be measured, hence it will show 0.', 'code-profiler') ?>
-		</td>
-	</tr>
-	<tr>
-		<td style="border-bottom:1px solid #c3c4c7"><a name="composerwarning"></a>
-			<h4><?php esc_html_e('Why does Code Profiler warn me that I have multiple plugins using Composer?', 'code-profiler') ?></h4>
-			<?php
-			echo esc_html_e('Composer, a tool for dependency management in PHP, is included in many popular plugins and themes. It is used to autoload PHP classes.', 'code-profiler') .
-			'<br />' .
-			esc_html__('Code Profiler will inform you if two or more activated plugins use it because you will need to take it into consideration when reading and interpreting the results. Let\'s take an example:', 'code-profiler').
-			'<br />' .
-			esc_html__('Assuming you have four plugins, #1, #2, #3 and #4. Both plugins #1 and #4 include and require Composer. WordPress will start and load plugin #1, which will run an instance of Composer to load its classes. Immediately after, WordPress will load plugins #2 and #3. Then, it will load plugin #4, which too will need to load its classes. However, plugin #4 will not start a new instance of Composer but, instead, will rely on the one from plugin #1 to load its own classes.', 'code-profiler').
-			'<br />' .
-			esc_html__('As a result, the execution time of plugin #1 will increase (its instance of Composer is used to load classes for plugin #4 too), while the execution time of plugin #4 will decrease (it doesn\'t need to start a new instance of Composer).', 'code-profiler').
-			' '.
-			esc_html__('Therefore, if you have a dozen or more plugins using Composer, it is important to take into consideration that the execution time of plugin #1 may be much higher than other plugins.', 'code-profiler').
-			'<br />' .
-			esc_html__('Also, assuming you are a developer and just want to profile a plugin that you wrote and that includes Composer, you will need to disable any other plugin using Composer in order to get the most accurate results for your plugin only.', 'code-profiler');
-			?>
-			<br />&nbsp;
 		</td>
 	</tr>
 	<tr>

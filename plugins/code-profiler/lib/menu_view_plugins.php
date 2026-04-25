@@ -7,13 +7,15 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
-if (! defined('ABSPATH') ) { die('Forbidden'); }
+if (! defined('ABSPATH') ) {
+	die('Forbidden');
+}
 
-// =====================================================================
+// ===================================================================== 2023-11-17
 // Display Plugins & Theme stats.
 
 $buffer = code_profiler_get_profile_data( $profile_path, 'slugs');
@@ -25,29 +27,32 @@ if ( isset( $buffer['error'] ) ) {
 $cp_options = get_option('code-profiler');
 
 // Name vs slug
-if ( empty( $cp_options['display_name'] ) || ! in_array( $cp_options['display_name'], ['full', 'slug' ] ) ) {
+if ( empty( $cp_options['display_name'] ) ||
+	! in_array( $cp_options['display_name'], ['full', 'slug' ] ) ) {
+
 	$cp_options['display_name'] = 'full';
 }
 // Truncate name
-if ( empty( $cp_options['truncate_name'] ) || ! preg_match('/^\d+$/', ( $cp_options['truncate_name'] ) ) ) {
+if ( empty( $cp_options['truncate_name'] ) ||
+	! preg_match('/^\d+$/', ( $cp_options['truncate_name'] ) ) ) {
+
 	$cp_options['truncate_name'] = 30;
 }
 // Horizontal vs vertical chart
-if ( empty( $cp_options['chart_type'] ) || ! in_array( $cp_options['chart_type'], ['x', 'y' ] ) ) {
+if ( empty( $cp_options['chart_type'] ) ||
+	! in_array( $cp_options['chart_type'], ['x', 'y' ] ) ) {
+
 	$axis = 'x';
 } else {
 	$axis = $cp_options['chart_type'];
 }
 // Max plugins to display
-if ( empty( $cp_options['chart_max_plugins'] ) || ! preg_match('/^\d+$/', ( $cp_options['chart_max_plugins'] ) ) ) {
+if ( empty( $cp_options['chart_max_plugins'] ) ||
+	! preg_match('/^\d+$/', ( $cp_options['chart_max_plugins'] ) ) ) {
+
 	$chart_max_plugins = 25;
 } else {
 	$chart_max_plugins = $cp_options['chart_max_plugins'];
-}
-
-// Check if we should warn about composer
-if (! empty( $cp_options['warn_composer'] ) ) {
-	$composer_warning = code_profiler_composer_warning( $profile_path, $cp_options['display_name'] );
 }
 
 $label		= [];
@@ -136,7 +141,8 @@ jQuery(document).ready(function() {
 		}
 		echo "\t<tr>\n\t\t<td>". esc_html( $label[ $i ] ) ."</td>".
 		"<td>". esc_html( number_format( $sr_data[ $i ], 3 ) ) ."</td>".
-		"<td>". esc_html( number_format( ( $sr_data[ $i ] / $total_time ) * 100 ) ) ."%</td>\n\t</tr>\n";
+		"<td>". esc_html( number_format( ( $sr_data[ $i ] / $total_time ) * 100 ) ) .
+		"%</td>\n\t</tr>\n";
 	}
 	echo "</table>\n";
 ?>
@@ -149,50 +155,5 @@ $save_png	= 1;
 $rotate_img	= 1;
 $type			= 'slugs';
 
-// =====================================================================
-// Warn if multiple plugins are using composer
-
-function code_profiler_composer_warning( $profile_path, $display_name ) {
-
-	if (! file_exists( "$profile_path.composer.profile" ) ) {
-		return;
-	}
-	$res = json_decode( file_get_contents( "$profile_path.composer.profile" ), true );
-	// Make sure there are at least two items (free version only)
-	if ( $res === false || count( $res ) < 2 ) {
-		return;
-	}
-
-	$list		= '';
-	$first	= '';
-	$count	= 1;
-	foreach( $res as $slug => $name ) {
-		if ( $display_name == 'full') {
-			$list .= "$count: <strong>". esc_html( $name ) .'</strong>, ';
-			if ( empty( $first ) ) {
-				$first = '<strong>'. esc_html( $name ) .'</strong>';
-			}
-		} else {
-			$list .= "$count: <strong>". esc_html( $slug ) .'</strong>, ';
-			if ( empty( $first ) ) {
-				$first = '<strong>'. esc_html( $slug ) .'</strong>';
-			}
-		}
-		$count++;
-	}
-	$list = rtrim( $list, ', ') .'.';
-
-	$msg = esc_html__('Code Profiler has detected that the following components, sorted by execution order, are using Composer dependency manager:', 'code-profiler') . "<br />$list<br />".
-	sprintf(
-		esc_html__('As that may increase the execution time of %s, make sure to consult the following FAQ: %s%s%s', 'code-profiler'),
-		$first,
-		'<a href="?page=code-profiler&cptab=faq#composerwarning" target="_blank" rel="noopener noreferrer">',
-		esc_html__('Why does Code Profiler warn me that I have multiple plugins using Composer?', 'code-profiler'),
-		'</a>'
-	);
-
-	return '<div class="cp-notice cp-notice-orange"><p>'. $msg .'</p></div>';
-
-}
 // =====================================================================
 // EOF

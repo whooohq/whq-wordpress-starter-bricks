@@ -1,9 +1,10 @@
 === Error Log Monitor ===
 Contributors: whiteshadow
-Tags: dashboard widget, administration, error reporting, admin, maintenance, php
+Tags: dashboard widget, administration, error reporting, admin, php
+License: GPLv3
 Requires at least: 4.5
-Tested up to: 6.2
-Stable tag: 1.7.7
+Tested up to: 6.8.3
+Stable tag: 1.7.12
 
 Adds a Dashboard widget that displays the latest messages from your PHP error log. It can also send logged errors to email.
 
@@ -45,6 +46,30 @@ Follow these steps to install the plugin on your site:
 2. Dashboard widget configuration screen.
 
 == Changelog ==
+
+= 1.7.12 =
+* Fixed a fatal error when trying to clear a log file that is not writable.
+* Updated the Freemius SDK to version 2.12.2.
+* Tested up to WP 6.8.3 and WP 6.9-alpha.
+
+= 1.7.11 =
+* Fixed potential PHP deprecation warnings like "Creation of dynamic property ClassName::$file is deprecated in .../AdminPage.php". While this plugin doesn't trigger warnings like that on its own, it could cause them indirectly if it was used together with another plugin that also uses the scbFramework framework.
+* Updated the Freemius SDK to the latest version.
+* Tested up to WP 6.7.1.
+
+= 1.7.10 =
+* Fix likely crash due to some Freemius SDK files being missing.
+
+= 1.7.9 =
+* Made the "Stack Trace" section collapsible. By default, it will always be expanded if available. You can change that in the widget configuration, in the new "Context" section. The plugin will also remember the state of recently collapsed/expanded "Stack Trace" sections (per unique log message). 
+* Updated the Freemius SDK to version 2.9.0.
+* Tested up to WP 6.6.2.
+
+= 1.7.8 =
+* Added a "Download Log" button. It downloads the PHP error log as a ZIP file. The button will only appear if the log is not empty and the server meets a number of additional requirements (PHP 8.1+, 64-bit PHP version, zlib and mbstring extensions).
+* Increased the minimum required PHP version to 7.4.
+* Updated the Freemius SDK to the latest version.
+* Tested up to WP 6.6-alpha.
 
 = 1.7.7 =
 * Updated the Freemius SDK to the latest version.

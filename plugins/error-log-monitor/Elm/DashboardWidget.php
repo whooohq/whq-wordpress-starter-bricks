@@ -1,6 +1,8 @@
 <?php
 
 class Elm_DashboardWidget {
+	const LOG_CLEARING_ERROR_TRANSIENT = 'elm_log_clearing_error';
+
 	protected $widgetId = 'ws_php_error_log';
 	protected $requiredCapability = 'manage_options';
 	protected $widgetCssPath = 'css/dashboard-widget.css';
@@ -13,6 +15,11 @@ class Elm_DashboardWidget {
 	 * @var Elm_plugin $plugin A reference to the main plugin object.
 	 */
 	protected $plugin;
+
+	/**
+	 * @var \Ajaw_v1_Action
+	 */
+	protected $downloadLogAction;
 
 	protected function __construct($settings, $plugin) {
 		$this->settings = $settings;
@@ -57,6 +64,12 @@ class Elm_DashboardWidget {
 			->requiredCap($this->requiredCapability)
 			->register();
 
+		$this->downloadLogAction = ajaw_v1_CreateAction('elm-download-log')
+			->handler(array($this, 'ajaxDownloadLog'))
+			->requiredCap($this->requiredCapability)
+			->method('GET')
+			->register();
+
 		add_action('wp_dashboard_setup', array($this, 'registerWidget'));
 		add_action('wp_network_dashboard_setup', array($this, 'registerWidget'));
 		add_action('admin_init', array($this, 'handleLogClearing'));
@@ -88,20 +101,24 @@ class Elm_DashboardWidget {
 		return $this->userCanSeeWidget() && current_user_can('install_plugins');
 	}
 
+	private function userCanDownloadLog() {
+		return $this->userCanSeeWidget() && current_user_can('install_plugins');
+	}
+
 	public function enqueueWidgetDependencies($hook) {
 		if ( $hook === 'index.php' ) {
 			wp_enqueue_script(
 				'elm-dashboard-widget',
 				plugins_url('js/dashboard-widget.js', $this->plugin->getPluginFile()),
 				array('jquery', 'ajaw-v1-ajax-action-wrapper'),
-				'20201204'
+				'20240910-3'
 			);
 
 			wp_enqueue_style(
 				'elm-dashboard-widget-styles',
 				plugins_url($this->widgetCssPath, $this->plugin->getPluginFile()),
 				array(),
-				'20220313'
+				'20240912'
 			);
 		}
 	}
@@ -114,8 +131,32 @@ class Elm_DashboardWidget {
 			return;
 		}
 
-		if ( isset($_GET['elm-log-cleared']) && !empty($_GET['elm-log-cleared']) ) {
-			printf('<p><strong>%s</strong></p>', __('Log cleared.', 'error-log-monitor'));
+		//phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset($_GET['elm-log-cleared']) && is_numeric($_GET['elm-log-cleared']) ) {
+			//phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$code = (int)$_GET['elm-log-cleared'];
+
+			if ( $code === 1 ) {
+				printf('<p><strong>%s</strong></p>', esc_html__('Log cleared.', 'error-log-monitor'));
+			} else if ( $code === 2 ) {
+				$storedMessage = get_transient(self::LOG_CLEARING_ERROR_TRANSIENT);
+				if ( $storedMessage !== false ) { //Clean up the transient.
+					delete_transient(self::LOG_CLEARING_ERROR_TRANSIENT);
+				}
+
+				if ( is_string($storedMessage) && !empty($storedMessage) ) {
+					$message = sprintf(
+						__('Error clearing log: %s', 'error-log-monitor'),
+						$storedMessage
+					);
+				} else {
+					$message = __('An unknown error occurred while clearing the log.', 'error-log-monitor');
+				}
+				printf(
+					'<div class="notice notice-error inline"><p><strong>%s</strong></p></div>',
+					esc_html($message)
+				);
+			}
 		}
 
 		$this->displayContentSection($log);
@@ -123,11 +164,12 @@ class Elm_DashboardWidget {
 		if ( $log->getFileSize() > 0 ) {
 			echo '<p>';
 			printf(
-				/* translators: 1: Log file name, 2: Log file size */
+			/* translators: 1: Log file name, 2: Log file size */
 				__('Log file: %1$s (%2$s)', 'error-log-monitor') . ' ',
 				esc_html($log->getFilename()),
 				Elm_Plugin::formatByteCount($log->getFileSize(), 2)
 			);
+
 			if ( $this->userCanClearLog() ) {
 				/** @noinspection HtmlUnknownTarget */
 				printf(
@@ -135,6 +177,24 @@ class Elm_DashboardWidget {
 					wp_nonce_url(self_admin_url('/index.php?elm-action=clear-log&noheader=1'), 'clear-log'),
 					esc_js(__('Are you sure you want to clear the error log?', 'error-log-monitor')),
 					__('Clear Log', 'error-log-monitor')
+				);
+			}
+
+			if ( $this->userCanDownloadLog() && $this->isCompressedLogDownloadPossible() ) {
+				$downloadUrl = add_query_arg(
+					[
+						'action'      => $this->downloadLogAction->action,
+						'_ajax_nonce' => wp_create_nonce($this->downloadLogAction->action),
+						'mtime'       => $log->getModificationTime(),
+					],
+					admin_url('admin-ajax.php')
+				);
+
+				/** @noinspection HtmlUnknownTarget */
+				printf(
+					' <a href="%s" class="button">%s</a>',
+					esc_url($downloadUrl),
+					__('Download Log', 'error-log-monitor')
 				);
 			}
 
@@ -216,7 +276,7 @@ class Elm_DashboardWidget {
 				$this->displaySkippedEntryCount($filteredLog);
 			}
 		} else {
-			if ($this->settings->get('sort_order') === 'reverse-chronological') {
+			if ( $this->settings->get('sort_order') === 'reverse-chronological' ) {
 				$lines = array_reverse($lines);
 			}
 
@@ -228,7 +288,7 @@ class Elm_DashboardWidget {
 			 * "No errors or warnings in the last 24 hours."
 			 */
 
-			if ($this->settings->get('dashboard_log_layout', 'list') === 'list') {
+			if ( $this->settings->get('dashboard_log_layout', 'list') === 'list' ) {
 				$this->displayLogAsList($lines);
 			} else {
 				$this->displayLogAsTable($lines);
@@ -246,7 +306,7 @@ class Elm_DashboardWidget {
 	protected function getItemActionLinks() {
 		return array(
 			$this->getMarkAsFixedLink(),
-			$this->getIgnoreLink()
+			$this->getIgnoreLink(),
 		);
 	}
 
@@ -292,11 +352,12 @@ class Elm_DashboardWidget {
 		'<tbody>';
 		foreach ($lines as $line) {
 			printf(
-				'<tr data-raw-message="%s" class="elm-entry"><td style="white-space:nowrap;">
+				'<tr data-raw-message="%s" data-hash="%s" class="elm-entry"><td style="white-space:nowrap;">
 						%s
 						<p class="elm-line-actions">%s</p>						
 					</td>',
 				esc_attr($line['message']),
+				esc_attr($this->getMessageHash($line['message'])),
 				!empty($line['timestamp']) ? $this->plugin->formatTimestamp($line['timestamp']) : '',
 				implode(' | ', $this->getItemActionLinks())
 			);
@@ -317,7 +378,7 @@ class Elm_DashboardWidget {
 	protected function displayLogAsList($lines, $listClasses = array(), $callbacks = array()) {
 		//Do any of the log entries have a stack trace?
 		$hasStackTraces = false;
-		foreach($lines as $line) {
+		foreach ($lines as $line) {
 			if ( !empty($line['stacktrace']) ) {
 				$hasStackTraces = true;
 				break;
@@ -341,10 +402,13 @@ class Elm_DashboardWidget {
 				$itemClasses[] = 'elm-level-' . preg_replace('@[^a-z\-]@', '-', $line['level']);
 			}
 
+			$messageHash = $this->getMessageHash($line['message']);
+
 			printf(
-				'<li class="%s" data-raw-message="%s">',
+				'<li class="%s" data-raw-message="%s" data-hash="%s">',
 				esc_attr(implode(' ', $itemClasses)),
-				esc_attr($line['message'])
+				esc_attr($line['message']),
+				esc_attr($messageHash)
 			);
 
 			echo '<div class="elm-entry-body-container">';
@@ -375,17 +439,17 @@ class Elm_DashboardWidget {
 
 			echo '<div class="elm-entry-context-container">';
 			if ( isset($callbacks['inContext']) ) {
-				call_user_func($callbacks['inContext'], $line);
+				call_user_func($callbacks['inContext'], $line, $messageHash);
 			}
 
 			if ( isset($line['context'], $line['context']['stackTrace']) ) {
-				$this->displayStackTrace($line['context']['stackTrace']);
+				$this->displayStackTrace($line['context']['stackTrace'], $messageHash);
 			} else if ( !empty($line['stacktrace']) ) {
-				$this->displayStackTrace($line['stacktrace']);
+				$this->displayStackTrace($line['stacktrace'], $messageHash);
 			}
 
 			if ( !empty($line['context']) ) {
-				$this->displayContextData($line['context']);
+				$this->displayContextData($line['context'], $messageHash);
 			}
 			echo '</div>';
 
@@ -394,7 +458,7 @@ class Elm_DashboardWidget {
 		echo '</ul>';
 	}
 
-	private function displayStackTrace($stackTrace) {
+	private function displayStackTrace($stackTrace, $messageHash = '') {
 		if ( empty($stackTrace) ) {
 			return;
 		}
@@ -411,7 +475,12 @@ class Elm_DashboardWidget {
 
 		$isMundane = $this->findMundaneTraceItems($stackTrace);
 
-		echo '<div class="elm-context-group">
+		$groupClasses = array('elm-context-group', 'elm-collapsible-context-group');
+		if ( !$this->isContextGroupOpen('stackTrace', $messageHash) ) {
+			$groupClasses[] = 'elm-closed-context-group';
+		}
+
+		echo '<div class="' . esc_attr(implode(' ', $groupClasses)) . '" data-group="stackTrace">
 			<h3 class="elm-context-group-caption">', __('Stack Trace', 'error-log-monitor'), '</h3>
 			<table class="elm-context-group-content elm-hide-mundane-items elm-stacktrace">';
 
@@ -540,8 +609,14 @@ class Elm_DashboardWidget {
 			} else if ( $this->endsWithAny(
 				$fileName,
 				array(
-					'/wp-load.php', '/wp-config.php', '/wp-settings.php', '/wp-admin/admin.php', '/wp-admin/menu.php',
-					'/wp-includes/template-loader.php', '/wp-blog-header.php', '/wp-includes/template.php',
+					'/wp-load.php',
+					'/wp-config.php',
+					'/wp-settings.php',
+					'/wp-admin/admin.php',
+					'/wp-admin/menu.php',
+					'/wp-includes/template-loader.php',
+					'/wp-blog-header.php',
+					'/wp-includes/template.php',
 				)
 			) ) {
 				//Hide core files that are included on almost every page load.
@@ -586,9 +661,81 @@ class Elm_DashboardWidget {
 		return false;
 	}
 
-	protected function displayContextData($context) {
+	protected function displayContextData($context, $messageHash = '') {
 		//The free version doesn't collect context data.
 		//This method is an extension point for other versions.
+	}
+
+	protected function isContextGroupOpen($groupName, $messageHash = ''): bool {
+		if ( $messageHash ) {
+			$state = $this->getMessageGroupState($groupName, $messageHash);
+			if ( $state !== null ) {
+				return $state;
+			}
+		}
+
+		$visibility = $this->settings->get('context_group_visibility', array());
+		//By default all groups are visible (= open).
+		if ( !isset($visibility[$groupName]) ) {
+			return true;
+		}
+		return !empty($visibility[$groupName]);
+	}
+
+	protected function getAvailableContextGroups(): array {
+		return array('stackTrace' => __('Stack Trace', 'error-log-monitor'));
+	}
+
+	private $isHashAlgorithmAvailable = null;
+	const MESSAGE_HASH_LENGTH = 10;
+	const GROUP_STATE_COOKIE = 'elm_context_group_state';
+
+	protected function getMessageHash($message) {
+		if ( empty($message) || !is_string($message) ) {
+			return '';
+		}
+
+		if ( $this->isHashAlgorithmAvailable === null ) {
+			$this->isHashAlgorithmAvailable =
+				function_exists('hash')
+				&& in_array('xxh3', hash_algos());
+		}
+
+		if ( $this->isHashAlgorithmAvailable ) {
+			$hash = hash('xxh3', $message, false);
+		} else {
+			$hash = md5($message);
+		}
+		return substr($hash, 0, self::MESSAGE_HASH_LENGTH);
+	}
+
+	/**
+	 * @var null|array
+	 */
+	private $cacheMessageGroupState = null;
+
+	private function getMessageGroupState($group, $messageHash) {
+		if ( $this->cacheMessageGroupState === null ) {
+			$this->cacheMessageGroupState = array();
+			$cookie = isset($_COOKIE[self::GROUP_STATE_COOKIE]) ? stripslashes($_COOKIE[self::GROUP_STATE_COOKIE]) : '';
+			if ( $cookie ) {
+				$cookieData = json_decode($cookie, true);
+				//The cookie is expected to contain an array of [key, boolean] pairs.
+				if ( is_array($cookieData) ) {
+					foreach ($cookieData as $item) {
+						if ( isset($item[0], $item[1]) && is_string($item[0]) ) {
+							$this->cacheMessageGroupState[$item[0]] = (bool)$item[1];
+						}
+					}
+				}
+			}
+		}
+
+		$key = $messageHash . ':' . $group;
+		if ( isset($this->cacheMessageGroupState[$key]) ) {
+			return (bool)$this->cacheMessageGroupState[$key];
+		}
+		return null;
 	}
 
 	private function displayConfigurationHelp($problem) {
@@ -612,7 +759,7 @@ class Elm_DashboardWidget {
 			_e(
 				'By default, only fatal errors and warnings will be logged. To also log notices
                 and other messages, enable the <code>WP_DEBUG</code> option by adding this code:',
-                'error-log-monitor'
+				'error-log-monitor'
 			);
 			echo '</p>';
 			$debugCode =
@@ -632,7 +779,7 @@ class Elm_DashboardWidget {
 
 		echo '<p>';
 		printf(
-			/* translators: Links to English-language articles about configuring error logging. */
+		/* translators: Links to English-language articles about configuring error logging. */
 			__('See also: %s', 'error-log-monitor'),
 			'<a href="https://codex.wordpress.org/Editing_wp-config.php#Configure_Error_Logging">Editing wp-config.php</a>,
 			 <a href="https://digwp.com/2009/07/monitor-php-errors-wordpress/">3 Ways To Monitor PHP Errors</a>'
@@ -659,7 +806,8 @@ class Elm_DashboardWidget {
 				$formInputs = wp_unslash($formInputs);
 			}
 
-			$settingsErrors = array(); /** @var Elm_ConfigurationError[] $settingsErrors */
+			$settingsErrors = array();
+			/** @var Elm_ConfigurationError[] $settingsErrors */
 
 			$this->settings->set('widget_line_count', intval($formInputs['widget_line_count']));
 			if ( $this->settings->get('widget_line_count') <= 0 ) {
@@ -751,10 +899,18 @@ class Elm_DashboardWidget {
 				$this->settings->set('dashboard_log_layout', $logLayout);
 			}
 
+			$contextGroups = array_keys($this->getAvailableContextGroups());
+			$visibilitySettings = array();
+			foreach ($contextGroups as $group) {
+				$groupFieldName = 'context_visibility_option-' . $group;
+				$visibilitySettings[$group] = !empty($formInputs[$groupFieldName]);
+			}
+			$this->settings->set('context_group_visibility', $visibilitySettings);
+
 			do_action('elm_handle_widget_settings_form', $formInputs);
 			do_action('elm_settings_changed', $this->settings);
 
-			if ( !empty($settingsErrors) )	{
+			if ( !empty($settingsErrors) ) {
 				$this->handleSettingsErrors($settingsErrors);
 			}
 		}
@@ -790,7 +946,7 @@ class Elm_DashboardWidget {
 			_x('Table', 'widget layout option', 'error-log-monitor') => 'table',
 			_x('List', 'widget layout option', 'error-log-monitor')  => 'list',
 		);
-		foreach($layouts as $name => $value) {
+		foreach ($layouts as $name => $value) {
 			printf(
 				'<label><input type="radio" name="%s[dashboard_log_layout]" value="%s" %s> %s</label><br>',
 				esc_attr($this->widgetId),
@@ -844,7 +1000,7 @@ class Elm_DashboardWidget {
 			esc_attr($this->widgetId)
 		);
 		$logCheckInterval = min($this->settings->get('email_interval'), $this->settings->get('email_log_check_interval'));
-		foreach($intervals as $name => $interval) {
+		foreach ($intervals as $name => $interval) {
 			printf(
 				'<option value="%d" %s>%s</option>',
 				$interval,
@@ -859,7 +1015,7 @@ class Elm_DashboardWidget {
 			__('How often to send email (max):', 'error-log-monitor'),
 			esc_attr($this->widgetId)
 		);
-		foreach($intervals as $name => $interval) {
+		foreach ($intervals as $name => $interval) {
 			printf(
 				'<option value="%d" %s>%s</option>',
 				$interval,
@@ -891,9 +1047,9 @@ class Elm_DashboardWidget {
 		//This script is too short to be worth placing in a separate file. Let's just inline it.
 		?>
 		<script type="text/javascript">
-			jQuery(function($) {
+			jQuery(function ($) {
 				var sizeNotificationEnabled = $('#elm_enable_log_size_notification');
-				sizeNotificationEnabled.change(function() {
+				sizeNotificationEnabled.change(function () {
 					$('#elm_log_size_notification_threshold').prop('disabled', !sizeNotificationEnabled.is(':checked'));
 				});
 			});
@@ -975,7 +1131,7 @@ class Elm_DashboardWidget {
 			);
 
 			echo '<table class="widefat striped elm-ignored-messages">';
-			foreach(array_keys($ignoredMessages) as $message) {
+			foreach (array_keys($ignoredMessages) as $message) {
 				printf('<tr data-raw-message="%s">', esc_attr($message));
 				printf('<td>%s</td>', htmlentities($message));
 				printf(
@@ -1009,7 +1165,7 @@ class Elm_DashboardWidget {
 			);
 
 			echo '<table class="widefat striped elm-fixed-messages">';
-			foreach($fixedMessages as $message => $details) {
+			foreach ($fixedMessages as $message => $details) {
 				printf('<tr data-raw-message="%s">', esc_attr($message));
 				printf('<td>%s</td>', htmlentities($message));
 				printf(
@@ -1045,6 +1201,26 @@ class Elm_DashboardWidget {
 			//Adjust box height to match the number of lines of text (within limits).
 			min(max($currentLineCount, 3), 20)
 		);
+
+		printf(
+			'<h3 class="elm-config-section-heading"><strong>%s</strong></h3>',
+			_x('Context', 'configuration section heading', 'error-log-monitor')
+		);
+
+		echo '<p id="elm-group-visibility-options">';
+		_e('Expand these sections by default (if available):', 'error-log-monitor');
+		echo '<br>';
+
+		foreach ($this->getAvailableContextGroups() as $id => $label) {
+			printf(
+				'<label><input type="checkbox" name="%s[%s]" %s> %s</label><br>',
+				esc_attr($this->widgetId),
+				esc_attr('context_visibility_option-' . $id),
+				$this->isContextGroupOpen($id) ? ' checked="checked"' : '',
+				$label
+			);
+		}
+		echo '</p>';
 
 		if ( !wsh_elm_fs()->is_activation_mode() ) {
 			echo '<div id="elm-pro-version-settings-section">';
@@ -1133,9 +1309,9 @@ class Elm_DashboardWidget {
 	private function printSeverityFilterOptions($fieldNamePrefix, $selectedOptions) {
 		echo '<div class="elm_error_type_list" style="margin-left: 18px; margin-bottom: 1em;">';
 
-		foreach(Elm_SeverityFilter::getAvailableOptions() as $errorGroup) {
+		foreach (Elm_SeverityFilter::getAvailableOptions() as $errorGroup) {
 			$label = ucwords($errorGroup);
-			if ($errorGroup === Elm_SeverityFilter::UNKNOWN_LEVEL_GROUP) {
+			if ( $errorGroup === Elm_SeverityFilter::UNKNOWN_LEVEL_GROUP ) {
 				$label = _x('Other', 'error type', 'error-log-monitor');
 			}
 
@@ -1160,7 +1336,7 @@ class Elm_DashboardWidget {
 		$validGroups = Elm_SeverityFilter::getAvailableOptions();
 		$includedGroups = array();
 
-		foreach($validGroups as $group) {
+		foreach ($validGroups as $group) {
 			$fieldName = $fieldPrefix . '-' . $this->slugifyErrorLevel($group);
 			if ( isset($formInputs[$fieldName]) && !empty($formInputs[$fieldName]) ) {
 				$includedGroups[] = $group;
@@ -1180,14 +1356,66 @@ class Elm_DashboardWidget {
 				return;
 			}
 
-			$log->clear();
+			$result = $log->clear();
+			if ( is_wp_error($result) ) {
+				set_transient(self::LOG_CLEARING_ERROR_TRANSIENT, $result->get_error_message(), 120);
+				$statusCode = 2;
+			} else {
+				//Since the log is empty now, we can reset the file size notification.
+				$this->settings->set('log_size_notification_sent', false);
+				$statusCode = 1;
+			}
 
-			//Since the log is empty now, we can reset the file size notification.
-			$this->settings->set('log_size_notification_sent', false);
-
-			wp_redirect(self_admin_url('index.php?elm-log-cleared=1'));
+			wp_safe_redirect(add_query_arg(
+				['elm-log-cleared' => $statusCode],
+				self_admin_url('index.php')
+			));
 			exit();
 		}
+	}
+
+	private function isCompressedLogDownloadPossible() {
+		return (
+			//Check ZipStream-PHP requirements.
+			//PHP 8.1 or later
+			version_compare(phpversion(), '8.1.0', '>=')
+			//64-bit PHP
+			&& (PHP_INT_SIZE === 8)
+			//zlib extension
+			&& extension_loaded('zlib')
+			//mbstring extension
+			&& extension_loaded('mbstring')
+			//To avoid compatibility issues, abort if another plugin has already loaded ZipStream.
+			//It could be a different version or a fork with incompatible changes.
+			&& !class_exists('ZipStream\\ZipStream', false)
+		);
+	}
+
+	private function setupZipStreamAutoloader() {
+		static $autoloaderRegistered = false;
+		if ( $autoloaderRegistered ) {
+			return;
+		}
+
+		$psr4Autoloader = function ($class) {
+			$prefix = 'ZipStream\\';
+			$baseDir = __DIR__ . '/../vendor/ZipStream-PHP/src/';
+
+			//Does the class use the namespace prefix?
+			$len = strlen($prefix);
+			if ( strncmp($prefix, $class, $len) !== 0 ) {
+				return;
+			}
+
+			$relativeClass = substr($class, $len);
+			$filePath = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+			if ( file_exists($filePath) ) {
+				require $filePath;
+			}
+		};
+
+		spl_autoload_register($psr4Autoloader);
+		$autoloaderRegistered = true;
 	}
 
 	/**
@@ -1219,7 +1447,7 @@ class Elm_DashboardWidget {
 	public function ajaxClearAllIgnoredMessages() {
 		$items = $this->settings->get('ignored_messages');
 		$total = count($items);
-		foreach(array_keys($items) as $message) {
+		foreach (array_keys($items) as $message) {
 			$this->plugin->queueBlacklistRemoval(
 				'ignored_messages',
 				$message,
@@ -1234,7 +1462,7 @@ class Elm_DashboardWidget {
 	public function ajaxClearAllFixedMessages() {
 		$items = $this->settings->get('fixed_messages');
 		$total = count($items);
-		foreach(array_keys($items) as $message) {
+		foreach (array_keys($items) as $message) {
 			$this->plugin->queueBlacklistRemoval(
 				'fixed_messages',
 				$message,
@@ -1297,6 +1525,88 @@ class Elm_DashboardWidget {
 	public function ajaxHideUpgradeNotice() {
 		$this->settings->set('enable_premium_notice', false);
 		return array('success' => true);
+	}
+
+	/** @noinspection PhpFullyQualifiedNameUsageInspection */
+	public function ajaxDownloadLog() {
+		if ( !$this->userCanDownloadLog() ) {
+			return new WP_Error(
+				'permission_denied',
+				__('You do not have permission to download the log file.', 'error-log-monitor'),
+				403
+			);
+		}
+
+		$log = Elm_PhpErrorLog::autodetect();
+		if ( is_wp_error($log) ) {
+			return $log;
+		}
+
+		//The log file may have been deleted or moved since the download link was generated.
+		if ( !file_exists($log->getFileName()) ) {
+			return new WP_Error(
+				'file_not_found',
+				__('The log file was not found. It may have been deleted or moved.', 'error-log-monitor'),
+				404
+			);
+		}
+
+		if ( !$this->isCompressedLogDownloadPossible() ) {
+			return new WP_Error(
+				'zip_stream_incompatible',
+				__(
+					'The server does not support the ZipStream-PHP library or an incompatible version is loaded.',
+					'error-log-monitor'
+				),
+				501
+			);
+		}
+
+		//Downloading a large log file could take a while. Let's increase the time limit.
+		set_time_limit(2 * 60 * 60);
+
+		//Close and clear all output buffers. Buffering negates the benefits of streaming,
+		//and any content already buffered would probably be either superfluous output from
+		//other plugins or PHP warnings/notices.
+		while ((ob_get_level() > 0)) {
+			ob_end_clean();
+		}
+
+		//Convert exceptions to WP_Error instances for easier handling.
+		try {
+			$this->setupZipStreamAutoloader();
+
+			//Use ZipStream-PHP to compress the log file on-the-fly.
+			//Most of the plugin still supports PHP 5.6, so we can't use named parameters here.
+			//We have to go through all the constructor parameters to get to the archive name.
+			$zip = new ZipStream\ZipStream(
+				ZipStream\OperationMode::NORMAL,
+				'',                                   //Comment
+				null,                                 //Output stream.
+				ZipStream\CompressionMethod::DEFLATE,
+				6,                                    //Compression level
+				true,                                 //Enable Zip64
+				true,                                 //defaultEnableZeroHeader
+				true,                                 //Send HTTP headers
+				null,                                 //Header callback
+				'php-errors.zip'                      //Archive name
+			);
+
+			$logFilePath = $log->getFileName();
+			$zip->addFileFromPath(basename($logFilePath), $logFilePath);
+			$zip->finish();
+		} catch (\ZipStream\Exception\FileNotFoundException $e) {
+
+			return new WP_Error('file_not_found', $e->getMessage(), 404);
+		} catch (\ZipStream\Exception\FileNotReadableException $e) {
+			return new WP_Error('file_not_readable', $e->getMessage(), 403);
+		} catch (\ZipStream\Exception\OverflowException $e) {
+			return new WP_Error('zip_overflow', $e->getMessage(), 500);
+		} catch (\Exception $e) {
+			return new WP_Error('general_zip_error', $e->getMessage(), 500);
+		}
+
+		exit;
 	}
 
 	public static function getInstance($settings, $plugin) {

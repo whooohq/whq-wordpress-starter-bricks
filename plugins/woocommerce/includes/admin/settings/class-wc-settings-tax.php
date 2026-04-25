@@ -32,8 +32,16 @@ class WC_Settings_Tax extends WC_Settings_Page {
 			add_action( 'woocommerce_sections_' . $this->id, array( $this, 'output_sections' ) );
 			add_action( 'woocommerce_settings_' . $this->id, array( $this, 'output' ) );
 			add_action( 'woocommerce_settings_save_' . $this->id, array( $this, 'save' ) );
+			add_action( 'admin_notices', array( $this, 'tax_configuration_validation_notice' ) );
 		}
 	}
+
+	/**
+	 * Setting page icon.
+	 *
+	 * @var string
+	 */
+	public $icon = 'percent';
 
 	/**
 	 * Creates the React mount point for the embedded banner.
@@ -44,7 +52,7 @@ class WC_Settings_Tax extends WC_Settings_Page {
 							<th scope="row" class="titledesc woocommerce_admin_tax_settings_slotfill_th">
 							</th>
 							<td class="forminp forminp-text woocommerce_admin_tax_settings_slotfill_td">
-		<div id="wc_conflict_error_slotfill"> </div>
+		<div id="wc_tax_settings_slotfill"> </div>
 	</td>
 	</tr>
 		<?php
@@ -178,7 +186,7 @@ class WC_Settings_Tax extends WC_Settings_Page {
 	public function output_tax_rates() {
 		global $current_section;
 
-		$current_class = $this->get_current_tax_class();
+		$current_class = self::get_current_tax_class();
 
 		$countries = array();
 		foreach ( WC()->countries->get_allowed_countries() as $value => $label ) {
@@ -320,7 +328,7 @@ class WC_Settings_Tax extends WC_Settings_Page {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- this is called via "do_action('woocommerce_settings_save_'...") in base class, where nonce is verified first.
 		global $wpdb;
 
-		$current_class = sanitize_title( $this->get_current_tax_class() );
+		$current_class = sanitize_title( self::get_current_tax_class() );
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.NonceVerification.Missing
 		$posted_countries = wc_clean( wp_unslash( $_POST['tax_rate_country'] ) );
 
@@ -357,6 +365,110 @@ class WC_Settings_Tax extends WC_Settings_Page {
 			}
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
+	}
+
+	/**
+	 * Display admin notice when tax-inclusive pricing is enabled without a base tax rate.
+	 *
+	 * @since 10.5.0
+	 * @internal This method is public only because it is used as a hook callback.
+	 *
+	 * @return void
+	 */
+	public function tax_configuration_validation_notice(): void {
+		// Only show on WooCommerce settings pages.
+		$screen = get_current_screen();
+		if ( ! $screen || 'woocommerce_page_wc-settings' !== $screen->id ) {
+			return;
+		}
+
+		// Don't show if taxes are disabled.
+		if ( ! wc_tax_enabled() ) {
+			return;
+		}
+
+		// Check if prices are entered with tax.
+		if ( 'yes' !== get_option( 'woocommerce_prices_include_tax' ) ) {
+			return;
+		}
+
+		/**
+		 * Filters if taxes should be removed from locations outside the store base location.
+		 *
+		 * The woocommerce_adjust_non_base_location_prices filter can stop base taxes being taken off when dealing
+		 * with out of base locations. e.g. If a product costs 10 including tax, all users will pay 10
+		 * regardless of location and taxes.
+		 *
+		 * @since 2.4.7
+		 *
+		 * @param bool $adjust_non_base_location_prices True by default.
+		 */
+		if ( ! apply_filters( 'woocommerce_adjust_non_base_location_prices', true ) ) {
+			return;
+		}
+
+		// Check if base location has tax rates configured.
+		$base_location = wc_get_base_location();
+		if ( empty( $base_location['country'] ) ) {
+			return;
+		}
+
+		$has_base_rate = $this->has_standard_tax_rate_for_country( $base_location['country'] );
+
+		// If no base rates exist, show warning.
+		if ( ! $has_base_rate ) {
+			/**
+			 * Filter whether to show the tax configuration incomplete notice.
+			 *
+			 * @since 10.5.0
+			 *
+			 * @param bool $show_notice Whether to show the notice. Default true.
+			 */
+			if ( ! apply_filters( 'woocommerce_show_tax_configuration_notice', true ) ) {
+				return;
+			}
+			?>
+			<div class="notice notice-warning">
+				<p>
+					<strong><?php esc_html_e( 'Tax configuration incomplete', 'woocommerce' ); ?></strong>
+				</p>
+				<p>
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: 1: country code, 2: opening link tag, 3: closing link tag */
+							__( 'You have enabled "Prices entered with tax" but have not configured a standard tax rate for your base location (%1$s). Please %2$sconfigure standard tax rates%3$s to ensure accurate tax calculations.', 'woocommerce' ),
+							esc_html( $base_location['country'] ),
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=tax&section=standard' ) ) . '">',
+							'</a>'
+						)
+					);
+					?>
+				</p>
+			</div>
+			<?php
+		}
+	}
+
+	/**
+	 * Check if a standard tax rate exists for a given country.
+	 *
+	 * @since 10.5.0
+	 *
+	 * @param string $country Country code.
+	 * @return bool True if at least one standard tax rate exists for the country.
+	 */
+	private function has_standard_tax_rate_for_country( $country ) {
+		global $wpdb;
+
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_tax_rates WHERE (tax_rate_country = %s OR tax_rate_country = '') AND tax_rate_class = ''",
+				$country
+			)
+		);
+
+		return $count > 0;
 	}
 }
 

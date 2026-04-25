@@ -15,16 +15,16 @@ class Loco_fs_FileWriter {
     private $fs;
 
     /**
-     * @param Loco_fs_File
+     * @param Loco_fs_File $file
      */
     public function __construct( Loco_fs_File $file ){
-        $this->file = $file;
+        $this->setFile($file);
         $this->disconnect();
     }
     
     
     /**
-     * @param Loco_fs_File
+     * @param Loco_fs_File $file
      * @return Loco_fs_FileWriter
      */
     public function setFile( Loco_fs_File $file ){
@@ -36,8 +36,8 @@ class Loco_fs_FileWriter {
     /**
      * Connect to alternative file system context
      * 
-     * @param WP_Filesystem_Base
-     * @param bool whether reconnect required
+     * @param WP_Filesystem_Base $fs
+     * @param bool $disconnected whether reconnect required
      * @return Loco_fs_FileWriter
      * @throws Loco_error_WriteException
      */
@@ -58,7 +58,7 @@ class Loco_fs_FileWriter {
     
     /**
      * Revert to direct file system connection
-     * @return Loco_fs_FileWriter
+     * @return self
      */
     public function disconnect(){
         $this->fs = Loco_api_WordPressFileSystem::direct();
@@ -77,7 +77,7 @@ class Loco_fs_FileWriter {
 
     /**
      * Map virtual path for remote file system
-     * @param string
+     * @param string $path
      * @return string
      */
     private function mapPath( $path ){
@@ -121,14 +121,15 @@ class Loco_fs_FileWriter {
 
 
     /**
-     * @param int file mode integer e.g 0664
-     * @param bool whether to set recursively (directories)
+     * @param int $mode file mode integer e.g 0664
+     * @param bool $recursive whether to set recursively (directories)
      * @return Loco_fs_FileWriter
      * @throws Loco_error_WriteException
      */
     public function chmod( $mode, $recursive = false ){
         $this->authorize();
         if( ! $this->fs->chmod( $this->getPath(), $mode, $recursive ) ){
+            // translators: %s refers to a file name, for which the chmod operation failed.
             throw new Loco_error_WriteException( sprintf( __('Failed to chmod %s','loco-translate'), $this->file->basename() ) );
         }
         return $this;
@@ -136,7 +137,7 @@ class Loco_fs_FileWriter {
 
 
     /**
-     * @param Loco_fs_File target for copy
+     * @param Loco_fs_File $copy target for copy
      * @return Loco_fs_FileWriter
      * @throws Loco_error_WriteException
      */
@@ -157,7 +158,8 @@ class Loco_fs_FileWriter {
         // perform WP file system copy method
         if( ! $this->fs->copy($source,$target,true) ){
             Loco_error_AdminNotices::debug(sprintf('Failed to copy %s to %s via "%s" method',$source,$target,$this->fs->method));
-            throw new Loco_error_WriteException( sprintf( __('Failed to copy %s to %s','loco-translate'), basename($source), basename($target) ) );
+            // translators: (1) Source file name (2) Target file name
+            throw new Loco_error_WriteException( sprintf( __('Failed to copy %1$s to %2$s','loco-translate'), basename($source), basename($target) ) );
         }
 
         return $this;
@@ -165,7 +167,7 @@ class Loco_fs_FileWriter {
 
 
     /**
-     * @param Loco_fs_File target file with new path
+     * @param Loco_fs_File $dest target file with new path
      * @return Loco_fs_FileWriter
      * @throws Loco_error_WriteException
      */
@@ -188,13 +190,14 @@ class Loco_fs_FileWriter {
 
 
     /**
-     * @param bool
-     * @return Loco_fs_FileWriter
+     * @param bool $recursive
+     * @return self
      * @throws Loco_error_WriteException
      */
     public function delete( $recursive = false ){
         $this->authorize();
         if( ! $this->fs->delete( $this->getPath(), $recursive ) ){
+            // translators: %s refers to a file name, for which a delete operation failed.
             throw new Loco_error_WriteException( sprintf( __('Failed to delete %s','loco-translate'), $this->file->basename() ) );
         }
 
@@ -203,7 +206,7 @@ class Loco_fs_FileWriter {
 
 
     /**
-     * @param string
+     * @param string $data
      * @return Loco_fs_FileWriter
      * @throws Loco_error_WriteException
      */
@@ -211,6 +214,7 @@ class Loco_fs_FileWriter {
         $this->authorize();
         $file = $this->file;
         if( $file->isDirectory() ){
+            // translators: %s refers to a directory name which was expected to be an ordinary file
             throw new Loco_error_WriteException( sprintf( __('"%s" is a directory, not a file','loco-translate'), $file->basename() ) );
         }
         // file having no parent directory is likely an error, like a relative path.
@@ -261,11 +265,10 @@ class Loco_fs_FileWriter {
 
     /**
      * Create current directory context
-     * @param Loco_fs_File optional directory
-     * @return bool
+     * @param Loco_fs_File|null $here optional working directory
      * @throws Loco_error_WriteException
      */
-     public function mkdir( Loco_fs_File $here = null ) {
+     public function mkdir( ?Loco_fs_File $here = null ):bool {
         if( is_null($here) ){
             $here = $this->file;
         }
@@ -278,7 +281,7 @@ class Loco_fs_FileWriter {
         /* @var $parent Loco_fs_Directory */
         while( $parent = $here->getParent() ){
             array_unshift( $stack, $this->mapPath( $here->getPath() ) );
-            if( $parent->exists() ){
+            if( '/' === $parent->getPath() || $parent->readable() ){
                 // have existent directory, now build full path
                 foreach( $stack as $path ){
                     if( ! $fs->mkdir($path,$mode) ){
@@ -298,7 +301,7 @@ class Loco_fs_FileWriter {
     /**
      * Check whether write operations are permitted, or throw
      * @throws Loco_error_WriteException
-     * @return Loco_fs_FileWriter
+     * @return self
      */
     public function authorize(){
         if( $this->disabled() ){
@@ -309,18 +312,30 @@ class Loco_fs_FileWriter {
         if( 1 < $opts->fs_protect && $this->file->getUpdateType() ){
             throw new Loco_error_WriteException( __('Modification of installed files is disallowed by the plugin settings','loco-translate') );
         }
+        // we may need to examine multiple extensions, or there may be none for directories
+        $exts = array_slice( explode('.',strtolower($this->file->basename())), 1 );
+        if( ! $exts ){
+            return $this;
+        }
+        $ext = array_pop($exts);
         // deny POT modification (pot_protect = 2)
         // this assumes that templates all have .pot extension, which isn't guaranteed. UI should prevent saving of wrongly files like "default.po"
-        if( 'pot' === strtolower($this->file->extension()) &&  1 < $opts->pot_protect ){
-            throw new Loco_error_WriteException( __('Modification of POT (template) files is disallowed by the plugin settings','loco-translate') );
+        if( 'pot' === $ext && 1 < $opts->pot_protect ){
+            throw new Loco_error_WriteException( __( 'Modification of POT (template) files is disallowed by the plugin settings', 'loco-translate' ) );
         }
-        // Deny list of executable file extensions, noting that specific actions may limit this further.
-        // Note that this ignores the base file name, so "php.pot" would be permitted, but "foo.php.pot" would not.
-        $exts = array_slice( explode('.', $this->file->basename() ), 1 );
-        if( preg_grep('/^php\\d*/i', $exts ) ){
-            throw new Loco_error_WriteException('Executable file extension disallowed .'.implode('.',$exts) );
+        // Full list of file extensions this plugin can modify; note that specific actions may limit this further.
+        $allow = [ 'po'=>1, 'pot'=>1, 'mo'=>1, 'json'=>1, 'po~'=>1, 'pot~'=>1, 'txt'=>1, 'xml'=>1, 'zip'=>1 ];
+        if( array_key_exists($ext,$allow) ){
+            return $this;
         }
-        return $this;
+        // Writing to PHP files is generally disallowed, but we need to write l10n.php cache files
+        if( preg_match('/php\\d*/i',$ext) ){
+            $prev = array_pop($exts);
+            if( 'mo' === $prev || 'l10n' === $prev ){
+                return $this;
+            }
+        }
+        throw new Loco_error_WriteException('File extension disallowed .'.$ext );
     }
 
 

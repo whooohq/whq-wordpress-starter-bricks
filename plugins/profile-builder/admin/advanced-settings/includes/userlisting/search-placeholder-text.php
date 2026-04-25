@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 function wppb_toolbox_userlisting_search_placeholder_text( $default ) {
     $text = wppb_toolbox_get_settings( 'userlisting', 'search-placeholder-text' );

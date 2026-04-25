@@ -13,7 +13,6 @@ use Automattic\WooCommerce\Admin\API\Reports\GenericStatsController;
 use Automattic\WooCommerce\Admin\API\Reports\Revenue\Query as RevenueQuery;
 use Automattic\WooCommerce\Admin\API\Reports\ExportableInterface;
 use Automattic\WooCommerce\Admin\API\Reports\ExportableTraits;
-use Automattic\WooCommerce\Admin\API\Reports\ParameterException;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -54,42 +53,22 @@ class Controller extends GenericStatsController implements ExportableInterface {
 		$args['segmentby']           = $request['segmentby'];
 		$args['fields']              = $request['fields'];
 		$args['force_cache_refresh'] = $request['force_cache_refresh'];
+		$args['date_type']           = $request['date_type'];
 
 		return $args;
 	}
 
 	/**
-	 * Get all reports.
+	 * Get data from RevenueQuery.
 	 *
-	 * @param WP_REST_Request $request Request data.
-	 * @return WP_REST_Response|WP_Error
+	 * @override GenericController::get_datastore_data()
+	 *
+	 * @param array $query_args Query arguments.
+	 * @return mixed Results from the data store.
 	 */
-	public function get_items( $request ) {
-		$query_args      = $this->prepare_reports_query( $request );
-		$reports_revenue = new RevenueQuery( $query_args );
-		try {
-			$report_data = $reports_revenue->get_data();
-		} catch ( ParameterException $e ) {
-			return new \WP_Error( $e->getErrorCode(), $e->getMessage(), array( 'status' => $e->getCode() ) );
-		}
-
-		$out_data = array(
-			'totals'    => get_object_vars( $report_data->totals ),
-			'intervals' => array(),
-		);
-
-		foreach ( $report_data->intervals as $interval_data ) {
-			$item                    = $this->prepare_item_for_response( $interval_data, $request );
-			$out_data['intervals'][] = $this->prepare_response_for_collection( $item );
-		}
-
-		return $this->add_pagination_headers(
-			$request,
-			$out_data,
-			(int) $report_data->total,
-			(int) $report_data->page_no,
-			(int) $report_data->pages
-		);
+	protected function get_datastore_data( $query_args = array() ) {
+		$query = new RevenueQuery( $query_args );
+		return $query->get_data();
 	}
 
 	/**
@@ -111,9 +90,9 @@ class Controller extends GenericStatsController implements ExportableInterface {
 	}
 
 	/**
-	 * Prepare a report object for serialization.
+	 * Prepare a report data item for serialization.
 	 *
-	 * @param array           $report  Report data.
+	 * @param array           $report  Report data item as returned from Data Store.
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response
 	 */
@@ -244,17 +223,19 @@ class Controller extends GenericStatsController implements ExportableInterface {
 	 */
 	public function get_collection_params() {
 		$params                    = parent::get_collection_params();
-		$params['orderby']['enum'] = array(
-			'date',
-			'total_sales',
-			'coupons',
-			'refunds',
-			'shipping',
-			'taxes',
-			'net_revenue',
-			'orders_count',
-			'items_sold',
-			'gross_sales',
+		$params['orderby']['enum'] = $this->apply_custom_orderby_filters(
+			array(
+				'date',
+				'total_sales',
+				'coupons',
+				'refunds',
+				'shipping',
+				'taxes',
+				'net_revenue',
+				'orders_count',
+				'items_sold',
+				'gross_sales',
+			)
 		);
 		$params['segmentby']       = array(
 			'description'       => __( 'Segment the response by additional constraint.', 'woocommerce' ),
@@ -268,6 +249,17 @@ class Controller extends GenericStatsController implements ExportableInterface {
 			),
 			'validate_callback' => 'rest_validate_request_arg',
 		);
+		$params['date_type']       = array(
+			'description'       => __( 'Override the "woocommerce_date_type" option that is used for the database date field considered for revenue reports.', 'woocommerce' ),
+			'type'              => 'string',
+			'enum'              => array(
+				'date_paid',
+				'date_created',
+				'date_completed',
+			),
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+		unset( $params['fields'] );
 
 		return $params;
 	}
@@ -278,7 +270,7 @@ class Controller extends GenericStatsController implements ExportableInterface {
 	 * @return array Key value pair of Column ID => Label.
 	 */
 	public function get_export_columns() {
-		return array(
+		$export_columns = array(
 			'date'         => __( 'Date', 'woocommerce' ),
 			'orders_count' => __( 'Orders', 'woocommerce' ),
 			'gross_sales'  => __( 'Gross sales', 'woocommerce' ),
@@ -289,6 +281,15 @@ class Controller extends GenericStatsController implements ExportableInterface {
 			'shipping'     => __( 'Shipping', 'woocommerce' ),
 			'total_sales'  => __( 'Total sales', 'woocommerce' ),
 		);
+
+		/**
+		 * Filter to add or remove column names from the revenue stats report for
+		 * export.
+		 *
+		 * @since 10.7.0
+		 * @param array $export_columns Key value pair of column ID and label.
+		 */
+		return apply_filters( 'woocommerce_report_revenue_stats_export_columns', $export_columns );
 	}
 
 	/**
@@ -300,7 +301,7 @@ class Controller extends GenericStatsController implements ExportableInterface {
 	public function prepare_item_for_export( $item ) {
 		$subtotals = (array) $item['subtotals'];
 
-		return array(
+		$export_item = array(
 			'date'         => $item['date_start'],
 			'orders_count' => $subtotals['orders_count'],
 			'gross_sales'  => self::csv_number_format( $subtotals['gross_sales'] ),
@@ -311,5 +312,15 @@ class Controller extends GenericStatsController implements ExportableInterface {
 			'shipping'     => self::csv_number_format( $subtotals['shipping'] ),
 			'total_sales'  => self::csv_number_format( $subtotals['total_sales'] ),
 		);
+
+		/**
+		 * Filter to prepare extra columns in the export item for the revenue
+		 * stats report.
+		 *
+		 * @since 10.7.0
+		 * @param array $export_item Key value pair of column ID and row value.
+		 * @param array $item        The original report item.
+		 */
+		return apply_filters( 'woocommerce_report_revenue_stats_prepare_export_item', $export_item, $item );
 	}
 }

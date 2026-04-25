@@ -13,9 +13,6 @@ class WizardNotice extends \WCML_Menu_Wrap_Base {
 				'title' => \WCML_Admin_Menus::getWcmlLabel(),
 			],
 			'is_standalone' => false,
-			'rate'          => [
-				'on' => 0,
-			],
 			'content'       => ( new \WCML_Setup_Notice_UI() )->get_view( 'setup/wizard-notice.twig' ),
 		];
 	}

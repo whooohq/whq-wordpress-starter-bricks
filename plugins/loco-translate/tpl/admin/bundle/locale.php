@@ -6,7 +6,7 @@
 $this->extend('../layout');
 ?> 
 
-    <div class="notice inline notice-info">
+    <div class="panel panel-info">
         <h3 class="has-lang">
             <span <?php echo $locale->attr?>><code><?php $locale->e('code')?></code></span> 
             <span><?php $locale->e('name')?></span>
@@ -96,7 +96,7 @@ $this->extend('../layout');
                         <!-- no percentage for template -->
                     </td>
                     <td data-sort-value="-1">
-                        -- <!-- no pending for template -->
+                        -- <!-- no pending translations in templates -->
                     </td><?php
                     endif;
                     endif?> 

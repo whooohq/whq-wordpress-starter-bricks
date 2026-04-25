@@ -1,5 +1,6 @@
 <?php
-
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- using the native PHP fclose() function instead of the WP Filesystem API.
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Using the default PHP fopen() function instead of the WP Filesystem API.
 if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed');
 
 if (!class_exists('UpdraftPlus_RemoteStorage_Addons_Base_v2')) updraft_try_include_file('methods/addon-base-v2.php', 'require_once');
@@ -13,6 +14,12 @@ class UpdraftPlus_BackupModule_remotesend extends UpdraftPlus_RemoteStorage_Addo
 	private $remotesend_chunked_wp_error;
 	
 	private $try_format_upgrade = false;
+
+	private $remotesend_file_size;
+
+	private $remotesend_uploaded_size;
+
+	private $remote_sent_defchunk_transient;
 	
 	/**
 	 * Class constructor
@@ -63,18 +70,29 @@ class UpdraftPlus_BackupModule_remotesend extends UpdraftPlus_RemoteStorage_Addo
 		$get_remote_size = $this->send_message('get_file_status', $file, 30);
 		
 		if (is_wp_error($get_remote_size)) {
-			throw new Exception($get_remote_size->get_error_message().' (get_file_status: '.$get_remote_size->get_error_code().')');
+			$err_msg = $get_remote_size->get_error_message();
+			$err_data = $get_remote_size->get_error_data();
+			$err_code = $get_remote_size->get_error_code();
+
+			if (!is_numeric($err_code) && isset($err_data['response']['code'])) {
+				$err_code = $err_data['response']['code'];
+				$err_msg = UpdraftPlus_HTTP_Error_Descriptions::get_http_status_code_description($err_code);
+			} elseif (is_string($err_data) && preg_match('/captcha|verify.*human|turnstile/i', $err_data)) {
+				$err_msg = __('We are unable to proceed with the process due to a bot verification requirement', 'updraftplus');
+			}
+
+			throw new Exception($err_msg.' (get_file_status: '.$err_code.')'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 		}
 
-		if (!is_array($get_remote_size) || empty($get_remote_size['response'])) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($get_remote_size));
+		if (!is_array($get_remote_size) || empty($get_remote_size['response'])) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($get_remote_size)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 
 		if ('error' == $get_remote_size['response']) {
 			$msg = $get_remote_size['data'];
 			// Could interpret the codes to get more interesting messages directly to the user
-			throw new Exception(__('Error:', 'updraftplus').' '.$msg);
+			throw new Exception(__('Error:', 'updraftplus').' '.$msg); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 		}
 
-		if (empty($get_remote_size['data']) || !isset($get_remote_size['data']['size']) || 'file_status' != $get_remote_size['response']) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($get_remote_size));
+		if (empty($get_remote_size['data']) || !isset($get_remote_size['data']['size']) || 'file_status' != $get_remote_size['response']) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($get_remote_size)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 
 		// Possible statuses: 0=temporary file (or not present), 1=file
 		if (empty($get_remote_size['data'])) {
@@ -233,10 +251,10 @@ class UpdraftPlus_BackupModule_remotesend extends UpdraftPlus_RemoteStorage_Addo
 		if (is_wp_error($put_chunk)) {
 			// The exception handler is within this class. So we can store the data.
 			$this->remotesend_chunked_wp_error = $put_chunk;
-			throw new Exception($put_chunk->get_error_message().' ('.$put_chunk->get_error_code().')');
+			throw new Exception($put_chunk->get_error_message().' ('.$put_chunk->get_error_code().')'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 		}
 
-		if (!is_array($put_chunk) || empty($put_chunk['response'])) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($put_chunk));
+		if (!is_array($put_chunk) || empty($put_chunk['response'])) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($put_chunk)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 
 		if ('error' == $put_chunk['response']) {
 			$msg = $put_chunk['data'];
@@ -249,10 +267,10 @@ class UpdraftPlus_BackupModule_remotesend extends UpdraftPlus_RemoteStorage_Addo
 					return new WP_Error('try_again', 'File on remote system is smaller than expected - perhaps an eventually-consistent filesystem (wait and retry)');
 				}
 			}
-			throw new Exception(__('Error:', 'updraftplus').' '.$msg);
+			throw new Exception(__('Error:', 'updraftplus').' '.$msg); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 		}
 
-		if ('file_status' != $put_chunk['response']) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($put_chunk));
+		if ('file_status' != $put_chunk['response']) throw new Exception(__('Unexpected response:', 'updraftplus').' '.serialize($put_chunk)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
 
 		// Possible statuses: 0=temporary file (or not present), 1=file
 		if (empty($put_chunk['data']) || !is_array($put_chunk['data'])) {
@@ -394,13 +412,15 @@ class UpdraftPlus_BackupModule_remotesend extends UpdraftPlus_RemoteStorage_Addo
 	public function do_bootstrap($opts, $connect = true) {// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- $connect unused
 	
 		global $updraftplus;
+
+		$updraftplus->ensure_phpseclib();
 	
-		if (!class_exists('UpdraftPlus_Remote_Communications')) include_once(apply_filters('updraftplus_class_udrpc_path', UPDRAFTPLUS_DIR.'/vendor/team-updraft/common-libs/src/updraft-rpc/class-udrpc.php', $updraftplus->version));
+		if (!class_exists('UpdraftPlus_Remote_Communications_V2')) include_once(apply_filters('updraftplus_class_udrpc_path', UPDRAFTPLUS_DIR.'/vendor/team-updraft/common-libs/src/updraft-rpc/class-udrpc2.php', $updraftplus->version));
 
 		$opts = $this->get_opts();
 
 		try {
-			$ud_rpc = new UpdraftPlus_Remote_Communications($opts['name_indicator']);
+			$ud_rpc = new UpdraftPlus_Remote_Communications_V2($opts['name_indicator']);
 			if (!empty($opts['format_support']) && 2 == $opts['format_support'] && !empty($opts['local_private']) && !empty($opts['local_public']) && !empty($opts['remote_got_public'])) {
 				$ud_rpc->set_message_format(2);
 				$ud_rpc->set_key_remote($opts['key']);

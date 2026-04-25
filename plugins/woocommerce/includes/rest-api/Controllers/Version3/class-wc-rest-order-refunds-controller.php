@@ -10,7 +10,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-use Automattic\WooCommerce\Internal\RestApiUtil;
+use Automattic\WooCommerce\Internal\RestApiParameterUtil;
+use Automattic\WooCommerce\Internal\CostOfGoodsSold\CogsAwareTrait;
 
 /**
  * REST API Order Refunds controller class.
@@ -19,6 +20,7 @@ use Automattic\WooCommerce\Internal\RestApiUtil;
  * @extends WC_REST_Order_Refunds_V2_Controller
  */
 class WC_REST_Order_Refunds_Controller extends WC_REST_Order_Refunds_V2_Controller {
+	use CogsAwareTrait;
 
 	/**
 	 * Endpoint namespace.
@@ -36,7 +38,7 @@ class WC_REST_Order_Refunds_Controller extends WC_REST_Order_Refunds_V2_Controll
 	 * @return WP_Error|WC_Data The prepared item, or WP_Error object on failure.
 	 */
 	protected function prepare_object_for_database( $request, $creating = false ) {
-		RestApiUtil::adjust_create_refund_request_parameters( $request );
+		RestApiParameterUtil::adjust_create_refund_request_parameters( $request );
 
 		$order = wc_get_order( (int) $request['order_id'] );
 
@@ -89,6 +91,38 @@ class WC_REST_Order_Refunds_Controller extends WC_REST_Order_Refunds_V2_Controll
 	}
 
 	/**
+	 * Get formatted item data.
+	 * Invokes parents and then adds the proper Cost of Goods Sold information.
+	 *
+	 * @param  WC_Data $data_object WC_Data instance.
+	 * @return array
+	 * @since  9.9.0
+	 */
+	protected function get_formatted_item_data( $data_object ) {
+		$data = parent::get_formatted_item_data( $data_object );
+		if ( ! $this->cogs_is_enabled() ) {
+			return $data;
+		}
+
+		if ( $data_object instanceof WC_Abstract_Order && $data_object->has_cogs() ) {
+			$data['cost_of_goods_sold'] = array(
+				'value' => $data_object->get_cogs_total_value(),
+			);
+
+			foreach ( $data['line_items'] as $key => $line_item ) {
+				$cogs_value = $line_item['cogs_value'] ?? null;
+				if ( ! is_null( $cogs_value ) ) {
+					$data['line_items'][ $key ]['cost_of_goods_sold'] = array(
+						'value' => $cogs_value,
+					);
+					unset( $data['line_items'][ $key ]['cogs_value'] );
+				}
+			}
+		}
+		return $data;
+	}
+
+	/**
 	 * Get the refund schema, conforming to JSON Schema.
 	 *
 	 * @return array
@@ -115,6 +149,48 @@ class WC_REST_Order_Refunds_Controller extends WC_REST_Order_Refunds_V2_Controll
 			'type'        => 'boolean',
 			'context'     => array( 'edit' ),
 			'default'     => true,
+		);
+
+		if ( $this->cogs_is_enabled() ) {
+			$schema = $this->add_cogs_related_schema( $schema );
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Add the Cost of Goods Sold related fields to the schema.
+	 *
+	 * @param array $schema The original schema.
+	 * @return array The updated schema.
+	 */
+	private function add_cogs_related_schema( array $schema ): array {
+		$schema['properties']['cost_of_goods_sold'] = array(
+			'description' => __( 'Cost of Goods Sold data.', 'woocommerce' ),
+			'type'        => 'object',
+			'context'     => array( 'view', 'edit' ),
+			'properties'  => array(
+				'total_value' => array(
+					'description' => __( 'Total value of the Cost of Goods Sold for the refund.', 'woocommerce' ),
+					'type'        => 'number',
+					'readonly'    => true,
+					'context'     => array( 'view', 'edit' ),
+				),
+			),
+		);
+
+		$schema['properties']['line_items']['items']['properties']['cost_of_goods_sold'] = array(
+			'description' => __( 'Cost of Goods Sold data. Only present for product refund line items.', 'woocommerce' ),
+			'type'        => 'object',
+			'context'     => array( 'view', 'edit' ),
+			'properties'  => array(
+				'total_value' => array(
+					'description' => __( 'Value of the Cost of Goods Sold for the refund item.', 'woocommerce' ),
+					'type'        => 'number',
+					'readonly'    => true,
+					'context'     => array( 'view', 'edit' ),
+				),
+			),
 		);
 
 		return $schema;

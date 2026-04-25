@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Plugins Core
  * Description: A core library for TMM WordPress plugins which contains common APIs.
- * Version:     0.1.47
+ * Version:     0.1.52
  * Text Domain: tmm-wp-plugins-core
  * Author:      TMM Technology
  * Author URI:  https://tmm.ventures/

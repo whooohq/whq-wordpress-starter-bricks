@@ -67,7 +67,7 @@ class TwoFA extends Instance {
 					. get_submit_button( __('Enable 2FA', 'dologin') )
 					. '</form>';
 
-			$desc = __('Please scan this barcode w/ your phone 2FA app (e.g. Google Authenticator) and type the code in 2FA app below.', 'dologin');
+			$desc = __('Please scan this barcode w/ your phone 2FA app (e.g. KeyLockr or Google Authenticator) and type the code in 2FA app below.', 'dologin');
 			if ( Conf::val( '2fa_force' ) ) $desc .= '<br/><font color="red">' . __( 'You need to setup your 2FA before enabling this setting to avoid yourself being blocked from next time login.', 'dologin' ) . '</font>';
 
 			GUI::error( '<h2>' . DOLOGIN_LOGO . __('Dologin Notice') . '</h2>' . $desc . '<br />' . $qrcode . $form );

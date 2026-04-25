@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 // $Id: potx.inc,v 1.1.2.17.2.7.2.19.4.1 2009/07/19 12:54:42 goba Exp $
 
 /**

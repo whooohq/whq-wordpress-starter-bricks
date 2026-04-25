@@ -5,6 +5,9 @@
  * @package WooCommerce\Gateways
  */
 
+use Automattic\WooCommerce\Enums\OrderStatus;
+use Automattic\WooCommerce\Internal\Admin\Settings\Utils as SettingsUtils;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
@@ -22,6 +25,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Gateway_Cheque extends WC_Payment_Gateway {
 
 	/**
+	 * Unique ID for this gateway.
+	 *
+	 * @var string
+	 */
+	const ID = 'cheque';
+
+	/**
 	 * Gateway instructions that will be added to the thank you page and emails.
 	 *
 	 * @var string
@@ -32,7 +42,7 @@ class WC_Gateway_Cheque extends WC_Payment_Gateway {
 	 * Constructor for the gateway.
 	 */
 	public function __construct() {
-		$this->id                 = 'cheque';
+		$this->id                 = self::ID;
 		$this->icon               = apply_filters( 'woocommerce_cheque_icon', '' );
 		$this->has_fields         = false;
 		$this->method_title       = _x( 'Check payments', 'Check payment method', 'woocommerce' );
@@ -109,15 +119,19 @@ class WC_Gateway_Cheque extends WC_Payment_Gateway {
 	 * @param bool     $plain_text Email format: plain text or HTML.
 	 */
 	public function email_instructions( $order, $sent_to_admin, $plain_text = false ) {
-		/**
-		 * Filter the email instructions order status.
-		 *
-		 * @since 7.4
-		 * @param string $terms The order status.
-		 * @param object $order The order object.
-		 */
-		if ( $this->instructions && ! $sent_to_admin && 'cheque' === $order->get_payment_method() && $order->has_status( apply_filters( 'woocommerce_cheque_email_instructions_order_status', 'on-hold', $order ) ) ) {
-			echo wp_kses_post( wpautop( wptexturize( $this->instructions ) ) . PHP_EOL );
+		if ( $this->instructions && ! $sent_to_admin && self::ID === $order->get_payment_method() ) {
+			/**
+			 * Filter the email instructions order status.
+			 *
+			 * @since 7.4
+			 *
+			 * @param string $status The default status.
+			 * @param object $order  The order object.
+			 */
+			$instructions_order_status = apply_filters( 'woocommerce_cheque_email_instructions_order_status', OrderStatus::ON_HOLD, $order );
+			if ( $order->has_status( $instructions_order_status ) ) {
+				echo wp_kses_post( wpautop( wptexturize( $this->instructions ) ) . PHP_EOL );
+			}
 		}
 	}
 
@@ -132,8 +146,17 @@ class WC_Gateway_Cheque extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 
 		if ( $order->get_total() > 0 ) {
+			/**
+			 * Filter the order status for cheque payment.
+			 *
+			 * @since 3.6.0
+			 *
+			 * @param string $status The default status.
+			 * @param object $order  The order object.
+			 */
+			$process_payment_status = apply_filters( 'woocommerce_cheque_process_payment_order_status', OrderStatus::ON_HOLD, $order );
 			// Mark as on-hold (we're awaiting the cheque).
-			$order->update_status( apply_filters( 'woocommerce_cheque_process_payment_order_status', 'on-hold', $order ), _x( 'Awaiting check payment', 'Check payment method', 'woocommerce' ) );
+			$order->update_status( $process_payment_status, _x( 'Awaiting check payment.', 'Check payment method', 'woocommerce' ) );
 		} else {
 			$order->payment_complete();
 		}
@@ -145,6 +168,34 @@ class WC_Gateway_Cheque extends WC_Payment_Gateway {
 		return array(
 			'result'   => 'success',
 			'redirect' => $this->get_return_url( $order ),
+		);
+	}
+
+	/**
+	 * Get the settings URL for the gateway.
+	 *
+	 * @return string The settings page URL for the gateway.
+	 */
+	public function get_settings_url() {
+		// Search for a WC_Settings_Payment_Gateways instance in the settings pages.
+		$payments_settings_page = null;
+		foreach ( WC_Admin_Settings::get_settings_pages() as $settings_page ) {
+			if ( $settings_page instanceof WC_Settings_Payment_Gateways ) {
+				$payments_settings_page = $settings_page;
+				break;
+			}
+		}
+		// If no instance found, return the default settings URL (the Reactified page).
+		if ( empty( $payments_settings_page ) ) {
+			return SettingsUtils::wc_payments_settings_url( '/' . WC_Settings_Payment_Gateways::OFFLINE_SECTION_NAME . '/' . $this->id );
+		}
+
+		$should_use_react_settings_page = $payments_settings_page->should_render_react_section( WC_Settings_Payment_Gateways::CHEQUE_SECTION_NAME );
+
+		// We must not include both the path and the section query parameter, as this can cause weird behavior.
+		return SettingsUtils::wc_payments_settings_url(
+			$should_use_react_settings_page ? '/' . WC_Settings_Payment_Gateways::OFFLINE_SECTION_NAME . '/' . $this->id : null,
+			$should_use_react_settings_page ? array() : array( 'section' => $this->id )
 		);
 	}
 }

@@ -1,0 +1,2694 @@
+# Copyright (C) 2026 OnTheGoSystems
+# This file is distributed under the same license as the WPML Multilingual & Multicurrency for WooCommerce plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: WPML Multilingual & Multicurrency for WooCommerce 5.5.4\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-multilingual\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-01-27T22:50:49+01:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: woocommerce-multilingual\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Plugin Name of the plugin
+#: wpml-woocommerce.php
+#: classes/AdminNotices/ExportImport.php:187
+#: inc/admin-menus/class-wcml-admin-menus.php:361
+msgid "WPML Multilingual & Multicurrency for WooCommerce"
+msgstr "WPML Multilingual & Multicurrency for WooCommerce"
+
+#. Plugin URI of the plugin
+#: wpml-woocommerce.php
+msgid "https://wpml.org/documentation/related-projects/woocommerce-multilingual/?utm_source=plugin&utm_medium=gui&utm_campaign=wcml"
+msgstr "https://wpml.org/documentation/related-projects/woocommerce-multilingual/?utm_source=plugin&utm_medium=gui&utm_campaign=wcml"
+
+#. Description of the plugin
+#: wpml-woocommerce.php
+msgid "Make your store multilingual and enable multiple currencies | <a href=\"https://wpml.org/documentation/related-projects/woocommerce-multilingual/?utm_source=plugin&utm_medium=gui&utm_campaign=wcml\">Documentation</a>"
+msgstr "让您的商店使用多种语言并启用多种货币 | <a href=\"https://wpml.org/documentation/related-projects/woocommerce-multilingual/?utm_source=plugin&utm_medium=gui&utm_campaign=wcml\">Documentation</a>"
+
+#. Author of the plugin
+#: wpml-woocommerce.php
+msgid "OnTheGoSystems"
+msgstr "OnTheGoSystems"
+
+#. Author URI of the plugin
+#: wpml-woocommerce.php
+msgid "http://www.onthegosystems.com/"
+msgstr "http://www.onthegosystems.com/"
+
+#: classes/AdminNotices/CachePlugins.php:33
+msgid "WPML Multilingual & Multicurrency for WooCommerce detected an active cache plugin on your site."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 检测到您的网站上有活跃的缓存插件。"
+
+#: classes/AdminNotices/CachePlugins.php:34
+msgid "Caching may cause currency display issues for your customers if you are using the multicurrency feature."
+msgstr "如果使用多货币功能，缓存可能会给客户带来货币显示问题。"
+
+#: classes/AdminNotices/CachePlugins.php:35
+msgid "To avoid this, set your cache plugin to not cache pages for visitors that have a cookie set in their browser."
+msgstr "为避免这种情况，请将您的缓存插件设置为不缓存在浏览器中设置了 cookie 的访客的页面。"
+
+#: classes/AdminNotices/CurrencySwitcherUseTwigTemplate.php:55
+msgid "Important: Action Needed for Your Currency Switcher"
+msgstr "重要：您的货币转换器需要采取行动"
+
+#: classes/AdminNotices/CurrencySwitcherUseTwigTemplate.php:56
+msgid "We detected that your site is using a Currency Switcher built with Twig templates. For security reasons, support for Twig-based templates will be discontinued in the upcoming version of WPML Multilingual & Multicurrency for WooCommerce 5.6."
+msgstr "我们检测到您的网站正在使用基于 Twig 模板构建的货币转换器。出于安全原因，对 Twig 模板的支持将在即将发布的 WPML Multilingual & Multicurrency for WooCommerce 5.6 版本中停止。"
+
+#: classes/AdminNotices/CurrencySwitcherUseTwigTemplate.php:57
+msgid "To ensure your Currency Switcher continues working smoothly:"
+msgstr "为确保您的货币转换器继续平稳运行："
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/AdminNotices/CurrencySwitcherUseTwigTemplate.php:63
+msgid "- Switch to a PHP-based template - you can select one from the %1$sconfiguration page%2$s."
+msgstr "- 切换到基于 PHP 的模板 - 您可以从 %1$s配置页面%2$s中选择一个。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/AdminNotices/CurrencySwitcherUseTwigTemplate.php:71
+msgid "- Need a custom solution? %1$sContact our support%2$s - we’re here to help you migrate safely."
+msgstr "- 需要自定义解决方案？%1$s联系我们的支持团队%2$s - 我们随时为您提供安全迁移帮助。"
+
+#: classes/AdminNotices/CurrencySwitcherUseTwigTemplate.php:77
+msgid "We recommend updating your Currency Switcher as soon as possible to avoid disruptions when the new version of WPML Multilingual & Multicurrency for WooCommerce is released."
+msgstr "我们建议您尽快更新您的货币转换器，以避免在发布新版本的 WPML Multilingual & Multicurrency for WooCommerce 时出现中断。"
+
+#. translators: %s is a link.
+#: classes/AdminNotices/ExportImport.php:154
+msgid "Migrating your multilingual shop? With %s you can transfer your translated content to a new site, including cross-sells, up-sells, and product attributes."
+msgstr "迁移您的多语言商店？使用 %s，您可以将已翻译的内容转移到新网站，包括交叉销售、追加销售和产品属性。"
+
+#. translators: %1$s and %2$s are both links.
+#: classes/AdminNotices/ExportImport.php:165
+msgid "Looking to import your multilingual shop? With %1$s and %2$s in both your original and new site, you can export and import your translations automatically."
+msgstr "想要导入您的多语言商店？通过在原始和新网站上同时使用 %1$s 和 %2$s，您可以自动导出和导入您的翻译。"
+
+#: classes/AdminNotices/ExportImport.php:176
+msgid "WPML Export and Import"
+msgstr "WPML导出和导入"
+
+#: classes/AdminNotices/MultiCurrencyMissing.php:51
+msgid "You haven't added any secondary currencies"
+msgstr "您没有添加任何辅助货币"
+
+#: classes/AdminNotices/MultiCurrencyMissing.php:52
+msgid "Please add another currency to fully utilize multicurrency mode. If you do not need multiple currencies, you can disable this setting to improve your site's performance."
+msgstr "请添加另一种货币，以充分利用多货币模式。如果不需要多种货币，可以禁用此设置来提高网站性能。"
+
+#: classes/AdminNotices/MultiCurrencyMissing.php:55
+msgid "Configure multicurrency mode"
+msgstr "配置多货币模式"
+
+#: classes/AdminNotices/Review.php:47
+msgid "Review WPML Multilingual & Multicurrency for WooCommerce"
+msgstr "评价 WPML Multilingual & Multicurrency for WooCommerce"
+
+#: classes/AdminNotices/Review.php:58
+msgid "Congrats on making your first multicurrency sale!"
+msgstr "恭喜您完成第一笔多币种销售！"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/AdminNotices/Review.php:64
+msgid "Want to help <strong>WPML Multilingual & Multicurrency for WooCommerce</strong> plugin? %1$sGive us a review%2$s!"
+msgstr "想要帮助 <strong>WPML Multilingual & Multicurrency for WooCommerce</strong> 插件吗？%1$s给我们一个评价%2$s！"
+
+#: classes/AdminNotices/TranslationControlMovedNotice.php:57
+msgid "The Translation Controls Have Moved"
+msgstr "翻译控制已移动"
+
+#: classes/AdminNotices/TranslationControlMovedNotice.php:59
+msgid "We updated WPML Multilingual & Multicurrency for WooCommerce to streamline your translation work."
+msgstr "我们更新了 WPML Multilingual & Multicurrency for WooCommerce 以简化您的翻译工作。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/AdminNotices/TranslationControlMovedNotice.php:65
+msgid "Translate your whole site's content, including products, from %1$sWPML &rarr; Translation Management%2$s."
+msgstr "从%1$sWPML &rarr; 翻译管理%2$s翻译您整个网站的内容，包括产品。"
+
+#: classes/currencies/class-wcml-admin-currency-selector.php:89
+#: inc/currencies/class-wcml-multi-currency-reports.php:161
+msgid "Currency - no orders found"
+msgstr "货币 - 未找到订单"
+
+#: classes/currencies/class-wcml-admin-currency-selector.php:107
+#: compatibility/WcBookings/MulticurrencyHooks.php:737
+#: inc/class-wcml-orders.php:278
+#: inc/currencies/class-wcml-multi-currency-configuration.php:301
+#: inc/currencies/class-wcml-multi-currency-orders.php:436
+#: inc/currencies/class-wcml-multi-currency-reports.php:138
+msgid "Invalid nonce"
+msgstr "无效的 nonce"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/Email/Settings/TranslationControls.php:119
+msgid "To translate custom WooCommerce email notifications, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译自定义WooCommerce电子邮件通知，请前往%1$s翻译仪表板%2$s。"
+
+#. translators: %s is the month day
+#: classes/multi-currency/class-wcml-exchange-rates.php:406
+msgid "Monthly on the %s"
+msgstr "每月在 %s"
+
+#. translators: %s is the week day
+#: classes/multi-currency/class-wcml-exchange-rates.php:415
+msgid "Weekly on %s"
+msgstr "每周 %s"
+
+#: classes/multi-currency/exchange-rate-services/Service.php:168
+msgid "Cannot get exchange rates. Connection failed."
+msgstr "无法获取汇率。连接失败。"
+
+#. translators: 1: Currency, 2: Cart total.
+#: classes/multi-currency/payment-gateways/class-wcml-currencies-payment-gateways.php:175
+msgid "Please note that the payment will be made in %1$s. Your total will be approximately %2$s, depending on the current exchange rate."
+msgstr "请注意，付款方式为 %1$s 。根据当前汇率，您的付款总额约为 %2$s 。"
+
+#: classes/multi-currency/payment-gateways/class-wcml-not-supported-payment-gateway.php:16
+msgid "Not yet supported"
+msgstr "尚未支持"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-bacs.php:15
+msgid "Set the currency in which your customer will see the final price when they checkout. Choose which accounts they will see in their payment message."
+msgstr "设置客户结账时看到最终价格的货币。选择他们将在付款信息中看到的账户。"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-bacs.php:17
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal-v2.php:32
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal.php:47
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-stripe.php:18
+#: classes/Multicurrency/Analytics/Export.php:29
+#: classes/Multicurrency/Analytics/Export.php:31
+#: classes/Multicurrency/Analytics/Hooks.php:86
+#: classes/Multicurrency/UI/Hooks.php:198
+#: inc/class-wcml-wc-gateways.php:349
+msgid "Currency"
+msgstr "货币"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-bacs.php:18
+msgid "Bank Account"
+msgstr "银行账户"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-bacs.php:19
+msgid "All Accounts"
+msgstr "所有账户"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-bacs.php:20
+msgid "All in selected currency"
+msgstr "全部以选定货币计算"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal-v2.php:33
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal.php:48
+msgid "PayPal Email"
+msgstr "支付宝电子邮件"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal-v2.php:34
+msgid "Merchant ID"
+msgstr "商户ID"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal-v2.php:35
+msgid "Client ID"
+msgstr "客户ID"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal-v2.php:36
+msgid "Secret Key"
+msgstr "密匙"
+
+#. translators: %s is currency code.
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal-v2.php:38
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-paypal.php:50
+msgid "This gateway does not support %s. To show this gateway please select another currency."
+msgstr "此网关不支持 %s 。要显示此网关，请选择其他货币。"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-stripe.php:19
+msgid "Live Publishable Key"
+msgstr "可实时发布的密钥"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-stripe.php:20
+msgid "Live Secret Key"
+msgstr "实时密钥"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-stripe.php:21
+msgid "Test Publishable Key"
+msgstr "测试可发布密钥"
+
+#: classes/multi-currency/payment-gateways/class-wcml-payment-gateway-stripe.php:22
+msgid "Test Secret Key"
+msgstr "测试秘密密钥"
+
+#: classes/Multicurrency/Analytics/Export.php:25
+#: classes/Reports/Orders/Hooks.php:24
+msgid "Language"
+msgstr "语言"
+
+#: classes/Multicurrency/Shipping/AdminHooks.php:66
+msgid "Costs and values in custom currencies"
+msgstr "自定义货币的成本和价值"
+
+#: classes/Multicurrency/Shipping/AdminHooks.php:69
+msgid "WPML Multilingual & Multicurrency for WooCommerce by default will multiply all your costs and values defined above by currency exchange rates. If you don't want this and you prefer static values instead, you can define them here."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 默认会将上面定义的所有成本和价值乘以货币汇率。如果您不想这样做，而是希望使用静态值，您可以在这里定义它们。"
+
+#: classes/Multicurrency/Shipping/AdminHooks.php:83
+msgid "Enable costs in custom currencies"
+msgstr "启用自定义货币成本"
+
+#: classes/Multicurrency/Shipping/AdminHooks.php:88
+msgid "Calculate shipping costs in other currencies automatically"
+msgstr "自动计算其他货币的运费"
+
+#: classes/Multicurrency/Shipping/AdminHooks.php:89
+msgid "Set shipping costs in other currencies manually"
+msgstr "手动设置其他货币的运费"
+
+#. translators: %s is the currency code
+#: classes/Multicurrency/Shipping/FreeShipping.php:15
+msgctxt "The label for the field with minimal order amount in additional currency. The currency symbol will be added in place of %s specifier."
+msgid "Minimal order amount in %s"
+msgstr "最小订单金额 %s"
+
+#. translators: %s is the currency code
+#: classes/Multicurrency/Shipping/FreeShipping.php:26
+msgctxt "The description for the field with minimal order amount in additional currency. The currency symbol will be added in place of %s specifier."
+msgid "The minimal order amount if customer choose %s as a purchase currency."
+msgstr "如果客户选择 %s 作为购买货币，最小订单金额。"
+
+#. translators: %1$s is a shipping class name and %2$s is a language code
+#: classes/Multicurrency/Shipping/ShippingClasses.php:63
+msgid "Your shipping class %1$s has been created in %2$s language. Please switch your language if you want to provide shipping costs in different currencies for this class."
+msgstr "您的运费类别 %1$s 是以 %2$s 语言创建的。如果您想为该类别提供不同货币的运费，请切换语言。"
+
+#. translators: %1$s is a shipping class name and %2$s is a currency code
+#: classes/Multicurrency/Shipping/ShippingClasses.php:74
+msgid "\"%1$s\" shipping class cost in %2$s"
+msgstr "\"%1$s\" 船运舱位费用 %2$s"
+
+#: classes/Multicurrency/Shipping/ShippingClasses.php:76
+#: classes/Multicurrency/Shipping/ShippingClasses.php:87
+msgid "N/A"
+msgstr "不适用"
+
+#. translators: %s is a currency code
+#: classes/Multicurrency/Shipping/ShippingClasses.php:85
+msgid "No shipping class cost in %s"
+msgstr "无运输舱位费用 %s"
+
+#. translators: %s is a currency code
+#: classes/Multicurrency/Shipping/VariableCost.php:17
+msgctxt "The label for the field with shipping cost in additional currency. The currency symbol will be added in place of %s specifier."
+msgid "Cost in %s"
+msgstr "成本 %s"
+
+#. translators: %s is a currency code
+#: classes/Multicurrency/Shipping/VariableCost.php:31
+msgctxt "The description for the field with shipping cost in additional currency. The currency symbol will be added in place of %s specifier."
+msgid "The shipping cost if customer choose %s as a purchase currency."
+msgstr "客户选择 %s 作为购买货币时的运费。"
+
+#: classes/Multicurrency/UI/Hooks.php:197
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:66
+msgid "Currencies"
+msgstr "货币"
+
+#: classes/Multicurrency/UI/Hooks.php:199
+msgid "Add currency"
+msgstr "添加货币"
+
+#: classes/Multicurrency/UI/Hooks.php:200
+msgid "Rate"
+msgstr "评分"
+
+#: classes/Multicurrency/UI/Hooks.php:201
+msgid "default"
+msgstr "默认"
+
+#: classes/Multicurrency/UI/Hooks.php:202
+msgid "Edit"
+msgstr "编辑"
+
+#: classes/Multicurrency/UI/Hooks.php:203
+msgid "Currency displayed first"
+msgstr "先显示货币"
+
+#: classes/Multicurrency/UI/Hooks.php:204
+msgid "Choose which currency to display when a client switches languages"
+msgstr "选择在客户切换语言时显示哪种货币"
+
+#: classes/Multicurrency/UI/Hooks.php:205
+msgid "Keep"
+msgstr "保持"
+
+#: classes/Multicurrency/UI/Hooks.php:206
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:124
+msgid "Delete"
+msgstr "删除"
+
+#: classes/Multicurrency/UI/Hooks.php:207
+msgid "Currencies to display for each language"
+msgstr "每种语言显示的货币"
+
+#. translators: %1$s is for language name and %2$s for currency name
+#: classes/Multicurrency/UI/Hooks.php:209
+msgid "Enable %1$s for %2$s"
+msgstr "启用 %1$s %2$s"
+
+#. translators: %1$s is for language name and %2$s for currency name
+#: classes/Multicurrency/UI/Hooks.php:211
+msgid "Disable %1$s for %2$s"
+msgstr "禁用 %1$s %2$s"
+
+#: classes/Multicurrency/UI/Hooks.php:212
+#: inc/template-classes/class-wcml-menus-wrap.php:47
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:68
+msgid "Settings"
+msgstr "设置"
+
+#: classes/Multicurrency/UI/Hooks.php:213
+msgid "Add new currency"
+msgstr "添加新货币"
+
+#. translators: %s for currency label
+#: classes/Multicurrency/UI/Hooks.php:215
+msgid "Currency settings for %s"
+msgstr "的货币设置 %s"
+
+#: classes/Multicurrency/UI/Hooks.php:216
+msgid "Select currency"
+msgstr "选择货币"
+
+#: classes/Multicurrency/UI/Hooks.php:217
+msgid "Exchange Rate"
+msgstr "汇率"
+
+#: classes/Multicurrency/UI/Hooks.php:218
+msgid "Only numeric"
+msgstr "只有数字"
+
+#. translators: %s for currency exchange rate value
+#: classes/Multicurrency/UI/Hooks.php:220
+msgid "(previous value: %s)"
+msgstr "（前值： %s)"
+
+#: classes/Multicurrency/UI/Hooks.php:221
+msgid "Currency Preview"
+msgstr "货币预览"
+
+#: classes/Multicurrency/UI/Hooks.php:222
+msgid "Currency Position"
+msgstr "货币状况"
+
+#: classes/Multicurrency/UI/Hooks.php:223
+msgid "Left"
+msgstr "左边"
+
+#: classes/Multicurrency/UI/Hooks.php:224
+msgid "Right"
+msgstr "右边"
+
+#: classes/Multicurrency/UI/Hooks.php:225
+msgid "Left with space"
+msgstr "留有空间"
+
+#: classes/Multicurrency/UI/Hooks.php:226
+msgid "Right with space"
+msgstr "有空间的右侧"
+
+#: classes/Multicurrency/UI/Hooks.php:227
+msgid "Thousand Separator"
+msgstr "千分离器"
+
+#: classes/Multicurrency/UI/Hooks.php:228
+msgid "(Space)"
+msgstr "空间"
+
+#: classes/Multicurrency/UI/Hooks.php:229
+msgid "Decimal Separator"
+msgstr "小数分隔符"
+
+#: classes/Multicurrency/UI/Hooks.php:230
+msgid "Number of Decimals"
+msgstr "小数位数"
+
+#: classes/Multicurrency/UI/Hooks.php:231
+msgid "Rounding to the nearest integer"
+msgstr "四舍五入到最接近的整数"
+
+#: classes/Multicurrency/UI/Hooks.php:232
+msgid "Disabled"
+msgstr "已禁用"
+
+#: classes/Multicurrency/UI/Hooks.php:233
+msgid "Up"
+msgstr "向上"
+
+#: classes/Multicurrency/UI/Hooks.php:234
+msgid "Down"
+msgstr "下降"
+
+#: classes/Multicurrency/UI/Hooks.php:235
+msgid "Nearest"
+msgstr "最近的"
+
+#: classes/Multicurrency/UI/Hooks.php:236
+msgid "Increment for nearest integer"
+msgstr "按最接近的整数递增"
+
+#. translators: %s is an HTML break line
+#: classes/Multicurrency/UI/Hooks.php:238
+msgid "The resulting price will be an increment of this value after initial rounding.%se.g.:"
+msgstr "%s例如："
+
+#: classes/Multicurrency/UI/Hooks.php:239
+msgid "1454.07 &raquo; 1454 when set to 1"
+msgstr "1454.07 \" 设置为 1时为 1454"
+
+#: classes/Multicurrency/UI/Hooks.php:240
+msgid "1454.07 &raquo; 1450 when set to 10"
+msgstr "1454.07 \" 设置为 10 时为 1450"
+
+#: classes/Multicurrency/UI/Hooks.php:241
+msgid "1454.07 &raquo; 1500 when set to 100"
+msgstr "1454.07 \" 设置为 100 时为 1500"
+
+#. translators: %s is an HTML break line
+#: classes/Multicurrency/UI/Hooks.php:243
+msgid "Round the converted price to the closest integer. %se.g. 15.78 becomes 16.00"
+msgstr "将换算后的价格四舍五入为最接近的整数。 %s例如， 15.78 变成 16.00"
+
+#: classes/Multicurrency/UI/Hooks.php:244
+msgid "The value to be subtracted from the amount obtained previously."
+msgstr "从之前获得的数值中减去的数值。"
+
+#: classes/Multicurrency/UI/Hooks.php:245
+msgid "For 1454.07, when the increment for the nearest integer is 100 and the auto-subtract amount is 1, the resulting amount is 1499."
+msgstr "对于 1454.07，当最近整数的增量为 100 ，自动减去的数额为 1时，得出的数额为 1499。"
+
+#: classes/Multicurrency/UI/Hooks.php:246
+msgid "Autosubtract amount"
+msgstr "自动减去金额"
+
+#: classes/Multicurrency/UI/Hooks.php:247
+msgid "Payment Gateways"
+msgstr "支付网关"
+
+#. translators: %s is a currency code
+#: classes/Multicurrency/UI/Hooks.php:249
+msgid "Custom settings for %s"
+msgstr "自定义设置 %s"
+
+#: classes/Multicurrency/UI/Hooks.php:251
+#: inc/template-classes/class-wcml-pointer-ui.php:37
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:63
+msgid "Learn more"
+msgstr "了解更多"
+
+#: classes/Multicurrency/UI/Hooks.php:252
+msgid "Please enter a valid number"
+msgstr "请输入有效号码"
+
+#: classes/Multicurrency/UI/Hooks.php:253
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:356
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:109
+#: inc/template-classes/store-urls/class-wcml-store-urls-edit-base-ui.php:51
+msgid "Cancel"
+msgstr "取消"
+
+#: classes/Multicurrency/UI/Hooks.php:254
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:110
+#: inc/template-classes/store-urls/class-wcml-store-urls-edit-base-ui.php:52
+msgid "Save"
+msgstr "节省"
+
+#: classes/Multicurrency/UI/Hooks.php:255
+msgid "Currency available in"
+msgstr "可用货币"
+
+#: classes/Multicurrency/UI/Hooks.php:256
+#: classes/PaymentGateways/Hooks.php:172
+msgid "All countries"
+msgstr "所有国家"
+
+#: classes/Multicurrency/UI/Hooks.php:257
+msgid "All countries except: "
+msgstr "所有国家除外： "
+
+#: classes/Multicurrency/UI/Hooks.php:258
+#: classes/PaymentGateways/Hooks.php:174
+msgid "All countries except..."
+msgstr "所有国家除..."
+
+#: classes/Multicurrency/UI/Hooks.php:259
+#: classes/PaymentGateways/Hooks.php:175
+msgid "Specific countries"
+msgstr "具体国家"
+
+#: classes/Multicurrency/UI/Hooks.php:260
+msgid "Show currencies based on"
+msgstr "显示货币基于"
+
+#: classes/Multicurrency/UI/Hooks.php:261
+msgid "You need the WPML plugin to make your store multilingual and display currencies based on site language. Don't have it yet?"
+msgstr "您需要使用 WPML 插件来使您的商店使用多种语言，并根据网站语言显示货币。还没有？"
+
+#: classes/Multicurrency/UI/Hooks.php:262
+msgid "Purchase WPML now"
+msgstr "立即购买 WPML"
+
+#: classes/Multicurrency/UI/Hooks.php:263
+msgid "Site Language"
+msgstr "网站语言"
+
+#: classes/Multicurrency/UI/Hooks.php:264
+msgid "Client Location"
+msgstr "客户所在地"
+
+#: classes/Multicurrency/UI/Hooks.php:265
+msgid "Location based"
+msgstr "基于位置"
+
+#: classes/Multicurrency/UI/Hooks.php:266
+msgid "WooCommerce integrates with MaxMind Geolocation to reliably determine the location of your customers."
+msgstr "WooCommerce 与 MaxMind Geolocation 集成，可以可靠地确定客户的位置。"
+
+#: classes/Multicurrency/UI/Hooks.php:267
+msgid "Great! Now you can use Geolocation to determine default currency for chosen languages. You can edit that key in "
+msgstr "太棒了！现在，您可以使用地理位置来确定所选语言的默认货币。您可以在 "
+
+#: classes/Multicurrency/UI/Hooks.php:269
+msgid "WooCommerce settings page."
+msgstr "WooCommerce 设置页面。"
+
+#: classes/Multicurrency/UI/Hooks.php:270
+msgid "MaxMind Licence Key"
+msgstr "Maxmind 许可证密钥"
+
+#: classes/Multicurrency/UI/Hooks.php:271
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:355
+msgid "Apply"
+msgstr "应用"
+
+#: classes/Multicurrency/UI/Hooks.php:272
+msgid "Please note: without a free MaxMind key, your geolocation calls will be limited and your site performance may be impacted."
+msgstr "请注意：如果没有免费的 MaxMind 密钥，您的地理位置调用将受到限制，网站性能可能会受到影响。"
+
+#: classes/Multicurrency/UI/Hooks.php:274
+msgid "Learn how to generate a free license key"
+msgstr "了解如何生成免费许可证密钥"
+
+#. translators: %s is a date
+#: classes/Multicurrency/UI/Hooks.php:311
+msgid "Set on %s"
+msgstr "设置在 %s"
+
+#: classes/PaymentGateways/Hooks.php:171
+msgid "Country availability"
+msgstr "国家可用性"
+
+#: classes/PaymentGateways/Hooks.php:173
+msgid "All countries except"
+msgstr "除以下国家外的所有国家"
+
+#: classes/PaymentGateways/Hooks.php:176
+msgid "Configure per country availability for this payment gateway"
+msgstr "为该支付网关配置每个国家的可用性"
+
+#: classes/PaymentGateways/Hooks.php:178
+#: inc/template-classes/class-wcml-settings-ui.php:120
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:106
+msgid "Save changes"
+msgstr "保存更改"
+
+#: classes/PaymentGateways/Hooks.php:179
+msgid "Settings saved."
+msgstr "设置已保存。"
+
+#: classes/PaymentGateways/Hooks.php:180
+msgid "Error saving settings."
+msgstr "保存设置时出错。"
+
+#: classes/PaymentGateways/Hooks.php:279
+msgid "We noticed that you're using WooCommerce Gateways Country Limiter plugin which is now integrated into WPML Multilingual & Multicurrency for WooCommerce. Please remove it!"
+msgstr "我们注意到您正在使用 WooCommerce Gateways Country Limiter 插件，该插件现已集成到 WPML Multilingual & Multicurrency for WooCommerce 中。请将其移除！"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/PaymentGateways/Strings.php:33
+msgid "To translate custom text for payment methods, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译支付方式的自定义文本，请前往%1$s翻译仪表板%2$s。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/Permalinks/Settings/TranslationControls.php:55
+msgid "To translate permalinks for product taxonomies, go to %1$sWPML Multilingual & Multicurrency for WooCommerce → Store URLs%2$s."
+msgstr "要翻译产品分类法的永久链接，请前往 %1$sWPML Multilingual & Multicurrency for WooCommerce → 店铺网址%2$s。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/Permalinks/Settings/TranslationControls.php:63
+msgid "To translate product permalinks, go to %1$sWPML Multilingual & Multicurrency for WooCommerce → Store URLs%2$s."
+msgstr "要翻译产品永久链接，请前往 %1$sWPML Multilingual & Multicurrency for WooCommerce → 店铺网址%2$s。"
+
+#: classes/Permalinks/Settings/TranslationControls.php:73
+msgid "How to translate permalinks for product taxonomies"
+msgstr "如何翻译产品分类的永久链接"
+
+#: classes/Permalinks/Settings/TranslationControls.php:80
+msgid "How to translate product permalinks"
+msgstr "如何翻译产品永久链接"
+
+#: classes/pointers/class-wcml-pointers.php:42
+msgid "Translate WooCommerce products"
+msgstr "翻译 WooCommerce 产品"
+
+#: classes/pointers/class-wcml-pointers.php:54
+msgid "Translate shipping classes"
+msgstr "翻译运输类别"
+
+#: classes/pointers/class-wcml-pointers.php:67
+msgid "Configure multicurrency for multilingual sites"
+msgstr "为多语言网站配置多货币"
+
+#: classes/pointers/class-wcml-pointers.php:81
+msgid "Translate endpoints"
+msgstr "翻译端点"
+
+#: classes/PointerUi/Factory.php:17
+#: inc/template-classes/class-wcml-pointer-ui.php:20
+msgid "How to translate this?"
+msgstr "如何翻译？"
+
+#: classes/privacy/class-wcml-privacy-content.php:20
+msgid "WPML Multilingual & Multicurrency for WooCommerce will use cookies to understand the basket info when using languages in domains and to transfer data between the domains."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 将使用 cookie 来了解在域中使用语言时的购物篮信息，并在域之间传输数据。"
+
+#: classes/privacy/class-wcml-privacy-content.php:21
+msgid "WPML Multilingual & Multicurrency for WooCommerce will also use cookies to identify the language and currency of each customer’s order as well as the currency of the reports created by WooCommerce. WPML Multilingual & Multicurrency for WooCommerce extends these reports by adding the currency’s information."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 还将使用 cookie 来识别每个客户订单的语言和货币，以及 WooCommerce 创建的报告的货币。WPML Multilingual & Multicurrency for WooCommerce 通过添加货币信息来扩展这些报告。"
+
+#. translators: $s is a currency code
+#: classes/Rest/Exceptions/InvalidCurrency.php:16
+msgid "Invalid currency parameter: \"%s\""
+msgstr "无效货币参数： \"%s\""
+
+#. translators: $s is a language code
+#: classes/Rest/Exceptions/InvalidLanguage.php:16
+msgid "Invalid language parameter: \"%s\""
+msgstr "语言参数无效： \"%s\""
+
+#. translators: $s is a product ID
+#: classes/Rest/Exceptions/InvalidProduct.php:16
+msgid "Product not found: %d"
+msgstr "未找到产品： %d"
+
+#. translators: $s is a term ID
+#: classes/Rest/Exceptions/InvalidTerm.php:16
+msgid "Term not found: %d"
+msgstr "未找到术语： %d"
+
+#: classes/Rest/Exceptions/MissingLanguage.php:12
+#: classes/Rest/Wrapper/Products/Products.php:121
+msgid "Using \"translation_of\" requires providing a \"lang\" parameter too"
+msgstr "使用 \"translation_of\" 也需要提供一个 \"lang\" 参数"
+
+#: classes/StandAlone/UI/AdminMenu.php:45
+#: inc/template-classes/class-wcml-menus-wrap.php:42
+msgid "Multilingual"
+msgstr "多种语言"
+
+#: classes/StandAlone/UI/AdminMenu.php:50
+#: inc/template-classes/class-wcml-menus-wrap.php:52
+#: inc/template-classes/status/class-wcml-status-multi-currencies-ui.php:33
+msgid "Multicurrency"
+msgstr "多种货币"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/StandAlone/UI/AdminMenu.php:74
+msgid "To run your store in multiple languages, you need to use the %1$sWPML plugin%2$s."
+msgstr "要以多种语言运行您的商店，您需要使用 %1$sWPML 插件%2$s 。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/StandAlone/UI/AdminMenu.php:78
+msgid "If you have it already, install and activate it. Otherwise, %1$sbuy WPML%2$s."
+msgstr "如果您已经拥有，请安装并激活。否则， %1$s购买 WPML%2$s 。"
+
+#: classes/StandAlone/UI/AdminMenu.php:79
+msgid "You will need either the Multilingual CMS or Multilingual Agency package to use WPML with WooCommerce."
+msgstr "要在 WooCommerce 中使用 WPML，您需要多语言 CMS 或多语言代理套餐。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/StandAlone/UI/AdminMenu.php:85
+msgid "You can still use the %1$smulticurrency features%2$s without buying anything."
+msgstr "您仍然可以使用 %1$s多货币功能%2$s ，而无需购买任何东西。"
+
+#. translators: %s is a taxonomy singular label
+#: classes/taxonomy-translation/class-wcml-taxonomy-translation-link-filters.php:37
+msgid "%s translation"
+msgstr "%s 译文"
+
+#. translators: %1$s is a taxonomy singular label and %2$s is an HTML link
+#: classes/taxonomy-translation/class-wcml-taxonomy-translation-link-filters.php:42
+msgid "Translating %1$s? Use the %2$s table for easier translation."
+msgstr "翻译 %1$s? 请使用 %2$s 表格，以便于翻译。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/TMDashboard/Hooks.php:58
+msgid "To translate product details, including their taxonomy, use this dashboard. If you need to translate taxonomy independently or adjust store and currency settings, visit: %1$sWPML Multilingual & Multicurrency for WooCommerce documentation%2$s."
+msgstr "要翻译产品详情，包括其分类法，请使用此仪表板。如果您需要独立翻译分类法或调整店铺和货币设置，请访问：%1$sWPML Multilingual & Multicurrency for WooCommerce 文档%2$s。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: classes/TranslationControls/Hooks.php:123
+msgid "To translate this content, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译此内容，请前往%1$s翻译仪表板%2$s。"
+
+#: classes/TranslationControls/Hooks.php:136
+msgid "To see how to translate this text, save your changes here first."
+msgstr "要查看如何翻译此文本，请先在此处保存您的更改。"
+
+#: classes/WcEmailSettings/MultilingualHooks.php:36
+msgid "Header alignment for translations"
+msgstr "翻译的标头对齐"
+
+#. translators: %s is an HTML break line - after about 65 characters the text will no longer be visible
+#: classes/WcEmailSettings/MultilingualHooks.php:39
+msgid "Automatically align email headers based on%slanguage direction (right-to-left or left-to-right).\""
+msgstr "根据语言方向（从右到左或从左到右）自动对齐电子邮件标头。%s"
+
+#: classes/WcEmailSettings/MultilingualHooks.php:43
+msgid "Off – use the \"Header alignment\" setting above"
+msgstr "关闭 – 使用上面的 “标头对齐” 设置"
+
+#: classes/WcEmailSettings/MultilingualHooks.php:44
+msgid "On – align automatically"
+msgstr "开启 – 自动对齐"
+
+#: classes/wcml-setup/class-wcml-setup.php:38
+msgid "Introduction"
+msgstr "导言"
+
+#: classes/wcml-setup/class-wcml-setup.php:45
+msgid "Store Pages"
+msgstr "商店页面"
+
+#: classes/wcml-setup/class-wcml-setup.php:55
+msgid "Global Attributes"
+msgstr "全球属性"
+
+#: classes/wcml-setup/class-wcml-setup.php:64
+msgid "Multiple Currencies"
+msgstr "多种货币"
+
+#: compatibility/AdventureTours/class-wcml-adventure-tours.php:116
+msgid "Tour Data"
+msgstr "旅游数据"
+
+#: compatibility/AdventureTours/class-wcml-adventure-tours.php:123
+#: compatibility/WcBookings/class-wcml-bookings.php:624
+#: compatibility/WcTabManager/class-wcml-tab-manager.php:326
+#: compatibility/WcTabManager/class-wcml-tab-manager.php:333
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:155
+msgid "Title"
+msgstr "标题"
+
+#: compatibility/AdventureTours/class-wcml-adventure-tours.php:125
+msgid "Content"
+msgstr "内容"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/TableRateShipping/class-wcml-table-rate-shipping.php:178
+msgid "To translate the Method Title, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译方法标题，请前往%1$s翻译仪表板%2$s。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/TableRateShipping/class-wcml-table-rate-shipping.php:191
+msgid "To translate Labels, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译标签，请前往%1$s翻译仪表板%2$s。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/TmExtraProductOptions/class-wcml-extra-product-options.php:31
+msgid "To translate custom product fields, save your changes here first, then go to the %2$sTranslation Dashboard%3$s."
+msgstr "要翻译自定义产品字段，请先在此处保存您的更改，然后前往%2$s翻译仪表板%3$s。"
+
+#: compatibility/WcBookings/class-wcml-accommodation-bookings.php:57
+#: compatibility/WcBookings/MulticurrencyHooks.php:332
+msgid "Calculate costs in other currencies automatically"
+msgstr "自动计算其他货币的成本"
+
+#: compatibility/WcBookings/class-wcml-accommodation-bookings.php:62
+#: compatibility/WcBookings/MulticurrencyHooks.php:337
+msgid "Set costs in other currencies manually"
+msgstr "手动设置其他货币的成本"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:601
+msgid "Bookings"
+msgstr "预订"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:605
+msgid "Resources Label"
+msgstr "资源标签"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:613
+#: compatibility/WcBookings/class-wcml-bookings.php:614
+msgid "Resources"
+msgstr "资源"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:634
+msgid "Person Types"
+msgstr "人员类型"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:642
+msgid "Person Type Name"
+msgstr "人员类型名称"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:644
+#: compatibility/WcCompositeProducts/class-wcml-composite-products.php:185
+#: compatibility/WcCompositeProducts/class-wcml-composite-products.php:209
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:279
+#: compatibility/WcProductBundles/class-wcml-product-bundles.php:390
+msgid "Description"
+msgstr "描述"
+
+#: compatibility/WcBookings/class-wcml-bookings.php:736
+msgid "Resources label"
+msgstr "资源标签"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/WcBookings/class-wcml-bookings.php:1353
+msgid "To translate Resources, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation."
+msgstr "要翻译资源，请前往%1$s翻译仪表板%2$s并发送相关产品进行翻译。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/WcBookings/class-wcml-bookings.php:1366
+msgid "To translate Person Types, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation."
+msgstr "要翻译人员类型，请前往%1$s翻译仪表板%2$s并发送相关产品进行翻译。"
+
+#: compatibility/WcBookings/MulticurrencyHooks.php:693
+msgid "Booking currency"
+msgstr "预订货币"
+
+#: compatibility/WcCompositeProducts/class-wcml-composite-products.php:174
+msgid "Composite Products ( Components )"
+msgstr "复合材料产品（部件）"
+
+#: compatibility/WcCompositeProducts/class-wcml-composite-products.php:183
+#: compatibility/WcCompositeProducts/class-wcml-composite-products.php:207
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:277
+#: compatibility/WcProductBundles/class-wcml-product-bundles.php:379
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:195
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:283
+msgid "Name"
+msgstr "名字"
+
+#: compatibility/WcCompositeProducts/class-wcml-composite-products.php:198
+msgid "Composite Products ( Scenarios )"
+msgstr "复合产品（方案）"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:170
+msgid "To translate global add-ons, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译全局附加项，请前往%1$s翻译仪表板%2$s。"
+
+#. translators: %s is a product addon name
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:274
+msgid "Product Add-ons Group \"%s\""
+msgstr "产品附加组件群 \"%s\""
+
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:282
+msgid "Placeholder"
+msgstr "占位符"
+
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:289
+msgid "Options"
+msgstr "选项"
+
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:292
+msgid "Label"
+msgstr "标签"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/WcProductAddons/class-wcml-product-addons.php:384
+msgid "To translate per-product add-ons, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation."
+msgstr "要翻译每个产品的附加项，请前往%1$s翻译仪表板%2$s并发送相关产品进行翻译。"
+
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:329
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:352
+msgid "Multi-currency settings"
+msgstr "多种货币设置"
+
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:330
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:66
+msgid "Calculate prices in other currencies automatically"
+msgstr "自动计算其他货币的价格"
+
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:331
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:70
+msgid "Set prices in other currencies manually"
+msgstr "手动设置其他货币的价格"
+
+#. translators: %s is an option label
+#: compatibility/WcProductAddons/MulticurrencyHooks.php:354
+msgid "Here you can set different prices for the %s in multiple currencies:"
+msgstr "在这里，您可以用多种货币为 %s 设置不同的价格："
+
+#: compatibility/WcProductBundles/class-wcml-product-bundles.php:355
+msgid "Product Bundles"
+msgstr "产品捆绑"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/WcSubscriptions/class-wcml-wc-subscriptions.php:102
+msgid "You can translate text for subscription products from the %1$sTranslation Dashboard%2$s."
+msgstr "您可以从%1$s翻译仪表板%2$s翻译订阅产品的文本。"
+
+#: compatibility/WcSubscriptions/MulticurrencyHooks.php:149
+msgid "Subscription Price"
+msgstr "订阅价格"
+
+#: compatibility/WcSubscriptions/MulticurrencyHooks.php:150
+msgid "Sign-up Fee"
+msgstr "注册费"
+
+#: compatibility/WcTabManager/class-wcml-tab-manager.php:312
+msgid "Product tabs"
+msgstr "产品标签"
+
+#: compatibility/WcTabManager/class-wcml-tab-manager.php:328
+msgid "Heading"
+msgstr "标题"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: compatibility/WcTabManager/class-wcml-tab-manager.php:709
+#: compatibility/YikesCustomProductTabs/class-wcml-yikes-custom-product-tabs.php:236
+msgid "To translate custom per-product tabs, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation."
+msgstr "要翻译自定义的每个产品标签，请前往%1$s翻译仪表板%2$s并发送相关产品进行翻译。"
+
+#: compatibility/YikesCustomProductTabs/class-wcml-yikes-custom-product-tabs.php:55
+msgid "Custom Tabs"
+msgstr "自定义标签"
+
+#: compatibility/YikesCustomProductTabs/class-wcml-yikes-custom-product-tabs.php:66
+msgid "Tab Title"
+msgstr "标签标题"
+
+#: inc/admin-menus/class-wcml-admin-menus.php:170
+msgid "Quick Edit isn't available for product translations:"
+msgstr "产品翻译不提供快速编辑："
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/admin-menus/class-wcml-admin-menus.php:177
+msgid "- To edit this product's translation, use the %1$sTranslation Dashboard%2$s."
+msgstr "- 要编辑此产品的翻译，请使用 %1$s翻译仪表板%2$s。"
+
+#: inc/admin-menus/class-wcml-admin-menus.php:183
+msgid "- To edit the original product, switch back to the default language."
+msgstr "- 要编辑原始产品，请切换回默认语言。"
+
+#: inc/admin-menus/class-wcml-admin-menus.php:275
+msgid "Multilingual Settings"
+msgstr "多语言设置"
+
+#: inc/admin-menus/class-wcml-admin-menus.php:279
+msgid "Multicurrency Settings"
+msgstr "多种货币设置"
+
+#. translators: 1: open <a> tag, 2: close <a> tag
+#: inc/admin-menus/class-wcml-admin-menus.php:295
+msgid "It’s recommended that you translate products from the %1$sTranslation Dashboard%2$s."
+msgstr "建议您从%1$s翻译仪表板%2$s翻译产品。"
+
+#: inc/admin-menus/class-wcml-admin-menus.php:299
+#: inc/class-wcml-cart-sync-warnings.php:90
+msgid "Dismiss"
+msgstr "关闭"
+
+#: inc/admin-menus/class-wcml-admin-menus.php:368
+msgid "WCML"
+msgstr "WCML"
+
+#: inc/class-wcml-cart-removed-items-widget.php:8
+msgid "Shows a list of the products that existed in the cart before the cart is reset on the front end after switching the language or the currency. It will be hidden when there are no products to show."
+msgstr "显示购物车在切换语言或货币后在前端重置之前存在于购物车中的产品列表。如果没有要显示的产品，该列表将被隐藏。"
+
+#: inc/class-wcml-cart-removed-items-widget.php:13
+msgid "Products before cart reset"
+msgstr "购物车重置前的产品"
+
+#: inc/class-wcml-cart-switch-lang-functions.php:78
+msgid "Switching language?"
+msgstr "转换语言？"
+
+#. translators: %s is a language name
+#: inc/class-wcml-cart-switch-lang-functions.php:82
+msgid "You've switched the language and there are items in the cart. If you keep the %s language, the cart will be emptied and you will have to add the items again to the cart."
+msgstr "您切换了语言，但购物车中有商品。如果您保留 %s 语言，购物车将清空，您必须重新将物品添加到购物车。"
+
+#. translators: %s is a language name
+#: inc/class-wcml-cart-switch-lang-functions.php:89
+msgid "Keep %s"
+msgstr "保持 %s"
+
+#. translators: %s is a language name
+#: inc/class-wcml-cart-switch-lang-functions.php:91
+msgid "Switch back to %s"
+msgstr "切换回 %s"
+
+#: inc/class-wcml-cart-sync-warnings.php:73
+msgctxt "Reset cart option warning 1"
+msgid "Because of some elements in your site configuration, when the users switch the currency or the language on the front end, the cart content might not be synchronized correctly."
+msgstr "由于网站配置中的某些元素，当用户在前端切换货币或语言时，购物车内容可能无法正确同步。"
+
+#. translators: %s is link to "reset cart configuration"
+#: inc/class-wcml-cart-sync-warnings.php:75
+msgctxt "Reset cart option warning 2"
+msgid "It is recommended that you %s with the option to reset the cart in a situation like this."
+msgstr "在这种情况下，建议您 %s ，选择重置购物车。"
+
+#: inc/class-wcml-cart-sync-warnings.php:77
+msgid "configure WPML Multilingual & Multicurrency for WooCommerce"
+msgstr "配置 WPML Multilingual & Multicurrency for WooCommerce"
+
+#: inc/class-wcml-cart-sync-warnings.php:84
+msgid "More details"
+msgstr "更多详情"
+
+#: inc/class-wcml-cart.php:206
+msgid "Switching currency?"
+msgstr "转换货币？"
+
+#: inc/class-wcml-cart.php:207
+msgid "Your cart is not empty! After you switched the currency, all items from the cart will be removed and you have to add them again."
+msgstr "您的购物车不是空的！切换货币后，购物车中的所有商品将被移除，您必须重新添加。"
+
+#. translators: %s is a currency
+#: inc/class-wcml-cart.php:209
+msgid "Keep using %s"
+msgstr "继续使用 %s"
+
+#: inc/class-wcml-cart.php:210
+msgid "Proceed"
+msgstr "继续"
+
+#. translators: %s is the number of reviews
+#: inc/class-wcml-comments.php:284
+msgid "Show reviews in all languages  (%s)"
+msgstr "以所有语言显示评论 (%s)"
+
+#. translators: %1$s is a language name and %2$s is the number of reviews
+#: inc/class-wcml-comments.php:300
+msgid "Show only reviews in %1$s (%2$s)"
+msgstr "仅显示 %1$s 的评论 (%2$s)"
+
+#: inc/class-wcml-comments.php:348
+msgid "translated"
+msgstr "翻译"
+
+#. translators: %1$s is a URL and %2$s is a version number
+#: inc/class-wcml-dependencies.php:119
+msgid "WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It is not compatible with  <a href=\"%1$s\">WPML</a> versions prior %2$s."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 已启用但未生效。它与 <a href=\"%1$s\">WPML</a> %2$s 之前的版本不兼容。"
+
+#: inc/class-wcml-dependencies.php:135
+msgid "WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. Please finish the installation of WPML first."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 已启用但未生效。请先完成 WPML 的安装。"
+
+#. translators: %1$s is a URL and %2$s is a version number
+#: inc/class-wcml-dependencies.php:147
+msgid "WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It is not compatible with  <a href=\"%1$s\">Woocommerce</a> versions prior %2$s."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 已启用但未生效。它与 <a href=\"%1$s\">Woocommerce</a> %2$s 之前的版本不兼容。"
+
+#. translators: %1$s is a URL and %2$s is a version number
+#: inc/class-wcml-dependencies.php:167
+msgid "WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It is not compatible with  <a href=\"%1$s\">WPML String Translation</a> versions prior %2$s."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 已启用但未生效。它与 <a href=\"%1$s\">WPML 字符串翻译</a> %2$s 之前的版本不兼容。"
+
+#: inc/class-wcml-dependencies.php:199
+msgid "WPML support"
+msgstr "支持 WPML"
+
+#. translators: Part 1/6 of a message telling users that some taxonomies, required for WCML to work, are not set as translatable when they should
+#: inc/class-wcml-dependencies.php:202
+msgctxt "Default taxonomies must be translatable: 1/6"
+msgid "Some taxonomies in your site are forced to be untranslatable. This is causing a problem when you're trying to run a multilingual WooCommerce site."
+msgstr "您网站中的某些分类标准被强制为不可翻译。这在您尝试运行多语言 WooCommerce 网站时会造成问题。"
+
+#. translators: Part 2/6 of a message telling users that some taxonomies, required for WCML to work, are not set as translatable when they should
+#: inc/class-wcml-dependencies.php:204
+msgctxt "Default taxonomies must be translatable: 2/6"
+msgid "A plugin or the theme are probably doing this."
+msgstr "可能是插件或主题造成的。"
+
+#. translators: Part 3/6 of a message telling users that some taxonomies, required for WCML to work, are not set as translatable when they should
+#: inc/class-wcml-dependencies.php:206
+msgctxt "Default taxonomies must be translatable: 3/6"
+msgid "What you can do:"
+msgstr "你能做什么"
+
+#. translators: Part 4/6 of a message telling users that some taxonomies, required for WCML to work, are not set as translatable when they should
+#: inc/class-wcml-dependencies.php:208
+msgctxt "Default taxonomies must be translatable: 4/6"
+msgid "1. Temporarily disable plugins and see if this message disappears."
+msgstr "1.暂时禁用插件，看看此信息是否消失。"
+
+#. translators: Part 5/6 of a message telling users that some taxonomies, required for WCML to work, are not set as translatable when they should
+#: inc/class-wcml-dependencies.php:210
+msgctxt "Default taxonomies must be translatable: 5/6"
+msgid "2. Temporarily switch the theme and see if this message disappears."
+msgstr "2.临时切换主题，看看这条信息是否消失。"
+
+#. translators: Part 6/6 of a message telling users that some taxonomies, required for WCML to work, are not set as translatable when they should
+#: inc/class-wcml-dependencies.php:212
+msgctxt "Default taxonomies must be translatable: 6/6"
+msgid "It's best to contact %s, tell that you're getting this message and offer to send a Duplicator copy of the site. We will work with the theme/plugin author and fix the problem for good. In the meanwhile, we'll give you a temporary solution, so you're not stuck."
+msgstr "最好联系 %s ，告知您收到此消息，并提供一份网站的 Duplicator 副本。我们将与主题/插件作者合作，彻底解决问题。与此同时，我们会为您提供一个临时解决方案，这样您就不会陷入困境。"
+
+#: inc/class-wcml-dependencies.php:239
+msgid "and"
+msgstr "和"
+
+#. translators: %s is a list of plugin names
+#: inc/class-wcml-dependencies.php:250
+msgid "WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It requires %s in order to work."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 已启用但未生效。它需要 %s 才能工作。"
+
+#: inc/class-wcml-dependencies.php:275
+msgid "Because this site uses the default permalink structure, you cannot use slug translation for product permalinks."
+msgstr "由于该网站使用默认的永久链接结构，因此不能对产品永久链接使用 slug 翻译。"
+
+#: inc/class-wcml-dependencies.php:277
+msgid "Please choose a different permalink structure or disable slug translation."
+msgstr "请选择不同的永久链接结构或禁用 slug 翻译。"
+
+#: inc/class-wcml-dependencies.php:279
+msgid "Permalink settings"
+msgstr "Permalink 设置"
+
+#: inc/class-wcml-dependencies.php:281
+msgid "Configure products slug translation"
+msgstr "配置产品标题翻译"
+
+#: inc/class-wcml-dependencies.php:312
+msgid "wpml-config.xml file missing from WPML Multilingual & Multicurrency for WooCommerce folder."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 文件夹中缺少 wpml-config.xml 文件。"
+
+#. translators: %s is a field name
+#: inc/class-wcml-dependencies.php:340
+msgid "Custom field %s configuration from wpml-config.xml file was altered!"
+msgstr "修改了 wpml-config.xml 文件中的自定义字段 %s 配置！"
+
+#. translators: %s is a custom post type name
+#: inc/class-wcml-dependencies.php:372
+msgid "Custom type %s configuration from wpml-config.xml file was altered!"
+msgstr "修改了 wpml-config.xml 文件中的自定义类型 %s 配置！"
+
+#. translators: %s is a custom taxonomy name
+#: inc/class-wcml-dependencies.php:404
+msgid "Custom taxonomy %s configuration from wpml-config.xml file was altered!"
+msgstr "修改了 wpml-config.xml 文件中的自定义分类 %s 配置！"
+
+#. translators: %1$s and %2$s are opening and closing HTML italic tags and %3$s and %4$s are opening and closing HTML link tags
+#: inc/class-wcml-install.php:275
+msgid "We detected a problem in your WPML configuration: the %1$sproduct_type%2$s taxonomy is set as translatable and this would cause problems with translated products. You can fix this in the %3$sMultilingual Content Setup page%4$s."
+msgstr "我们在您的 WPML 配置中检测到一个问题： %1$sproduct_type%2$s 分类标准被设置为可翻译，这会导致翻译产品出现问题。您可以在 %3$s多语言内容设置页面%4$s 中解决这个问题。"
+
+#. translators: %1$s and %2$s are opening and closing HTML italic tags and %3$s and %4$s are opening and closing HTML link tags
+#: inc/class-wcml-install.php:291
+msgid "We detected that the %1$sproduct_type%2$s field was set incorrectly for some product translations. This happened because the product_type taxonomy was translated. You can fix this in the WPML Multilingual & Multicurrency for WooCommerce %3$stroubleshooting page%4$s."
+msgstr "我们检测到 %1$sproduct_type%2$s 字段在某些产品翻译中设置不正确。这是因为 product_type 分类法已被翻译。您可以在 WPML Multilingual & Multicurrency for WooCommerce 的%3$s故障排除页面%4$s中修复此问题。"
+
+#: inc/class-wcml-languages-upgrader.php:246
+msgid "Downloading translations... Please don't close this page."
+msgstr "下载翻译...请不要关闭此页面。"
+
+#: inc/class-wcml-orders.php:238
+msgid "All the products will be removed from the current order in order to change the language"
+msgstr "为了更改语言，将从当前订单中删除所有产品"
+
+#: inc/class-wcml-products.php:200
+#: inc/template-classes/store-urls/class-wcml-store-urls-translation-statuses-ui.php:57
+msgid "Original language"
+msgstr "原文"
+
+#: inc/class-wcml-products.php:239
+msgid "Translation in progress"
+msgstr "翻译中"
+
+#: inc/class-wcml-products.php:255
+msgid "Take this and edit"
+msgstr "拿去编辑"
+
+#. translators: %s is the post title
+#: inc/class-wcml-products.php:318
+msgid "Quick edit \"%s\" inline"
+msgstr "快速编辑 “%s” 内联"
+
+#: inc/class-wcml-products.php:322
+msgid "Quick Edit"
+msgstr "快速编辑"
+
+#: inc/class-wcml-requests.php:63
+#: inc/currencies/class-wcml-multi-currency-configuration.php:95
+msgid "Your settings have been saved."
+msgstr "您的设置已保存。"
+
+#: inc/class-wcml-resources.php:187
+msgid "Choose a file"
+msgstr "选择文件"
+
+#: inc/class-wcml-resources.php:188
+msgid "At least one of these fields is required: title, content or excerpt"
+msgstr "其中至少一个字段为必填字段：标题、内容或摘录"
+
+#: inc/class-wcml-resources.php:189
+msgid "This translation job will no longer be assigned to you. Other translators will be able take it and continue the translation."
+msgstr "该翻译任务将不再分配给您。其他译员可以接手并继续翻译。"
+
+#: inc/class-wcml-resources.php:290
+#: inc/class-wcml-resources.php:291
+msgid "This field is locked for editing because WPML will copy its value from the original language."
+msgstr "该字段已锁定，无法编辑，因为 WPML 会从原始语言中复制其值。"
+
+#. translators: %1$s is the post title inside a HTML link pointing to the post edit screen, %2$s and %3$s are opening and closing HTML link tags
+#: inc/class-wcml-resources.php:307
+msgid "This is a translation of %1$s. Some of the fields are not editable. It's recommended that you translate products from the %2$sTranslation Dashboard%3$s."
+msgstr "这是 %1$s 的翻译。某些字段不可编辑。建议您从%2$s翻译仪表板%3$s翻译产品。"
+
+#: inc/class-wcml-store-pages.php:392
+#: inc/template-classes/class-wcml-settings-ui.php:85
+msgid "Cart"
+msgstr "购物车"
+
+#: inc/class-wcml-store-pages.php:393
+msgid "Checkout"
+msgstr "结账"
+
+#: inc/class-wcml-store-pages.php:394
+msgid "Checkout &rarr; Pay"
+msgstr "结账 &rarr; 付款"
+
+#: inc/class-wcml-store-pages.php:395
+msgid "Order Received"
+msgstr "收到订单"
+
+#: inc/class-wcml-store-pages.php:396
+msgid "My Account"
+msgstr "我的账户"
+
+#: inc/class-wcml-store-pages.php:397
+msgid "Change Password"
+msgstr "更改密码"
+
+#: inc/class-wcml-store-pages.php:398
+msgid "Edit My Address"
+msgstr "编辑我的地址"
+
+#: inc/class-wcml-store-pages.php:399
+msgid "Logout"
+msgstr "退出"
+
+#: inc/class-wcml-store-pages.php:400
+msgid "Lost Password"
+msgstr "丢失密码"
+
+#: inc/class-wcml-store-pages.php:401
+msgid "View Order"
+msgstr "查看订单"
+
+#: inc/class-wcml-store-pages.php:402
+msgid "Shop"
+msgstr "商店"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/class-wcml-store-pages.php:693
+msgid "To quickly translate this and other WooCommerce store pages, please run the %1$ssetup wizard%2$s."
+msgstr "要快速翻译此页面和其他 WooCommerce 商店页面，请运行 %1$s安装向导%2$s 。"
+
+#. translators: %1$s/%2$s and %3$s/%4$s are opening and closing HTML link tags
+#: inc/class-wcml-terms.php:101
+msgid "To translate %1$s please use the %2$s translation%3$s page, inside the %4$sWPML Multilingual & Multicurrency for WooCommerce admin%5$s."
+msgstr "要翻译 %1$s，请使用 %2$s 翻译%3$s 页面，位于 %4$sWPML Multilingual & Multicurrency for WooCommerce 管理%5$s中。"
+
+#. translators: %d is a number of products
+#: inc/class-wcml-terms.php:472
+msgid "%d products left"
+msgstr "%d 剩余产品"
+
+#: inc/class-wcml-terms.php:475
+msgid "Synchronization complete!"
+msgstr "同步完成！"
+
+#. translators: %s is a taxonomy name
+#: inc/class-wcml-terms.php:513
+#: inc/class-wcml-terms.php:544
+msgid "Invalid taxonomy %s"
+msgstr "分类法无效 %s"
+
+#. translators: %%1$s is a post type name and %2$s is a taxonomy name
+#: inc/class-wcml-terms.php:680
+msgid "Some translated %1$s have different %2$s assignments."
+msgstr "一些翻译的 %1$s 有不同的 %2$s 分配。"
+
+#. translators: %%1$s is a taxonomy name and %2$s is a post type name
+#: inc/class-wcml-terms.php:686
+msgid "Update %1$s for all translated %2$s"
+msgstr "更新所有翻译的 %1$s %2$s"
+
+#. translators: %1$s is a taxonomy name and %2$s is a post type name
+#: inc/class-wcml-terms.php:695
+msgid "All %1$s have the same %2$s assignments."
+msgstr "所有 %1$s 都有相同的 %2$s 分配。"
+
+#. translators: %1$s is a taxonomy name and %2$s is a post type name
+#: inc/class-wcml-terms.php:705
+msgid "Successfully updated %1$s for all translated %2$s."
+msgstr "成功更新了 %1$s 的所有翻译 %2$s 。"
+
+#: inc/class-wcml-upgrade.php:72
+msgid "Looks like you are upgrading from a previous version of WPML Multilingual & Multicurrency for WooCommerce. Would you like to automatically create translated variations and images?"
+msgstr "看起来您正在从 WPML Multilingual & Multicurrency for WooCommerce 的早期版本升级。您想要自动创建翻译的变体和图像吗？"
+
+#: inc/class-wcml-upgrade.php:74
+msgid "Yes, go to the troubleshooting page"
+msgstr "是，请访问故障排除页面"
+
+#: inc/class-wcml-upgrade.php:75
+msgid "No - dismiss"
+msgstr "否 - 驳回"
+
+#: inc/class-wcml-upgrade.php:691
+msgid "important change about this service"
+msgstr "本服务的重要变更"
+
+#: inc/class-wcml-upgrade.php:692
+msgid "Fixer.io API key"
+msgstr "Fixer.io API 密钥"
+
+#: inc/class-wcml-upgrade.php:694
+msgid "multicurrency settings page"
+msgstr "多币种设置页面"
+
+#. translators: 1: Fixer.io, 2: Announcement link.
+#: inc/class-wcml-upgrade.php:697
+msgid "Your site uses %1$s to automatically calculate prices in the secondary currency. There is an %2$s effective June 1st, 2018."
+msgstr "Your site uses %1$s to automatically calculate prices in the secondary currency. There is an %2$s effective June 1st, 2018."
+
+#. translators: 1: Mulicurrency tab link, 2: Fixer.io API key.
+#: inc/class-wcml-upgrade.php:701
+msgid "Please go to the %1$s and fill in your %2$s."
+msgstr "请访问 %1$s 并填写您的 %2$s 。"
+
+#: inc/class-wcml-url-translation.php:859
+msgid "Product Base"
+msgstr "产品基地"
+
+#: inc/class-wcml-url-translation.php:864
+msgid "Product Tag Base"
+msgstr "产品标签底座"
+
+#: inc/class-wcml-url-translation.php:869
+msgid "Product Category Base"
+msgstr "产品类别基础"
+
+#: inc/class-wcml-url-translation.php:874
+msgid "Product Attribute Base"
+msgstr "产品属性库"
+
+#: inc/class-wcml-url-translation.php:879
+msgid "Attribute Slug"
+msgstr "属性标头"
+
+#. translators: %s is a slug
+#: inc/class-wcml-url-translation.php:888
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:82
+msgid "Endpoint: %s"
+msgstr "终点： %s"
+
+#: inc/class-wcml-wc-strings.php:261
+msgid "You are using the same value as for the regular category base. This is known to create conflicts resulting in urls not working properly."
+msgstr "您使用了与常规类别基础相同的值。众所周知，这会产生冲突，导致 url 无法正常工作。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/class-wcml-wc-strings.php:422
+msgid "To translate attributes, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation."
+msgstr "要翻译属性，请前往%1$s翻译仪表板%2$s并发送相关产品进行翻译。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/currencies/class-wcml-multi-currency-configuration.php:264
+msgid "The default currency was changed. In order to show accurate prices in all currencies, you need to update the exchange rates under the %1$sMulti-currency%2$s configuration."
+msgstr "默认货币已更改。为了准确显示所有货币的价格，需要更新 %1$sMulti-Currency%2$s 配置下的汇率。"
+
+#: inc/currencies/class-wcml-multi-currency-orders.php:77
+msgid "Show all currencies"
+msgstr "显示所有货币"
+
+#: inc/currencies/class-wcml-multi-currency-orders.php:168
+msgid "Order currency:"
+msgstr "订购货币："
+
+#: inc/currencies/class-wcml-multi-currency-orders.php:181
+msgid "All the products will be removed from the current order in order to change the currency"
+msgstr "所有产品都将从当前订单中删除，以便更改币种"
+
+#: inc/currencies/currency-switcher/class-wcml-currency-switcher-ajax.php:34
+msgid "Currencies order updated"
+msgstr "货币订单已更新"
+
+#: inc/currencies/currency-switcher/class-wcml-currency-switcher-templates.php:333
+msgid "Uploads"
+msgstr "上传"
+
+#: inc/currencies/currency-switcher/class-wcml-currency-switcher-widget.php:10
+msgid "Currency switcher"
+msgstr "货币转换器"
+
+#: inc/currencies/currency-switcher/class-wcml-currency-switcher-widget.php:52
+msgid "Customize the currency switcher"
+msgstr "自定义货币切换器"
+
+#: inc/currencies/currency-switcher/class-wcml-currency-switcher.php:130
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:38
+#: inc/template-classes/status/class-wcml-status-multi-currencies-ui.php:34
+msgid "You haven't added any secondary currencies."
+msgstr "您没有添加任何辅助货币。"
+
+#: inc/template-classes/class-wcml-custom-files-ui.php:28
+msgid "Use custom settings for translations download files"
+msgstr "为翻译下载文件使用自定义设置"
+
+#: inc/template-classes/class-wcml-custom-files-ui.php:29
+#: inc/template-classes/class-wcml-settings-ui.php:70
+msgid "Use the same files for translations"
+msgstr "翻译时使用相同的文件"
+
+#: inc/template-classes/class-wcml-custom-files-ui.php:30
+msgid "Add separate download files for translations when you translate this product"
+msgstr "翻译本产品时，为翻译添加单独的下载文件"
+
+#: inc/template-classes/class-wcml-languages-upgrade-notice.php:19
+msgid "Update Translation"
+msgstr "更新翻译"
+
+#: inc/template-classes/class-wcml-languages-upgrade-notice.php:20
+msgid "Hide This Message"
+msgstr "隐藏此信息"
+
+#. translators: %1$s is a list of notice items and %2$s is a version number
+#: inc/template-classes/class-wcml-languages-upgrade-notice.php:22
+msgid "<strong>WooCommerce Translation Available</strong> &#8211; Install or update your <code>%1$s</code> translations to version <code>%2$s</code>."
+msgstr "<strong>可用的 WooCommerce 翻译</strong> - 安装或更新您的 <code>%1$s</code> 翻译版本 <code>%2$s</code>."
+
+#: inc/template-classes/class-wcml-menus-wrap.php:38
+#: inc/template-classes/class-wcml-sync-taxonomy.php:53
+msgid "You have untranslated terms!"
+msgstr "你有未经翻译的术语！"
+
+#: inc/template-classes/class-wcml-menus-wrap.php:57
+msgid "Store URLs"
+msgstr "商店 URL"
+
+#: inc/template-classes/class-wcml-menus-wrap.php:62
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:36
+msgid "Status"
+msgstr "状态"
+
+#: inc/template-classes/class-wcml-menus-wrap.php:67
+#: inc/template-classes/class-wcml-settings-ui.php:132
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:32
+#: inc/template-classes/status/class-wcml-status-ui.php:54
+msgid "Troubleshooting"
+msgstr "故障排除"
+
+#: inc/template-classes/class-wcml-multilingual-ui.php:9
+#: inc/template-classes/class-wcml-multilingual-ui.php:14
+#: inc/template-classes/status/class-wcml-status-products-ui.php:37
+msgid "Translate Products"
+msgstr "翻译产品"
+
+#: inc/template-classes/class-wcml-multilingual-ui.php:10
+msgid "Go to WPML &rarr; Translation Management to translate Products"
+msgstr "前往 WPML &rarr; 翻译管理来翻译产品"
+
+#: inc/template-classes/class-wcml-multilingual-ui.php:18
+#: inc/template-classes/class-wcml-multilingual-ui.php:23
+msgid "Translate Taxonomy"
+msgstr "翻译分类"
+
+#: inc/template-classes/class-wcml-multilingual-ui.php:19
+msgid "Go to WPML &rarr; Taxonomy Translation to translate Taxonomy terms manually"
+msgstr "前往 WPML &rarr; 分类法翻译来手动翻译分类术语"
+
+#: inc/template-classes/class-wcml-multilingual-ui.php:28
+msgid "Prefer to translate manually?"
+msgstr "更喜欢手动翻译？"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/class-wcml-multilingual-ui.php:31
+msgid "To manually translate products, go to %1$sProducts%2$s and click on the \"plus\" icon."
+msgstr "要手动翻译产品，请前往%1$s产品%2$s并点击 “加号” 图标。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/class-wcml-multilingual-ui.php:37
+msgid "To manually translate product categories, tags and attributes, go to %1$sWPML &rarr; Taxonomy Translation%2$s."
+msgstr "要手动翻译产品类别、标签和属性，请前往%1$sWPML &rarr; 分类法翻译%2$s。"
+
+#: inc/template-classes/class-wcml-not-translatable-attributes.php:31
+msgid "Translatable?"
+msgstr "可以翻译吗？"
+
+#: inc/template-classes/class-wcml-not-translatable-attributes.php:32
+msgid "Enable this if you want to translate attribute values with WPML Multilingual & Multicurrency for WooCommerce"
+msgstr "如果您想使用 WPML Multilingual & Multicurrency for WooCommerce 翻译属性值，请启用此功能"
+
+#: inc/template-classes/class-wcml-not-translatable-attributes.php:33
+msgid "Existing translations and variations associated will be deleted."
+msgstr "相关的现有译文和变体将被删除。"
+
+#. translators: %s is a currency or language name
+#: inc/template-classes/class-wcml-removed-cart-items-ui.php:44
+msgid "Products removed after switching to %s:"
+msgstr "转至 %s 后删除的产品："
+
+#: inc/template-classes/class-wcml-removed-cart-items-ui.php:47
+msgid "Clear list"
+msgstr "清除列表"
+
+#: inc/template-classes/class-wcml-settings-ui.php:41
+msgid "Products Synchronization"
+msgstr "产品同步"
+
+#: inc/template-classes/class-wcml-settings-ui.php:42
+msgid "Configure specific product properties that should be synced to translations."
+msgstr "配置应同步到翻译的特定产品属性。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:45
+msgid "Sync publishing date for translated products."
+msgstr "同步翻译产品的发布日期。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:49
+msgid "Sync products and product taxonomies order."
+msgstr "同步产品和产品分类顺序。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:54
+msgid "Products Media Synchronization"
+msgstr "产品媒体同步"
+
+#: inc/template-classes/class-wcml-settings-ui.php:55
+msgid "Configure thumbnail and gallery synchronization to translations."
+msgstr "配置缩略图和图库同步翻译。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:58
+msgid "Display original images on the translated product front page if images not specified"
+msgstr "如果未指定图像，则在翻译后的产品首页上显示原始图像"
+
+#: inc/template-classes/class-wcml-settings-ui.php:63
+msgid "Products Download Files"
+msgstr "产品下载文件"
+
+#: inc/template-classes/class-wcml-settings-ui.php:64
+msgid ""
+"If you are using downloadable products, you can choose to have their paths\n"
+"                                            synchronized, or seperate for each language."
+msgstr "如果您使用的是可下载产品，您可以选择让它们的路径\n 同步，或为每种语言分别设置路径。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:71
+msgid "Add separate download files for translations when translating products"
+msgstr "翻译产品时为翻译添加单独的下载文件"
+
+#: inc/template-classes/class-wcml-settings-ui.php:75
+msgid "Product reviews"
+msgstr "产品评论"
+
+#: inc/template-classes/class-wcml-settings-ui.php:76
+msgid "Define how to display product reviews on the product page by default. The customer will be still able to filter reviews by language."
+msgstr "定义如何在产品页面上默认显示产品评论。客户仍可按语言过滤评论。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:79
+msgid "By default, show reviews in all languages"
+msgstr "默认情况下，显示所有语言的评论"
+
+#: inc/template-classes/class-wcml-settings-ui.php:84
+msgid "You can choose to clear the cart contents when you change language or currency in case you have problems in cart or checkout page"
+msgstr "如果购物车或结账页面出现问题，您可以选择在更换语言或货币时清除购物车内容。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:87
+msgid "Switching languages when there are items in the cart"
+msgstr "购物车中有商品时切换语言"
+
+#: inc/template-classes/class-wcml-settings-ui.php:88
+msgid "Synchronize cart content when switching languages"
+msgstr "切换语言时同步购物车内容"
+
+#: inc/template-classes/class-wcml-settings-ui.php:89
+#: inc/template-classes/class-wcml-settings-ui.php:95
+msgid "Prompt for a confirmation and reset the cart"
+msgstr "提示确认并重置购物车"
+
+#: inc/template-classes/class-wcml-settings-ui.php:93
+msgid "Switching currencies when there are items in the cart"
+msgstr "购物车中有商品时切换货币"
+
+#: inc/template-classes/class-wcml-settings-ui.php:94
+msgid "Synchronize cart content when switching currencies"
+msgstr "切换货币时同步购物车内容"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/class-wcml-settings-ui.php:101
+msgid "This feature was disabled. Please enable %1$sWPML cookies%2$s to continue."
+msgstr "此功能已禁用。请启用 %1$sWPML cookies%2$s 以继续。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/class-wcml-settings-ui.php:110
+msgid "Not sure which option to choose? Read about %1$spotential issues when switching languages and currencies while the cart has items%2$s."
+msgstr "不确定选择哪种选项？请阅读 %1$s在购物车中有商品时切换语言和货币的潜在问题%2$s 。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:138
+msgid "Product Translation Interface"
+msgstr "产品翻译界面"
+
+#: inc/template-classes/class-wcml-settings-ui.php:139
+msgid "The recommended way is using the WPML Translation Editor. It is streamlined for making the translation process much easier while also providing a much better integration with various WooCommerce extensions."
+msgstr "建议使用 WPML 翻译编辑器。它不仅简化了翻译过程，还能更好地与各种 WooCommerce 扩展集成。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:144
+msgid "WPML Translation Editor"
+msgstr "WPML 翻译编辑器"
+
+#: inc/template-classes/class-wcml-settings-ui.php:148
+msgid "Native WooCommerce product editing screen"
+msgstr "原生 WooCommerce 产品编辑屏幕"
+
+#: inc/template-classes/class-wcml-settings-ui.php:152
+msgid "If you are using a page builder to design WooCommerce products, you should only use WPML's Translation Editor."
+msgstr "如果您使用页面生成器来设计 WooCommerce 产品，则只能使用 WPML 的翻译编辑器。"
+
+#: inc/template-classes/class-wcml-settings-ui.php:153
+msgid "OK (translate with the WordPress editor)"
+msgstr "确定（使用 WordPress 编辑器翻译）"
+
+#: inc/template-classes/class-wcml-settings-ui.php:154
+msgid "Cancel (stay with the Translation Editor)"
+msgstr "取消（继续使用翻译编辑器）"
+
+#. translators: %s is a taxonomy name
+#: inc/template-classes/class-wcml-st-taxonomy-ui.php:19
+msgid "Set different slugs in different languages for %s on WPML Multilingual & Multicurrency for WooCommerce URLs translations page"
+msgstr "在 WPML Multilingual & Multicurrency for WooCommerce 网址翻译页面上为不同语言的 %s 设置不同的缩略名"
+
+#. translators: %s is an attribute name
+#: inc/template-classes/class-wcml-st-taxonomy-ui.php:27
+msgid "To translate the attribute slug, please set the option \"Enable archives?\" for the attribute %s in WooCommerce"
+msgstr "要翻译属性标题，请在 WooCommerce 中为属性 %s 设置选项 \"启用存档？"
+
+#: inc/template-classes/class-wcml-sync-taxonomy.php:45
+msgid "Synchronize attributes and update product variations"
+msgstr "同步属性并更新产品差异"
+
+#: inc/template-classes/class-wcml-sync-taxonomy.php:46
+msgid "This will automatically generate variations for translated products corresponding to recently translated attributes."
+msgstr "这将自动生成与最近翻译的属性相对应的翻译产品变体。"
+
+#. translators: %s is a number of product variations
+#: inc/template-classes/class-wcml-sync-taxonomy.php:48
+msgid "Currently, there are %s variations that need to be created."
+msgstr "目前，需要创建的变体有 %s 。"
+
+#. translators: %s is a taxonomy name
+#: inc/template-classes/class-wcml-sync-taxonomy.php:50
+msgid "Synchronize %s assignment in content"
+msgstr "在内容中同步 %s 作业"
+
+#. translators: %s is a taxonomy name
+#: inc/template-classes/class-wcml-sync-taxonomy.php:52
+msgid "This action lets you automatically apply the %s taxonomy to your content in different languages. It will scan the original content and apply the same taxonomy to translated content."
+msgstr "此操作可让您自动将 %s 分类法应用于不同语言的内容。它会扫描原始内容，并将相同的分类法应用于翻译内容。"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:33
+msgid "Please make a backup of your database before using these tools"
+msgstr "在使用这些工具之前，请备份您的数据库"
+
+#. translators: The placeholder is the number of products.
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:39
+msgid "There are <strong>%s product(s)</strong> in total."
+msgstr "总共有 <strong>%s 个产品</strong>。"
+
+#. translators: The placeholder is the number of products.
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:41
+msgid "There are <strong>%s product(s)</strong> with variations."
+msgstr "有 <strong>%s 个产品</strong> 包含变体。"
+
+#. translators: The placeholder is the number of products.
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:43
+msgid "There are <strong>%s variation(s)</strong> in total."
+msgstr "总共有 <strong>%s 个变体</strong>。"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:47
+msgid "Synchronize data into translations"
+msgstr "将数据同步到翻译中"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:49
+msgid "Synchronize product variations"
+msgstr "同步产品变体"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:50
+msgid "Synchronize products image galleries"
+msgstr "同步产品图片库"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:51
+msgid "Synchronize metadata for product categories (display type, thumbnail)"
+msgstr "同步产品类别的元数据（显示类型、缩略图）"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:52
+msgid "Synchronize stock for products and product variations"
+msgstr "同步产品和产品变体的库存"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:57
+msgid "Fix multilingual information"
+msgstr "修复多语言信息"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:59
+msgid "Fix incorrect or missing translation links for product variations"
+msgstr "修复产品变体的不正确或缺失的翻译链接"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:63
+msgid "Fix product taxonomies"
+msgstr "修复产品分类法"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:65
+msgid "Set product types as not translatable and delete unwanted translations"
+msgstr "将产品类型设置为不可翻译并删除不需要的翻译"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:66
+msgid "Create missing translations for product attributes:"
+msgstr "为产品属性创建缺失的翻译："
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:71
+msgid "To translate product taxonomies, go to the %1$sTaxonomy Translation%2$s page."
+msgstr "要翻译产品分类法，请前往 %1$s分类法翻译%2$s 页面。"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:77
+msgid "none"
+msgstr "无"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:81
+msgid "Fix missing product reviews"
+msgstr "修复缺失的产品评论"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:83
+msgid "Allow to translate missing product reviews"
+msgstr "允许翻译缺失的产品评论"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:88
+msgid "To translate product reviews, go to the %1$sTranslation Dashboard%2$s."
+msgstr "要翻译产品评论，请前往 %1$s翻译仪表板%2$s。"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:94
+msgid "Cleanup tools"
+msgstr "清理工具"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:96
+msgid "Remove unused custom fields from product and variation translations"
+msgstr "从产品和变体翻译中移除未使用的自定义字段"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:100
+msgid "Run the selected tools"
+msgstr "运行选定的工具"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:101
+msgid "Processing"
+msgstr "处理中"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:104
+msgid "WPML Multilingual & Multicurrency for WooCommerce settings"
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 设置"
+
+#. translators: The placeholder is the number of processed items.
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:109
+msgid "%s items processed"
+msgstr "已处理 %s 项"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:112
+msgid "Processing..."
+msgstr "处理中..."
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:113
+msgid "Completed"
+msgstr "已完成"
+
+#: inc/template-classes/class-wcml-troubleshooting-ui.php:114
+msgid "Something went wrong, please reload the page and try again"
+msgstr "出现错误，请重新加载页面并重试"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:31
+msgid "Clear all colors"
+msgstr "清除所有颜色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:34
+msgid "Gray"
+msgstr "灰色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:37
+msgid "White"
+msgstr "白色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:40
+msgid "Blue"
+msgstr "蓝色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:44
+msgid "Border"
+msgstr "边境"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:45
+msgid "Current currency font color"
+msgstr "当前货币字体颜色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:46
+msgid "Other currency font color"
+msgstr "其他货币字体颜色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:47
+msgid "Current currency background color"
+msgstr "当前货币的背景颜色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:48
+msgid "Other currency background color"
+msgstr "其他货币背景颜色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:52
+msgid "Currency switcher style"
+msgstr "货币切换器样式"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:53
+msgid "Core"
+msgstr "核心"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:54
+msgid "Custom"
+msgstr "自定义"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:55
+msgid "Allowed HTML tags: <img> <span> <u> <strong> <em>"
+msgstr "允许使用的 HTML 标记： <img> <span> <u> <strong> <em>"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:58
+msgid "Template for currency switcher"
+msgstr "货币切换器模板"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:59
+msgid "Available parameters"
+msgstr "可用参数"
+
+#. translators: unidentified placeholders...
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:61
+msgid "Default: %name% (%1$symbol%) - %2$code%"
+msgstr "默认值： %name% (%1$symbol%) - %2$code%"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:64
+msgid "Hide more"
+msgstr "隐藏更多"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:65
+msgid "You can customize the currency switcher template using these parameters:"
+msgstr "您可以使用以下参数自定义货币转换器模板："
+
+#. translators: %1$s is the bolded placeholder for the currency name, %name%
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:68
+msgid "%1$s: Full name of the currency (e.g., “Euro”)."
+msgstr "%1$s：货币的全名（例如，“欧元”）。"
+
+#. translators: %1$s is the bolded placeholder for the currency symbol, %symbol%
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:73
+msgid "%1$s: Standard symbol representing the currency (e.g., “$” or “€”)."
+msgstr "%1$s：代表货币的标准符号（例如，“$” 或 “€”）。"
+
+#. translators: %1$s is the bolded placeholder for the standard currency code, %code%
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:78
+msgid "%1$s: Standard code representing the currency (e.g., USD for United States Dollar)."
+msgstr "%1$s：代表货币的标准代码（例如，USD 代表美元）。"
+
+#. translators: %1$s and %2$s are <strong> tags; %3$s and %4$s are opening and closing HTML link tags.
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:83
+msgid "Additionally, you can use HTML tags %1$s(img, span, em, strong, u)%2$s to customize the output when the switcher style is set to %1$sList of currencies%2$s, %3$sin line with official HTML standards for the select tag%4$s."
+msgstr "此外，当切换器样式设置为 %1$s货币列表%2$s时，您可以使用 HTML 标签 %1$s(img, span, em, strong, u)%2$s 自定义输出，%3$s符合 select 标签的官方 HTML 标准%4$s。"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:94
+msgid "Currency switcher colors"
+msgstr "货币切换器颜色"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:95
+msgid "Color theme"
+msgstr "色彩主题"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:96
+msgid "Normal"
+msgstr "正常"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:97
+msgid "Hover"
+msgstr "悬停"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:98
+msgid "Select a preset"
+msgstr "选择预置"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:101
+msgid "Widget area"
+msgstr "小工具区域"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:102
+msgid "Widget title"
+msgstr "小工具标题"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:103
+msgid "-- Choose a widget area --"
+msgstr "-- 选择小部件区域--"
+
+#: inc/template-classes/currency-switcher/class-wcml-currency-switcher-options-dialog.php:106
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:120
+msgid "Preview"
+msgstr "预览"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:38
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:74
+msgid "Regular Price"
+msgstr "正常价格"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:39
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:75
+msgid "Sale Price"
+msgstr "销售价格"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:59
+msgid "Multi-currency is enabled, but no secondary currencies have been set. %1$sAdd secondary currency%2$s."
+msgstr "已启用多种货币，但未设置辅助货币。 %1$s添加辅助货币%2$s 。"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:67
+msgid "Click to see the prices in the other currencies as they are currently shown on the front end."
+msgstr "点击查看其他货币的价格，因为它们目前显示在前端。"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:68
+msgid "Show"
+msgstr "显示"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:69
+msgid "Hide"
+msgstr "隐藏"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:71
+msgid "Enter prices in other currencies"
+msgstr "输入其他货币的价格"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:72
+msgid "Hide prices in other currencies"
+msgstr "隐藏其他货币的价格"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:73
+msgid "Determined automatically based on exchange rate"
+msgstr "根据汇率自动确定"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:76
+msgid "Schedule"
+msgstr "日程"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:77
+msgid "Same as default currency"
+msgstr "与默认货币相同"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:78
+msgid "Set dates"
+msgstr "确定日期"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:79
+msgid "Collapse"
+msgstr "崩溃"
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:80
+msgid "From&hellip;"
+msgstr "从..."
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:81
+msgid "To&hellip;"
+msgstr "要..."
+
+#: inc/template-classes/multi-currency/class-wcml-custom-prices-ui.php:82
+msgid "Please enter in a value less than the regular price"
+msgstr "请输入小于正常价格的数值"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:31
+msgid "never"
+msgstr "从不"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:37
+msgid "Automatic Exchange Rates"
+msgstr "自动汇率"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:39
+msgid "Enable automatic exchange rates"
+msgstr "启用自动汇率"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:40
+msgid "Exchange rates source"
+msgstr "汇率来源"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:41
+msgid "Lifting charge"
+msgstr "提升电荷"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:42
+msgid "The lifting charge adjusts the exchange rate provided by the selected service before it is saved. The exchange rates displayed in the table above include the lifting charge."
+msgstr "在保存之前，提升费会调整所选服务提供的汇率。上表中显示的汇率包含提升费。"
+
+#. translators: %s is an exchange rates service
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:44
+msgid "Exchange rate = %s exchange rate x (1 + lifting charge / 100)"
+msgstr "汇率 =  %s 汇率 x (1 + 提升费 / 100)"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:45
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:55
+msgid "API key (required)"
+msgstr "API 密钥（必填）"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:46
+msgid "Update frequency"
+msgstr "更新频率"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:47
+msgid "Update manually now"
+msgstr "现在手动更新"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:48
+msgid "You have to save all settings before updating exchange rates"
+msgstr "更新汇率前必须保存所有设置"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:49
+msgid "Manually"
+msgstr "手动"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:50
+msgid "Hourly"
+msgstr "每小时"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:51
+msgid "Daily"
+msgstr "每日"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:52
+msgid "Weekly on"
+msgstr "每周"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:53
+msgid "Monthly on the"
+msgstr "每月在"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:54
+msgid "Enter API key"
+msgstr "输入 API 密钥"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:56
+msgid "WARNING! Minor limitations include 1000 requests/month limit and EUR being the only available base currency for customers using a free account. If you need more than 1000 requests per month or want to use all 170 available base currencies, you’ll need to choose one of the paid plans starting at only $10 per month."
+msgstr "警告！对于使用免费账户的客户，小限制包括 1000 次/月请求限制和欧元是唯一可用的基础货币。如果您每月需要超过 1000 个请求，或希望使用全部 170 种可用基础货币，则需要选择付费计划，起价仅为 $10 /月。"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:57
+msgid "Updating the exchange rates on an hourly basis generates around 744 API calls a month. Please check that your exchange rates source can accommodate this higher usage."
+msgstr "按小时更新汇率每月会产生约 744 次 API 调用。请检查您的汇率源是否能满足如此高的使用量。"
+
+#. translators: %s is a date and time
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:61
+msgid "Last updated: %s"
+msgstr "最后更新 %s"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:64
+msgid "Exchange rates updated successfully"
+msgstr "汇率更新成功"
+
+#: inc/template-classes/multi-currency/class-wcml-exchange-rates-ui.php:65
+msgid "Visit website"
+msgstr "访问网站"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:65
+msgid "Enable/disable"
+msgstr "启用/禁用"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:80
+msgid "The multi-currency mode cannot be enabled as a specific currency was not set. Go to the %1$sWooCommerce settings%2$s page and select the default currency for your store."
+msgstr "由于未设置特定货币，因此无法启用多货币模式。请访问 %1$sWooCommerce 设置%2$s 页面，选择商店的默认货币。"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:93
+msgid "Enable the multicurrency mode"
+msgstr "启用多货币模式"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:95
+msgid "Multicurrency documentation"
+msgstr "多种货币文件"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:100
+msgid "Show only products with %1$scustom prices%2$s in secondary currencies"
+msgstr "仅显示带有 %1$s自定义价格的产品%2$s 以二级货币显示"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:104
+msgid "When enabled, products with prices based on the exchange rate are hidden"
+msgstr "启用后，价格基于汇率的产品将被隐藏"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:107
+msgid "The changes you made will be lost if you navigate away from this page."
+msgstr "如果您离开此页面，您所做的更改将丢失。"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:108
+msgid "At least one currency must be enabled for this language!"
+msgstr "该语言必须至少启用一种货币！"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:114
+msgid "Currency switcher options"
+msgstr "货币切换器选项"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:115
+msgid "All currency switchers in your site are affected by the settings in this section."
+msgstr "网站中的所有货币切换器都会受到本节设置的影响。"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:116
+msgid "Order of currencies"
+msgstr "货币顺序"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:117
+msgid "Additional CSS"
+msgstr "附加 css"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:118
+msgid "Widget Currency Switcher"
+msgstr "小部件货币切换器"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:119
+msgid "Product page Currency Switcher"
+msgstr "产品页面 货币转换器"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:121
+msgid "Position"
+msgstr "位置"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:122
+msgid "Actions"
+msgstr "操作"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:123
+msgid "Action"
+msgstr "操作"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:125
+msgid "Edit currency switcher"
+msgstr "编辑货币切换器"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:126
+msgid "Add a new currency switcher to a widget area"
+msgstr "在 widget 区域添加新的货币切换器"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:129
+msgid "Your theme does not support a currency switcher widget. Please %1$sadd your currency switcher%2$s using a shortcode or PHP."
+msgstr "您的主题不支持货币切换器部件。请 %1$s使用简码或 PHP 添加您的货币切换器%2$s 。"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:137
+msgid "Currency switcher preview"
+msgstr "货币切换器预览"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:143
+msgid "Drag and drop the currencies to change their order"
+msgstr "拖放货币以更改其顺序"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:144
+msgid "Show a currency switcher on the product page template"
+msgstr "在产品页面模板上显示货币切换器"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:210
+msgid "Edit Product Currency Switcher"
+msgstr "编辑产品货币切换器"
+
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:212
+msgid "New Widget Area Currency Switcher"
+msgstr "新小部件区域货币切换器"
+
+#. translators: %s is sidebar name
+#: inc/template-classes/multi-currency/class-wcml-multi-currency-ui.php:215
+msgid "Edit %s Currency Switcher"
+msgstr "编辑 %s 货币转换器"
+
+#: inc/template-classes/setup/class-wcml-setup-attributes-ui.php:43
+msgid "Which product attributes should be translatable?"
+msgstr "哪些产品属性应该可以翻译？"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/setup/class-wcml-setup-attributes-ui.php:47
+msgid "WPML allows you to %1$stranslate your product attributes%2$s. Some attributes, like the ones based on numbers and codes, can be universal and might not need to be translated."
+msgstr "WPML 允许您 %1$s翻译产品属性%2$s 。有些属性，如基于数字和代码的属性，可以通用，可能不需要翻译。"
+
+#: inc/template-classes/setup/class-wcml-setup-attributes-ui.php:51
+msgid "Select which attributes in your store should be translatable:"
+msgstr "选择商店中哪些属性应可翻译："
+
+#: inc/template-classes/setup/class-wcml-setup-attributes-ui.php:52
+msgid "There are no attributes defined"
+msgstr "没有定义属性"
+
+#: inc/template-classes/setup/class-wcml-setup-attributes-ui.php:53
+#: inc/template-classes/setup/class-wcml-setup-store-pages-ui.php:73
+msgid "Continue"
+msgstr "继续"
+
+#: inc/template-classes/setup/class-wcml-setup-attributes-ui.php:54
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:19
+#: inc/template-classes/setup/class-wcml-setup-store-pages-ui.php:74
+msgid "Go back"
+msgstr "返回"
+
+#: inc/template-classes/setup/class-wcml-setup-header.php:38
+msgid "WPML Multilingual & Multicurrency for WooCommerce › Setup Wizard"
+msgstr "WPML Multilingual & Multicurrency for WooCommerce › 安装向导"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:11
+msgid "Let's make your WooCommerce store multilingual"
+msgstr "让您的 WooCommerce 商店使用多种语言"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:14
+msgid "To get started, we need to set up the following:"
+msgstr "开始时，我们需要设置以下内容："
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:15
+#: inc/template-classes/setup/class-wcml-setup-store-pages-ui.php:71
+msgid "Create store pages in all your site's languages"
+msgstr "用网站的所有语言创建商店页面"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:16
+msgid "Choose which product attributes you want to translate"
+msgstr "选择要翻译的产品属性"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:17
+msgid "Set your translation options"
+msgstr "设置翻译选项"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:18
+msgid "Decide if you want to add multiple currencies to your store"
+msgstr "决定是否要在商店中添加多种货币"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:21
+msgid "Let's continue"
+msgstr "让我们继续"
+
+#: inc/template-classes/setup/class-wcml-setup-introduction-ui.php:22
+msgid "I'll do the setup later"
+msgstr "我稍后再进行设置"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:11
+msgid "Do you want to add more currencies to your store?"
+msgstr "您想为您的商店添加更多货币吗？"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:12
+msgid "You will be able to:"
+msgstr "您将能够"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:13
+msgid "Add a currency switcher to your store"
+msgstr "为您的商店添加货币转换器"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:14
+msgid "Set exchange rates"
+msgstr "设定汇率"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:15
+msgid "Create custom pricing in each currency"
+msgstr "创建每种货币的自定义定价"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:16
+msgid "And more!"
+msgstr "还有更多"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:17
+msgid "Yes, enable multicurrency mode"
+msgstr "是，启用多货币模式"
+
+#: inc/template-classes/setup/class-wcml-setup-multi-currency-ui.php:18
+msgid "No, use only one currency"
+msgstr "不，只使用一种货币"
+
+#: inc/template-classes/setup/class-wcml-setup-notice.php:12
+msgid "Make your store multilingual"
+msgstr "让您的商店使用多种语言"
+
+#. translators: %1$s and %2$s are opening and closing HTML strong tags
+#: inc/template-classes/setup/class-wcml-setup-notice.php:15
+msgid "Set up %1$sWPML Multilingual & Multicurrency for WooCommerce%2$s to translate your store and add more currencies."
+msgstr "设置 %1$sWPML Multilingual & Multicurrency for WooCommerce%2$s 来翻译您的店铺并添加更多货币。"
+
+#: inc/template-classes/setup/class-wcml-setup-notice.php:19
+msgid "Start the Setup Wizard"
+msgstr "启动设置向导"
+
+#: inc/template-classes/setup/class-wcml-setup-store-pages-ui.php:40
+msgid "Click continue to create missing WooCommerce pages translate your store pages into the following languages:"
+msgstr "点击继续创建缺失的 WooCommerce 页面 将您的商店页面翻译成以下语言："
+
+#: inc/template-classes/setup/class-wcml-setup-store-pages-ui.php:55
+msgid "Click continue to translate your store pages into the following languages:"
+msgstr "点击继续，将您的商店页面翻译成以下语言："
+
+#: inc/template-classes/setup/class-wcml-setup-store-pages-ui.php:72
+msgid "WPML automatically generates translated versions of default WooCommerce pages, such as Shop, Account, Checkout, and Cart."
+msgstr "WPML 可自动生成默认 WooCommerce 页面的翻译版本，如商店、账户、结账和购物车。"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:49
+msgid "Configuration Warnings"
+msgstr "配置警告"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:50
+msgid "Your product permalink base is not translated to:"
+msgstr "您的产品固定链接库未翻译为："
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:51
+msgid "Translate URLs"
+msgstr "翻译 URL"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:52
+msgid "Running WPML Multilingual & Multicurrency for WooCommerce with default language other than English."
+msgstr "使用英语以外的默认语言运行 WPML Multilingual & Multicurrency for WooCommerce。"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:53
+msgid "This may cause problems with URLs in different languages."
+msgstr "这可能会导致不同语言的 URL 出现问题。"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:54
+msgid "Change default language"
+msgstr "更改默认语言"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:55
+msgid "There are some settings that require careful attention."
+msgstr "有些设置需要特别注意。"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:56
+msgid "Some settings from the WPML Multilingual & Multicurrency for WooCommerce wpml-config.xml file have been overwritten."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce wpml-config.xml 文件中的一些设置已被覆盖。"
+
+#. translators: %s is link to Multilingual Content Setup
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:58
+msgid "You should check WPML configuration files added by other plugins or manual settings on the %s section."
+msgstr "您应检查其他插件添加的 WPML 配置文件或 %s 部分的手动设置。"
+
+#: inc/template-classes/status/class-wcml-status-config-warnings-ui.php:59
+msgid "Multilingual Content Setup"
+msgstr "多语言内容设置"
+
+#: inc/template-classes/status/class-wcml-status-media-ui.php:22
+msgid "Media"
+msgstr "媒体"
+
+#. translators: %s is a plugin name
+#: inc/template-classes/status/class-wcml-status-media-ui.php:25
+msgid "%s is not active."
+msgstr "%s 未激活。"
+
+#. translators: %s is a plugin name
+#: inc/template-classes/status/class-wcml-status-media-ui.php:27
+msgid "%s is not required in order to run WPML Multilingual & Multicurrency for WooCommerce but it’s recommended if you want to use separate product images and galleries for different languages."
+msgstr "运行 WPML Multilingual & Multicurrency for WooCommerce 不需要 %s，但如果您想为不同语言使用单独的产品图像和图库，建议使用它。"
+
+#. translators: %s is a plugin name
+#: inc/template-classes/status/class-wcml-status-media-ui.php:29
+#: inc/template-classes/status/class-wcml-status-status-ui.php:27
+msgid "%s is installed and active."
+msgstr "%s 已安装并激活。"
+
+#. translators: %s is a list of currency codes
+#: inc/template-classes/status/class-wcml-status-multi-currencies-ui.php:36
+msgid "Secondary currencies: %s"
+msgstr "辅助货币 %s"
+
+#: inc/template-classes/status/class-wcml-status-multi-currencies-ui.php:37
+msgid "Multi-currency is not enabled."
+msgstr "未启用多种货币。"
+
+#: inc/template-classes/status/class-wcml-status-multi-currencies-ui.php:38
+msgid "Add Currencies"
+msgstr "添加货币"
+
+#: inc/template-classes/status/class-wcml-status-products-ui.php:32
+msgid "Products Missing Translations"
+msgstr "缺少翻译的产品"
+
+#. translators: %1$s is a number of products and %2$s is a product name
+#: inc/template-classes/status/class-wcml-status-products-ui.php:34
+msgid "%1$d %2$s translation missing."
+msgstr "%1$d %2$s 翻译缺失。"
+
+#. translators: %1$s is a number of products and %2$s is a product name
+#: inc/template-classes/status/class-wcml-status-products-ui.php:36
+msgid "%1$d %2$s translations missing."
+msgstr "%1$d %2$s 翻译缺失。"
+
+#: inc/template-classes/status/class-wcml-status-products-ui.php:38
+msgid "Right now, there are no products needing translation."
+msgstr "目前，还没有需要翻译的产品。"
+
+#: inc/template-classes/status/class-wcml-status-status-ui.php:25
+msgid "Plugins Status"
+msgstr "插件状态"
+
+#. translators: %s is a plugin name
+#: inc/template-classes/status/class-wcml-status-status-ui.php:29
+msgid "%s is set up."
+msgstr "%s 已设定。"
+
+#. translators: %s is a plugin name
+#: inc/template-classes/status/class-wcml-status-status-ui.php:31
+msgid "%s is not set up."
+msgstr "%s 未设置。"
+
+#: inc/template-classes/status/class-wcml-status-status-ui.php:35
+msgid "WPML Multilingual & Multicurrency for WooCommerce depends on several plugins to work. If any required plugin is missing, you should install and activate it."
+msgstr "WPML Multilingual & Multicurrency for WooCommerce 依赖于多个插件才能工作。如果缺少任何必需的插件，您应该安装并激活它。"
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:38
+msgid "WooCommerce Store Pages"
+msgstr "WooCommerce 商店页面"
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:39
+msgid "To run a multilingual e-commerce site, you need to have the WooCommerce shop pages translated to all the site's languages. Once all the pages are installed you can add the translations for them from this menu."
+msgstr "要运行一个多语言电子商务网站，您需要将 WooCommerce 商店页面翻译成网站的所有语言。安装好所有页面后，您就可以在此菜单中添加翻译。"
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:40
+msgid "One or more WooCommerce pages have not been created."
+msgstr "一个或多个 WooCommerce 页面尚未创建。"
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:41
+msgid "Install WooCommerce Pages"
+msgstr "安装 WooCommerce 页面"
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:42
+msgid "WooCommerce store pages do not exist for these languages:"
+msgstr "这些语言不存在 WooCommerce 商店页面："
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:43
+msgid "Create missing translations"
+msgstr "创建缺失的翻译"
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:44
+msgid "These pages are currently being translated by translators via WPML: "
+msgstr "这些页面目前正由翻译人员通过 WPML 进行翻译： "
+
+#: inc/template-classes/status/class-wcml-status-store-pages-ui.php:45
+msgid "WooCommerce store pages are translated to all the site's languages."
+msgstr "WooCommerce 商店页面可翻译成网站的所有语言。"
+
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:26
+msgid "Taxonomies Missing Translations"
+msgstr "分类法缺少翻译"
+
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:27
+msgid "To run a fully translated site, you should translate all taxonomy terms. Some store elements, such as variations, depend on taxonomy translation."
+msgstr "要运行一个完全翻译的网站，您应该翻译所有分类术语。一些商店元素（如变体）依赖于分类法翻译。"
+
+#. translators: %s is a taxonomy name
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:29
+msgid "%s do not require translation."
+msgstr "%s 无需翻译。"
+
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:30
+msgid "This taxonomy requires translation."
+msgstr "该分类法需要翻译。"
+
+#. translators: %1$d is a number of taxonomy and %2$d is a taxonomy name
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:32
+msgid "%1$d %2$s is missing translations."
+msgstr "%1$d %2$s 缺少翻译。"
+
+#. translators: %1$d is a number of taxonomy and %2$d is a taxonomy name
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:34
+msgid "%1$d %2$s are missing translations."
+msgstr "%1$d %2$s 缺少翻译。"
+
+#. translators: %s is a taxonomy name
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:36
+msgid "Translate %s"
+msgstr "翻译 %s"
+
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:37
+msgid "This taxonomy does not require translation."
+msgstr "该分类法无需翻译。"
+
+#. translators: %s is a taxonomy name
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:39
+msgid "All %s are translated."
+msgstr "所有 %s 均已翻译。"
+
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:40
+msgid "Right now, there are no taxonomy terms needing translation."
+msgstr "目前，还没有需要翻译的分类术语。"
+
+#. translators: %1$s and %2$s are opening and closing HTML link tags
+#: inc/template-classes/status/class-wcml-status-taxonomies-ui.php:42
+msgid "To configure product taxonomies or attributes as translatable or not translatable, go to the %1$sMultilingual Content Setup%2$s"
+msgstr "要将产品分类法或属性配置为可翻译或不可翻译，请访问 %1$s多语言内容设置%2$s"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-edit-base-ui.php:49
+msgid "Original"
+msgstr "原创"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-edit-base-ui.php:50
+msgid "Translation to"
+msgstr "翻译至"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-edit-base-ui.php:71
+msgid "Product Shop Base"
+msgstr "产品商店基地"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-translation-statuses-ui.php:58
+msgid "Update translation"
+msgstr "更新翻译"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-translation-statuses-ui.php:59
+msgid "Add translation"
+msgstr "添加翻译"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-translation-statuses-ui.php:60
+msgid "Edit translation"
+msgstr "编辑翻译"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:60
+msgid "This page allows you to translate all strings that are being used by WooCommerce in building different type of urls. Translating them enables you to have fully localized urls that match the language of the pages."
+msgstr "本页面允许您翻译 WooCommerce 在构建不同类型网址时使用的所有字符串。通过翻译这些字符串，您可以获得与页面语言相匹配的完全本地化的网址。"
+
+#. translators: %1$s/%2$s and %3$s/%4$s are opening and closing HTML link tags
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:63
+msgid "You can enter or edit your default values on the %1$sPermalinks settings%2$s page or, for the endpoints, on the WooCommerce %3$sAdvanced settings%4$s page."
+msgstr "您可以在 %1$sPermalinks 设置%2$s 页面输入或编辑默认值，也可以在 WooCommerce %3$s高级设置%4$s 页面输入或编辑端点默认值。"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:72
+msgid "permalinks settings"
+msgstr "永久链接设置"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:73
+msgid "Account settings"
+msgstr "账户设置"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:74
+msgid "Slug type"
+msgstr "蛞蝓类型"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:75
+msgid "Original Slug"
+msgstr "原始弹头"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:76
+msgid "Shop page"
+msgstr "商店页面"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:77
+msgid "Product base"
+msgstr "产品基地"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:78
+msgid "Product category base"
+msgstr "产品类别基础"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:79
+msgid "Product tag base"
+msgstr "产品标签底座"
+
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:80
+msgid "Product attribute base"
+msgstr "产品属性库"
+
+#. translators: %s is a slug
+#: inc/template-classes/store-urls/class-wcml-store-urls-ui.php:84
+msgid "Attribute slug: %s"
+msgstr "属性符号： %s"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:93
+msgid "Product"
+msgstr "产品"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:157
+msgid "Slug"
+msgstr "蛞蝓"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:167
+msgid "Content / Description"
+msgstr "内容 / 说明"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:170
+msgid "Excerpt"
+msgstr "摘录"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:174
+msgid "Purchase note"
+msgstr "购买说明"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:182
+msgid "Images"
+msgstr "图片"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:192
+msgid "Custom Product attributes"
+msgstr "自定义产品属性"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:197
+msgid "Value(s)"
+msgstr "价值"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:212
+msgid "Custom Fields"
+msgstr "自定义字段"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:261
+msgid "Variations data"
+msgstr "变化数据"
+
+#. translators: %s is a product ID
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:275
+msgid "Download Files for Variation #%s"
+msgstr "下载变体文件 #%s"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:277
+msgid "Download Files"
+msgstr "下载文件"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:286
+msgid "File URL"
+msgstr "文件 URL"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:298
+msgid "External Product"
+msgstr "外部产品"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:299
+msgid "Product url"
+msgstr "产品网址"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:300
+msgid "Button text"
+msgstr "按钮文本"
+
+#: inc/translation-editor/class-wcml-editor-ui-product-job.php:315
+msgid "Changes in these translations will affect terms in general! ( Not only for this product )"
+msgstr "这些翻译的更改将影响到一般条款！ ( 不仅适用于本产品）"

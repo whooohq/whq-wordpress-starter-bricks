@@ -44,10 +44,14 @@ class WCML_Dependencies {
 			$st_ok   = true;
 			$wc_ok   = true;
 
+			/* @phpstan-ignore booleanOr.rightAlwaysFalse */
 			if ( ! defined( 'ICL_SITEPRESS_VERSION' ) || ICL_PLUGIN_INACTIVE || is_null( $sitepress ) || ! class_exists( 'SitePress' ) ) {
 				$missing['WPML'] = $this->tracking_link->getWpmlHome();
 				$core_ok         = false;
-			} elseif ( version_compare( ICL_SITEPRESS_VERSION, self::MIN_WPML, '<' ) ) {
+			} elseif (
+				/* @phpstan-ignore elseif.alwaysFalse */
+				version_compare( ICL_SITEPRESS_VERSION, self::MIN_WPML, '<' )
+			) {
 				add_action( 'admin_notices', [ $this, '_old_wpml_warning' ] );
 				$core_ok = false;
 			} elseif ( ! $sitepress->setup() ) {
@@ -62,6 +66,7 @@ class WCML_Dependencies {
 				$missing['WooCommerce'] = 'http://www.woothemes.com/woocommerce/';
 				$wc_ok                  = false;
 			} elseif (
+				/* @phpstan-ignore booleanAnd.rightAlwaysFalse */
 				defined( 'WC_VERSION' ) && version_compare( WC_VERSION, self::MIN_WOOCOMMERCE, '<' ) ||
 				isset( $woocommerce->version ) && version_compare( $woocommerce->version, self::MIN_WOOCOMMERCE, '<' )
 			) {
@@ -92,7 +97,8 @@ class WCML_Dependencies {
 				add_action( 'init', [ $this, 'check_for_translatable_default_taxonomies' ] );
 			}
 
-			if ( isset( $sitepress ) ) {
+			if ( $sitepress instanceof SitePress ) {
+				/* @phpstan-ignore booleanAnd.rightAlwaysTrue */
 				$this->allok = $full_mode && $sitepress->setup();
 			}
 		}
@@ -111,7 +117,7 @@ class WCML_Dependencies {
 			printf(
 				/* translators: %1$s is a URL and %2$s is a version number */
 				__(
-					'WooCommerce Multilingual & Multicurrency is enabled but not effective. It is not compatible with  <a href="%1$s">WPML</a> versions prior %2$s.',
+					'WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It is not compatible with  <a href="%1$s">WPML</a> versions prior %2$s.',
 					'woocommerce-multilingual'
 				),
 				$this->tracking_link->getWpmlHome(),
@@ -126,7 +132,7 @@ class WCML_Dependencies {
 	public function _wpml_not_installed_warning() {
 		?>
 		<div class="message error">
-			<p><?php printf( __( 'WooCommerce Multilingual & Multicurrency is enabled but not effective. Please finish the installation of WPML first.', 'woocommerce-multilingual' ) ); ?></p>
+			<p><?php printf( __( 'WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. Please finish the installation of WPML first.', 'woocommerce-multilingual' ) ); ?></p>
 		</div>
 		<?php
 	}
@@ -139,7 +145,7 @@ class WCML_Dependencies {
 			printf(
 				/* translators: %1$s is a URL and %2$s is a version number */
 				__(
-					'WooCommerce Multilingual & Multicurrency is enabled but not effective. It is not compatible with  <a href="%1$s">Woocommerce</a> versions prior %2$s.',
+					'WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It is not compatible with  <a href="%1$s">Woocommerce</a> versions prior %2$s.',
 					'woocommerce-multilingual'
 				),
 				'http://www.woothemes.com/woocommerce/',
@@ -159,7 +165,7 @@ class WCML_Dependencies {
 			printf(
 				/* translators: %1$s is a URL and %2$s is a version number */
 				__(
-					'WooCommerce Multilingual & Multicurrency is enabled but not effective. It is not compatible with  <a href="%1$s">WPML String Translation</a> versions prior %2$s.',
+					'WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It is not compatible with  <a href="%1$s">WPML String Translation</a> versions prior %2$s.',
 					'woocommerce-multilingual'
 				),
 				$this->tracking_link->getWpmlHome(),
@@ -176,7 +182,10 @@ class WCML_Dependencies {
 	 */
 	public function check_for_translatable_default_taxonomies() {
 
-		$default_taxonomies = [ 'product_cat', 'product_tag', 'product_shipping_class' ];
+		$default_taxonomies = [
+			\WCML\Utilities\WCTaxonomies::TAXONOMY_PRODUCT_CATEGORY,
+			\WCML\Utilities\WCTaxonomies::TAXONOMY_PRODUCT_TAG,
+		];
 		$show_error         = false;
 
 		foreach ( $default_taxonomies as $taxonomy ) {
@@ -238,7 +247,7 @@ class WCML_Dependencies {
 			<div class="message error">
 				<p><?php
 					/* translators: %s is a list of plugin names  */
-					printf( __( 'WooCommerce Multilingual & Multicurrency is enabled but not effective. It requires %s in order to work.', 'woocommerce-multilingual' ), $missing );
+					printf( __( 'WPML Multilingual & Multicurrency for WooCommerce is enabled but not effective. It requires %s in order to work.', 'woocommerce-multilingual' ), $missing );
 				?></p>
 			</div>
 			<?php
@@ -253,7 +262,7 @@ class WCML_Dependencies {
 	 * if none of these are true, display a warning message
 	 */
 	private function check_for_incompatible_permalinks() {
-		global $sitepress, $sitepress_settings, $pagenow;
+		global $sitepress_settings, $pagenow;
 
 		// WooCommerce 2.x specific checks
 		$permalinks = get_option( 'woocommerce_permalinks', [ 'product_base' => '' ] );
@@ -281,7 +290,7 @@ class WCML_Dependencies {
 			$compatible = false;
 		}
 
-		if ( ! $compatible && ( $pagenow == 'options-permalink.php' || ( isset( $_GET['page'] ) && $_GET['page'] == 'wpml-wcml' ) ) ) {
+		if ( ! $compatible && ( $pagenow == 'options-permalink.php' || ( isset( $_GET['page'] ) && \WCML\Utilities\AdminUrl::PAGE_WPML_WCML == $_GET['page'] ) ) ) {
 			$this->err_message = '<div class="message error"><p>' . $message . '    </p></div>';
 			add_action( 'admin_notices', [ $this, 'plugin_notice_message' ] );
 		}
@@ -300,7 +309,7 @@ class WCML_Dependencies {
 
 		$file = realpath( WCML_PLUGIN_PATH . '/wpml-config.xml' );
 		if ( ! file_exists( $file ) ) {
-			$this->xml_config_errors[] = __( 'wpml-config.xml file missing from WooCommerce Multilingual & Multicurrency folder.', 'woocommerce-multilingual' );
+			$this->xml_config_errors[] = __( 'wpml-config.xml file missing from WPML Multilingual & Multicurrency for WooCommerce folder.', 'woocommerce-multilingual' );
 		} else {
 			$config = icl_xml2array( file_get_contents( $file ) );
 

@@ -30,7 +30,7 @@ class OTGS_Installer_WP_Share_Local_Components_Setting_Hooks {
 			            'render_local_components_setting',
 		            ),
 		            10,
-		            5 );
+		            1 );
 		add_filter( 'otgs_installer_has_local_components_setting',
 		            array( $this, 'has_local_components_setting_filter' ),
 		            10,
@@ -92,31 +92,49 @@ class OTGS_Installer_WP_Share_Local_Components_Setting_Hooks {
 		$custom_privacy_policy_text = $params['custom_privacy_policy_text'];
 		$repo                       = isset( $params['plugin_repository'] ) ? $params['plugin_repository'] : strtolower( $plugin_name );
 
+		$customRadioLabelYes = array_key_exists( 'custom_radio_label_yes', $params ) ?
+			$params['custom_radio_label_yes'] : null;
+		$customRadioLabelNo  = array_key_exists( 'custom_radio_label_no', $params ) ?
+			$params['custom_radio_label_no'] : null;
+
+		$sharingDataDetailsText = array_key_exists( 'sharing_data_details_text', $params ) ?
+			$params['sharing_data_details_text'] : null;
+		$sharingDataDetailsUrl  = array_key_exists( 'sharing_data_details_url', $params ) ?
+			$params['sharing_data_details_url'] : null;
+
+		$customDescriptionText = array_key_exists( 'custom_description', $params ) ?
+			$params['custom_description'] : null;
+
 		return array(
 			'strings'                    => array(
 				'heading'                 => __( 'Reporting to', 'installer' ),
 				'report_to'               => __( 'Report to', 'installer' ),
 				'radio_report_yes'        => __( 'Send theme and plugins information, in order to get faster support and compatibility alerts',
-				                                 'installer' ),
+					'installer' ),
 				'radio_report_no'         => __( "Don't send this information and skip compatibility alerts",
-				                                 'installer' ),
+					'installer' ),
 				'which_theme_and_plugins' => __( 'which theme and plugins you are using.', 'installer' ),
 			),
 			'custom_raw_heading'         => $custom_heading,
 			'custom_raw_label'           => $custom_label,
 			'custom_privacy_policy_text' => $custom_privacy_policy_text,
 			'privacy_policy_url'         => $privacy_policy_url,
-			'privacy_policy_text' => $privacy_policy_text,
-			'component_name'      => $plugin_name,
-			'company_url'         => $plugin_uri,
-			'company_site'        => $plugin_site,
-			'nonce'               => array(
+			'privacy_policy_text'        => $privacy_policy_text,
+			'component_name'             => $plugin_name,
+			'company_url'                => $plugin_uri,
+			'company_site'               => $plugin_site,
+			'nonce'                      => array(
 				'action' => OTGS_Installer_WP_Components_Setting_Ajax::AJAX_ACTION,
 				'value'  => wp_create_nonce( OTGS_Installer_WP_Components_Setting_Ajax::AJAX_ACTION ),
 			),
-			'repo'                => $repo,
-			'is_repo_allowed'     => $this->setting->is_repo_allowed( $repo ),
-			'has_setting'         => (int) $this->setting->has_setting( $repo ),
+			'repo'                       => $repo,
+			'is_repo_allowed'            => $this->setting->is_repo_allowed( $repo ),
+			'has_setting'                => (int) $this->setting->has_setting( $repo ),
+			'custom_radio_label_yes'     => $customRadioLabelYes,
+			'custom_radio_label_no'      => $customRadioLabelNo,
+			'sharing_data_details_text'  => $sharingDataDetailsText,
+			'sharing_data_details_url'   => $sharingDataDetailsUrl,
+			'custom_description_text'    => $customDescriptionText,
 		);
 	}
 

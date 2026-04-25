@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Function that creates the Admin Email Customizer menu
  *
@@ -102,7 +105,7 @@ function wppb_admin_email_customizer_add_mustache_in_backend(){
                 )
 			);
 
-	new PB_Mustache_Generate_Admin_Box( 'aec_default_registration', __( 'Default Registration & Registration with Email Confirmation', 'profile-builder' ), 'profile-builder_page_admin-email-customizer', 'core', $mustache_vars, '', $fields);
+	new PB_Mustache_Generate_Admin_Box( 'aec_default_registration', __( 'Registration: Default & Email Confirmation', 'profile-builder' ), 'profile-builder_page_admin-email-customizer', 'core', $mustache_vars, '', $fields);
 
 	if( PROFILE_BUILDER != 'Profile Builder Free' ){
 		$registration_admin_approval_email_content = __( "<p>New subscriber on {{site_name}}.</p>\n<p>Username:{{username}}</p>\n<p>Email:{{user_email}}</p>\n<p>The Admin Approval feature was activated at the time of registration,\nso please remember that you need to approve this user before he/she can log in!</p>", 'profile-builder' );
@@ -164,6 +167,6 @@ function wppb_admin_email_customizer_add_mustache_in_backend(){
 		)
 	);
 
-	new PB_Mustache_Generate_Admin_Box( 'aec_user_password_reset', __( 'Admin Notification for User Password Reset', 'profile-builder' ), 'profile-builder_page_admin-email-customizer', 'core', $mustache_vars, '', $fields );
+	new PB_Mustache_Generate_Admin_Box( 'aec_user_password_reset', __( 'User Password Reset', 'profile-builder' ), 'profile-builder_page_admin-email-customizer', 'core', $mustache_vars, '', $fields );
 
 }

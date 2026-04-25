@@ -1,4 +1,9 @@
-<div class="otgs-installer-component-setting" data-has-setting="<?php echo esc_attr( $model->has_setting ); ?>">
+<div style="width: 660px;" class="otgs-installer-component-setting" data-has-setting="<?php echo esc_attr( $model->has_setting ); ?>">
+	<?php if ( $model->hasValue( 'custom_description_text' ) ) { ?>
+        <p>
+			<?php echo wp_kses_post( $model->custom_description_text ); ?>
+        </p>
+	<?php } ?>
 	<span class="spinner otgs-components-report-setting-spinner"></span>
 	<ul>
 		<li>
@@ -18,7 +23,7 @@
 				/>
 
 				<?php
-				if ( isset( $model->custom_radio_label_yes ) && $model->custom_radio_label_yes !== null ) {
+				if ( $model->hasValue( 'custom_radio_label_yes' ) ) {
 					echo  wp_kses_post( $model->custom_radio_label_yes );
 				} else {
 					echo  wp_kses_post( $model->strings->radio_report_yes );
@@ -42,7 +47,7 @@
 						data-repo="<?php echo esc_attr( $model->repo ); ?>"
 				/>
 				<?php
-				if ( isset( $model->custom_radio_label_no ) && $model->custom_radio_label_no !== null ) {
+				if ( $model->hasValue( 'custom_radio_label_no' ) ) {
 					echo  wp_kses_post( $model->custom_radio_label_no );
 				} else {
 					echo  wp_kses_post( $model->strings->radio_report_no );
@@ -52,20 +57,35 @@
 		</li>
 	</ul>
 
-	<p class="otgs-installer-component-privacy-policy">
-		<a
-				href="<?php echo  esc_url( $model->privacy_policy_url ); ?>"
-				target="_blank"
-				rel="noopener"
-				class="otgs-external-link"
-		>
+    <p class="otgs-installer-component-privacy-policy">
+        <a
+                href="<?php echo esc_url( $model->privacy_policy_url ); ?>"
+                target="_blank"
+                rel="noopener"
+                class="otgs-external-link"
+        >
 			<?php
-			if ( isset( $model->custom_privacy_policy_text ) && $model->custom_privacy_policy_text !== null ) {
-				echo  wp_kses_post( $model->custom_privacy_policy_text );
+			if ( $model->hasValue( 'custom_privacy_policy_text' ) ) {
+				echo wp_kses_post( $model->custom_privacy_policy_text );
 			} else {
-				echo  wp_kses_post( $model->privacy_policy_text );
+				echo wp_kses_post( $model->privacy_policy_text );
 			}
 			?>
-		</a>
-	</p>
+        </a>
+    </p>
+
+	<?php if ( $model->hasValue( 'sharing_data_details_text' ) && $model->hasValue( 'sharing_data_details_url' ) ) { ?>
+        <p class="otgs-installer-component-privacy-policy">
+            <a
+                    href="<?php echo esc_url( $model->sharing_data_details_url ); ?>"
+                    target="_blank"
+                    rel="noopener"
+                    class="otgs-external-link"
+            >
+				<?php
+				echo wp_kses_post( $model->sharing_data_details_text )
+				?>
+            </a>
+        </p>
+	<?php } ?>
 </div>

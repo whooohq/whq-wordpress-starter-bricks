@@ -55,15 +55,11 @@ function wp_chill_check_email_array_checked( $values, $current ) {
 }
 
 function wp_chill_check_email_get_dismiss_icon() {
-	return <<<EOT
-<span class="dashicons dashicons-dismiss"></span>
-EOT;
+	return '<span class="dashicons dashicons-dismiss"></span>';
 }
 
 function wp_chill_check_email_get_confirm_icon() {
-	return <<<EOT
-<span class="dashicons dashicons-yes-alt"></span>
-EOT;
+	return '<span class="dashicons dashicons-yes-alt"></span>';
 
 }
 
@@ -148,9 +144,14 @@ function wp_chill_check_email_get_column_label_map() {
 		'cc'          => esc_html__( 'CC', 'check-email' ),
 		'bcc'         => esc_html__( 'BCC', 'check-email' ),
 		'reply_to'    => esc_html__( 'Reply To', 'check-email' ),
-		'ip_address'  => esc_html__( 'IP Address', 'check-email' ),
+		'ip_address'  => esc_html__( 'Host IP', 'check-email' ),
 		'result'      => esc_html__( 'Sent Status', 'check-email' ),
+		'content'      => esc_html__( 'Content', 'check-email' ),
+		'created_at'      => esc_html__( 'Date', 'check-email' ),
+		'initiator'      => esc_html__( 'Source', 'check-email' ),
+		'check_email_log_id'      => esc_html__( 'Log ID', 'check-email' ),
+		'action'      => esc_html__( 'Action', 'check-email' ),
 	);
-
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 	return apply_filters( 'check_email_db_column_labels', $labels );
 }

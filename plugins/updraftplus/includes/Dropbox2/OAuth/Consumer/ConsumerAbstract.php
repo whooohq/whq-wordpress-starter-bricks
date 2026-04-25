@@ -126,7 +126,8 @@ abstract class Dropbox_ConsumerAbstract
                 header('Location: ' . $url);
                 exit;
             } else {
-                throw new Dropbox_Exception(sprintf(__('The %s authentication could not go ahead, because something else on your site is breaking it. Try disabling your other plugins and switching to a default theme. (Specifically, you are looking for the component that sends output (most likely PHP warnings/errors) before the page begins. Turning off any debugging settings may also help).', 'updraftplus'), 'Dropbox'));
+                /* translators: %s: Authentication service name (e.g., Dropbox) */
+                throw new Dropbox_Exception(sprintf(__('The %s authentication could not go ahead, because something else on your site is breaking it.', 'updraftplus'), 'Dropbox').' '.__('Try disabling your other plugins and switching to a default theme.', 'updraftplus').' ('.__('Specifically, you are looking for the component that sends output (most likely PHP warnings/errors) before the page begins.', 'updraftplus').' '.__('Turning off any debugging settings may also help.', 'updraftplus').')'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
             }
             ?><?php
             return false;
@@ -134,7 +135,8 @@ abstract class Dropbox_ConsumerAbstract
         global $updraftplus;
         $updraftplus->log('Dropbox reauthorisation needed; but we are running from cron, AJAX or the CLI, so this is not possible');
         $this->storage->do_unset('access_token');
-        throw new Dropbox_Exception(sprintf(__('You need to re-authenticate with %s, as your existing credentials are not working.', 'updraftplus'), 'Dropbox'));
+        /* translators: %s: Authentication service name (e.g., Dropbox) */
+        throw new Dropbox_Exception(sprintf(__('You need to re-authenticate with %s, as your existing credentials are not working.', 'updraftplus'), 'Dropbox')); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
         #$updraftplus->log(sprintf(__('You need to re-authenticate with %s, as your existing credentials are not working.', 'updraftplus'), 'Dropbox'), 'error');
         return false;
     }
@@ -151,9 +153,9 @@ abstract class Dropbox_ConsumerAbstract
 		*/
 	    
 		global $updraftplus;
-		if (!function_exists('crypt_random_string')) $updraftplus->ensure_phpseclib('Crypt_Random');
+        $updraftplus->ensure_phpseclib();
 
-		$CSRF = base64_encode(crypt_random_string(16));
+		$CSRF = base64_encode(phpseclib_Crypt_Random::string(16));
         $this->storage->set($CSRF,'CSRF');
         // Prepare request parameters
         /*
@@ -506,7 +508,7 @@ abstract class Dropbox_ConsumerAbstract
                 $this->sigMethod = $method;
                 break;
             default:
-                throw new Dropbox_Exception('Unsupported signature method ' . $method);
+                throw new Dropbox_Exception('Unsupported signature method ' . $method); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
         }
     }
     

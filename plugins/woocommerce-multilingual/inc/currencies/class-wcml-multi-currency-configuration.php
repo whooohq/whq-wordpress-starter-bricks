@@ -159,6 +159,10 @@ class WCML_Multi_Currency_Configuration {
 			$options['countries'] = wc_string_to_array( $options['countries'], ',' );
 		}
 
+		if ( isset( $options['num_decimals'] ) ) {
+			$options['num_decimals'] = absint( $options['num_decimals'] );
+		}
+
 		if ( $wc_currency !== $currency_code ) {
 			$options['thousand_sep'] = wc_format_option_price_separators( null, null, $options['thousand_sep'] );
 			$options['decimal_sep']  = wc_format_option_price_separators( null, null, $options['decimal_sep'] );
@@ -261,7 +265,7 @@ class WCML_Multi_Currency_Configuration {
 					'The default currency was changed. In order to show accurate prices in all currencies, you need to update the exchange rates under the %1$sMulti-currency%2$s configuration.',
 					'woocommerce-multilingual'
 				),
-				'<a href="' . admin_url( 'admin.php?page=wpml-wcml&tab=multi-currency' ) . '">',
+				'<a href="' . \WCML\Utilities\AdminUrl::getMultiCurrencyTab() . '">',
 				'</a>'
 			),
 			'type'         => 'warning',
@@ -340,7 +344,7 @@ class WCML_Multi_Currency_Configuration {
 				$save = true;
 			}
 
-			if ( ! empty( self::$multi_currency ) ) {
+			if ( self::$multi_currency instanceof WCML_Multi_Currency ) {
 				foreach ( self::$multi_currency->get_currency_codes() as $code ) {
 					$new_key = $key . '_' . $code;
 					$iclTranslationManagement->settings['custom_fields_readonly_config'][] = $new_key;
@@ -372,7 +376,7 @@ class WCML_Multi_Currency_Configuration {
 		self::verify_nonce();
 		$data = self::get_data();
 
-		if ( isset( WC()->integrations ) ) {
+		if ( WC()->integrations instanceof WC_Integrations) {
 			$integrations = WC()->integrations->get_integrations();
 
 			if ( isset( $integrations['maxmind_geolocation'] ) ) {

@@ -549,10 +549,10 @@ class Tokens {
 		if ( function_exists( 'wp_generate_password' ) ) {
 			$nonce = wp_generate_password( 10, false );
 		} else {
-			$nonce = substr( sha1( wp_rand( 0, 1000000 ) ), 0, 10 );
+			$nonce = substr( sha1( (string) wp_rand( 0, 1000000 ) ), 0, 10 );
 		}
 
-		$normalized_request_string = join(
+		$normalized_request_string = implode(
 			"\n",
 			array(
 				$token_key,
@@ -576,7 +576,7 @@ class Tokens {
 			$header_pieces[] = sprintf( '%s="%s"', $key, $value );
 		}
 
-		return join( ' ', $header_pieces );
+		return implode( ' ', $header_pieces );
 	}
 
 	/**
@@ -615,10 +615,6 @@ class Tokens {
 		try {
 			$expires = ( new DateTime() )->add( DateInterval::createFromDateString( (int) $timespan . ' seconds' ) );
 		} catch ( Exception $e ) {
-			return false;
-		}
-
-		if ( false === $expires ) {
 			return false;
 		}
 

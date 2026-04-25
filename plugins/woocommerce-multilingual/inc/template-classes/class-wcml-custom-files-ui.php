@@ -1,28 +1,20 @@
 <?php
 
-/**
- * Created by OnTheGo Systems
- */
 class WCML_Custom_Files_UI extends WCML_Templates_Factory {
 
-	private $woocommerce_wpml;
 	private $product_id;
 	private $is_variation;
 
 	/**
-	 * WCML_Custom_Files_UI constructor.
-	 *
-	 * @param woocommerce_wpml $woocommerce_wpml
-	 * @param int              $product_id
-	 * @param bool             $is_variation
+	 * @param int  $product_id
+	 * @param bool $is_variation
 	 */
-	public function __construct( $woocommerce_wpml, $product_id, $is_variation = false ) {
+	public function __construct( $product_id, $is_variation = false ) {
 		// @todo Cover by tests, required for wcml-3037.
 		parent::__construct();
 
-		$this->woocommerce_wpml = $woocommerce_wpml;
-		$this->product_id       = $product_id;
-		$this->is_variation     = $is_variation;
+		$this->product_id   = $product_id;
+		$this->is_variation = $is_variation;
 	}
 
 	public function get_model() {
@@ -30,7 +22,7 @@ class WCML_Custom_Files_UI extends WCML_Templates_Factory {
 		$model = [
 			'product_id'   => $this->product_id,
 			'is_variation' => $this->is_variation,
-			'nonce'        => wp_nonce_field( 'wcml_save_files_option', 'wcml_save_files_option_nonce' ),
+			'nonce'        => wp_nonce_field( 'wcml_save_files_option', 'wcml_save_files_option_nonce', true, false ),
 			'sync_custom'  => get_post_meta( $this->product_id, 'wcml_sync_files', true ),
 			'strings'      => [
 				'use_custom' => __( 'Use custom settings for translations download files', 'woocommerce-multilingual' ),

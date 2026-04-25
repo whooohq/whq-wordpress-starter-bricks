@@ -6,10 +6,13 @@
  */
 
 use Automattic\Jetpack\Constants;
+use Automattic\WooCommerce\Enums\OrderStatus;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+use Automattic\WooCommerce\Gateways\PayPal\Constants as PayPalConstants;
 
 require_once dirname( __FILE__ ) . '/class-wc-gateway-paypal-response.php';
 
@@ -155,10 +158,10 @@ class WC_Gateway_Paypal_PDT_Handler extends WC_Gateway_Paypal_Response {
 			// We have a valid response from PayPal.
 			WC_Gateway_Paypal::log( 'PDT Transaction Status: ' . wc_print_r( $status, true ) );
 
-			$order->add_meta_data( '_paypal_status', $status );
+			$order->add_meta_data( PayPalConstants::PAYPAL_ORDER_META_STATUS, $status );
 			$order->set_transaction_id( $transaction );
 
-			if ( 'completed' === $status ) {
+			if ( OrderStatus::COMPLETED === $status ) {
 				if ( number_format( $order->get_total(), 2, '.', '' ) !== number_format( $amount, 2, '.', '' ) ) {
 					WC_Gateway_Paypal::log( 'Payment error: Amounts do not match (amt ' . $amount . ')', 'error' );
 					/* translators: 1: Payment amount */

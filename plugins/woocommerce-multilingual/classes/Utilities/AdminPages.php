@@ -13,13 +13,14 @@ use function WCML\functions\isStandAlone;
 class AdminPages {
 
 	const TAB_MULTICURRENCY = 'multi-currency';
-	const TAB_PRODUCTS      = 'products';
+	const TAB_MULTILINGUAL  = 'multilingual';
+	const TAB_MULTILINGUAL_STANDALONE  = 'multilingual-standalone';
 
 	/**
 	 * @return string
 	 */
 	public static function getDefaultTab() {
-		return isStandAlone() ? self::TAB_MULTICURRENCY : self::TAB_PRODUCTS;
+		return isStandAlone() ? self::TAB_MULTICURRENCY : self::TAB_MULTILINGUAL;
 	}
 
 	/**
@@ -90,6 +91,10 @@ class AdminPages {
 	 */
 	public static function isTranslationsDashboard() {
 		return ! isStandAlone() && self::isTmPage( '/menu/main.php' );
+	}
+
+	public static function isWcProductAttributesPage(): bool {
+		return self::isPage( 'product_attributes' ) && Relation::propEq( 'post_type', 'product', $_GET );
 	}
 
 	/**

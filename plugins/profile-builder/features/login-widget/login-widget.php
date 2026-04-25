@@ -19,7 +19,6 @@ class wppb_login_widget extends WP_Widget {
 	}
 
 	function widget( $args, $instance ) {
-        extract( $args );
 
 		$title = apply_filters( 'wppb_login_widget_title', ( isset( $instance['title'] ) ? $instance['title'] : '' ) );
 		$redirect = ( isset( $instance['redirect'] ) ? trim( $instance['redirect'] ) : '' );
@@ -36,6 +35,7 @@ class wppb_login_widget extends WP_Widget {
 		do_action( 'wppb_login_widget_display', $args, $instance);
 			
 		echo wp_kses_post( $args['after_widget'] );
+		
 	}
 
 	/**

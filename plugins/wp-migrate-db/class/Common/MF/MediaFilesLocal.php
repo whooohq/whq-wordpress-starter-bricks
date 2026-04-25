@@ -199,9 +199,7 @@ class MediaFilesLocal
             // Push = get local files
             $abs_path = Files_Util::get_wp_uploads_dir();
             $abs_path = apply_filters('wpmdb_mf_local_uploads_folder', $abs_path, $state_data);
-            $items    = $this->plugin_helper->get_top_level_items($abs_path);
-
-            $file_list = $this->file_processor->get_local_files($items, $abs_path, $excludes, $state_data['stage'], $date, $timezone,'push');
+            $file_list = $this->file_processor->get_local_files([$abs_path], $abs_path, $excludes, $state_data['stage'], $date, $timezone,'push');
         }
 
         if (is_wp_error($file_list)) {
@@ -262,6 +260,10 @@ class MediaFilesLocal
 
         $count = apply_filters('wpmdbmf_file_batch_size', 1000);
         $data  = $this->queue_manager->list_jobs($count);
+
+        if (is_wp_error($data)) {
+            return $this->http->end_ajax($data);
+        }
 
         $processed = $this->transfer_util->process_file_data($data);
 

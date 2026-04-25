@@ -13,6 +13,7 @@ class Account {
 
 	const NOT_REGISTERED = 'not-registered';
 	const EXPIRED = 'expired';
+	const IN_GRACE = 'in-grace';
 	const REFUNDED = 'refunded';
 	const GET_FIRST_INSTALL_TIME = 'get_first_install_time';
 	const DEVELOPMENT_MODE = 'development_mode';
@@ -30,6 +31,7 @@ class Account {
 		$noticeTypes = [
 			self::NOT_REGISTERED   => [ Account::class, 'shouldShowNotRegistered' ],
 			self::EXPIRED          => [ Account::class, 'shouldShowExpired' ],
+			self::IN_GRACE         => [ Account::class, 'shouldShowInGrace' ],
 			self::REFUNDED         => [ Account::class, 'shouldShowRefunded' ],
 			self::DEVELOPMENT_MODE => [ Account::class, 'shouldShowDevelopmentBanner' ],
 		];
@@ -75,6 +77,16 @@ class Account {
 	 *
 	 * @return bool
 	 */
+	public static function shouldShowInGrace( \WP_Installer $installer, array $nag ) {
+		return $installer->repository_has_in_grace_subscription( $nag['repository_id'], 30 * DAY_IN_SECONDS );
+	}
+
+	/**
+	 * @param \WP_Installer $installer
+	 * @param array $nag
+	 *
+	 * @return bool
+	 */
 	public static function shouldShowDevelopmentBanner( \WP_Installer $installer, array $nag ) {
 		$showDevelopmentBanner = $installer->repository_has_development_site_key( $nag['repository_id'] );
 		$isDismissed = Loader::isDismissed( $nag[ 'repository_id' ], Account::DEVELOPMENT_MODE );
@@ -89,14 +101,20 @@ class Account {
 		/** @var \WP_Admin_Bar $wp_admin_bar */
 		global $wp_admin_bar;
 
-		$helpText = __( 'This site is registered on wpml.org as a development site.', 'installer' );
+		$learnMoreLink = 'https://wpml.org/faq/how-to-remove-the-this-site-is-registered-on-wpml-org-as-a-development-site-notice/?utm_source=plugin&utm_medium=gui&utm_campaign=wpml-core';
+		$helpText = sprintf(
+			/* translators: %1$s and %2$s are opening and closing link tags. */
+			__( 'This site is registered on wpml.org as a development site. %1$sLearn more%2$s', 'installer' ),
+			'<a href="' . esc_url( $learnMoreLink ) . '" target="_blank">',
+			'</a>'
+		);
 		$text = __( 'Development Site', 'installer' );
 
 		$wp_admin_bar->add_menu(
 			array(
 				'parent' => false,
 				'id'     => 'otgs-wpml-development',
-				'title'  => '<i  class="otgs-ico-sitepress-multilingual-cms js-otgs-popover-tooltip" data-tippy-zIndex="999999" title="' . $helpText . '" > ' . $text . '</i>',
+				'title'  => '<i  class="otgs-ico-sitepress-multilingual-cms js-otgs-popover-tooltip" data-tippy-zIndex="999999" title="' . esc_attr( $helpText ) . '" > ' . $text . '</i>',
 				'href'   => false,
 			)
 		);
@@ -125,6 +143,7 @@ class Account {
 				'wpml'    => [
 					Account::NOT_REGISTERED   => $wpmlPages,
 					Account::EXPIRED          => $wpmlPages,
+					Account::IN_GRACE         => $wpmlPages,
 					Account::REFUNDED         => $wpmlPages,
 					Account::DEVELOPMENT_MODE => $wpmlPages,
 				],
@@ -142,6 +161,7 @@ class Account {
 		$config = [
 			Account::NOT_REGISTERED   => [ 'screens' => [ 'plugins' ] ],
 			Account::EXPIRED          => [ 'screens' => [ 'plugins' ] ],
+			Account::IN_GRACE         => [ 'screens' => [ 'plugins' ] ],
 			Account::REFUNDED         => [ 'screens' => [ 'plugins', 'dashboard' ] ],
 			Account::DEVELOPMENT_MODE => [ 'screens' => [ 'plugins', 'dashboard', 'plugin-install' ] ],
 		];
@@ -160,12 +180,14 @@ class Account {
 				'wpml'    => [
 					Account::NOT_REGISTERED   => WPMLTexts::class . '::notRegistered',
 					Account::EXPIRED          => WPMLTexts::class . '::expired',
+					Account::IN_GRACE         => WPMLTexts::class . '::inGrace',
 					Account::REFUNDED         => WPMLTexts::class . '::refunded',
 					Account::DEVELOPMENT_MODE => WPMLTexts::class . '::developmentBanner',
 				],
 				'toolset' => [
 					Account::NOT_REGISTERED   => ToolsetTexts::class . '::notRegistered',
 					Account::EXPIRED          => ToolsetTexts::class . '::expired',
+					Account::IN_GRACE         => ToolsetTexts::class . '::inGrace',
 					Account::REFUNDED         => ToolsetTexts::class . '::refunded',
 					Account::DEVELOPMENT_MODE => ToolsetTexts::class . '::developmentBanner',
 				],

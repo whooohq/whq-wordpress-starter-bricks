@@ -13,7 +13,10 @@ class ActionFilterLoader {
 	 */
 	private $loader;
 
-	public function __construct( WPML_Action_Filter_Loader $loader = null ) {
+	/**
+	 * @param WPML_Action_Filter_Loader|null $loader
+	 */
+	public function __construct( $loader = null ) {
 		$this->loader = null === $loader ? new WPML_Action_Filter_Loader() : $loader;
 	}
 

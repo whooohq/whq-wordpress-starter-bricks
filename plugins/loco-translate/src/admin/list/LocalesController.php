@@ -21,7 +21,7 @@ class Loco_admin_list_LocalesController extends Loco_mvc_AdminController {
      */
     public function getHelpTabs(){
         return  [
-            __('Overview','default') => $this->viewSnippet('tab-list-locales'),
+            __('Overview','loco-translate') => $this->viewSnippet('tab-list-locales'),
         ];
     }
 
@@ -78,7 +78,6 @@ class Loco_admin_list_LocalesController extends Loco_mvc_AdminController {
                 ] );
             }
         }
-        $this->set('locales', $locales );
         
         // Count up unique PO files  
         foreach( $finder->findLocaleFiles() as $file ){
@@ -86,8 +85,13 @@ class Loco_admin_list_LocalesController extends Loco_mvc_AdminController {
                 $locale = Loco_Locale::parse($r[1]);
                 if( $locale->isValid() ){
                     $tag = (string) $locale;
-                    $locales[$tag]['nfiles']++;
-                    $locales[$tag]['time'] = max( $locales[$tag]['time'], $file->modified() );
+                    if( array_key_exists($tag,$locales) ){
+                        $locales[$tag]['nfiles']++;
+                        $locales[$tag]['time'] = max( $locales[$tag]['time'], $file->modified() );
+                    }
+                    else {
+                        Loco_error_Debug::trace('%s found on disk, but not an installed language',$tag);
+                    }
                 }
             }
         }
@@ -100,6 +104,12 @@ class Loco_admin_list_LocalesController extends Loco_mvc_AdminController {
                 $locales[$tag]['time'] = max( $locales[$tag]['time'], $file->modified() );
             }
         }
+        
+        // sort alphabetically by locale label
+        usort( $locales, function( ArrayAccess $a, ArrayAccess $b ):int {
+            return strcasecmp( $a['lname'], $b['lname'] );
+        } );
+        $this->set('locales', $locales );
         
        return $this->view( 'admin/list/locales' );
     }

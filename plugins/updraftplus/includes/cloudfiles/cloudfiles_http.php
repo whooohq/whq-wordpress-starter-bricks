@@ -1,4 +1,8 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.file_system_operations_fputs, WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable, WordPress.WP.AlternativeFunctions.file_system_operations_chown, WordPress.WP.AlternativeFunctions.file_system_operations_chgrp -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
+// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array, WordPress.WP.AlternativeFunctions.curl_curl_setopt, WordPress.WP.AlternativeFunctions.curl_curl_init, WordPress.WP.AlternativeFunctions.curl_curl_exec, WordPress.WP.AlternativeFunctions.curl_curl_getinfo, WordPress.WP.AlternativeFunctions.curl_curl_multi_init, WordPress.WP.AlternativeFunctions.curl_curl_multi_add_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_exec, WordPress.WP.AlternativeFunctions.curl_curl_multi_select, WordPress.WP.AlternativeFunctions.curl_curl_multi_getcontent, WordPress.WP.AlternativeFunctions.curl_curl_multi_remove_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_close, WordPress.WP.AlternativeFunctions.curl_curl_error, WordPress.WP.AlternativeFunctions.curl_curl_close, WordPress.WP.AlternativeFunctions.curl_curl_errno -- Direct cURL usage is intentional to leverage specific low-level options not available via the WordPress HTTP API.
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals -- This is a third-party library file; naming conventions are not applicable.
+if (!defined('ABSPATH')) die('No direct access allowed');
 /**
  * This is an HTTP client class for Cloud Files.  It uses PHP's cURL module
  * to handle the actual HTTP request/response.  This is NOT a generic HTTP
@@ -16,7 +20,7 @@
  * get_object_to_stream() and put_object() take an open filehandle
  * argument for streaming data out of or into Cloud Files.
  *
- * Requres PHP 5.x (for Exceptions and OO syntax)
+ * Requires PHP 5.x (for Exceptions and OO syntax)
  *
  * See COPYING for license information.
  *
@@ -145,7 +149,7 @@ class UpdraftPlus_CF_Http
         $this->response_reason = NULL;
 
         # Curl connections array - since there is no way to "re-set" the
-        # connection paramaters for a cURL handle, we keep an array of
+        # connection parameters for a cURL handle, we keep an array of
         # the unique use-cases and funnel all of those same type
         # requests through the appropriate curl connection.
         #
@@ -212,7 +216,7 @@ class UpdraftPlus_CF_Http
         }
         if (!file_exists($this->cabundle_path)) {
             throw new IOException("Could not use CA bundle: "
-                . $this->cabundle_path);
+                . $this->cabundle_path); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
         }
         return;
     }
@@ -263,7 +267,11 @@ class UpdraftPlus_CF_Http
         curl_setopt($curl_ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($curl_ch, CURLOPT_URL, $url);
         curl_exec($curl_ch);
-        curl_close($curl_ch);
+        if (version_compare(PHP_VERSION, '8.0', '<')) {
+            curl_close($curl_ch);
+        } else {
+            unset($curl_ch); // On PHP 8+, curl_close() is a no-op (deprecated in 8.5); unset the handle instead.
+        }
 
         return array($this->response_status, $this->response_reason,
             $this->storage_url, $this->cdnm_url, $this->auth_token);
@@ -1495,14 +1503,14 @@ class UpdraftPlus_CF_Http
                         }
                     }
                     if (!$result) throw new SyntaxException(sprintf(
-                        "Header name %s is not allowed", $k));
+                        "Header name %s is not allowed", $k)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
                 }
 
                 $k = $rule['prefix'] . $k;
                 if (strlen($k) > MAX_HEADER_NAME_LEN || strlen($v) > MAX_HEADER_VALUE_LEN)
                     throw new SyntaxException(sprintf(
                         "Header %s exceeds maximum length: %d/%d",
-                            $k, strlen($k), strlen($v)));
+                            $k, strlen($k), strlen($v))); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
 
                 $hdrs[$k] = $v;
             }
@@ -1557,7 +1565,11 @@ class UpdraftPlus_CF_Http
     {
         foreach ($this->connections as $cnx) {
             if (isset($cnx)) {
-                curl_close($cnx);
+                if (version_compare(PHP_VERSION, '8.0', '<')) {
+                    curl_close($cnx);
+                } else {
+                    unset($cnx); // On PHP 8+, curl_close() is a no-op (deprecated in 8.5); unset the handle instead.
+                }
                 $this->connections[$cnx] = NULL;
             }
         }

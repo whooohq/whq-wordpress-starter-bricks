@@ -1,5 +1,5 @@
 <?php
-
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
 if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed');
 
 /**
@@ -318,7 +318,7 @@ class UpdraftPlus_Pcloud_API {
 	 * @param array    $offset       - you can create real chunked download using this offset param.
 	 *
 	 * @return int
-	 * @throws Exception Throws standart exception.
+	 * @throws Exception Throws standard exception.
 	 */
 	public function download($file_id, $archive_file = null, $options = array(), $offset = 0) {
 
@@ -464,8 +464,8 @@ class UpdraftPlus_Pcloud_API {
 	/**
 	 * Upload - write content chunk
 	 *
-	 * @param string $content - String content to be writen.
-	 * @param array  $params  - Additinal request params.
+	 * @param string $content - String content to be written.
+	 * @param array  $params  - Additional request params.
 	 *
 	 * @return WP_Error - returns a WP_Error if something goes wrong
 	 */

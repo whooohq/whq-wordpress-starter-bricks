@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Using the default PHP fopen() function instead of the WP Filesystem API.
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- using the native PHP fclose() function instead of the WP Filesystem API.
 
 if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed.');
 
@@ -55,9 +57,11 @@ class UpdraftPlus_ftp_wrapper {
 		if (time() - $time_start > 19) {
 			global $updraftplus_admin;
 			if (isset($updraftplus_admin->logged) && is_array($updraftplus_admin->logged)) {
+				/* translators: %s: Connection type (e.g., FTP) */
 				$updraftplus_admin->logged[] = sprintf(__('The %s connection timed out; if you entered the server correctly, then this is usually caused by a firewall blocking the connection - you should check with your web hosting company.', 'updraftplus'), 'FTP');
 			} else {
 				global $updraftplus;
+				/* translators: %s: Connection type (e.g., FTP) */
 				$updraftplus->log(sprintf(__('The %s connection timed out; if you entered the server correctly, then this is usually caused by a firewall blocking the connection - you should check with your web hosting company.', 'updraftplus'), 'FTP'), 'error');
 			}
 		}
@@ -84,7 +88,7 @@ class UpdraftPlus_ftp_wrapper {
 			}
 		}
 
-		// From here on, $file_size is only used for logging calculations. We want to avoid divsion by zero.
+		// From here on, $file_size is only used for logging calculations. We want to avoid division by zero.
 		$file_size = max($file_size, 1);
 
 		if (!$fh = fopen($local_file_path, 'rb')) return false;

@@ -10,10 +10,10 @@
  * License: GPLv3
  * License URI: https://www.gnu.org/licenses/gpl.txt
  * Description: Simple and lightweight plugin to show all registered shortcodes under a "Registered Shortcodes" toolbar menu item.
- * Requires PHP: 7.2.34
- * Requires At Least: 5.5
- * Tested Up To: 6.2.2
- * Version: 2.0.0
+ * Requires PHP: 7.4.33
+ * Requires At Least: 6.0
+ * Tested Up To: 6.9.4
+ * Version: 4.0.0
  *
  * Version Numbering: {major}.{minor}.{bugfix}[-{stage}.{level}]
  *
@@ -22,7 +22,7 @@
  *      {bugfix}        Backwards-compatible bug fixes or small improvements.
  *      {stage}.{level} Pre-production release: dev < a (alpha) < b (beta) < rc (release candidate).
  *
- * Copyright 2016-2023 Jean-Sebastien Morisset (https://surniaulula.com/)
+ * Copyright 2016-2026 Jean-Sebastien Morisset (https://surniaulula.com/)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -87,7 +87,7 @@ if ( ! class_exists( 'JsmSrsc' ) ) {
 			$parent_title = sprintf( __( 'Registered Shortcodes (%d)', 'jsm-show-registered-shortcodes' ), count( $shortcode_tags ) );
 
 			/*
-			 * Add the parent item.
+			 * Add parent item.
 			 */
 			$args = array(
 				'id'    => $parent_slug,
@@ -130,13 +130,13 @@ if ( ! class_exists( 'JsmSrsc' ) ) {
 
 			} elseif ( is_array( $callback ) ) {
 
-				if ( is_string( $callback[0] ) ) {	// Static method.
+				if ( is_string( $callback[ 0 ] ) ) {	// Static method.
 
-					return $callback[0] . ':: ' . $callback[1];
+					return $callback[ 0 ] . ':: ' . $callback[ 1 ];
 
-				} elseif ( is_object( $callback[0] ) ) {
+				} elseif ( is_object( $callback[ 0 ] ) ) {
 
-					return get_class( $callback[0] ) . '->' . $callback[1];
+					return get_class( $callback[ 0 ] ) . '->' . $callback[ 1 ];
 				}
 			}
 

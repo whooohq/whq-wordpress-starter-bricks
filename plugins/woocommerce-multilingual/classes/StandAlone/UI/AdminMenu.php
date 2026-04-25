@@ -3,6 +3,7 @@
 namespace WCML\StandAlone\UI;
 
 use WCML\Utilities\AdminPages;
+use WCML\Utilities\AdminUrl;
 use WCML_Admin_Menus;
 use WCML_Multi_Currency_UI;
 use WPML\Core\ISitePress;
@@ -35,23 +36,23 @@ class AdminMenu extends \WCML_Menu_Wrap_Base {
 		$current_tab = AdminPages::getTabToDisplay();
 
 		$model = [
-			'strings'             => [
-				'title'              => WCML_Admin_Menus::getWcmlLabel(),
+			'strings'       => [
+				'title' => WCML_Admin_Menus::getWcmlLabel(),
 			],
-			'is_standalone'       => true,
-			'menu'                => [
-				'multilingual'          => [
+			'is_standalone' => true,
+			'menu'          => [
+				AdminUrl::TAB_MULTILINGUAL => [
 					'title'  => __( 'Multilingual', 'woocommerce-multilingual' ),
-					'active' => 'multilingual' === $current_tab ? 'nav-tab-active' : '',
-					'url'    => admin_url( 'admin.php?page=wpml-wcml&tab=multilingual' ),
+					'active' => AdminUrl::TAB_MULTILINGUAL_STANDALONE === $current_tab ? 'nav-tab-active' : '',
+					'url'    => \WCML\Utilities\AdminUrl::getMultilingualTab(),
 				],
-				'multi_currency'    => [
+				'multi_currency'           => [
 					'name'   => __( 'Multicurrency', 'woocommerce-multilingual' ),
-					'active' => 'multi-currency' === $current_tab ? 'nav-tab-active' : '',
-					'url'    => admin_url( 'admin.php?page=wpml-wcml&tab=multi-currency' ),
+					'active' => AdminUrl::TAB_MULTILINGUAL_STANDALONE !== $current_tab ? 'nav-tab-active' : '',
+					'url'    => \WCML\Utilities\AdminUrl::getMultiCurrencyTab(),
 				],
 			],
-			'content'             => $this->get_current_menu_content( $current_tab ),
+			'content'       => $this->get_current_menu_content( $current_tab ),
 		];
 
 		return $model;
@@ -60,7 +61,7 @@ class AdminMenu extends \WCML_Menu_Wrap_Base {
 	protected function get_current_menu_content( $current_tab ) {
 		$content = '';
 		switch ( $current_tab ) {
-			case 'multilingual':
+			case AdminUrl::TAB_MULTILINGUAL_STANDALONE:
 				$inP       = Str::wrap( '<p>', '</p>' );
 				$inWrapper = Str::wrap( '<div class="wcml-banner">', '</div>' );
 
@@ -82,7 +83,7 @@ class AdminMenu extends \WCML_Menu_Wrap_Base {
 					$wrapLink(
 						/* translators: %1$s and %2$s are opening and closing HTML link tags */
 						esc_html__( 'You can still use the %1$smulticurrency features%2$s without buying anything.', 'woocommerce-multilingual' ),
-						admin_url( 'admin.php?page=wpml-wcml&tab=multi-currency' ),
+						\WCML\Utilities\AdminUrl::getMultiCurrencyTab(),
 						false
 					)
 				);
@@ -90,7 +91,7 @@ class AdminMenu extends \WCML_Menu_Wrap_Base {
 				$content = $inWrapper( $content );
 				break;
 
-			case 'multi-currency':
+			case AdminUrl::TAB_MULTICURRENCY:
 			default:
 				if ( current_user_can( 'wpml_operate_woocommerce_multilingual' ) ) {
 					$wcml_mc_ui = new WCML_Multi_Currency_UI( $this->woocommerce_wpml, $this->sitepress );

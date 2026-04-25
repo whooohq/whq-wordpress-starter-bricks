@@ -28,6 +28,7 @@ class WCML_Capabilities {
 		$role = get_role( 'shop_manager' );
 		if ( $role ) {
 			$role->add_cap( 'wpml_operate_woocommerce_multilingual' );
+			$role->add_cap( 'wpml_manage_taxonomy_translation' );
 		}
 
 		self::reload_capabilities();

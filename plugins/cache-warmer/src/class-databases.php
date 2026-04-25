@@ -243,8 +243,8 @@ final class DB {
         }
 
         // Generate a unique constraint name using a hash of the table prefix to ensure it's valid and unique.
-        $constraint_name_fk_list_id        = 'fk_' . md5( $table_prefix . 'warm_ups_list_id' );
-        $constraint_name_fk_user_agents_id = 'fk_' . md5( $table_prefix . 'user_agents_id' );
+        $constraint_name_fk_list_id        = 'fk_' . $table_prefix . 'warm_ups_list_id';
+        $constraint_name_fk_user_agents_id = 'fk_' . $table_prefix . 'user_agents_id';
 
         $migrations = [
             "
@@ -332,6 +332,16 @@ final class DB {
                 ALTER TABLE {$table_prefix}warm_ups_logs
                 ADD `canonical` TEXT DEFAULT ''
             ",
+            // Add external_warmer_results field.
+            "
+                ALTER TABLE `{$table_prefix}warm_ups_logs`
+                ADD `external_warmer_results` TEXT DEFAULT NULL
+            ",
+            // Add warmed at of 1 (for external interval warms).
+            "
+                INSERT IGNORE INTO {$table_prefix}warm_ups_list (warmed_at) VALUES ('" . External_Warmer::WARMUP_ID . "')
+            ",
+
         ];
 
         return $migrations;

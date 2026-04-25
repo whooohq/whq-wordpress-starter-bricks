@@ -39,14 +39,16 @@ final class AJAX {
             'get_warmup_log_content',
             'delete_all_logs',
             'delete_unscheduled_logs',
+            'delete_external_warmer_logs',
             'import_settings',
             'reset_settings',
             'get_debug_data',
             'insert_my_cookies',
+            'reschedule_intervals',
         ];
 
         foreach ( $admin_ajax_events as $ajax_event ) {
-            add_action( 'wp_ajax_cache_warmer_' . $ajax_event, [ $this, $ajax_event ] );
+            add_action( 'wp_ajax_cache_warmer_' . $ajax_event, [ $this, $ajax_event ], 10, 0 );
         }
     }
 
@@ -178,9 +180,98 @@ final class AJAX {
             Cache_Warmer::$options->set( 'setting-posts-warming-enqueue-interval', $posts_warming_enqueue_delay );
         }
 
-        if ( array_key_exists( 'externalWarmerLicenseKey', $_REQUEST ) ) {
-            $external_warmer_license_key = sanitize_text_field( wp_unslash( $_REQUEST['externalWarmerLicenseKey'] ) );
-            Cache_Warmer::$options->set( 'setting-external-warmer-license-key', $external_warmer_license_key );
+        if ( array_key_exists( 'externalWarmerSettings', $_REQUEST ) ) {
+            $external_warmer_settings = json_decode( wp_unslash( $_REQUEST['externalWarmerSettings'] ), true );
+
+            if ( $external_warmer_settings ) {
+                as_unschedule_all_actions( External_Warmer::INTERVAL_HOOK_NAME );
+
+                foreach ( $external_warmer_settings as $domain => $settings ) {
+
+                    // Update license key.
+
+                    $external_warmer_license_key_changed = false;
+
+                    $external_warmer_license_key_initial = get_option( 'cache-warmer-setting-external-warmer-license-key' . $domain );
+                    $external_warmer_license_key         = $settings['licenseKey'];
+
+                    if ( $external_warmer_license_key !== $external_warmer_license_key_initial ) {
+                        $external_warmer_license_key_changed = true;
+
+                        update_option( 'cache-warmer-setting-external-warmer-license-key' . $domain, $external_warmer_license_key );
+                    }
+
+                    // Make a server request to get the data.
+
+                    if ( $external_warmer_license_key_changed ) {
+                        if ( $external_warmer_license_key ) {
+                            $url = 'https://validate.cachewarmer.xyz';
+
+                            $query_params = [
+                                'domain' => $domain,
+                                'key'    => $external_warmer_license_key,
+                            ];
+
+                            $body = wp_json_encode( $query_params, true );
+
+                            $response = wp_remote_post(
+                                $url,
+                                [
+                                    'headers' => [
+                                        'Content-Type' => 'application/json',
+                                    ],
+                                    'body'    => $body,
+                                    'timeout' => 15,
+                                ]
+                            );
+
+                            update_option(
+                                'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-code' . $domain,
+                                wp_remote_retrieve_response_code( $response )
+                            );
+
+                            update_option(
+                                'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-body' . $domain,
+                                wp_remote_retrieve_body( $response )
+                            );
+
+                            // Reset the list of servers to use.
+                            delete_option(
+                                'cache-warmer-setting-external-warmer-servers-to-use' . $domain
+                            );
+                        } else {
+                            delete_option(
+                                'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-code' . $domain,
+                            );
+
+                            delete_option(
+                                'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-body' . $domain,
+                            );
+                        }
+                    }
+
+                    // Update interval.
+
+                    update_option(
+                        'cache-warmer-setting-external-warmer-interval' . $domain,
+                        max( (int) $settings['interval'], 0 )
+                    );
+
+                    // Update servers to use.
+
+                    if ( isset( $settings['serversToUse'] ) ) {
+                        update_option(
+                            'cache-warmer-setting-external-warmer-servers-to-use' . $domain,
+                            $settings['serversToUse']
+                        );
+                    } else {
+                        delete_option( 'cache-warmer-setting-external-warmer-servers-to-use' . $domain );
+                    }
+                }
+
+                // Reschedules external warmer intervals.
+                External_Warmer::reschedule_intervals();
+            }
         }
 
         if ( array_key_exists( 'addEntryPointSitesSitemaps', $_REQUEST ) ) {
@@ -191,6 +282,11 @@ final class AJAX {
         if ( array_key_exists( 'forHowManyDaysToKeepTheLogs', $_REQUEST ) ) {
             $for_how_many_days_to_keep_the_logs = sanitize_text_field( wp_unslash( $_REQUEST['forHowManyDaysToKeepTheLogs'] ) );
             Cache_Warmer::$options->set( 'setting-for-how-many-days-to-keep-the-logs', $for_how_many_days_to_keep_the_logs );
+        }
+
+        if ( array_key_exists( 'useExternalWarmerServersDuringTheWarming', $_REQUEST ) ) {
+            $use_external_warmer_servers_during_the_warming = sanitize_text_field( wp_unslash( $_REQUEST['useExternalWarmerServersDuringTheWarming'] ) );
+            Cache_Warmer::$options->set( 'setting-use-external-warmer-servers-during-the-warming', $use_external_warmer_servers_during_the_warming );
         }
 
         if ( array_key_exists( 'excludedPages', $_REQUEST ) ) {
@@ -209,14 +305,15 @@ final class AJAX {
     /**
      * Start warm up.
      *
+     * @param bool       $check_for_nonce         Whether to do nonce check.
      * @param bool       $start_for_interval      Whether to start the warm-up for the interval (without additional checks).
      * @param bool|array $warm_up_for_unscheduled Whether to start the unscheduled warm-up (e.g. on posts modification) -
      *                                            if so, then the value is array of URLs, and false otherwise.
      *
      * @throws Exception Exception.
      */
-    public static function start_warm_up( $start_for_interval = false, $warm_up_for_unscheduled = false ) {
-        if ( ! $start_for_interval ) {
+    public static function start_warm_up( $check_for_nonce = true, $start_for_interval = false, $warm_up_for_unscheduled = false ) {
+        if ( $check_for_nonce ) {
             /*
              * Nonce check.
              */
@@ -248,6 +345,7 @@ final class AJAX {
             $excluded_pages                       = array_filter( Cache_Warmer::$options->get( 'cache-warmer-setting-excluded-pages' ) );
             $excluded_pages_use_regex_match       = '1' === Cache_Warmer::$options->get( 'setting-excluded-pages-use-regex-match' );
             $exclude_pages_with_warmed_canonical  = '1' === Cache_Warmer::$options->get( 'setting-exclude-pages-with-warmed-canonical' );
+            $use_external_warmer                  = '1' === Cache_Warmer::$options->get( 'setting-use-external-warmer-servers-during-the-warming' );
 
             $failed_links_option_key = ! $warm_up_for_unscheduled ?
                 'cache-warmer-failed-to-retrieve-links' :
@@ -539,6 +637,9 @@ final class AJAX {
                         'excluded_pages_use_regex_match'  => $excluded_pages_use_regex_match,
                         'exclude_pages_with_warmed_canonical' => $exclude_pages_with_warmed_canonical,
                         'user_agents'                     => $user_agents,
+                        'visited_links'                   => [],
+                        'external_warmup_request_args'    => [],
+                        'use_external_warmer'             => $use_external_warmer,
                     ],
                 ]
             );
@@ -553,27 +654,59 @@ final class AJAX {
                     Debug::maybe_get_debug_array()
                 );
 
-                wp_send_json_success( $output ); // Debug data.
+                if ( $check_for_nonce ) {
+                    wp_send_json_success( $output ); // Debug data.
+                }
             }
         } elseif ( ! $start_for_interval ) {
-            wp_send_json_error( __( 'There is already an active warm-up... Please wait until it finishes.', 'cache-warmer' ) );
+            if ( $check_for_nonce ) {
+                wp_send_json_error( __( 'There is already an active warm-up... Please wait until it finishes.', 'cache-warmer' ) );
+            }
         }
     }
 
     /**
      * Stop warm up.
      *
+     * @param bool $check_for_nonce Whether to do nonce check.
+     *
      * @throws Exception Exception.
      */
-    public static function stop_warm_up() {
-        /*
-         * Nonce check.
-         */
-        check_ajax_referer( 'cache-warmer-menu', 'nonceToken' );
+    public static function stop_warm_up( $check_for_nonce = true ) {
+        if ( $check_for_nonce ) {
+            /*
+             * Nonce check.
+             */
+            check_ajax_referer( 'cache-warmer-menu', 'nonceToken' );
+        }
+
+        $data = Cache_Warmer::$options->get( 'cache-warmer-links-tree-leftovers' );
+
+        if ( ! isset( $data['meta'] ) ) {
+            return;
+        }
+
+        $meta = $data['meta'];
+
+        Cache_Warmer::$options->set( 'last-stopped-by-hand-warmup-id', $meta['start_date'] );
+
+        if (
+            isset( $meta['external_warmup_request_args'] ) &&
+            $meta['external_warmup_request_args'] &&
+            '0000-00-00 00:00:00' !== $meta['start_date'] // Not for unscheduled.
+        ) {
+            Cache_Warmer::$options->set( 'last-external-warmup-request-args-id', $meta['start_date'] );
+            Cache_Warmer::$options->set( 'last-success-warmup-external-warmup-request-args', $meta['external_warmup_request_args'] );
+        }
 
         Warm_Up::stop_current_warmup();
+
+        // Whether the last warmup was stopped by hand.
         Cache_Warmer::$options->set( 'cache-warmer-last-warmup-was-stopped-by-hand', true );
-        wp_send_json_success();
+
+        if ( $check_for_nonce ) {
+            wp_send_json_success();
+        }
     }
 
     /**
@@ -626,7 +759,7 @@ final class AJAX {
     }
 
     /**
-     * Gets the latest warm up log content.
+     * Deletes unscheduled logs.
      */
     public static function delete_unscheduled_logs() {
         /*
@@ -639,6 +772,26 @@ final class AJAX {
         $table_name = DB::get_tables_prefix() . 'warm_ups_list';
         $query      = "DELETE FROM $table_name WHERE warmed_at=0";
         $wpdb->query( $query ); // @codingStandardsIgnoreLine
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Deletes external warmer logs.
+     */
+    public static function delete_external_warmer_logs() {
+        /*
+         * Nonce check.
+         */
+        check_ajax_referer( 'cache-warmer-menu', 'nonceToken' );
+
+        global $wpdb;
+
+        $table_name = DB::get_tables_prefix() . 'warm_ups_list';
+        $query      = "DELETE FROM $table_name WHERE warmed_at='2000-01-01 00:00:00'";
+        $wpdb->query( $query ); // @codingStandardsIgnoreLine
+
+        update_option( 'cache-warmer-last-delete-external-warmer-logs', time() );
 
         wp_send_json_success();
     }
@@ -660,6 +813,15 @@ final class AJAX {
 
         if ( array_key_exists( 'logName', $_REQUEST ) ) {
             $log_name = sanitize_text_field( wp_unslash( $_REQUEST['logName'] ) );
+
+            if ( 'unscheduled' === $log_name ) {
+                $log_name = '0000-00-00 00:00:00';
+            } elseif ( 'external-warmer' === $log_name ) {
+                $log_name = '2000-01-01 00:00:00';
+            } elseif ( 'latest' === $log_name ) {
+                $log_name = Logging::get_latest_warmed_at();
+            }
+
             wp_send_json_success( [ 'content' => Logging::format_log_content_array_into_string( $log_name, Logging::get_log_content( $log_name, $page ), $page ) ] );
         }
 
@@ -708,13 +870,16 @@ final class AJAX {
         check_ajax_referer( 'cache-warmer-menu', 'nonceToken' );
 
         if ( array_key_exists( 'file', $_REQUEST ) ) {
-            $settings = Sanitize::sanitize_array( (array) json_decode( wp_unslash( $_REQUEST['file'] ), true ) ); // @codingStandardsIgnoreLine
+            $settings = Sanitize::sanitize_array( (array) json_decode( base64_decode( $_REQUEST['file'] ), true ) ); // @codingStandardsIgnoreLine
             foreach ( $settings as $option_name => $option_value ) {
                 // Some simple security check, so only the option that start from "cache-warmer-" could be updated.
                 if ( preg_match( '@^cache-warmer-setting-@', $option_name ) ) {
                     Cache_Warmer::$options->set( $option_name, $option_value );
                 }
             }
+
+            // Reschedules external warmer intervals.
+            External_Warmer::reschedule_intervals();
         }
 
         wp_send_json_success();
@@ -744,6 +909,9 @@ final class AJAX {
             }
         }
 
+        // Reschedules external warmer intervals.
+        External_Warmer::reschedule_intervals();
+
         wp_send_json_success();
     }
 
@@ -769,6 +937,20 @@ final class AJAX {
         }
 
         Cache_Warmer::$options->set( 'setting-cookies', array_merge( $cookies, $cookies_to_add ) );
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Reschedules intervals.
+     */
+    public function reschedule_intervals() {
+        /*
+         * Nonce check.
+         */
+        check_ajax_referer( 'cache-warmer-menu', 'nonceToken' );
+
+        Intervals_Scheduler::fix_missing_intervals();
 
         wp_send_json_success();
     }

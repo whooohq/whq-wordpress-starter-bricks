@@ -39,6 +39,7 @@ class Config {
 		return [
 			\WPML\Core\ISitePress::class,
 			\WPML_Notices::class,
+			\WCML_Dependencies::class,
 		];
 	}
 

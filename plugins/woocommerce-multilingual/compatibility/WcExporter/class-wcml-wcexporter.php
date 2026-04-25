@@ -24,37 +24,37 @@ class WCML_wcExporter implements \IWPML_Action {
 
 	public function add_hooks() {
 
-		add_filter( 'woo_ce_product_fields', array( $this, 'woo_ce_fields' ) );
-		add_filter( 'woo_ce_category_fields', array( $this, 'woo_ce_fields' ) );
-		add_filter( 'woo_ce_tag_fields', array( $this, 'woo_ce_fields' ) );
-		add_filter( 'woo_ce_order_fields', array( $this, 'woo_ce_order_fields' ) );
-		add_filter( 'woo_ce_product_item', array( $this, 'woo_ce_product_item' ), 10, 2 );
-		add_filter( 'woo_ce_category_item', array( $this, 'woo_ce_category_item' ), 10 );
-		add_filter( 'woo_ce_tags', array( $this, 'woo_ce_tags' ), 10 );
+		add_filter( 'woo_ce_product_fields', [ $this, 'woo_ce_fields' ] );
+		add_filter( 'woo_ce_category_fields', [ $this, 'woo_ce_fields' ] );
+		add_filter( 'woo_ce_tag_fields', [ $this, 'woo_ce_fields' ] );
+		add_filter( 'woo_ce_order_fields', [ $this, 'woo_ce_order_fields' ] );
+		add_filter( 'woo_ce_product_item', [ $this, 'woo_ce_product_item' ], 10, 2 );
+		add_filter( 'woo_ce_category_item', [ $this, 'woo_ce_category_item' ], 10 );
+		add_filter( 'woo_ce_tags', [ $this, 'woo_ce_tags' ], 10 );
 
 	}
 
 	public function woo_ce_fields( $fields ) {
-		$fields[] = array(
+		$fields[] = [
 			'name'    => 'language',
 			'label'   => __( 'Language', 'woo_ce' ),
 			'default' => 1
-		);
-		$fields[] = array(
+		];
+		$fields[] = [
 			'name'    => 'translation_of',
 			'label'   => __( 'Translation of', 'woo_ce' ),
 			'default' => 1
-		);
+		];
 
 		return $fields;
 	}
 
 	public function woo_ce_order_fields( $fields ) {
-		$fields[] = array(
+		$fields[] = [
 			'name'    => 'language',
 			'label'   => __( 'Language', 'woo_ce' ),
 			'default' => 1
-		);
+		];
 
 		return $fields;
 	}
@@ -70,7 +70,7 @@ class WCML_wcExporter implements \IWPML_Action {
 	public function woo_ce_category_item( $data ) {
 
 		$data->language       = $this->sitepress->get_language_for_element( $data->term_taxonomy_id, 'tax_product_cat' );
-		$data->translation_of = apply_filters( 'translate_object_id', $data->term_taxonomy_id, 'tax_product_cat', true, $this->sitepress->get_default_language() );
+		$data->translation_of = apply_filters( 'wpml_object_id', $data->term_taxonomy_id, 'tax_product_cat', true, $this->sitepress->get_default_language() );
 
 		return $data;
 	}
@@ -79,7 +79,7 @@ class WCML_wcExporter implements \IWPML_Action {
 
 		foreach ( $tags as $key => $tag ) {
 			$tags[ $key ]->language       = $this->sitepress->get_language_for_element( $tag->term_taxonomy_id, 'tax_product_tag' );
-			$tags[ $key ]->translation_of = apply_filters( 'translate_object_id', $tag->term_taxonomy_id, 'tax_product_tag', true, $this->sitepress->get_default_language() );
+			$tags[ $key ]->translation_of = apply_filters( 'wpml_object_id', $tag->term_taxonomy_id, 'tax_product_tag', true, $this->sitepress->get_default_language() );
 		}
 
 		return $tags;

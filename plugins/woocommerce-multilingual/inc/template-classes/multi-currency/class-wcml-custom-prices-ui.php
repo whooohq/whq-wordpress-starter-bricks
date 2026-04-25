@@ -29,7 +29,7 @@ class WCML_Custom_Prices_UI extends WCML_Templates_Factory {
 
 		$this->woocommerce_wpml            = $woocommerce_wpml;
 		$this->product_id                  = $product_id;
-		$this->is_variation                = get_post_type( $product_id ) == 'product_variation' ? true : false;
+		$this->is_variation                = get_post_type( $product_id ) == 'product_variation';
 		$this->custom_prices               = get_post_custom( $product_id );
 		$this->custom_prices_fields        = apply_filters( 'wcml_custom_prices_fields', [ '_regular_price', '_sale_price' ], $product_id );
 		$this->custom_prices_fields_labels = apply_filters(
@@ -60,7 +60,7 @@ class WCML_Custom_Prices_UI extends WCML_Templates_Factory {
 							'Multi-currency is enabled, but no secondary currencies have been set. %1$sAdd secondary currency%2$s.',
 							'woocommerce-multilingual'
 						),
-						'<a href="' . admin_url( 'admin.php?page=wpml-wcml&tab=multi-currency' ) . '">',
+						'<a href="' . \WCML\Utilities\AdminUrl::getMultiCurrencyTab() . '">',
 						'</a>'
 					),
 					'calc_auto'      => __( 'Calculate prices in other currencies automatically', 'woocommerce-multilingual' ),

@@ -6,6 +6,7 @@ use OTGS\Installer\AdminNotices\Notices\ApiConnection;
 use OTGS\Installer\AdminNotices\Notices\SiteKey;
 use OTGS\Installer\AdminNotices\Notices\Hooks;
 use OTGS\Installer\AdminNotices\Notices\Recommendation;
+use OTGS\Installer\Subscription\SubscriptionManagerFactory;
 use OTGS\Installer\Upgrade\AutoUpgrade;
 use OTGS\Installer\Upgrade\InstallerPlugins;
 
@@ -269,19 +270,14 @@ class OTGS_Installer_Factory {
 			new OTGS_Installer_Logger_Storage( new OTGS_Installer_Log_Factory() )
 		);
 
-		$fetch_subscription = new OTGS_Installer_Fetch_Subscription(
-			new OTGS_Installer_Source_Factory(),
-			$this->get_plugin_finder(),
-			$this->get_repositories(),
-			$logger,
-			new OTGS_Installer_Log_Factory()
-		);
+		$removeService = $this->create_site_key_remove_service();
 
 		return new OTGS_Installer_Site_Key_Ajax(
-			$fetch_subscription,
 			$logger,
 			$this->get_repositories(),
-			new OTGS_Installer_Subscription_Factory()
+			new OTGS_Installer_Subscription_Factory(),
+			new SubscriptionManagerFactory($this->installer->get_settings()),
+			$removeService
 		);
 	}
 
@@ -290,6 +286,16 @@ class OTGS_Installer_Factory {
 		$site_key_ajax_handler->add_hooks();
 
 		return $this;
+	}
+
+	/**
+	 * @return OTGS_Installer_Site_Key_Remove_Service
+	 */
+	private function create_site_key_remove_service() {
+		return new OTGS_Installer_Site_Key_Remove_Service(
+			$this->get_repositories(),
+			new OTGS_Installer_Site_Key_Remove_Request()
+		);
 	}
 
 	public function load_installer_support_hooks() {
@@ -323,7 +329,7 @@ class OTGS_Installer_Factory {
 	 */
 	private function get_repositories() {
 		if ( ! $this->repositories ) {
-			$repositories_factory = new OTGS_Installer_Repositories_Factory( $this->get_installer() );
+			$repositories_factory = new OTGS_Installer_Repositories_Factory();
 			$this->repositories = $repositories_factory->create( $this->installer );
 		}
 
@@ -367,6 +373,22 @@ class OTGS_Installer_Factory {
 		);
 
 		$autoUpgrade->addHooks();
+		return $this;
+	}
+
+	/**
+	 * @return OTGS_Installer_Cloned_Sites_Handler
+	 */
+	private function create_cloned_sites_handler() {
+		return new OTGS_Installer_Cloned_Sites_Handler(
+			$this->create_site_key_remove_service()
+		);
+	}
+
+	public function load_cloned_sites_handler() {
+		$cloned_sites_handler = $this->create_cloned_sites_handler();
+		$cloned_sites_handler->add_hooks();
+
 		return $this;
 	}
 

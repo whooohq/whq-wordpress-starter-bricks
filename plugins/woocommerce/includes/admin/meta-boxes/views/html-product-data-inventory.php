@@ -10,13 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div id="inventory_product_data" class="panel woocommerce_options_panel hidden">
-	<div class="inline notice woocommerce-message show_if_variable">
-		<p>
-			<?php echo esc_html_e( 'Settings below apply to all variations without manual stock management enabled.', 'woocommerce' ); ?> <a target="_blank" href="https://woocommerce.com/document/variable-product/"><?php esc_html_e( 'Learn more', 'woocommerce' ); ?></a>
-		</p>
-	</div>
 	<div class="options_group">
 		<?php
+		$info_img_url = WC_ADMIN_IMAGES_FOLDER_URL . '/icons/info.svg';
+
 		if ( wc_product_sku_enabled() ) {
 			woocommerce_wp_text_input(
 				array(
@@ -30,6 +27,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 		}
 
 		do_action( 'woocommerce_product_options_sku' );
+
+		woocommerce_wp_text_input(
+			array(
+				'id'          => '_global_unique_id',
+				'value'       => $product_object->get_global_unique_id( 'edit' ),
+				// translators: %1$s GTIN %2$s UPC %3$s EAN %4$s ISBN.
+				'label'       => sprintf( __( '%1$s, %2$s, %3$s, or %4$s', 'woocommerce' ), '<abbr title="' . esc_attr__( 'Global Trade Item Number', 'woocommerce' ) . '">' . esc_html__( 'GTIN', 'woocommerce' ) . '</abbr>', '<abbr title="' . esc_attr__( 'Universal Product Code', 'woocommerce' ) . '">' . esc_html__( 'UPC', 'woocommerce' ) . '</abbr>', '<abbr title="' . esc_attr__( 'European Article Number', 'woocommerce' ) . '">' . esc_html__( 'EAN', 'woocommerce' ) . '</abbr>', '<abbr title="' . esc_attr__( 'International Standard Book Number', 'woocommerce' ) . '">' . esc_html__( 'ISBN', 'woocommerce' ) . '</abbr>' ),
+				'desc_tip'    => true,
+				'description' => __( 'Enter a barcode or any other identifier unique to this product. It can help you list this product on other channels or marketplaces.', 'woocommerce' ),
+			)
+		);
+
+		do_action( 'woocommerce_product_options_global_unique_id' );
+
+		?>
+		<div class="inline notice woocommerce-message show_if_variable">
+			<img class="info-icon" src="<?php echo esc_url( $info_img_url ); ?>" />
+			<p>
+				<?php esc_html_e( 'Settings below apply to all variations without manual stock management enabled. ', 'woocommerce' ); ?> <a target="_blank" href="https://woocommerce.com/document/variable-product/"><?php esc_html_e( 'Learn more', 'woocommerce' ); ?></a>
+			</p>
+		</div>
+		<?php
 
 		if ( 'yes' === get_option( 'woocommerce_manage_stock' ) ) {
 
@@ -47,10 +66,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			echo '<div class="stock_fields show_if_simple show_if_variable">';
 
+			/**
+			 * Filters product default stock amount.
+			 *
+			 * @since 10.6.0
+			 *
+			 * @param int $default_stock_amount Default stock amount. Default is 1.
+			 */
+			$default_stock_amount = apply_filters( 'woocommerce_product_stock_default_amount', 1 );
+
 			woocommerce_wp_text_input(
 				array(
 					'id'                => '_stock',
-					'value'             => wc_stock_amount( $product_object->get_stock_quantity( 'edit' ) ?? 1 ),
+					'value'             => wc_stock_amount( $product_object->get_stock_quantity( 'edit' ) ?? $default_stock_amount ),
 					'label'             => __( 'Quantity', 'woocommerce' ),
 					'desc_tip'          => true,
 					'description'       => __( 'Stock quantity. If this is a variable product this value will be used to control stock for all variations, unless you define stock at variation level.', 'woocommerce' ),
@@ -65,12 +93,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 			echo '<input type="hidden" name="_original_stock" value="' . esc_attr( wc_stock_amount( $product_object->get_stock_quantity( 'edit' ) ) ) . '" />';
 
 			$backorder_args = array(
-				'id'          => '_backorders',
-				'value'       => $product_object->get_backorders( 'edit' ),
-				'label'       => __( 'Allow backorders?', 'woocommerce' ),
-				'options'     => wc_get_product_backorder_options(),
-				'desc_tip'    => true,
-				'description' => __( 'If managing stock, this controls whether or not backorders are allowed. If enabled, stock quantity can go below 0.', 'woocommerce' ),
+				'id'      => '_backorders',
+				'value'   => $product_object->get_backorders( 'edit' ),
+				'label'   => __( 'Allow backorders?', 'woocommerce' ),
+				'options' => wc_get_product_backorder_options(),
 			);
 
 			/**

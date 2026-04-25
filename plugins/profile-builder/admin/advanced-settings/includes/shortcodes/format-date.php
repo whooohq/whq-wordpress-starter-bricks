@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_shortcode( 'wppb-format-date', 'wppb_toolbox_format_date_handler' );
 function wppb_toolbox_format_date_handler( $atts ){

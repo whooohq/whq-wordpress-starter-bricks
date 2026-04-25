@@ -99,6 +99,7 @@ jQuery(document).ready(function( $ ) {
 				if (empty_libs.length > 0) {
 					const data = {
 						action: 'piotnetforms_get_json_file',
+                        nonce: piotnetforms_editor_nonce_obj.nonce,
 						libs: empty_libs
 					}
 					$.post(ajaxurl, data, function (response) {
@@ -328,7 +329,6 @@ jQuery(document).ready(function( $ ) {
 				const $els = $('[data-piotnetforms-template]');
 				$els.each(function(){
 					const template_id = $(this).attr("id");
-					console.log($(this).html().replace('<!--', '').replace('-->', ''));
 					const $template = _.template($(this).html().replace('<!--', '').replace('-->', ''));
 					pb.set_template(template_id, $template);
 				});
@@ -703,6 +703,7 @@ jQuery(document).ready(function( $ ) {
 							action: 'piotnetforms_widget_preview',
 							function: 'widget_edit',
 							widget_id: widget_id,
+                            nonce: piotnetforms_editor_nonce_obj.nonce,
 							widget_settings: widgetSettings['fields'],
 							widget_information: widgetInformation,
 						};
@@ -1751,6 +1752,7 @@ jQuery(document).ready(function( $ ) {
 						action: 'piotnetforms_widget_preview',
 						function: 'widget_init',
 						widget_id: widget_id,
+                        nonce: piotnetforms_editor_nonce_obj.nonce,
 						widget_data: widget_data,
 					};
 					$.post(ajaxurl, ajax_data, function(response) {
@@ -1990,6 +1992,7 @@ jQuery(document).ready(function( $ ) {
 			const data = {
 				'action': 'piotnetforms_save',
 				'post_id': post_id,
+                'nonce': piotnetforms_editor_nonce_obj.nonce,
 				'piotnet-widgets-css': total_css,
 				'piotnetforms_data': JSON.stringify(piotnetforms_data)
 			};
@@ -2030,53 +2033,6 @@ jQuery(document).ready(function( $ ) {
 				const repeaterId = $controls_section_el.find('[name="piotnetforms_repeater_id"]').val();
 				$controls_section_el.find('.piotnetforms-repeater-shortcode').val('[repeater id="' + repeaterId + '"]');
 			}
-		});
-
-		$(document).on('click','[data-piotnetforms-campaign-get-data-list]', function() {
-			const $parent = $(this).closest('#elementor-controls'); // FIXME elementor-controls???
-			const $results = $parent.find('[data-piotnetforms-campaign-get-data-list-results]');
-			const campaign = $parent.find('[data-setting="activecampaign_api_key_source"]').val();
-			let campaign_url = false;
-			let campaign_key = false;
-			if(campaign === 'custom'){
-				campaign_url = $parent.find( '[data-setting="activecampaign_api_url"]' ).val();
-				campaign_key = $parent.find( '[data-setting="activecampaign_api_key"]' ).val();
-			}
-			const data = {
-				'action': 'piotnetforms_campaign_select_list',
-				'campaign_url': campaign_url,
-				'campaign_key': campaign_key,
-			};
-			$.post(ajaxurl, data, function(response) {
-				if(response){
-					$results.html(response);
-					$parent.find('[data-setting="activecampaign_list"]').change();
-				}
-			});
-		});
-
-		$(document).on('keyup, change','[data-setting="activecampaign_list"]', function() {
-			const $parent = $(this).closest('#elementor-controls'); // FIXME elementor-controls???
-			const campaign = $parent.find('[data-setting="activecampaign_api_key_source"]').val();
-			const listId = $(this).val();
-
-			let campaign_url = false;
-			let campaign_key = false;
-	 		if(campaign === 'custom'){
-				campaign_url = $parent.find( '[data-setting="activecampaign_api_url"]' ).val();
-				campaign_key = $parent.find( '[data-setting="activecampaign_api_key"]' ).val();
-			}
-			const data = {
-				'action': 'piotnetforms_campaign_fields',
-				'campaign_url': campaign_url,
-				'campaign_key': campaign_key,
-				'list_id': listId
-			};
-			$.post(ajaxurl, data, function(response) {
-				if(response){
-					$parent.find('[data-piotnetforms-campaign-get-fields]').html(response);
-				}
-			});
 		});
 
 	    $(document).on('click', '[data-piotnet-tab-heading]', function(){

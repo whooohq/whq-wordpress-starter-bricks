@@ -1,6 +1,7 @@
 <?php
-
-if (!defined('UPDRAFTCENTRAL_CLIENT_DIR')) die('No access.');
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.file_system_operations_fputs, WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable, WordPress.WP.AlternativeFunctions.file_system_operations_chown, WordPress.WP.AlternativeFunctions.file_system_operations_chgrp, WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
+// phpcs:disable WordPress.WP.AlternativeFunctions.rename_rename -- rename() usage is intentional and safe within this context.
+if (!defined('ABSPATH')) die('No direct access allowed');
 
 /**
  * - A container for all the RPC commands implemented. Commands map exactly onto method names (and hence this class should not implement anything else, beyond the constructor, and private methods)
@@ -98,7 +99,7 @@ abstract class UpdraftCentral_Commands {
 		$request_filesystem_credentials = ('direct' != $filesystem_method && !$filesystem_credentials_are_stored);
 
 		// Do we need to execute a backup process before installing/managing items
-		$automatic_backups = (class_exists('UpdraftPlus_Options') && class_exists('UpdraftPlus_Addon_Autobackup') && UpdraftPlus_Options::get_updraft_option('updraft_autobackup_default', true)) ? true : false;
+		$automatic_backups = (class_exists('UpdraftPlus_Options') && class_exists('UpdraftPlus_Addon_Autobackup') && UpdraftPlus_Options::get_updraft_option('updraft_autobackup_default')) ? true : false;
 		
 		return array(
 			'request_filesystem_credentials' => $request_filesystem_credentials,
@@ -204,11 +205,11 @@ abstract class UpdraftCentral_Commands {
 		}
 
 		// Save uploaded file
-		$filename = basename($params['filename']);
+		$filename = basename($params['filename']).md5(get_home_url());
 		$is_chunked = false;
 
 		if (isset($params['chunks']) && 1 < (int) $params['chunks']) {
-			$filename = basename($params['filename']).'.part';
+			$filename .= '.part';
 			$is_chunked = true;
 		}
 
@@ -265,16 +266,17 @@ abstract class UpdraftCentral_Commands {
 
 				// WP < 3.7
 				if (!class_exists('Automatic_Upgrader_Skin')) include_once(UPDRAFTCENTRAL_CLIENT_DIR.'/classes/class-automatic-upgrader-skin.php');
+				require_once(UPDRAFTCENTRAL_CLIENT_DIR.'/classes/class-updraftcentral-wp-upgrader.php');
 
 				$skin = new Automatic_Upgrader_Skin();
-				$upgrader = ('plugin' === $type) ? new Plugin_Upgrader($skin) : new Theme_Upgrader($skin);
+				$upgrader = ('plugin' === $type) ? new UpdraftCentral_Plugin_Upgrader($skin) : new UpdraftCentral_Theme_Upgrader($skin);
 
 				$install_result = $upgrader->install($zip_filepath);
 				remove_filter('upgrader_post_install', array($this, 'get_install_data'), 10, 3);
 
 				// Remove zip file on success and on error (cleanup)
 				if ($install_result || is_null($install_result) || is_wp_error($install_result)) {
-					@unlink($zip_filepath);// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the function.
+					@unlink($zip_filepath);// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise if the file doesn't exist.
 				}
 
 				if (false === $install_result || is_wp_error($install_result)) {

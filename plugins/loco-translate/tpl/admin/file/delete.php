@@ -6,7 +6,7 @@ $this->extend('../layout');
 ?> 
 
     <form action="" method="post" enctype="application/x-www-form-urlencoded" id="loco-del">
-        <div class="notice inline notice-danger">
+        <div class="panel panel-danger">
             <h3>
                 <span class="has-icon icon-trash"> </span>
                 <span><?php esc_html_e('Confirm delete','loco-translate')?></span>
@@ -27,7 +27,7 @@ $this->extend('../layout');
             </p><?php
             endif?> 
             <p class="submit">
-                <button type="submit" class="button button-danger" disabled><?php esc_html_e('Delete Permanently','default')?></button>
+                <button type="submit" class="button button-danger" disabled><?php esc_html_e('Delete Permanently','loco-translate')?></button>
             </p>
         </div>
         <?php

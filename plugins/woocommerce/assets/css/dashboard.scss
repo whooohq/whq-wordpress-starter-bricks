@@ -48,6 +48,10 @@ ul.woocommerce_stats {
 
 #woocommerce_dashboard_status {
 
+	.wc-status-widget-loading {
+		padding: 0 10px;
+	}
+
 	.inside {
 		padding: 0;
 		margin: 0;
@@ -74,13 +78,11 @@ ul.woocommerce_stats {
 			box-sizing: border-box;
 			margin: 0;
 			border-top: 1px solid #ececec;
-			color: #aaa;
+			color: $subtext;
 
 			a {
 				display: block;
-				color: #aaa;
 				padding: 9px 12px;
-				transition: all ease 0.5s;
 				position: relative;
 				font-size: 12px;
 
@@ -101,16 +103,6 @@ ul.woocommerce_stats {
 					line-height: 1.2em;
 					font-weight: normal;
 					display: block;
-					color: #21759b;
-				}
-
-				&:hover {
-					color: #2ea2cc;
-
-					&::before,
-					strong {
-						color: #2ea2cc !important;
-					}
 				}
 
 				&::before {
@@ -246,7 +238,7 @@ ul.woocommerce_stats {
 			left: 0;
 			letter-spacing: 0.1em;
 			letter-spacing: 0\9; // IE8 & below hack ;-(
-			color: #9c5d90;
+			color: var(--wc-primary);
 		}
 	}
 }

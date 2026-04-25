@@ -107,6 +107,7 @@ function wppb_populate_manage_fields(){
         // $manage_field_types['optgroups']['standard']['options'][] = 'Radio';
         $manage_field_types['optgroups']['standard']['options'][] = 'HTML';
         $manage_field_types['optgroups']['standard']['options'][] = 'Upload';
+        $manage_field_types['optgroups']['standard']['options'][] = 'International Telephone Input';
         // $manage_field_types['optgroups']['standard']['options'][] = 'Avatar';
 
         $manage_field_types['optgroups']['advanced']['options'][] = 'Phone';
@@ -114,12 +115,14 @@ function wppb_populate_manage_fields(){
         $manage_field_types['optgroups']['advanced']['options'][] = 'Select (Timezone)';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Select (Currency)';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Select (CPT)';
+        $manage_field_types['optgroups']['advanced']['options'][] = 'Select (Taxonomy)';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Checkbox (Terms and Conditions)';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Datepicker';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Timepicker';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Colorpicker';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Validation';
         $manage_field_types['optgroups']['advanced']['options'][] = 'Map';
+        $manage_field_types['optgroups']['advanced']['options'][] = 'Additional Map';
 
 		$manage_field_types['optgroups']['other']['options'][] = 'Email';
 		$manage_field_types['optgroups']['other']['options'][] = 'URL';
@@ -133,8 +136,13 @@ function wppb_populate_manage_fields(){
 
     $manage_field_types['optgroups']['other']['options'][] = 'Email Confirmation';
 
-    /* added recaptcha and user role field since version 2.6.2 */
+    /* added recaptcha field since version 2.6.2 */
     $manage_field_types['optgroups']['advanced']['options'][] = 'reCAPTCHA';
+
+    /* added turnstile field since version 3.15. */
+    $manage_field_types['optgroups']['advanced']['options'][] = 'Turnstile';
+
+    /* added user role field since version 2.6.2 */
     $manage_field_types['optgroups']['advanced']['options'][] = 'Select (User Role)';
 
 
@@ -151,18 +159,21 @@ function wppb_populate_manage_fields(){
         $manage_field_types['optgroups']['standard']['options'][] = array( 'field_name' => 'Select (Multiple)', 'disabled' => true );
         $manage_field_types['optgroups']['standard']['options'][] = array( 'field_name' => 'HTML', 'disabled' => true );
         $manage_field_types['optgroups']['standard']['options'][] = array( 'field_name' => 'Upload', 'disabled' => true );
+        $manage_field_types['optgroups']['standard']['options'][] = array( 'field_name' => 'International Telephone Input', 'disabled' => true );
 
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Phone', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Select (Country)', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Select (Timezone)', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Select (Currency)', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Select (CPT)', 'disabled' => true );
+        $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Select (Taxonomy)', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Checkbox (Terms and Conditions)', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Datepicker', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Timepicker', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Colorpicker', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Validation', 'disabled' => true );
         $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Map', 'disabled' => true );
+        $manage_field_types['optgroups']['advanced']['options'][] = array( 'field_name' => 'Additional Map', 'disabled' => true );
 
 		$manage_field_types['optgroups']['other']['options'][] = array( 'field_name' => 'WooCommerce Customer Billing Address', 'disabled' => true );
 		$manage_field_types['optgroups']['other']['options'][] = array( 'field_name' => 'WooCommerce Customer Shipping Address', 'disabled' => true );
@@ -180,7 +191,7 @@ function wppb_populate_manage_fields(){
 	// Free to Pro call to action on Manage Fields page
 	$field_description = __('Choose one of the supported field types','profile-builder');
 	if( PROFILE_BUILDER == 'Profile Builder Free' ) {
-		$field_description .= sprintf( __('. Extra Field Types are available in <a href="%s">Basic or PRO versions</a>.' , 'profile-builder'), esc_url( 'https://www.cozmoslabs.com/wordpress-profile-builder/?utm_source=wpbackend&utm_medium=clientsite&utm_content=manage-fields-link&utm_campaign=PBFree' ) );
+		$field_description .= sprintf( __('. Extra Field Types are available in <a href="%s">Basic or PRO versions</a>.' , 'profile-builder'), esc_url( 'https://www.cozmoslabs.com/wordpress-profile-builder/?utm_source=pb-form-fields&utm_medium=client-site&utm_campaign=pb-extra-fields#pricing' ) );
 	}
 
     //user roles
@@ -209,8 +220,28 @@ function wppb_populate_manage_fields(){
     }
 
 	//cpt select
-	$post_types = get_post_types( array( 'public'   => true ), 'names' );
+	$post_types_objects = get_post_types( array( 'public'   => true ), 'objects' );
+	$post_types = array();
 
+	if ( !empty( $post_types_objects ) ) {
+		// Loop through the post types objects and extract the labels
+		foreach ( $post_types_objects as $types ) {
+			if ( isset( $types->label ) )
+				array_push( $post_types, '%' . wppb_prepare_wck_labels( $types->label ) . '%' . $types->name );
+		}
+	}
+
+    //taxonomy select
+    $taxonomies_objects = get_taxonomies( array( 'public'   => true ), 'objects' );
+    $taxonomies = array();
+
+	if ( !empty( $taxonomies_objects ) ) {
+		// Loop through the taxonomies objects and extract the labels
+		foreach ( $taxonomies_objects as $taxonomy ) {
+			if ( isset( $taxonomy->label ) )
+                array_push( $taxonomies, '%' . wppb_prepare_wck_labels( $taxonomy->label ) . '%' . $taxonomy->name );
+		}
+	}
 
 	if( apply_filters( 'wppb_update_field_meta_key_in_db', false ) ) {
 		$meta_key_description = __( 'Use this in conjunction with WordPress functions to display the value in the page of your choosing<br/>Auto-completed but in some cases editable (in which case it must be unique)<br/>Changing this might take long in case of a very big user-count', 'profile-builder' );
@@ -240,15 +271,22 @@ function wppb_populate_manage_fields(){
         array( 'type' => 'checkbox', 'slug' => 'simple-upload', 'title' => __( 'Use Simple Upload', 'profile-builder' ), 'options' => array( '%'.__('Yes','profile-builder').'%'.'yes' ), 'description' => __( 'Use a simple upload field instead of the WordPress upload', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'allowed-upload-extensions', 'title' => __( 'Allowed Upload Extensions', 'profile-builder' ), 'default' => '.*', 'description' => __( 'Specify the extension(s) you want to limit to upload<br/>Example: .ext1,.ext2,.ext3<br/>If not specified, defaults to all WordPress allowed file extensions (.*)', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'avatar-size', 'title' => __( 'Avatar Size', 'profile-builder' ), 'default' => 100, 'description' => __( "Enter a value (between 20 and 200) for the size of the 'Avatar'<br/>If not specified, defaults to 100", 'profile-builder' ) ),
+        array( 'type' => 'text', 'slug' => 'max-file-size', 'title' => __( 'Maximum File Size (MB)', 'profile-builder' ), 'description' => __( 'Specify the maximum file size allowed for upload (in MB)<br/>If not specified, defaults to the server maximum upload size', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'date-format', 'title' => __( 'Date-format', 'profile-builder' ), 'default' => 'mm/dd/yy', 'description' => __( 'Specify the format of the date when using Datepicker<br/>Valid options: mm/dd/yy, mm/yy/dd, dd/yy/mm, dd/mm/yy, yy/dd/mm, yy/mm/dd, mm-dd-yy, yy-mm-dd, D, dd M yy, D, d M y, DD, dd-M-y, D, d M yy, mm/yy, mm/dd, dd/mm, @<br/>If not specified, defaults to mm/dd/yy<br/>ATTENTION: if you plan to use this field for sorting, please make sure to use year first, then month, and day last.', 'profile-builder' ) ),
         array( 'type' => 'textarea', 'slug' => 'terms-of-agreement', 'title' => __( 'Terms of Agreement', 'profile-builder' ), 'description' => __( 'Enter a detailed description of the terms of agreement for the user to read.<br/>Links can be inserted by using standard HTML syntax: &lt;a href="custom_url"&gt;custom_text&lt;/a&gt;', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'options', 'title' => __( 'Options', 'profile-builder' ), 'description' => __( "Enter a comma separated list of values<br/>This can be anything, as it is hidden from the user, but should not contain special characters or apostrophes", 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'labels', 'title' => __( 'Labels', 'profile-builder' ), 'description' => __( "Enter a comma separated list of labels<br/>Visible for the user", 'profile-builder' ) ),
-        array( 'type' => 'select', 'slug' => 'recaptcha-type', 'title' => __( 'reCAPTCHA Type', 'profile-builder' ), 'options' => array('%reCAPTCHA V2%v2', '%Invisible reCAPTCHA%invisible'), 'default' => 'v2', 'description' => __( 'Choose the <a href="https://developers.google.com/recaptcha/docs/versions" target="_blank">type of reCAPTCHA</a> you wish to add to this site.<br/>Please note that the Invisible reCAPTCHA is a type of reCAPTCHA v2.', 'profile-builder' ) ),
+        array( 'type' => 'select', 'slug' => 'recaptcha-type', 'title' => __( 'reCAPTCHA Type', 'profile-builder' ), 'options' => array('%reCAPTCHA V2 Checkbox%v2', '%reCAPTCHA V2 Invisible%invisible', '%reCAPTCHA V3%v3'), 'default' => 'v2', 'description' => __( 'Choose the <a href="https://developers.google.com/recaptcha/docs/versions" target="_blank">type of reCAPTCHA</a> you wish to add to this site.<br/>Please note that the Invisible reCAPTCHA is a type of reCAPTCHA v2.', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'public-key', 'title' => __( 'Site Key', 'profile-builder' ), 'description' => __( 'The site key from Google, <a href="https://www.google.com/recaptcha/admin/create" target="_blank">https://www.google.com/recaptcha/admin/create</a>', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'private-key', 'title' => __( 'Secret Key', 'profile-builder' ), 'description' => __( 'The secret key from Google, <a href="https://www.google.com/recaptcha/admin/create" target="_blank">https://www.google.com/recaptcha/admin/create</a>', 'profile-builder' ) ),
+        array( 'type' => 'text', 'slug' => 'score-threshold', 'title' => __( 'Score Threshold', 'profile-builder' ), 'default' => 0.5, 'description' => __( 'The required score threshold: 1.0 is very likely a good interaction, 0.0 is very likely a bot<br/>If not specified, defaults to 0.5', 'profile-builder' ) ),
         array( 'type' => 'checkbox', 'slug' => 'captcha-pb-forms', 'title' => __( 'Display on PB forms', 'profile-builder' ), 'options' => array( '%'.__('PB Login','profile-builder').'%'.'pb_login', '%'.__('PB Register','profile-builder').'%'.'pb_register', '%'.__('PB Recover Password','profile-builder').'%'.'pb_recover_password' ), 'default' => 'pb_register', 'description' => __( "Select on which Profile Builder forms to display reCAPTCHA", 'profile-builder' ) ),
         array( 'type' => 'checkbox', 'slug' => 'captcha-wp-forms', 'title' => __( 'Display on default WP forms', 'profile-builder' ), 'options' => array( '%'.__('Default WP Login', 'profile-builder').'%'.'default_wp_login', '%'.__('Default WP Register', 'profile-builder').'%'.'default_wp_register', '%'.__('Default WP Recover Password', 'profile-builder').'%'.'default_wp_recover_password'), 'default' => 'default_wp_register', 'description' => __( "Select on which default WP forms to display reCAPTCHA", 'profile-builder' ) ),
+        array( 'type' => 'select', 'slug' => 'theme', 'title' => __( 'Turnstile Theme', 'profile-builder' ), 'options' => array('%Auto%auto', '%Light%light', '%Dark%dark'), 'default' => 'auto', 'description' => __( 'Choose the theme for the Turnstile widget. The Auto option conforms to the user system preferences.', 'profile-builder' ) ),
+        array( 'type' => 'text', 'slug' => 'turnstile-site-key', 'title' => __( 'Site Key', 'profile-builder' ), 'description' => __( 'The site key from <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">Cloudflare</a>', 'profile-builder' ) ),
+        array( 'type' => 'text', 'slug' => 'turnstile-secret-key', 'title' => __( 'Secret Key', 'profile-builder' ), 'description' => __( 'The secret key from <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">Cloudflare</a>', 'profile-builder' ) ),
+        array( 'type' => 'checkbox', 'slug' => 'turnstile-pb-forms', 'title' => __( 'Display on PB forms', 'profile-builder' ), 'options' => array( '%'.__('PB Login','profile-builder').'%'.'pb_login', '%'.__('PB Register','profile-builder').'%'.'pb_register', '%'.__('PB Recover Password','profile-builder').'%'.'pb_recover_password' ), 'default' => 'pb_register', 'description' => __( "Select on which Profile Builder forms to display Turnstile", 'profile-builder' ) ),
+        array( 'type' => 'checkbox', 'slug' => 'turnstile-wp-forms', 'title' => __( 'Display on default WP forms', 'profile-builder' ), 'options' => array( '%'.__('Default WP Login', 'profile-builder').'%'.'default_wp_login', '%'.__('Default WP Register', 'profile-builder').'%'.'default_wp_register', '%'.__('Default WP Recover Password', 'profile-builder').'%'.'default_wp_recover_password'), 'default' => 'default_wp_register', 'description' => __( "Select on which default WP forms to display Turnstile", 'profile-builder' ) ),
         array( 'type' => 'checkbox', 'slug' => 'user-roles', 'title' => __( 'User Roles', 'profile-builder' ), 'options' => $user_roles, 'description' => __( "Select which user roles to show to the user ( drag and drop to re-order )", 'profile-builder' ) ),
         array( 'type' => 'checkbox', 'slug' => 'user-roles-on-edit-profile', 'title' => __( 'Display on Edit Profile', 'profile-builder' ), 'options' => array('%Yes%yes'), 'description' => __( "Check if you want the select user role field to appear on Edit Profile forms", 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'user-roles-sort-order', 'title' => __( 'User Roles Order', 'profile-builder' ), 'description' => __( "Save the user role order from the user roles checkboxes", 'profile-builder' ) ),
@@ -260,6 +298,7 @@ function wppb_populate_manage_fields(){
         array( 'type' => 'select', 'slug' => 'default-option-currency', 'title' => __( 'Default Option', 'profile-builder' ), 'options' => ( isset( $default_currency_options ) ) ? $default_currency_options : '', 'description' => __( "Default option of the field", 'profile-builder' ) ),
         array( 'type' => 'select', 'slug' => 'show-currency-symbol', 'title' => __( 'Show Currency Symbol', 'profile-builder' ), 'options' => array( 'No', 'Yes' ), 'default' => 'No', 'description' => __( 'Whether the currency symbol should be displayed after the currency name in the select option.', 'profile-builder' ) ),
         array( 'type' => 'select', 'slug' => 'cpt', 'title' => __( 'Show Post Type', 'profile-builder' ), 'options' => $post_types, 'default' => 'post', 'description' => __( 'Posts from what post type will be displayed in the select.', 'profile-builder' ) ),
+        array( 'type' => 'select', 'slug' => 'taxonomy', 'title' => __( 'Show Taxonomy Term', 'profile-builder' ), 'options' => $taxonomies, 'default' => 'category', 'description' => __( 'Terms from taxonomies', 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'validation-possible-values', 'title' => __( 'Allowable Values', 'profile-builder' ), 'description' => __( "Enter a comma separated list of possible values. Upon registration if the value provided by the user does not match one of these values, the user will not be registered.", 'profile-builder' ) ),
         array( 'type' => 'text', 'slug' => 'custom-error-message', 'title' => __( 'Error Message', 'profile-builder' ), 'description' => __( "Set a custom error message that will be displayed to the user.", 'profile-builder' ) ),
         array( 'type' => 'select', 'slug' => 'time-format', 'title' => __( 'Time Format', 'profile-builder' ), 'options' => array( '%12 Hours%12', '%24 Hours%24' ), 'description' => __( 'Specify the time format.', 'profile-builder' ) ),
@@ -294,11 +333,17 @@ function wppb_populate_manage_fields(){
 		array( 'type' => 'select', 'slug' => 'heading-tag', 'title' => __( 'Heading Tag', 'profile-builder' ), 'options' => array( '%h1 - biggest size%h1', 'h2', 'h3', 'h4', 'h5', '%h6 - smallest size%h6' ), 'default' => 'h4', 'description' => __( 'Change heading field size on front-end forms', 'profile-builder' ) ),
 		array( 'type' => 'text', 'slug' => 'min-number-value', 'title' => __( 'Min Number Value', 'profile-builder' ), 'description' => __( "Min allowed number value (0 to allow only positive numbers)", 'profile-builder' ) .'<br>'. __( "Leave it empty for no min value", 'profile-builder' ) ),
 		array( 'type' => 'text', 'slug' => 'max-number-value', 'title' => __( 'Max Number Value', 'profile-builder' ), 'description' => __( "Max allowed number value (0 to allow only negative numbers)", 'profile-builder' ) .'<br>'. __( "Leave it empty for no max value", 'profile-builder' ) ),
+		array( 'type' => 'checkbox', 'slug' => 'ask-current-password', 'title' => __( 'Ask for Current Password', 'profile-builder' ), 'options' => array( '%' . __( 'Yes', 'profile-builder' ) . '%yes' ), 'description' => __( 'On Edit Profile forms, require users to enter their current password before changing it. This applies only when users change their own password.', 'profile-builder' ) ),
 		array( 'type' => 'text', 'slug' => 'number-step-value', 'title' => __( 'Number Step Value', 'profile-builder' ), 'description' => __( "Step value 1 to allow only integers, 0.1 to allow integers and numbers with 1 decimal", 'profile-builder' ) .'<br>'. __( "To allow multiple decimals use for eg. 0.01 (for 2 deciamls) and so on", 'profile-builder' ) .'<br>'. __( "You can also use step value to specify the legal number intervals (eg. step value 2 will allow only -4, -2, 0, 2 and so on)", 'profile-builder' ) .'<br>'. __( "Leave it empty for no restriction", 'profile-builder' ) ),
 		array( 'type' => 'select', 'slug' => 'required', 'title' => __( 'Required', 'profile-builder' ), 'options' => array( 'No', 'Yes' ), 'default' => 'No', 'description' => __( 'Whether the field is required or not', 'profile-builder' ) ),
         array( 'type' => 'select', 'slug' => 'overwrite-existing', 'title' => __( 'Overwrite Existing', 'profile-builder' ), 'options' => array( 'No', 'Yes' ), 'default' => 'No', 'description' => __( "Selecting 'Yes' will add the field to the list, but will overwrite any other field in the database that has the same meta-name<br/>Use this at your own risk", 'profile-builder' ) ),
+        array( 'type' => 'text', 'slug' => 'initial-country', 'title' => __( 'Initial Country', 'profile-builder' ), 'description' => __( "Set the initial country for the phone field. Use 'auto' to detect it automatically by IP, or enter one ISO 3166-1 alpha-2 country code (e.g. ro, jp, us).", 'profile-builder' ), 'default' => 'auto' ),
+        array( 'type' => 'text', 'slug' => 'preferred-countries', 'title' => __( 'Preferred Countries', 'profile-builder' ), 'description' => __( "Set preferred countries using ISO 3166-1 alpha-2 codes (e.g. ro, jp, us), separated by commas.", 'profile-builder' ), 'default' => '' ),
+        array( 'type' => 'text', 'slug' => 'excluded-countries', 'title' => __( 'Excluded Countries', 'profile-builder' ), 'description' => __( "Exclude countries using ISO 3166-1 alpha-2 codes (e.g. af, ru, us), separated by commas.", 'profile-builder' ), 'default' => '' ),
+        array( 'type' => 'checkbox', 'slug' => 'national-mode', 'title' => __( 'National Mode', 'profile-builder' ), 'options' => array( '%'.__('Yes','profile-builder').'%'.'yes' ), 'description' => __( "Enable National Mode to enter numbers in local format (without country prefix). Disable it to use International Mode (with country prefix).", 'profile-builder' ) ),
+        array( 'type' => 'checkbox', 'slug' => 'hide-flags', 'title' => __( 'Hide Flags', 'profile-builder' ), 'options' => array( '%'.__('Yes','profile-builder').'%'.'yes' ), 'description' => __( "Enable to hide country flags in the phone field.", 'profile-builder' ) ),
 
-		// Added the new option for the map field type, that allows to customize the POIs load type.
+        // Added the new option for the map field type, that allows to customize the POIs load type.
 		array(
 			'type'        => 'select',
 			'slug'        => 'map-pins-load-type',
@@ -354,17 +399,23 @@ function wppb_populate_manage_fields(){
 	/* this is redundant but it should have a very low impact and for comfort we leave it here as well  */
     wppb_prepopulate_fields();
 
-    // create the info side meta-box
-    $args = array(
-        'metabox_id' 	=> 'manage-fields-info',
-        'metabox_title' => __( 'Registration & Edit Profile Forms', 'profile-builder' ),
-        'post_type' 	=> 'manage-fields',
-        'meta_name' 	=> 'wppb_manage_fields_info',
-        'meta_array' 	=> '',
-        'context'		=> 'option',
-        'mb_context'    => 'side'
-    );
-    new Wordpress_Creation_Kit_PB( $args );
+
+    // skip this meta-box for the Repeater Field -> Edit Field Group view
+    if ( !isset( $_GET['wppb_rpf_repeater_meta_name'] ) ) {
+
+        // create the info side meta-box
+        $args = array(
+            'metabox_id' 	=> 'manage-fields-info',
+            'metabox_title' => __( 'Form Shortcodes', 'profile-builder' ),
+            'post_type' 	=> 'manage-fields',
+            'meta_name' 	=> 'wppb_manage_fields_info',
+            'meta_array' 	=> '',
+            'context'		=> 'option',
+            'mb_context'    => 'side'
+        );
+        new Wordpress_Creation_Kit_PB( $args );
+
+    }
 }
 add_action( 'admin_init', 'wppb_populate_manage_fields', 1 );
 
@@ -711,9 +762,27 @@ function wppb_country_select_options( $form_location ) {
 		)
 	);
 
-	return $country_array;
+	return wppb_translate_countries( $country_array );
 }
 
+/**
+ * Helper function to translate country names with WPML
+ * Registers strings in WPML String Translation and returns translated value
+ */
+function wppb_translate_countries( $countries ) {
+
+    if ( !function_exists( 'icl_register_string' ) || !function_exists( 'icl_t' ) ) {
+        return $countries;
+    }
+
+    foreach( $countries as $index => $country ){
+        $prefix = 'country_' . $country;
+        icl_register_string( 'profile-builder', $prefix, $country );
+        $countries[$index] = icl_t( 'profile-builder', $prefix, $country );
+    }
+
+    return $countries;
+}
 
 /**
  * Function that returns an array with timezone options
@@ -1133,6 +1202,7 @@ function wppb_return_unique_field_list( $only_default_fields = false ){
     if( !$only_default_fields ){
 	    $unique_field_list[] = 'Avatar';
 	    $unique_field_list[] = 'reCAPTCHA';
+	    $unique_field_list[] = 'Turnstile';
         $unique_field_list[] = 'Select (User Role)';
         $unique_field_list[] = 'Map';
     }
@@ -1174,6 +1244,11 @@ function wppb_check_field_on_edit_add( $message, $fields, $required_fields, $met
 					$message .= __( "Please choose a different field type as this one already exists in your form (must be unique)\n", 'profile-builder' );
 					break;
 				}
+
+                if ( ( $posted_values['field'] == 'reCAPTCHA' && $field['field'] == 'Turnstile' ) || ( $posted_values['field'] == 'Turnstile' && $field['field'] == 'reCAPTCHA' ) ){
+                    $message .= __( "You cannot have both a reCAPTCHA and a Turnstile field! Please remove the other existing field first.\n", 'profile-builder' );
+                    break;
+                }
 			}
 		}
 		// END check if the unique fields are only added once
@@ -1190,6 +1265,15 @@ function wppb_check_field_on_edit_add( $message, $fields, $required_fields, $met
 		}
 		// END check for avatar size
 
+		// check for max file size
+		if ( in_array( $posted_values['field'], array( 'Avatar', 'Upload' ) ) ){
+			if ( isset( $posted_values['max-file-size'] ) && $posted_values['max-file-size'] !== '' ){
+				if ( !is_numeric( $posted_values['max-file-size'] ) || floatval( $posted_values['max-file-size'] ) <= 0 )
+					$message .= __( "The entered maximum file size is not a valid positive number\n", 'profile-builder' );
+			}
+		}
+		// END check for max file size
+
 		// check for correct row value
 		if ( ( $posted_values['field'] == 'Default - Biographical Info' ) || ( $posted_values['field'] == 'Textarea' ) ){
 			if ( !is_numeric( $posted_values['row-count'] ) )
@@ -1202,11 +1286,17 @@ function wppb_check_field_on_edit_add( $message, $fields, $required_fields, $met
 
 
 		// check for the public and private keys
-		if ( $posted_values['field'] == 'reCAPTCHA'){
+		if ( $posted_values['field'] == 'reCAPTCHA' ){
 			if ( trim( $posted_values['public-key'] ) == '' )
-				$message .= __( "You must enter the site key\n", 'profile-builder' );
+				$message .= __( "You must enter the site key!\n", 'profile-builder' );
 			if ( trim( $posted_values['private-key'] ) == '' )
-				$message .= __( "You must enter the secret key\n", 'profile-builder' );
+				$message .= __( "You must enter the secret key!\n", 'profile-builder' );
+		}
+		if ( $posted_values['field'] == 'Turnstile' ){
+			if ( trim( $posted_values['turnstile-site-key'] ) == '' )
+				$message .= __( "You must enter the site key!\n", 'profile-builder' );
+			if ( trim( $posted_values['turnstile-secret-key'] ) == '' )
+				$message .= __( "You must enter the secret key!\n", 'profile-builder' );
 		}
 		// END check for the public and private keys
 
@@ -1235,82 +1325,96 @@ function wppb_check_field_on_edit_add( $message, $fields, $required_fields, $met
 		}
 		// END check for the correct the date-format
 
-		//check for empty meta-name and duplicate meta-name
-		if ( $posted_values['overwrite-existing'] == 'No' ){
-            $skip_check_for_fields = wppb_return_unique_field_list(true);
-            $skip_check_for_fields = apply_filters ( 'wppb_skip_check_for_fields', $skip_check_for_fields );
 
-			if ( !in_array( trim( $posted_values['field'] ), $skip_check_for_fields ) ){
-				$reserved_meta_name_list = wppb_get_reserved_meta_name_list( $all_fields, $posted_values );
+        $skip_check_for_fields = wppb_return_unique_field_list(true);
+        $skip_check_for_fields = apply_filters ( 'wppb_skip_check_for_fields', $skip_check_for_fields );
 
-                //check to see if meta-name is empty
-                $skip_empty_check_for_fields = array( 'Heading', 'Select (User Role)', 'reCAPTCHA', 'HTML', 'GDPR Delete Button' );
+        // check for empty, reserved and/or duplicate meta-name
+        if ( !in_array( trim( $posted_values['field'] ), $skip_check_for_fields ) ) {
+            $reserved_meta_name_list = wppb_get_reserved_meta_name_list( $all_fields, $posted_values );
 
-                if( !in_array( $posted_values['field'], $skip_empty_check_for_fields ) && empty( $posted_values['meta-name'] ) ) {
-                    $message .= __( "The meta-name cannot be empty\n", 'profile-builder' );
-                }
+            //check to see if meta-name is empty
+            $skip_empty_check_for_fields = array( 'Heading', 'Select (User Role)', 'reCAPTCHA', 'Turnstile', 'HTML', 'GDPR Delete Button' );
 
-                //check if the meta-name starts or ends with a space
-                if ( strpos( $posted_values['meta-name'], " " ) === 0 ) {
-                    $message .= __( "The meta-name cannot begin with a space\n", 'profile-builder' );
-                }
-                if ( strpos( $posted_values['meta-name'], " " ) === strlen( $posted_values['meta-name'] ) - 1 ) {
-                    $message .= __( "The meta-name cannot end with a space\n", 'profile-builder' );
-                }
+            if( !in_array( $posted_values['field'], $skip_empty_check_for_fields ) && empty( $posted_values['meta-name'] ) ) {
+                $message .= __( "The meta-name cannot be empty\n", 'profile-builder' );
+            }
 
-                // meta names that are reserved and cannot be used as part of other meta names
-                $reserved_meta_name_list_strict = apply_filters( 'wppb_unique_meta_name_list_strict', array( 'map' ) );
-                // skip meta name check for these fields
-                $skip_unique_meta_name_list_check = apply_filters( 'wppb_skip_unique_meta_name_list_check', array( 'Map', 'Honeypot' ) );
+            //check if the meta-name starts or ends with a space
+            if ( strpos( $posted_values['meta-name'], " " ) === 0 ) {
+                $message .= __( "The meta-name cannot begin with a space\n", 'profile-builder' );
+            }
+            if ( strpos( $posted_values['meta-name'], " " ) === strlen( $posted_values['meta-name'] ) - 1 ) {
+                $message .= __( "The meta-name cannot end with a space\n", 'profile-builder' );
+            }
 
-				// if the desired meta name is in the restricted list or if one of the meta names in the strictly
-                // restricted list is part of it display an error message
-                $is_reserved_meta_name = false;
-                $trimmed_meta_name = trim( $posted_values['meta-name'] );
-                if ( !in_array( $posted_values['field'], $skip_unique_meta_name_list_check ) ) {
-                    foreach ($reserved_meta_name_list as $reserved_meta_name) {
-                        if (in_array($trimmed_meta_name, $reserved_meta_name_list) ||
-                            (strpos($trimmed_meta_name, $reserved_meta_name) !== false && in_array($reserved_meta_name, $reserved_meta_name_list_strict))) {
-                            $is_reserved_meta_name = true;
-                            break;
-                        }
+            // meta names that are reserved and cannot be used as part of other meta names
+            $reserved_meta_name_list_strict = apply_filters( 'wppb_unique_meta_name_list_strict', array( 'map' ) );
+            // skip meta name check for these fields
+            $skip_unique_meta_name_list_check = apply_filters( 'wppb_skip_unique_meta_name_list_check', array( 'Map', 'Honeypot' ) );
+
+            // if the desired meta name is in the restricted list or if one of the meta names in the strictly
+            // restricted list is part of it display an error message
+            $is_reserved_meta_name = false;
+            $trimmed_meta_name = trim( $posted_values['meta-name'] );
+
+            if ( !in_array( $posted_values['field'], $skip_unique_meta_name_list_check ) ) {
+                foreach ( $reserved_meta_name_list as $reserved_meta_name ) {
+
+                    if ( in_array( $trimmed_meta_name, $reserved_meta_name_list ) || ( strpos( $trimmed_meta_name, $reserved_meta_name ) !== false && in_array( $reserved_meta_name, $reserved_meta_name_list_strict ) ) ) {
+                        $is_reserved_meta_name = true;
+                        break;
                     }
+
                 }
-				if ( $is_reserved_meta_name )
-					$message .= __( "That meta-name can't be used, please choose another\n", 'profile-builder' );
+            }
 
-				else{
-					$found_in_custom_fields = false;
+            if ( $is_reserved_meta_name ) {
+                $message .= __( "That meta-name can't be used, please choose another\n", 'profile-builder' );
+            }
+            elseif ( $posted_values['overwrite-existing'] == 'No' ) {   // check for duplicate meta-name
+                $found_in_custom_fields = false;
 
-					if( $all_fields != 'not_set' )
-						foreach( $all_fields as $field ){
-							if ( $posted_values['meta-name'] != '' && ( $field['meta-name'] == $posted_values['meta-name'] ) && ( $field['id'] != $posted_values['id'] ) ){
-								$message .= __( "That meta-name is already in use\n", 'profile-builder' );
-								$found_in_custom_fields = true;
+                if( $all_fields != 'not_set' )
+                    foreach( $all_fields as $field ){
 
-							}elseif ( ( $field['meta-name'] == $posted_values['meta-name'] ) && ( $field['id'] == $posted_values['id'] ) )
-								$found_in_custom_fields = true;
-						}
-
-					if ( $found_in_custom_fields === false ){
-                        if( $posted_values['meta-name'] != '' ) {
-                            $found_meta_name = $wpdb->get_row($wpdb->prepare("SELECT * FROM $wpdb->usermeta WHERE meta_key = %s", $posted_values['meta-name']));
-                            if ($found_meta_name != null)
-                                $message .= __("That meta-name is already in use\n", 'profile-builder');
+                        if ( $posted_values['meta-name'] != '' && ( $field['meta-name'] == $posted_values['meta-name'] ) && ( $field['id'] != $posted_values['id'] ) ) {
+                            $message .= __( "That meta-name is already in use\n", 'profile-builder' );
+                            $found_in_custom_fields = true;
                         }
-					}
-				}
-			}
-		}
-		//END check duplicate meta-name
+                        elseif ( ( $field['meta-name'] == $posted_values['meta-name'] ) && ( $field['id'] == $posted_values['id'] ) )
+                            $found_in_custom_fields = true;
 
-		// check for correct meta name on upload field
+                    }
+
+                if ( $found_in_custom_fields === false ) {
+
+                    if( $posted_values['meta-name'] != '' ) {
+                        $found_meta_name = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->usermeta WHERE meta_key = %s", $posted_values['meta-name'] ) );
+
+                        if ( $found_meta_name != null )
+                            $message .= __( "That meta-name is already in use\n", 'profile-builder' );
+
+                    }
+
+                }
+
+            }
+
+        }
+        //END check for empty, reserved and/or duplicate meta-name
+
+		// check for correct meta name
 		if( $posted_values['field'] == 'Upload' ) {
 			if( ! empty( $posted_values['meta-name'] ) && preg_match( '/([^a-z\d_-])/', $posted_values['meta-name'] ) ) {
 				$message .= __( "The meta-name can only contain lowercase letters, numbers, _ , - and no spaces.\n", 'profile-builder' );
 			}
 		}
-		// END check for correct meta name on upload field
+        elseif ( ! empty( $posted_values['meta-name'] ) && preg_match( '/\s/', $posted_values['meta-name'] ) ) {
+            $message .= __( "The meta-name cannot contain spaces.\n", 'profile-builder' );
+        }
+
+        // END check for correct meta name
 
 		// check for valid default option (checkbox, select, radio)
 		if ( ( $posted_values['field'] == 'Checkbox' ) || ( $posted_values['field'] == 'Select (Multiple)' ) ) {
@@ -1421,13 +1525,15 @@ add_action( 'wck_metabox_content_header_wppb_manage_fields', 'wppb_manage_fields
  */
 function wppb_add_content_before_manage_fields(){
 ?>
-    <p><?php esc_html_e('Use these shortcodes on the pages you want the forms to be displayed:', 'profile-builder'); ?></p>
-        <ul>
-            <li><strong class="nowrap">[wppb-register]</strong></li>
-            <li><strong class="nowrap">[wppb-edit-profile]</strong></li>
-            <li><strong class="nowrap">[wppb-register role="author"]</strong></li>
-        </ul>
-    <p>
+    <p class="cozmoslabs-description"><?php esc_html_e('Use these shortcodes on the pages you want the forms to be displayed:', 'profile-builder'); ?></p>
+
+    <ul class="cozmoslabs-shortcodes-list">
+        <li><strong class="nowrap">[wppb-register]</strong></li>
+        <li><strong class="nowrap">[wppb-edit-profile]</strong></li>
+        <li><strong class="nowrap">[wppb-register role="author"]</strong></li>
+    </ul>
+
+    <p class="cozmoslabs-description">
     <?php
     $versions = array( 'Profile Builder Pro', 'Profile Builder Agency', 'Profile Builder Unlimited', 'Profile Builder Dev' );
 
@@ -1579,7 +1685,7 @@ function wppb_get_user_map_markers( $user_id, $meta_name ) {
 
     $meta_name_underlined = $meta_name . '_';
 
-    $results = $wpdb->get_results( "SELECT meta_value, meta_key FROM {$wpdb->usermeta} WHERE user_id={$user_id} AND meta_key LIKE '%{$meta_name_underlined}%'", ARRAY_N );
+    $results = $wpdb->get_results( $wpdb->prepare( "SELECT meta_value, meta_key FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key LIKE '%s'", $user_id, '%' . $meta_name_underlined . '%' ), ARRAY_N );
 
 	$markers = array();
 	$i = 0;
@@ -1718,24 +1824,10 @@ function wppb_change_field_meta_key( $meta, $id, $values, $element_id ){
 			$wppb_manage_fields = get_option('wppb_manage_fields');
 			if (!empty($wppb_manage_fields)) {
 
-				/*
-				 * We need to be sure this is not a repeater.
-				 * The way we're doing this is by checking if the $values['meta-name'] is found inside $wppb_manage_fields
-				 * If it's not, it's probably inside a repeater.
-				 *
-				 * The reason we're doing this is because when we're updating a repeater field the $meta is still  'wppb_manage_fields' for some reason, while $element_id comes from the position of the repeater.
-				 *
-				 * This means we're updating last_name (if it's the 9'th position in wppb_manage_fields) instead of 'something_repeater' that's also in the 9'th position but inside the repeater group.
-				 *
-				 * Also, this code didn't account for 'something_repeater_1' etc, meaning it would have changed just 1 field, causing data loss anyway.
-				 *
-				 */
-				$is_not_repeater = false;
-				foreach ($wppb_manage_fields as $field){
-					if ( $field['meta-name'] == $values['meta-name'] ){
-						$is_not_repeater = true;
-					}
-				}
+				$is_not_repeater = true;
+
+                if( !empty( $wppb_manage_fields[$element_id] ) && $wppb_manage_fields[$element_id]['field'] == 'Repeater' )
+                    $is_not_repeater = false;
 
 				if (!empty($values['meta-name']) && $wppb_manage_fields[$element_id]['meta-name'] != $values['meta-name'] && $is_not_repeater ) {
 					$wpdb->update(
@@ -1795,3 +1887,217 @@ if ( ! function_exists( 'wppb_filter_map_bubble_fields' ) ) {
 	}
 }
 add_filter( 'wppb_map_bubble_fields', 'wppb_filter_map_bubble_fields' );
+
+
+/**
+ * Get field property mapping for cleaning up stored field data
+ * 
+ * Maps each field type to its required properties based on the JavaScript
+ * field definitions in assets/js/jquery-manage-fields-live-change.js
+ *
+ * @since 3.15.3
+ * @return array Field type to properties mapping
+ */
+function wppb_get_field_property_mapping() {
+    
+	// Properties that can be dynamically added by various add-ons to many field types
+	$optional_addon_properties = array(
+		// Conditional Fields add-on
+		'conditional-logic-enabled',
+		'conditional-logic',
+		// WooCommerce Sync add-on
+		'woocommerce-checkout-field',
+		// BuddyPress add-on
+		'bdp-default-visibility',
+		'bdp-allow-custom-visibility',
+		// Field Visibility add-on
+		'visibility',
+		'user-role-visibility',
+		'location-visibility',
+		// Edit Profile Approved by Admin add-on
+		'edit-profile-approved-by-admin',
+		// Maximum Character Length add-on
+		'maximum-character-length',
+		// Custom CSS Classes add-on
+		'class-field',
+	);
+
+	/**
+	 * Filter the optional addon properties that are applied to all field types.
+	 * 
+	 * Add-ons can use this filter to register properties that should be preserved
+	 * across all field types (e.g., properties that can be applied to any field).
+	 * 
+	 * @since 3.15.3
+	 * 
+	 * @param array $optional_addon_properties Array of property slugs to preserve for all fields
+	 * 
+	 * @example
+	 * add_filter( 'wppb_field_optional_properties', 'my_addon_register_optional_properties' );
+	 * function my_addon_register_optional_properties( $properties ) {
+	 *     $properties[] = 'my-custom-property';
+	 *     $properties[] = 'another-property';
+	 *     return $properties;
+	 * }
+	 */
+	$optional_addon_properties = apply_filters( 'wppb_field_optional_properties', $optional_addon_properties );
+
+	$mapping = array(
+		// Default WordPress Fields - Headings
+		'Default - Name (Heading)' => array(),
+		'Default - Contact Info (Heading)' => array(),
+		'Default - About Yourself (Heading)' => array(),
+
+		// Default WordPress Fields - User Data
+		'Default - Username'                 => array('default-value'),
+		'Default - First Name'               => array('default-value'),
+		'Default - Last Name'                => array('default-value'),
+		'Default - Nickname'                 => array('default-value'),
+		'Default - E-mail'                   => array('default-value'),
+		'Default - Website'                  => array('default-value'),
+		'Default - AIM'                      => array('default-value'),
+		'Default - Yahoo IM'                 => array('default-value'),
+		'Default - Jabber / Google Talk'     => array('default-value'),
+        'Default - Password'                 => array('ask-current-password'),
+		'Default - Repeat Password'          => array(),
+		'Default - Biographical Info'        => array('row-count', 'default-content'),
+		'Default - Display name publicly as' => array('default-value'),
+		'Default - Blog Details'             => array(),
+
+		// GDPR Fields
+		'GDPR Checkbox'                  => array(),
+		'GDPR Delete Button'             => array(),
+		'GDPR Communication Preferences' => array('gdpr-communication-preferences', 'gdpr-communication-preferences-sort-order'),
+
+		// Standard Fields
+		'Heading'            => array('heading-tag'),
+		'Input'              => array('default-value'),
+		'Email'              => array('default-value'),
+		'Email Confirmation' => array(),
+		'URL'                => array('default-value'),
+		'Number'             => array('default-value', 'min-number-value', 'max-number-value', 'number-step-value'),
+		'Input (Hidden)'     => array('default-value'),
+		'Language'           => array('default-value'),
+		'Textarea'           => array('default-content', 'row-count'),
+		'WYSIWYG'            => array('default-content', 'row-count'),
+		'Phone'              => array('default-value', 'phone-format'),
+		
+		// Select Fields
+		'Select'             => array('default-option', 'options', 'labels'),
+		'Select (Multiple)'  => array('default-options', 'options', 'labels'),
+		'Select (Country)'   => array('default-option-country'),
+		'Select (Currency)'  => array('show-currency-symbol', 'default-option-currency'),
+		'Select (Timezone)'  => array('default-option-timezone'),
+		'Select (CPT)'       => array('default-option', 'cpt'),
+		'Select (Taxonomy)'  => array('default-option', 'taxonomy'),
+		'Select2'            => array('default-option', 'options', 'labels'),
+		'Select2 (Multiple)' => array('default-options', 'options', 'labels', 'select2-multiple-limit', 'select2-multiple-tags'),
+		
+		// Checkbox and Radio Fields
+		'Checkbox'                        => array('default-options', 'options', 'labels'),
+		'Checkbox (Terms and Conditions)' => array('terms-of-agreement'),
+		'Radio'                           => array('default-option', 'options', 'labels'),
+		'Honeypot'                        => array(),
+
+		// Upload Fields
+		'Upload' => array('simple-upload', 'allowed-upload-extensions', 'max-file-size'),
+		'Avatar' => array('simple-upload', 'allowed-image-extensions', 'avatar-size', 'max-file-size'),
+
+		// Date/Time Fields
+		'Datepicker'  => array('default-value', 'date-format'),
+		'Timepicker'  => array('time-format'),
+		'Colorpicker' => array('default-value'),
+
+		// Advanced Fields
+		'Validation'         => array('validation-possible-values', 'custom-error-message'),
+		'reCAPTCHA'          => array('recaptcha-type', 'public-key', 'private-key', 'score-threshold', 'captcha-pb-forms', 'captcha-wp-forms'),
+		'Select (User Role)' => array('user-roles', 'user-roles-on-edit-profile', 'user-roles-sort-order'),
+		'Map'                => array('map-api-key', 'map-default-lat', 'map-default-lng', 'map-default-zoom', 'map-height', 'map-pins-load-type', 'map-pagination-number', 'map-bubble-fields'),
+		'Additional Map'     => array('map-default-lat', 'map-default-lng', 'map-default-zoom', 'map-height'),
+		'HTML'               => array('html-content'),
+
+		// WooCommerce Fields (added via JS by add-on)
+		'WooCommerce Customer Billing Address'  => array('woo-billing-fields', 'woo-billing-fields-required', 'woo-billing-fields-sort-order', 'woo-billing-fields-name'),
+		'WooCommerce Customer Shipping Address' => array('woo-shipping-fields', 'woo-shipping-fields-required', 'woo-shipping-fields-sort-order', 'woo-shipping-fields-name'),
+
+		// Add-on Fields (MailChimp, MailPoet, Campaign Monitor, etc. may add their own)
+		'MailChimp Subscribe'        => array('mailchimp-lists', 'mailchimp-default-checked', 'mailchimp-hide-field'),
+		'MailPoet Subscribe'         => array('mailpoet-lists', 'mailpoet-default-checked', 'mailpoet-hide-field'),
+		'Campaign Monitor Subscribe' => array('campaign-monitor-lists', 'campaign-monitor-hide-field'),
+		'Subscription Plans'         => array('subscription-plans', 'subscription-plans-sort-order', 'subscription-plan-selected'),
+		'PMS Billing Fields'         => array('pms-billing-fields'),
+		'Repeater'                   => array('rpf-enable-limit', 'rpf-limit', 'rpf-limit-reached-message', 'rpf-role-limit', 'rpf-button'),
+	);
+
+	// Add optional addon properties to all field types
+	foreach ( $mapping as $field_type => $properties ) {
+		$mapping[$field_type] = array_merge( $properties, $optional_addon_properties );
+	}
+
+	// Allow add-ons to register their field type property mappings
+	$mapping = apply_filters( 'wppb_field_property_mapping', $mapping );
+
+	return $mapping;
+}
+
+/**
+ * Clean up field properties before saving to database
+ * 
+ * Removes unused properties from each field based on its type, reducing database bloat.
+ * Common properties are kept for all fields, field-specific properties are kept only
+ * when relevant to the field type.
+ *
+ * @since 3.15.3
+ * @param array $value New field data being saved
+ * @param array $old_value Existing field data (not used)
+ * @return array Cleaned field data
+ */
+function wppb_cleanup_manage_fields_before_save( $value, $old_value ) {
+	// Only process if we have an array
+	if ( ! is_array( $value ) ) {
+		return $value;
+	}
+
+	// Get field type to property mapping
+	$mapping = wppb_get_field_property_mapping();
+
+	// Common properties kept for all fields
+	// Note: meta-name is kept even when not shown in UI, as it's set programmatically
+	$common_properties = array(
+		'id',
+		'field',
+		'field-title',
+		'meta-name',
+		'description',
+		'required',
+		'overwrite-existing',
+	);
+
+	// Process each field
+	foreach ( $value as $key => $field ) {
+		if ( ! isset( $field['field'] ) ) {
+			continue;
+		}
+
+		$field_type = $field['field'];
+		$allowed_properties = $common_properties;
+
+		// Add field-specific properties if we have a mapping
+		if ( isset( $mapping[$field_type] ) ) {
+			$allowed_properties = array_merge( $allowed_properties, $mapping[$field_type] );
+		} else {
+			// Unknown field type: keep common properties + any non-empty properties
+			foreach ( $field as $prop_key => $prop_value ) {
+				if ( ! in_array( $prop_key, $common_properties ) && ! empty( $prop_value ) ) {
+					$allowed_properties[] = $prop_key;
+				}
+			}
+		}
+
+		// Filter the field to only keep allowed properties
+		$value[$key] = array_intersect_key( $field, array_flip( $allowed_properties ) );
+	}
+
+	return $value;
+}
+add_filter( 'pre_update_option_wppb_manage_fields', 'wppb_cleanup_manage_fields_before_save', 5, 2 );

@@ -23,9 +23,8 @@ class Loco_package_Locale {
 
     /**
      * Construct with locale to filter on
-     * @param Loco_Locale|null
      */
-    public function __construct( Loco_locale $locale = null ){
+    public function __construct( ?Loco_locale $locale = null ){
         $this->index =  new ArrayObject;
         $this->match = [];
         if( $locale ){
@@ -36,12 +35,10 @@ class Loco_package_Locale {
 
     /**
      * Add another locale to search on
-     * @param Loco_Locale
-     * @return Loco_package_Locale
      */
-    public function addLocale( Loco_Locale $locale ){
+    public function addLocale( Loco_Locale $locale ):self {
         if( $locale->isValid() ){
-            $sufx = (string) $locale.'.po';
+            $sufx = $locale.'.po';
             $this->match[$sufx] = - strlen($sufx);
         }
         return $this;
@@ -49,7 +46,6 @@ class Loco_package_Locale {
 
 
     /**
-     * @param Loco_fs_File
      * @return Loco_package_Project|null
      */
     public function getProject( Loco_fs_File $file ){

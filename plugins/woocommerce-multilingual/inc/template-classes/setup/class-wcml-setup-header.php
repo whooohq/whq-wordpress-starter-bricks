@@ -35,7 +35,7 @@ class WCML_Setup_Header_UI extends WCML_Templates_Factory {
 	public function get_model() {
 
 		$model = [
-			'title'           => __( 'WooCommerce Multilingual & Multicurrency › Setup Wizard', 'woocommerce-multilingual' ),
+			'title'           => __( 'WPML Multilingual & Multicurrency for WooCommerce › Setup Wizard', 'woocommerce-multilingual' ),
 			'WCML_PLUGIN_URL' => WCML_PLUGIN_URL,
 			'step'            => $this->step,
 			'has_handler'     => ! empty( $this->steps[ $this->step ]['handler'] ),

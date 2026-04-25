@@ -11,12 +11,7 @@
 
 .tsf-inline-input {
 	display: block;
-	margin-left: 8em;
-}
-
-body.rtl .tsf-inline-input {
-	margin-left: 0;
-	margin-right: 8em;
+	margin-inline-start: 8em;
 }
 
 .tsf-le-wide-complex-column input,
@@ -54,7 +49,7 @@ body.rtl .tsf-inline-input {
 	width: 30%;
 }
 
-@media screen and (max-width: 782px) {
+@media screen and ( max-width: 782px ) {
 	.tsf-inline-input {
 		margin-left: 0;
 	}

@@ -45,7 +45,10 @@ jQuery(function(){
 })
 
 jQuery(function() {
-    jQuery( ".stp-extra" ).accordion();
+    jQuery(".stp-extra").accordion({
+        active: false,
+        collapsible: true
+    });
 });
 
 //add hidden input with off value for checkboxes
@@ -78,3 +81,28 @@ jQuery(function() {
     });
 
 });
+
+
+jQuery(document).ready(function() {
+
+    jQuery('.cozmoslabs-form-field-wrapper.checkbox input').each( function () {
+        checkEmailField(this);
+    });
+
+
+    jQuery(document).on( 'change', '.cozmoslabs-form-field-wrapper.checkbox input', function () {
+        checkEmailField(this);
+    });
+
+});
+
+function checkEmailField(element) {
+    if (element.checked) {
+        jQuery(element).closest('.mustache-box').find('.cozmoslabs-form-field-wrapper.text').show();
+        jQuery(element).closest('.mustache-box').find('.cozmoslabs-form-field-wrapper.textarea').show();
+    }
+    else {
+        jQuery(element).closest('.mustache-box').find('.cozmoslabs-form-field-wrapper.text').hide();
+        jQuery(element).closest('.mustache-box').find('.cozmoslabs-form-field-wrapper.textarea').hide();
+    }
+}

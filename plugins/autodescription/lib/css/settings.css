@@ -36,7 +36,7 @@
 	justify-content: flex-end;
 }
 
-@media screen and (max-width: 782px) {
+@media screen and ( max-width: 782px ) {
 	.tsf-top-wrap,
 	.tsf-bottom-wrap,
 	.tsf-top-buttons.tsf-end,
@@ -106,7 +106,7 @@
 	background-color: #fff;
 }
 
-#tsf-title-separator input:focus + label:not(.tsf-no-focus-ring) {
+#tsf-title-separator input:focus + label:not( .tsf-no-focus-ring ) {
 	box-shadow: 0px 0px 1px 1px #333 inset;
 }
 
@@ -186,9 +186,9 @@
 }
 
 .tsf-nav-tab-label {
-	float: left;
+	float: inline-start;
 	border: 1px solid #ccc;
-	margin-left: .5em;
+	margin-inline-start: .5em;
 	margin-bottom: -1px;
 	padding: 1ch 2ch;
 	font-size: 12px;
@@ -196,11 +196,7 @@
 	color: #555;
 	font-weight: 600;
 	border-radius: 3px 3px 0 0;
-}
-body.rtl .tsf-nav-tab-label {
-	float: right;
-	margin-left: 0;
-	margin-right: .5em;
+	cursor: pointer;
 }
 
 .tsf-nav-desktop {
@@ -235,10 +231,10 @@ input.tsf-nav-tab-radio {
 }
 
 /* make all border colors #fff, so it doesn't look skewed */
-.tsf-nav-tab-radio:focus + label:not(.tsf-no-focus-ring) {
+.tsf-nav-tab-radio:focus + label:not( .tsf-no-focus-ring ) {
 	box-shadow:
 		0 0 0 1px #5b9dd9,
-		0 0 2px 1px rgba(30, 140, 190, .8);
+		0 0 2px 1px rgba( 30, 140, 190, .8 );
 	border-color: #fff;
 }
 
@@ -263,7 +259,3 @@ body.js .tsf-nav-tab-content {
 body.js .tsf-nav-tab-content.tsf-nav-tab-content-active {
 	display: block;
 }
-
-/**
- * End tabs.
- */

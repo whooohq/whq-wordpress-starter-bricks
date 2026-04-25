@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Manage Notification E-mails
-Plugin URI: https://www.freeamigos.nl/wp-plugins/manage-notification-emails/1.8.5
+Plugin URI: https://www.freeamigos.nl/wp-plugins/manage-notification-emails/1.8.6
 Description: This plugin gives you the option to disable some of the notification e-mails send by WordPress. It's a simple plugin but effective.
-Version: 1.8.5
+Version: 1.8.6
 Author: Virgial Berveling
 Author URI: https://www.freeamigos.nl
 Text Domain: manage-notification-emails
@@ -60,7 +60,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die();
 }
 
-define( 'FA_MNE_VERSION', '1.8.5' );
+define( 'FA_MNE_VERSION', '1.8.6' );
 define( 'FA_MNE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'FA_MNE_PLUGIN_DIR', untrailingslashit( dirname( __FILE__ ) ) );
 define( 'FA_MNE_SLUG', 'manage-notification-emails' );

@@ -87,10 +87,10 @@ class WCML_Switch_Lang_Request implements \IWPML_Frontend_Action, \IWPML_Backend
 	 * @return string
 	 */
 	public function get_server_host_name() {
-		$host = isset( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : null;
+		$host = $_SERVER['HTTP_HOST'] ?? null;
 		if ( ! $host ) {
-			$host        = isset( $_SERVER['SERVER_NAME'] ) ? $_SERVER['SERVER_NAME'] : null;
-			$server_port = isset( $_SERVER['SERVER_PORT'] ) ? $_SERVER['SERVER_PORT'] : null;
+			$host        = $_SERVER['SERVER_NAME'] ?? null;
+			$server_port = $_SERVER['SERVER_PORT'] ?? null;
 			if ( $host && $server_port && ! in_array( $server_port, [ 80, 443 ], false ) ) {
 				$host = $host . ':' . $server_port;
 			}

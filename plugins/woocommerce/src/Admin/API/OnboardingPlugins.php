@@ -8,12 +8,8 @@
 namespace Automattic\WooCommerce\Admin\API;
 
 defined( 'ABSPATH' ) || exit;
-
-use ActionScheduler;
-use Automattic\Jetpack\Connection\Manager;
-use Automattic\Jetpack\Constants;
 use Automattic\WooCommerce\Admin\PluginsHelper;
-use Automattic\WooCommerce\Admin\PluginsInstallLoggers\AsynPluginsInstallLogger;
+use Automattic\WooCommerce\Internal\Jetpack\JetpackConnection;
 use WC_REST_Data_Controller;
 use WP_Error;
 use WP_REST_Request;
@@ -66,6 +62,12 @@ class OnboardingPlugins extends WC_REST_Data_Controller {
 								);
 							},
 							'required'          => true,
+						),
+						'source'  => array(
+							'description'       => 'The source of the request',
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'required'          => false,
 						),
 					),
 				),
@@ -125,29 +127,8 @@ class OnboardingPlugins extends WC_REST_Data_Controller {
 				),
 			)
 		);
-
-		/*
-		 * This is a temporary solution to override /jetpack/v4/connection/data endpoint
-		 * registered by Jetpack Connection when Jetpack is not installed.
-		 *
-		 * For more details, see https://github.com/woocommerce/woocommerce/issues/38979
-		 */
-		if ( Constants::get_constant( 'JETPACK__VERSION' ) === null && wp_is_mobile() ) {
-			register_rest_route(
-				'jetpack/v4',
-				'/connection/data',
-				array(
-					array(
-						'methods'             => 'GET',
-						'permission_callback' => '__return_true',
-						'callback'            => function() {
-							return new WP_REST_Response( null, 404 );
-						},
-					),
-				),
-				true
-			);
-		}
+		add_action( 'woocommerce_plugins_install_error', array( $this, 'log_plugins_install_error' ), 10, 4 );
+		add_action( 'woocommerce_plugins_install_api_error', array( $this, 'log_plugins_install_api_error' ), 10, 2 );
 	}
 
 	/**
@@ -174,9 +155,10 @@ class OnboardingPlugins extends WC_REST_Data_Controller {
 	 */
 	public function install_and_activate_async( WP_REST_Request $request ) {
 		$plugins = $request->get_param( 'plugins' );
+		$source  = $request->get_param( 'source' );
 		$job_id  = uniqid();
 
-		WC()->queue()->add( 'woocommerce_plugins_install_and_activate_async_callback', array( $plugins, $job_id ) );
+		WC()->queue()->add( 'woocommerce_plugins_install_and_activate_async_callback', array( $plugins, $job_id, $source ) );
 
 		$plugin_status = array();
 		foreach ( $plugins as $plugin ) {
@@ -214,7 +196,7 @@ class OnboardingPlugins extends WC_REST_Data_Controller {
 
 		$actions = array_filter(
 			PluginsHelper::get_action_data( $actions ),
-			function( $action ) use ( $job_id ) {
+			function ( $action ) use ( $job_id ) {
 				return $action['job_id'] === $job_id;
 			}
 		);
@@ -236,41 +218,18 @@ class OnboardingPlugins extends WC_REST_Data_Controller {
 		return $response;
 	}
 
-
 	/**
 	 * Return Jetpack authorization URL.
 	 *
 	 * @param WP_REST_Request $request WP_REST_Request object.
 	 *
 	 * @return array
-	 * @throws \Exception If there is an error registering the site.
 	 */
 	public function get_jetpack_authorization_url( WP_REST_Request $request ) {
-		$manager = new Manager( 'woocommerce' );
-		$errors  = new WP_Error();
-
-		// Register the site to wp.com.
-		if ( ! $manager->is_connected() ) {
-			$result = $manager->try_registration();
-			if ( is_wp_error( $result ) ) {
-				$errors->add( $result->get_error_code(), $result->get_error_message() );
-			}
-		}
-
-		$redirect_url = $request->get_param( 'redirect_url' );
-		$calypso_env  = defined( 'WOOCOMMERCE_CALYPSO_ENVIRONMENT' ) && in_array( WOOCOMMERCE_CALYPSO_ENVIRONMENT, [ 'development', 'wpcalypso', 'horizon', 'stage' ], true ) ? WOOCOMMERCE_CALYPSO_ENVIRONMENT : 'production';
-
-		return [
-			'success' => ! $errors->has_errors(),
-			'errors'  => $errors->get_error_messages(),
-			'url'     => add_query_arg(
-				[
-					'from'        => $request->get_param( 'from' ),
-					'calypso_env' => $calypso_env,
-				],
-				$manager->get_authorization_url( null, $redirect_url )
-			),
-		];
+		return JetpackConnection::get_authorization_url(
+			$request->get_param( 'redirect_url' ),
+			$request->get_param( 'from' )
+		);
 	}
 
 	/**
@@ -410,5 +369,42 @@ class OnboardingPlugins extends WC_REST_Data_Controller {
 				),
 			),
 		);
+	}
+
+	public function log_plugins_install_error( $slug, $api, $result, $upgrader ) {
+		$properties = array(
+			'error_message'         => sprintf(
+			/* translators: %s: plugin slug (example: woocommerce-services) */
+				__(
+					'The requested plugin `%s` could not be installed.',
+					'woocommerce'
+				),
+				$slug
+			),
+			'type'                  => 'plugin_info_api_error',
+			'slug'                  => $slug,
+			'api_version'           => $api->version,
+			'api_download_link'     => $api->download_link,
+			'upgrader_skin_message' => implode( ',', $upgrader->skin->get_upgrade_messages() ),
+			'result'                => is_wp_error( $result ) ? $result->get_error_message() : 'null',
+		);
+		wc_admin_record_tracks_event( 'coreprofiler_install_plugin_error', $properties );
+	}
+
+	public function log_plugins_install_api_error( $slug, $api ) {
+		$properties = array(
+			'error_message'     => sprintf(
+			// translators: %s: plugin slug (example: woocommerce-services).
+				__(
+					'The requested plugin `%s` could not be installed. Plugin API call failed.',
+					'woocommerce'
+				),
+				$slug
+			),
+			'type'              => 'plugin_install_error',
+			'api_error_message' => $api->get_error_message(),
+			'slug'              => $slug,
+		);
+		wc_admin_record_tracks_event( 'coreprofiler_install_plugin_error', $properties );
 	}
 }

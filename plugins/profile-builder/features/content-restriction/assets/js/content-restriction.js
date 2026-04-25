@@ -2,10 +2,22 @@ jQuery( function(){
 
     /* Display custom redirect URL section if type of restriction is "Redirect" */
     jQuery( 'input[type=radio][name=wppb-content-restrict-type]' ).on( "click", function() {
-        if( jQuery( this ).is(':checked') && jQuery( this ).val() == 'redirect' )
+        if( jQuery( this ).is(':checked') && jQuery( this ).val() == 'redirect' ){
             jQuery( '#wppb-meta-box-fields-wrapper-restriction-redirect-url' ).addClass( 'wppb-content-restriction-enabled' );
-        else
+
+            // hide the custom restriction messages section (not needed for Redirect)
+            jQuery( '#wppb-meta-box-fields-wrapper-restriction-custom-messages' ).hide();
+        }
+        else {
             jQuery( '#wppb-meta-box-fields-wrapper-restriction-redirect-url' ).removeClass( 'wppb-content-restriction-enabled' );
+
+            // this needs to be unchecked so that the Custom URL is properly disabled
+            jQuery( '#wppb-content-restrict-custom-redirect-url-enabled' ).prop( 'checked', false );
+            jQuery( '.wppb-meta-box-field-wrapper-custom-redirect-url' ).removeClass( 'wppb-content-restriction-enabled' );
+
+            // show the custom restriction messages section
+            jQuery( '#wppb-meta-box-fields-wrapper-restriction-custom-messages' ).show();
+        }
     } );
 
     /* Display custom redirect URL field */
@@ -23,26 +35,5 @@ jQuery( function(){
         else
             jQuery( '.wppb-meta-box-field-wrapper-custom-messages' ).removeClass( 'wppb-content-restriction-enabled' );
     } );
-
-
-    /* Disable / Enable the user roles from the "Display for" field if the "Logged in Users" option is checked or not */
-    jQuery( document ).on( 'click', 'input[name="wppb-content-restrict-user-status"]', function() {
-        wppb_disable_enable_user_roles( jQuery( this ) );
-    } );
-
-    jQuery( 'input[name="wppb-content-restrict-user-status"]' ).each( function() {
-        wppb_disable_enable_user_roles( jQuery( this ) );
-    } );
-
-
-    function wppb_disable_enable_user_roles( $element ) {
-        $wrapper = $element.closest( '.wppb-meta-box-field-wrapper' );
-
-        if( $element.is( ':checked' ) ) {
-            $wrapper.find( 'input[name="wppb-content-restrict-user-role[]"]' ).attr( 'disabled', false );
-        } else {
-            $wrapper.find( 'input[name="wppb-content-restrict-user-role[]"]' ).attr( 'disabled', true );
-        }
-    }
 
 } );

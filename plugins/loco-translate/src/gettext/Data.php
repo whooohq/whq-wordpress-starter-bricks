@@ -8,52 +8,58 @@ loco_require_lib('compiled/gettext.php');
 class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
 
     /**
-     * Normalize file extension to internal type
-     * @return string Normalized file extension "po", "pot" or "mo"
+     * Normalize file extension to internal type.
+     * @return string Normalized file extension "po", "pot", "mo", "json" or "php"
      * @throws Loco_error_Exception
      */
-    public static function ext( Loco_fs_File $file ){
+    public static function ext( Loco_fs_File $file ):string {
         $ext = rtrim( strtolower( $file->extension() ), '~' );
-        if( 'po' === $ext || 'pot' === $ext || 'mo' === $ext ){
-            // We could validate file location here, but file type restriction should be sufficient
+        if( 'po' === $ext || 'pot' === $ext || 'mo' === $ext || 'json' === $ext ){
             return $ext;
         }
-        // translators: Error thrown when attempting to parse a file that is not PO, POT or MO
+        // only observing the full `.l10n.php` extension as a translation format.
+        if( 'php' === $ext && '.l10n.php' === substr($file->getPath(),-9) ){
+            return 'php';
+        }
+        // translators: Error thrown when attempting to parse a file that is not a supported translation file format
         throw new Loco_error_Exception( sprintf( __('%s is not a Gettext file','loco-translate'), $file->basename() ) );
     }
 
 
-    /**
-     * @return Loco_gettext_Data
-     */
-    public static function load( Loco_fs_File $file ){
-        $type = strtoupper( self::ext($file) );
-        // catch parse errors so we can inform user of which file is bad
+    public static function load( Loco_fs_File $file, ?string $type = null ):self {
+        if( is_null($type) ) {
+            $type = self::ext($file);
+        }
+        $type = strtolower($type);
+        // catch parse errors, so we can inform user of which file is bad
         try {
-            if( 'MO' === $type ){
-                return self::fromBinary( $file->getContents() );
-            }
-            else {
+            if( 'po' === $type || 'pot' === $type ){
                 return self::fromSource( $file->getContents() );
             }
+            if( 'mo' === $type ){
+                return self::fromBinary( $file->getContents() );
+            }
+            if( 'json' === $type ){
+                return self::fromJson( $file->getContents() );
+            }
+            if( 'php' === $type ){
+                return self::fromPhp( $file->getPath() );
+            }
+            throw new InvalidArgumentException('No parser for '.$type.' files');
         }
         catch( Loco_error_ParseException $e ){
             $path = $file->getRelativePath( loco_constant('WP_CONTENT_DIR') );
-            Loco_error_AdminNotices::debug( sprintf('Failed to parse %s as a %s file; %s',$path,$type,$e->getMessage()) );
+            Loco_error_AdminNotices::debug( sprintf('Failed to parse %s as a %s file; %s',$path,strtoupper($type),$e->getMessage()) );
             throw new Loco_error_ParseException( sprintf('Invalid %s file: %s',$type,basename($path)) );
         }
     }
 
 
     /**
-     * Like load but just pulls header, saving a full parse. PO only
-     * @return LocoPoHeaders
+     * Like load but just pulls header, saving a full parse
      * @throws InvalidArgumentException
      */
-    public static function head( Loco_fs_File $file ){
-        if( 'mo' === self::ext($file) ){
-            throw new InvalidArgumentException('PO only');
-        }
+    public static function head( Loco_fs_File $file ):?LocoPoHeaders {
         $p = new LocoPoParser( $file->getContents() );
         $p->parse(0);
         return $p->getHeader();
@@ -62,9 +68,8 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
 
     /**
      * @param string $src PO source
-     * @return Loco_gettext_Data
      */
-    public static function fromSource( $src ){
+    public static function fromSource( string $src ):self {
         $p = new LocoPoParser($src);
         return new Loco_gettext_Data( $p->parse() );
     }
@@ -72,19 +77,42 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
 
     /**
      * @param string $bin MO bytes
-     * @return Loco_gettext_Data
      */
-    public static function fromBinary( $bin ){
+    public static function fromBinary( string $bin ):self {
         $p = new LocoMoParser($bin);
         return new Loco_gettext_Data( $p->parse() );
     }
 
 
     /**
-     * Create a dummy/empty instance with minimum content to be a valid PO file.
-     * @return Loco_gettext_Data
+     * @param string $json Jed source
      */
-    public static function dummy(){
+    public static function fromJson( string $json ):self {
+        $blob = json_decode( $json, true );
+        $p = new LocoJedParser( $blob['locale_data'] );
+        // note that headers outside of locale_data are won't be parsed out. we don't currently need them.
+        return new Loco_gettext_Data( $p->parse() );
+    }
+
+
+    /**
+     * @param string $path PHP file path
+     */
+    public static function fromPhp( string $path ):self {
+        $blob = include $path;
+        if( ! is_array($blob) || ! array_key_exists('messages',$blob) ){
+            throw new Loco_error_ParseException('Invalid PHP translation file');
+        }
+        // refactor PHP structure into JED format
+        $p = new LocoMoPhpParser($blob);
+        return new Loco_gettext_Data( $p->parse() );
+    }
+
+
+    /**
+     * Create a dummy/empty instance with minimum content to be a valid PO file.
+     */
+    public static function dummy():self {
         return new Loco_gettext_Data( [ ['source'=>'','target'=>'Language:'] ] );
     }
 
@@ -92,10 +120,8 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
     /**
      * Ensure PO source is UTF-8. 
      * Required if we want PO code when we're not parsing it. e.g. source view
-     * @param string $src PO source
-     * @return string
      */
-    public static function ensureUtf8( $src ){
+    public static function ensureUtf8( string $src ):string {
         $src = loco_remove_bom($src,$cs);
         if( ! $cs ){
             // read PO header, requiring partial parse
@@ -115,7 +141,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
      * @return string MO file source
      * @throws Loco_error_Exception
      */
-    public function msgfmt(){
+    public function msgfmt():string {
         if( 2 !== strlen("\xC2\xA3") ){
             throw new Loco_error_Exception('Refusing to compile MO file. Please disable mbstring.func_overload'); // @codeCoverageIgnore
         }
@@ -138,9 +164,8 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
     /**
      * Get final UTF-8 string for writing to file
      * @param bool $sort Whether to sort output, generally only for extracting strings
-     * @return string
      */
-    public function msgcat( $sort = false ){
+    public function msgcat( bool $sort = false ):string {
         // set maximum line width, zero or >= 15
         $this->wrap( Loco_data_Settings::get()->po_width );
         // concat with default text sorting if specified
@@ -157,12 +182,16 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
      * Compile JED flavour JSON
      * @param string $domain text domain for JED metadata
      * @param string $source reference to file that uses included strings
-     * @return string
+     * @return string JSON source, or empty if JED file has no entries
      */
-    public function msgjed( $domain = 'messages', $source = '' ){
+    public function msgjed( string $domain = 'messages', string $source = '' ):string {
+        // note that JED is sparse, like MO. We won't write empty files.
+        $data = $this->exportJed();
+        if( 1 >= count($data) ){
+            return '';
+        }
         $head = $this->getHeaders();
         $head['domain'] = $domain;
-        $data = $this->exportJed();
         // Pretty formatting for debugging. Doing as per WordPress and always escaping Unicode.
         $json_options = 0;
         if( Loco_data_Settings::get()->jed_pretty ){
@@ -200,24 +229,23 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
         // @codeCoverageIgnoreEnd
         return $po;
     }
+    
+    
 
 
     /**
      * Create a signature for use in comparing source strings between documents
-     * @return string
      */
-    public function getSourceDigest(){
+    public function getSourceDigest():string {
         $data = $this->getHashes();
         return md5( implode("\1",$data) );
     }
 
     
-    /**
-     * @param Loco_Locale
-     * @param string[] custom headers
-     * @return Loco_gettext_Data
+    /** 
+     * @param string[] $custom custom headers
      */
-    public function localize( Loco_Locale $locale, array $custom = [] ){
+    public function localize( Loco_Locale $locale, array $custom = [] ):self {
         $date = gmdate('Y-m-d H:i').'+0000';
         // headers that must always be set if absent
         $defaults =  [
@@ -236,7 +264,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
             'Content-Type' => 'text/plain; charset=UTF-8',
             'Content-Transfer-Encoding' => '8bit',
             'X-Generator' => 'Loco https://localise.biz/',
-            'X-Loco-Version' => sprintf('%s; wp-%s', loco_plugin_version(), $GLOBALS['wp_version'] ),
+            'X-Loco-Version' => sprintf('%s; wp-%s; php-%s', loco_plugin_version(), $GLOBALS['wp_version'], PHP_VERSION ),
         ];
         // Allow some existing headers to remain if PO was previously localized to the same language
         $headers = $this->getHeaders();
@@ -257,7 +285,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
             if( '' === $credit ){
                 $credit = $prefs->default_credit();
             }
-            // filter credit with current user name and email
+            // filter credit with current username and email
             $user = wp_get_current_user();
             $credit = apply_filters( 'loco_current_translator', $credit, $user->get('display_name'), $user->get('email') );
             if( '' !== $credit ){
@@ -278,11 +306,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
     }
 
 
-    /**
-     * @param string
-     * @return Loco_gettext_Data
-     */
-    public function templatize( $domain = '' ){
+    public function templatize( string $domain = '' ):self {
         $date = gmdate('Y-m-d H:i').'+0000'; // <- forcing UCT
         $defaults =  [
             'Project-Id-Version' => 'PACKAGE VERSION',
@@ -299,7 +323,8 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
             'Content-Type' => 'text/plain; charset=UTF-8',
             'Content-Transfer-Encoding' => '8bit',
             'X-Generator' => 'Loco https://localise.biz/',
-            'X-Loco-Version' => sprintf('%s; wp-%s', loco_plugin_version(), $GLOBALS['wp_version'] ),
+            'X-Loco-Version' => sprintf('%s; wp-%s; php-%s', loco_plugin_version(), $GLOBALS['wp_version'], PHP_VERSION ),
+
             'X-Domain' => $domain,
         ];
         $headers = $this->applyHeaders($required,$defaults);
@@ -312,10 +337,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
     }
 
 
-    /**
-     * @return LocoPoHeaders
-     */
-    private function applyHeaders( array $required = [], array $defaults = [], array $custom = [] ){
+    private function applyHeaders( array $required = [], array $defaults = [], array $custom = [] ):LocoPoHeaders {
         $headers = $this->getHeaders();
         // only set absent or empty headers from default list
         foreach( $defaults as $key => $value ){
@@ -343,7 +365,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
      * @param string $vendor name used in header keys
      * @return bool whether base header was altered
      */
-    public function rebaseHeader( Loco_fs_File $origin, Loco_fs_File $target, $vendor ){
+    public function rebaseHeader( Loco_fs_File $origin, Loco_fs_File $target, string $vendor ):bool {
         $base = $target->getParent();
         $head = $this->getHeaders();
         $key = $head->normalize('X-'.$vendor.'-Basepath');
@@ -363,7 +385,7 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
     /**
      * Inherit meta values from header given, but leave standard headers intact.
      */
-    public function inheritHeader( LocoPoHeaders $source ){
+    public function inheritHeader( LocoPoHeaders $source ):void {
         $target = $this->getHeaders();
         foreach( $source as $key => $value ){
             if( 'X-' === substr($key,0,2) ) {
@@ -375,9 +397,8 @@ class Loco_gettext_Data extends LocoPoIterator implements JsonSerializable {
 
     /**
      * @param string $podate Gettext data formatted "YEAR-MO-DA HO:MI+ZONE"
-     * @return int
      */
-    public static function parseDate( $podate ){
+    public static function parseDate( string $podate ):int {
         if( method_exists('DateTime','createFromFormat') ){
             $objdate = DateTime::createFromFormat('Y-m-d H:iO', $podate);
             if( $objdate instanceof DateTime ){

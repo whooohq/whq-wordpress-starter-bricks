@@ -48,13 +48,28 @@ class PB_Elementor_Recover_Password_Widget extends PB_Elementor_Widget {
 			)
 		);
 
-		$this->add_control(
-			'pb_recovery_no_controls_text',
-			array(
-				'type' => \Elementor\Controls_Manager::RAW_HTML,
-                'raw'  => __( 'There are no available controls for the Password Recovery form', 'profile-builder' ),
-			)
-		);
+        if( defined( 'WPPB_PAID_PLUGIN_DIR' ) ) {
+            $this->add_control(
+                'pb_ajax',
+                array(
+                    'label'        => __( 'AJAX Validation', 'profile-builder' ),
+                    'type'         => \Elementor\Controls_Manager::SWITCHER,
+                    'label_on'     => __( 'Yes', 'profile-builder' ),
+                    'label_off'    => __( 'No', 'profile-builder' ),
+                    'return_value' => 'true',
+                    'default'      => 'false',
+                )
+            );
+        }
+        else {
+            $this->add_control(
+                'pb_recovery_no_controls_text',
+                array(
+                    'type' => \Elementor\Controls_Manager::RAW_HTML,
+                    'raw'  => __( 'There are no available controls for the Password Recovery form', 'profile-builder' ),
+                )
+            );
+        }
 
 		$this->end_controls_section();
 
@@ -74,12 +89,12 @@ class PB_Elementor_Recover_Password_Widget extends PB_Elementor_Widget {
         // User Login Style tab
         if( !$this->is_placeholder_labels_active() ) {
             $sections['label'] = [
-                'selector' => '.wppb-username-email label',
+                'selector' => '#wppb-recover-password .wppb-username-email label',
                 'section_name' => 'Label',
             ];
         }
         $sections['input'] = [
-            'selector' => '.wppb-username-email input',
+            'selector' => '#wppb-recover-password .wppb-username-email input',
             'section_name' => 'Input',
         ];
         $this->add_styling_control_group(
@@ -92,7 +107,8 @@ class PB_Elementor_Recover_Password_Widget extends PB_Elementor_Widget {
 
         // reCAPTCHA Style tab
         if( !$this->is_placeholder_labels_active() ) {
-            include_once(WPPB_PLUGIN_DIR . '/front-end/default-fields/recaptcha/recaptcha.php');
+        include_once(WPPB_PLUGIN_DIR . '/front-end/default-fields/recaptcha/recaptcha.php');
+        include_once(WPPB_PLUGIN_DIR . '/front-end/default-fields/turnstile/turnstile.php');
             $field = wppb_get_recaptcha_field();
             if (!empty($field) && isset($field['captcha-pb-forms']) && (strpos($field['captcha-pb-forms'], 'pb_recover_password') !== false)) {
                 $this->add_styling_control_group(
@@ -101,7 +117,7 @@ class PB_Elementor_Recover_Password_Widget extends PB_Elementor_Widget {
                     'pb_recover_password_recaptcha',
                     [
                         'label' => [
-                            'selector' => '.wppb-form-field.wppb-recaptcha label',
+                            'selector' => '#wppb-recover-password .wppb-form-field.wppb-recaptcha label',
                             'section_name' => 'Label',
                         ]
                     ]
@@ -116,7 +132,7 @@ class PB_Elementor_Recover_Password_Widget extends PB_Elementor_Widget {
             'pb_recover_password_button',
             [
                 'input' => [
-                    'selector' => '.form-submit input#wppb-recover-password-button',
+                    'selector' => '#wppb-recover-password .form-submit input#wppb-recover-password-button',
                     'section_name' => 'Input',
                 ]
             ]

@@ -1,26 +1,22 @@
 === Custom Post Type UI ===
-Contributors: webdevstudios, pluginize, tw2113, vegasgeek, modemlooper, williamsba1
+Contributors: webdevstudios, pluginize, tw2113, williamsba1
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3084056
-Tags: custom post types, post type, taxonomy, content types, CPT, CMS, post, types, custom
-Requires at least: 5.9
-Tested up to: 6.2
-Stable tag: 1.13.5
+Tags: custom post types, post type, taxonomy, content types, types
+Requires at least: 6.6
+Tested up to: 7.0
+Stable tag: 1.19.0
 License: GPL-2.0+
-Requires PHP: 5.6
+Requires PHP: 7.4
 
 Admin UI for creating custom content types like post types and taxonomies
 
 == Description ==
 
-Custom Post Type UI provides an easy to use interface for registering and managing custom post types and taxonomies for your website.
+Custom Post Type UI provides an easy-to-use interface for registering and managing custom post types and taxonomies for your website.
 
 = Custom Post Type UI Extended =
 
-CPTUI helps create custom content types, but displaying that content can be a whole new challenge. We created [Custom Post Type UI Extended](https://pluginize.com/product/custom-post-type-ui-extended/?utm_source=cptui-desription&utm_medium=text&utm_campaign=wporg) to help with displaying your crafted content. [View our Layouts page](https://pluginize.com/cpt-ui-extended-features/?utm_source=cptui-description-examples&utm_medium=text&utm_campaign=wporg) to see available layout examples with Custom Post Type UI Extended.
-
-Beginning with version 1.7.0, Custom Post Type UI Extended has properly moved in to the Block editor experience and is working to get all the layouts available in the new "Custom Post Type UI Block". It's now even easier to start showing your content with the existing and future layouts available with Custom Post Type UI Extended.
-
-[Pluginize](https://pluginize.com/?utm_source=cptui&utm_medium=text&utm_campaign=wporg) was launched in 2016 by [WebDevStudios](https://webdevstudios.com/) to promote, support, and house all of their [WordPress products](https://pluginize.com/shop/?utm_source=cptui-&utm_medium=text&utm_campaign=wporg). Pluginize is not only [creating new products for WordPress, like CPTUI Extended](https://pluginize.com/product/custom-post-type-ui-extended/?utm_source=cptui&utm_medium=text&utm_campaign=wporg), but also provides ongoing support and development for WordPress community favorites like [CMB2](https://wordpress.org/plugins/cmb2/) and more.
+CPTUI helps create custom content types, but displaying that content can be a whole new challenge. [Custom Post Type UI Extended](https://pluginize.com/plugins/custom-post-type-ui-extended/?utm_source=cptui-desription&utm_medium=text&utm_campaign=wporg) was created to help with displaying your crafted content. [View our Layouts page](https://pluginize.com/cpt-ui-extended-features/?utm_source=cptui-description-examples&utm_medium=text&utm_campaign=wporg) to see available layout examples with Custom Post Type UI Extended.
 
 = Plugin development =
 
@@ -36,123 +32,79 @@ Custom Post Type UI development is managed on GitHub, with official releases pub
 
 == Changelog ==
 
-= 1.13.5 - 2023-03-27 =
-* Fixed: Security issue in CPTUI Debug Info screen.
-* Fixed: Added `empty()` check for `can_export` parameters.
-* Updated: Changed textdomain loading from `plugins_loaded` to `init`.
+= 1.19.0 - 2026-04-23 =
+* Added: Support for "Filter by category" and "Filter by date" labels. Thanks aloMalbarez
+* Fixed: PHP notices from upsell notification display check.
+* Updated: Various capitalization for CPTUI Submenu labels
+* Updated: developer.wordpress.org URLs that had redirects.
+* Updated: jQuery-less Dashicon picker.
 
-= 1.13.4 - 2022-12-16 =
-* Fixed: Character encoding issue on CPTUI setting save in conjunction with PHP8 compatibility.
+= 1.18.3 - 2026-01-08 =
+* Fixed: Remove double escaping in tools section, for some output.
+* Added: Dismissable upsell notifications for CPTUI-Extended.
 
-= 1.13.3 - 2022-12-15 =
-* Fixed: Multiple PHP8 compatibility notices and warnings.
-* Fixed: "Invalid argument for foreach" based notices around labels.
-* Updated: Added taxonomy PHP global sanitization for 3rd party parameters.
+= 1.18.2 - 2025-12-05 =
+* Fixed: Security issue around Get Code functionality.
+* Fixed: Potential security issue around post type descriptions.
+* Updated: various internationalization details.
 
-= 1.13.2 - 2022-11-29 =
-* Fixed: Removed forcing of underscores in place of dashes for taxonomy slugs. Yay!
-* Updated: tested up to WP 6.1.1
-* Updated: Documentation links in wordpress.org FAQ section.
+= 1.18.1 - 2025-11-20 =
+* Fixed: Potential authorization access issues around content type modification.
+* Fixed: JS issue regarding warning user when changing content type slugs.
+* Updated: Revised "new tab" and 'rel="noopener"' link behavior and attributes.
+* Updated: Cleaned up CPTUI About screen.
 
-= 1.13.1 - 2022-09-08 =
-* Fixed: Various issues caused by a misplaced output for `ob_get_clean()` outside of function.
+= 1.18.0 - 2025-07-29 =
+* Added: "template_name" label support.
+* Fixed: Typo in "games" Dashicon classname.
+* Updated: CPTUI "ad" graphics. Added ThemeSwitcher Pro.
+* Updated: touched up some label usage for post type registration screen.
 
-= 1.13.0 - 2022-09-07 =
-* Added: Notes regarding featured image and post format support also needing `add_theme_support` to work.
-* Fixed: Issues around double quotes and JSON export with the post type description field
-* Fixed: Issues around HTML markup being removed from post type description field stemming from 1.10.x release
-* Fixed: Pluralization issue with our UI for some field labels
-* Updated: Code separation and quality cleanup.
-* Updated: Plugin branding.
+= 1.17.3 - 2025-04-21 =
+* Fixed: PHP notices around foreach loops in cptui_post_thumbnail_theme_support().
+* Fixed: PHP notices around empty variable values with get code section.
+* Fixed: PHP notices around false values with taxonomy listings with post type registration.
+* Updated: Confirmed compatibility with WordPress 6.8
 
-= 1.12.1 - 2022-05-16 =
-* Fixed: JSON decoding issues around WP-CLI import.
+= 1.17.2 - 2024-11-19 =
+* Fixed: PHP warnings around empty description variables from tools page.
+* Updated: Confirmed compatibility with WordPress 6.7
 
-= 1.12.0 - 2022-05-09 =
-* Added: Tested on WordPress 6.0.
-* Added: Auto-check, but not force, "page-attributes" when setting a post type as hierarchical.
-* Added: "rest_namespace" parameters for both post types and taxonomies.
-* Added: "register_meta_box_cb" parameter for post types.
-* Fixed: undefined index notices for "can_export".
-* Updated: list of reserved taxonomy names with more that are considered reserved.
-* Updated: readme descriptions and screenshots.
+= 1.17.1 - 2024-06-27 =
+* Fixed: Missed re-showing of autolabel fill links for js enabled browsers.
 
-= 1.11.2 - 2022-03-21 =
-* Fixed: Unintended reuse of `$delete_with_user` variable and `can_export` option. Props @bogutskyy
-* Fixed: PHP notices around `sort` array index.
+= 1.17.0 - 2024-06-17 =
+* Added: "sidebars" as a reserved slug for post types.
+* Added: Blueprint for trying Custom Post Type UI on wordpress.org before installation.
+* Updated: Reworked javascript files to be more modular with the build process.
 
-= 1.11.1 - 2022-03-18 =
-* Fixed: Errors and warnings around array_key_exists() and bool values
+= 1.16.0 - 2024-04-08 =
+* Added: Added a wpml-config.xml file.
+* Updated: Added "search_terms" to disallowed taxonomy list.
+* Updated: Began converting our javascript away from jQuery dependency.
+* Updated: tested up to WP 6.5
 
-= 1.11.0 - 2022-03-17 =
-* Added: "sort" argument for taxonomies.
-* Added: "can export" argument for post types
-* Added: New taxonomy labels from WordPress 5.9
-* Added: Custom option to set "Enter title here" value for post types.
-* Added: Notes around "exclude from search" argument for post types and taxonomy term archives.
-* Added: Notes around taxonomy "hierarchical" option regarding category vs tag behavior.
-* Updated: Reserved post type slugs from recent WordPress releases.
-* Fixed: PHP warnings around foreach loops in cptui_published_post_format_fix()
+= 1.15.1 - 2023-11-08 =
+* Fixed: Fixed up some Right-to-Left language styling issues.
+* Fixed: Fixing forgot to update about page and some PHP constants for CPTUI version.
+
+= 1.15.0 - 2023-11-06 =
+* Added: Checkbox to indicate you intend to migrate a post type into CPTUI in event of matching slugs. Props @ramsesdelr
+* Added: "item_trashed" post type label support from WordPress 6.3
+* Updated: confirmed compatibility with WordPress 6.4.
+* Updated: PHP8 compatibility.
+* Updated: Minimum WordPress version to version 6.3, minimum PHP version to 7.4.
+
+= 1.14.0 - 2023-08-07 =
+* Added: "Scroll to top" links in CPTUI pages. Props @aslamatwebdevstudios
+* Added: Remembers toggled states for CPTUI settings panels. Props @aslamatwebdevstudios and @ramsesdelr
+* Updated: Notes about slugs for both post types and taxonomies.
+* Updated: Support/FAQ section with more accurate links.
 
 == Upgrade Notice ==
 
-= 1.13.5 - 2023-03-27 =
-* Fixed: Security issue in CPTUI Debug Info screen.
-* Fixed: Added `empty()` check for `can_export` parameters.
-* Updated: Changed textdomain loading from `plugins_loaded` to `init`.
-
-= 1.13.4 - 2022-12-16 =
-* Fixed: Character encoding issue on CPTUI setting save in conjunction with PHP8 compatibility.
-
-= 1.13.3 - 2022-12-15 =
-* Fixed: Multiple PHP8 compatibility notices and warnings.
-* Fixed: "Invalid argument for foreach" based notices around labels.
-* Updated: Added taxonomy PHP global sanitization for 3rd party parameters.
-
-= 1.13.2 - 2022-11-29 =
-* Fixed: Removed forcing of underscores in place of dashes for taxonomy slugs. Yay!
-* Updated: tested up to WP 6.1.1
-* Updated: Documentation links in wordpress.org FAQ section.
-
-= 1.13.1 - 2022-09-08 =
-* Fixed: Various issues caused by a misplaced output for `ob_get_clean()` outside of function.
-
-= 1.13.0 - 2022-09-07 =
-* Added: Notes regarding featured image and post format support also needing `add_theme_support` to work.
-* Fixed: Issues around double quotes and JSON export with the post type description field
-* Fixed: Issues around HTML markup being removed from post type description field stemming from 1.10.x release
-* Fixed: Pluralization issue with our UI for some field labels
-* Updated: Code separation and quality cleanup.
-* Updated: Plugin branding.
-
-= 1.12.1 - 2022-05-16 =
-* Fixed: JSON decoding issues around WP-CLI import.
-
-= 1.12.0 - 2022-05-09 =
-* Added: Tested on WordPress 6.0.
-* Added: Auto-check, but not force, "page-attributes" when setting a post type as hierarchical.
-* Added: "rest_namespace" parameters for both post types and taxonomies.
-* Added: "register_meta_box_cb" parameter for post types.
-* Fixed: undefined index notices for "can_export".
-* Updated: list of reserved taxonomy names with more that are considered reserved.
-* Updated: readme descriptions and screenshots.
-
-= 1.11.2 - 2022-03-21 =
-* Fixed: Unintended reuse of `$delete_with_user` variable and `can_export` option. Props @bogutskyy
-* Fixed: PHP notices around `sort` array index.
-
-= 1.11.1 - 2022-03-18 =
-* Fixed: Errors and warnings around array_key_exists() and bool values
-
-= 1.11.0 - 2022-03-17 =
-* Added: "sort" argument for taxonomies.
-* Added: "can export" argument for post types
-* Added: New taxonomy labels from WordPress 5.9
-* Added: Custom option to set "Enter title here" value for post types.
-* Added: Notes around "exclude from search" argument for post types and taxonomy term archives.
-* Added: Notes around taxonomy "hierarchical" option regarding category vs tag behavior.
-* Updated: Reserved post type slugs from recent WordPress releases.
-* Fixed: PHP warnings around foreach loops in cptui_published_post_format_fix()
+= 1.19.0 =
+* Some new content type labels, jQuery-less Dashicon picker, PHP notices, and capitalization updates.
 
 == Installation ==
 

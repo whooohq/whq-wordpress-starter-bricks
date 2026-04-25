@@ -103,7 +103,7 @@ class acfe_screen_user{
         }
         
         // vars
-        $this->user_id = acfe_get_post_id(false);
+        $this->user_id = acfe_get_post_id('id');
         
         // actions
         do_action("acfe/load_user", $this->user_id);
@@ -252,6 +252,6 @@ class acfe_screen_user{
     
 }
 
-new acfe_screen_user();
+acf_new_instance('acfe_screen_user');
 
 endif;

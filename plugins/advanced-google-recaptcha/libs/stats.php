@@ -2,7 +2,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Stats extends WPCaptcha
@@ -21,16 +21,18 @@ class WPCaptcha_Stats extends WPCaptcha
     static function get_stats($type = "locks", $ndays = 60)
     {
         global $wpdb;
-        
+
         $days = array();
         for ($i = $ndays; $i >= 0; $i--){
-            $days[date("Y-m-d", strtotime('-' . $i . ' days'))] = 0;
+            $days[gmdate("Y-m-d", strtotime('-' . $i . ' days'))] = 0;
         }
 
+        // phpcs:ignore db call warnings as we are using a custom table
+
         if ($type == 'locks') {
-            $results = $wpdb->get_results("SELECT COUNT(*) as count,DATE_FORMAT(accesslock_date, '%Y-%m-%d') AS date FROM " . $wpdb->wpcatcha_accesslocks . " GROUP BY DATE_FORMAT(accesslock_date, '%Y%m%d')");
+            $results = $wpdb->get_results("SELECT COUNT(*) as count,DATE_FORMAT(accesslock_date, '%Y-%m-%d') AS date FROM " . $wpdb->wpcatcha_accesslocks . " GROUP BY DATE_FORMAT(accesslock_date, '%Y%m%d')"); // phpcs:ignore
         } else {
-            $results = $wpdb->get_results("SELECT COUNT(*) as count,DATE_FORMAT(login_attempt_date, '%Y-%m-%d') AS date FROM " . $wpdb->wpcatcha_login_fails . " GROUP BY DATE_FORMAT(login_attempt_date, '%Y%m%d')");
+            $results = $wpdb->get_results("SELECT COUNT(*) as count,DATE_FORMAT(login_attempt_date, '%Y-%m-%d') AS date FROM " . $wpdb->wpcatcha_login_fails . " GROUP BY DATE_FORMAT(login_attempt_date, '%Y%m%d')"); // phpcs:ignore
         }
 
         $total = 0;

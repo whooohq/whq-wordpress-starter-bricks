@@ -37,6 +37,8 @@ class Core extends Instance {
 
 		$this->cls( 'Pswdless' )->init();
 
+		$this->cls( 'Site' )->init();
+
 		register_activation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::activate' );
 		register_deactivation_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::deactivate' ) ;
 		register_uninstall_hook( DOLOGIN_DIR . 'dologin.php', __NAMESPACE__ . '\Util::uninstall' ) ;

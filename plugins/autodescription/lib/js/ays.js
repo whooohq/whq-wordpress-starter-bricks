@@ -8,7 +8,7 @@
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2019 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2019 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -32,23 +32,23 @@
  *
  * @constructor
  */
-window.tsfAys = function() {
+window.tsfAys = function () {
 
 	/**
 	 * Data property injected by WordPress l10n handler.
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 * @type {(Object<string, *>)|boolean|null} l10n Localized strings
+	 * @type {(Object<string,*>)|Boolean|null} l10n Localized strings
 	 */
-	const l10n = 'undefined' !== typeof tsfAysL10n && tsfAysL10n;
+	const l10n = tsfAysL10n;
 
 	/**
 	 * Handles the settings state.
 	 *
 	 * @since 4.0.0
 	 * @access private
-	 * @type {boolean}
+	 * @type {Boolean}
 	 */
 	let _settingsChanged = false;
 
@@ -57,7 +57,7 @@ window.tsfAys = function() {
 	 *
 	 * @since 4.0.0
 	 * @access private
-	 * @type {boolean}
+	 * @type {Boolean}
 	 */
 	let _loadedListeners = false;
 
@@ -68,19 +68,26 @@ window.tsfAys = function() {
 	 * @access private
 	 * @type {Map<Element,string>} string: event Type attached.
 	 */
-	let _registeredChangeListeners = new Map();
+	const _registeredChangeListeners = new Map();
 
 	/**
 	 * Returns changed state.
 	 *
 	 * @since 4.0.0
-	 * @todo deprecate
+	 * @since 5.1.0 Deprecated.
+	 * @deprecated
 	 * @access public
 	 *
-	 * @function
-	 * @return {boolean}
+	 * @return {Boolean}
 	 */
-	const getChangedState = () => areSettingsChanged();
+	function getChangedState() {
+		tsf.deprecatedFunc(
+			'tsfAys.getChangedState()',
+			'5.1.0',
+			'tsfAys.areSettingsChanged()',
+		);
+		return areSettingsChanged();
+	}
 
 	/**
 	 * Returns changed state.
@@ -88,10 +95,11 @@ window.tsfAys = function() {
 	 * @since 4.1.0
 	 * @access public
 	 *
-	 * @function
-	 * @return {boolean}
+	 * @return {Boolean}
 	 */
-	const areSettingsChanged = () => _settingsChanged;
+	function areSettingsChanged() {
+		return _settingsChanged;
+	}
 
 	/**
 	 * Transforms elements and queries to an array from nodelists.
@@ -99,23 +107,22 @@ window.tsfAys = function() {
 	 * @since 4.1.1
 	 * @access private
 	 *
-	 * @function
 	 * @param {Element|Document|string|string[]} elements
 	 * @return {(Element|Document)[]}
 	 */
-	const _getNodeArray = elements => ( elements instanceof Element || elements instanceof Document )
-		? [ elements ]
-		: [ ...document.querySelectorAll( Array.isArray( elements ) ? elements.join( ', ' ) : elements ) ];
+	function _getNodeArray( elements ) {
+		return ( elements instanceof Element || elements instanceof Document )
+			? [ elements ]
+			: [ ...document.querySelectorAll( Array.isArray( elements ) ? elements.join( ', ' ) : elements ) ];
+	}
 
 	/**
 	 * Registers changed state.
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 *
-	 * @function
 	 */
-	const registerChange = () => {
+	function registerChange() {
 		_settingsChanged = true;
 	}
 
@@ -124,14 +131,13 @@ window.tsfAys = function() {
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 *
-	 * @function
 	 */
-	const deregisterChange = () => {
+	function deregisterChange() {
 		_settingsChanged = false;
 	}
 
-	let _debounceReset = void 0;
+	// High timeout. Resets should only happen during failures or changing document states; the latter of which is slow.
+	const reloadDefaultListenersDebouncer = tsfUtils.debounce( () => reloadDefaultListeners(), 1000 );
 	/**
 	 * Resets all listeners and deregisters changes.
 	 *
@@ -140,16 +146,11 @@ window.tsfAys = function() {
 	 * @since 4.0.0
 	 * @since 4.1.1 debounced reloading of the listeners.
 	 * @access public
-	 *
-	 * @function
 	 */
-	const reset = () => {
+	function reset() {
 		deregisterChange();
-		if ( _loadedListeners ) {
-			clearTimeout( _debounceReset );
-			// High timeout. Resets should only happen during failures or changing document states; the latter of which is slow.
-			_debounceReset = setTimeout( reloadDefaultListeners, 1e3 );
-		}
+
+		_loadedListeners && reloadDefaultListenersDebouncer();
 	}
 
 	/**
@@ -158,12 +159,10 @@ window.tsfAys = function() {
 	 *
 	 * @since 4.0.0
 	 * @access private
-	 *
-	 * @function
 	 */
-	const _triggerUnload = () => {
+	function _triggerUnload() {
 
-		let wereSettingsChanged = areSettingsChanged();
+		const wereSettingsChanged = areSettingsChanged();
 
 		deregisterChange();
 
@@ -181,10 +180,9 @@ window.tsfAys = function() {
 	 * @since 4.1.1 Now only passes trusted events.
 	 * @access private
 	 *
-	 * @function
 	 * @param {event} event
 	 */
-	const _triggerChange = event => {
+	function _triggerChange( event ) {
 		if ( ! event.isTrusted ) return;
 		registerChange();
 		_exemptFutureChanges();
@@ -196,10 +194,8 @@ window.tsfAys = function() {
 	 * @since 4.0.0
 	 * @since 4.1.1 Now defuncts all registered change listers without relying on event details.
 	 * @access private
-	 *
-	 * @function
 	 */
-	const _exemptFutureChanges = () => {
+	function _exemptFutureChanges() {
 		_registeredChangeListeners.forEach( ( eventType, element ) => {
 			element.removeEventListener( eventType, _triggerChange );
 		} );
@@ -215,11 +211,10 @@ window.tsfAys = function() {
 	 *              2. Now filters the exceptions in place.
 	 * @access public
 	 *
-	 * @function
 	 * @param {(Element|string|string[])} elements  The elements to register.
 	 * @param {string}                    eventType The event type to listen to.
 	 */
-	const registerChangeListener = ( elements, eventType ) => {
+	function registerChangeListener( elements, eventType ) {
 		_getNodeArray( elements )
 			.filter( el => ! el.classList.contains( 'tsf-input-not-saved' ) && 'hidden' !== el.type )
 			.forEach( el => {
@@ -235,11 +230,10 @@ window.tsfAys = function() {
 	 * @since 4.0.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {(Element|string|string[])} elements  The elements to register.
 	 * @param {string}                    eventType The event type to listen to.
 	 */
-	const registerResetListener = ( elements, eventType ) => {
+	function registerResetListener( elements, eventType ) {
 		_getNodeArray( elements ).forEach( el => {
 			el.addEventListener( eventType, reset );
 		} );
@@ -252,11 +246,10 @@ window.tsfAys = function() {
 	 * @since 4.0.0
 	 * @access public
 	 *
-	 * @function
 	 * @param {(Element|string|string[])} elements  The elements to register.
 	 * @param {string}                    eventType The event type to listen to.
 	 */
-	const registerUnloadListener = ( elements, eventType ) => {
+	function registerUnloadListener( elements, eventType ) {
 		_getNodeArray( elements ).forEach( el => {
 			el.addEventListener( eventType, _triggerUnload )
 		} );
@@ -268,14 +261,12 @@ window.tsfAys = function() {
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 *
-	 * @function
 	 */
-	const reloadDefaultListeners = () => {
+	function reloadDefaultListeners() {
 
 		_loadedListeners = false;
 
-		//= Mouse input
+		// Mouse input
 		registerChangeListener(
 			[
 				'.tsf-metaboxes input[type=radio][name]',
@@ -288,10 +279,10 @@ window.tsfAys = function() {
 				'.tsf-term-meta input[type=checkbox][name]',
 				'.tsf-term-meta select[name]',
 			],
-			'change'
+			'change',
 		);
 
-		//= Text input
+		// Text input
 		registerChangeListener(
 			[
 				'.tsf-metaboxes input:not([type=radio]):not([type=checkbox])[name]',
@@ -301,16 +292,16 @@ window.tsfAys = function() {
 				'.tsf-term-meta input:not([type=radio]):not([type=checkbox])[name]',
 				'.tsf-term-meta textarea[name]',
 			],
-			'input'
+			'input',
 		);
 
-		//= Non-redirect, Gutenberg save action.
+		// Non-redirect, Gutenberg save action.
 		registerResetListener(
 			document,
-			'tsf-gutenberg-onsave-completed'
+			'tsf-gutenberg-onsave-completed',
 		);
 
-		//= Redirect-save actions.
+		// Redirect-save actions.
 		registerUnloadListener(
 			[
 				'.tsf-metaboxes input[type=submit]',
@@ -320,7 +311,7 @@ window.tsfAys = function() {
 				'.edit-tag-actions input[type=submit]',
 				'.edit-tag-actions .delete',
 			],
-			'click'
+			'click',
 		);
 
 		document.dispatchEvent( new CustomEvent( 'tsf-registered-ays-listeners' ) );
@@ -335,10 +326,9 @@ window.tsfAys = function() {
 	 * @access private
 	 * @link https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
 	 *
-	 * @function
 	 * @param {event} event
 	 */
-	const _alertUserBeforeunload = event => {
+	function _alertUserBeforeunload( event ) {
 		if ( areSettingsChanged() ) {
 			// Every other browser:
 			event.preventDefault();
@@ -353,10 +343,8 @@ window.tsfAys = function() {
 	 * @since 4.0.0
 	 * @since 4.1.1 Now binds to the tsf-interactive event, instead of tsf-ready.
 	 * @access private
-	 *
-	 * @function
 	 */
-	const _readyAys = () => {
+	function _readyAys() {
 		// Initialise form field changing flag.
 		reloadDefaultListeners();
 
@@ -364,7 +352,7 @@ window.tsfAys = function() {
 		// Undo accidental load-sequence state changes.
 		deregisterChange();
 
-		//= Alert onbeforeunload
+		// Alert onbeforeunload
 		window.addEventListener( 'beforeunload', _alertUserBeforeunload );
 	}
 
@@ -375,12 +363,10 @@ window.tsfAys = function() {
 		 *
 		 * @since 4.0.0
 		 * @access protected
-		 *
-		 * @function
 		 */
 		load: () => {
 			document.body.addEventListener( 'tsf-interactive', _readyAys );
-		}
+		},
 	}, {
 		reset,
 		getChangedState,
@@ -390,9 +376,9 @@ window.tsfAys = function() {
 		registerChangeListener,
 		registerResetListener,
 		registerUnloadListener,
-		reloadDefaultListeners
+		reloadDefaultListeners,
 	}, {
-		l10n
+		l10n,
 	} );
 }();
 window.tsfAys.load();

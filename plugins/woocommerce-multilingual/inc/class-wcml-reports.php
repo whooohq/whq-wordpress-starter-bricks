@@ -2,6 +2,13 @@
 
 use WCML\Utilities\DB;
 
+/**
+ * This class is responsible for handling legacy WC reports. Legacy WC reports are being phased out in favor of newer WC analytics.
+ * Legacy WC reports are not HPOS-compatible: https://github.com/woocommerce/woocommerce/issues/40671
+ *
+ * @deprecated This class is deprecated and should no longer be used because it's incompatible with HPOS.
+ * @link https://onthegosystems.myjetbrains.com/youtrack/issue/wcml-4489
+ */
 class WCML_Reports{
 
     public $tab;
@@ -9,7 +16,7 @@ class WCML_Reports{
 
     public function __construct(){
 
-        add_action('init', array($this, 'init'));
+        add_action('init', [ $this, 'init' ] );
 
     }
 
@@ -17,25 +24,25 @@ class WCML_Reports{
 
         if( isset($_GET['page']) && $_GET['page']==='wc-reports' ) {
 
-            $this->tab = isset( $_GET['tab'] ) ? $_GET['tab'] : 'orders';
-            $this->report = isset( $_GET['report'] ) ? $_GET['report'] : '';
+            $this->tab = $_GET['tab'] ?? 'orders';
+            $this->report = $_GET['report'] ?? '';
 
-            add_filter( 'woocommerce_reports_get_order_report_query', array( $this, 'filter_reports_query' ), 0 );
+            add_filter( 'woocommerce_reports_get_order_report_query', [ $this, 'filter_reports_query' ], 0 );
 
             if ( $this->tab==='orders' && $this->report==='sales_by_product' ) {
-                add_filter( 'woocommerce_reports_get_order_report_data', array( $this, 'combine_report_by_languages' ) );
+                add_filter( 'woocommerce_reports_get_order_report_data', [ $this, 'combine_report_by_languages' ] );
             }
 	        if ( $this->tab==='orders' && $this->report==='sales_by_category' ) {
-		        add_filter( 'woocommerce_report_sales_by_category_get_products_in_category', array(
+		        add_filter( 'woocommerce_report_sales_by_category_get_products_in_category', [
 			        $this,
 			        'use_categories_in_all_languages'
-		        ), 10, 2 );
+		        ], 10, 2 );
 	        }
         }
 
-        add_filter( 'woocommerce_report_most_stocked_query_from', array( $this, 'filter_reports_stock_query' ) );
-        add_filter( 'woocommerce_report_out_of_stock_query_from', array( $this, 'filter_reports_stock_query' ) );
-        add_filter( 'woocommerce_report_low_in_stock_query_from', array( $this, 'filter_reports_stock_query' ) );
+        add_filter( 'woocommerce_report_most_stocked_query_from', [ $this, 'filter_reports_stock_query' ] );
+        add_filter( 'woocommerce_report_out_of_stock_query_from', [ $this, 'filter_reports_stock_query' ] );
+        add_filter( 'woocommerce_report_low_in_stock_query_from', [ $this, 'filter_reports_stock_query' ] );
 
     }
 
@@ -77,7 +84,7 @@ class WCML_Reports{
                     $post_type = get_post_type($product_id);
                     $trid = $sitepress->get_element_trid($product_id, 'post_'.$post_type);
                     $translations = $sitepress->get_element_translations($trid, 'post_'.$post_type, true);
-                    $product_ids = array();
+                    $product_ids = [];
                     foreach($translations as $translation){
                         $product_ids[] = $translation->element_id;
                     }
@@ -95,12 +102,12 @@ class WCML_Reports{
 
             ){
                 preg_match("#order_item_meta__product_id_array\.meta_value IN \(([^\)]+)\)#", $query[ 'where' ], $matches);
-                $product_ids = array();
+                $product_ids = [];
                 $exp = array_map('trim', explode(',', $matches[1]));
                 foreach($exp as $e){
                     $product_ids[] = trim($e, "'");
                 }
-                $all_product_ids = array();
+                $all_product_ids = [];
                 foreach($product_ids as $product_id){
                     $post_type = get_post_type($product_id);
                     $trid = $sitepress->get_element_trid($product_id, 'post_'.$post_type);
@@ -120,7 +127,7 @@ class WCML_Reports{
 
 
     public function combine_report_by_languages($results){
-        global $sitepress, $wpdb;
+        global $sitepress;
 
         if(is_array($results) && isset($results['0']->order_item_qty)){
             $mode = 'top_sellers';
@@ -136,9 +143,9 @@ class WCML_Reports{
 
         $current_language = $sitepress->get_current_language();
 
-        $combined_results = array();
+        $combined_results = [];
 
-        foreach($results as $k => $row){
+        foreach($results as $row){
 
             switch($mode){
                 case 'top_sellers':
@@ -157,7 +164,7 @@ class WCML_Reports{
             }
         }
 
-        foreach($results as $k => $row){
+        foreach($results as $row){
 
             if($row->order_language != $current_language){
 
@@ -190,7 +197,7 @@ class WCML_Reports{
 
                 }else{
 
-                    $default_product_id = apply_filters( 'translate_object_id',$row->product_id, 'product', false, $current_language);
+                    $default_product_id = apply_filters( 'wpml_object_id',$row->product_id, 'product', false, $current_language);
 
                     if($default_product_id){
                         $combined_results[$key] = new stdClass();
@@ -220,12 +227,10 @@ class WCML_Reports{
 
         switch($mode){
             case 'top_sellers':
-                usort($combined_results, array(__CLASS__, 'order_by_quantity'));
-                array_slice($combined_results, 0, 12);
+                usort($combined_results, [ __CLASS__, 'order_by_quantity' ] );
                 break;
             case 'top_earners':
-                usort($combined_results, array(__CLASS__, 'order_by_total'));
-                array_slice($combined_results, 0, 12);
+                usort($combined_results, [ __CLASS__, 'order_by_total' ] );
                 break;
             case 'top_sellers_spark':
                 break;

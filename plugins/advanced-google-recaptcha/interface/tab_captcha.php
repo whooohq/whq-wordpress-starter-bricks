@@ -2,7 +2,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Tab_Captcha extends WPCaptcha
@@ -65,10 +65,29 @@ class WPCaptcha_Tab_Captcha extends WPCaptcha
         <td><input type="text" class="regular-text" id="captcha_secret_key" name="' . esc_attr(WPCAPTCHA_OPTIONS_KEY) . '[captcha_secret_key]" value="' . esc_html($options['captcha_secret_key']) . '" data-old="' . esc_html($options['captcha_secret_key']) . '" />';
         echo '</td></tr>';
 
+        echo '<tr class="captcha_score_wrapper" style="display:none;" valign="top">
+        <th scope="row"><label for="captcha_secret_key">Captcha Score</label><a title="This feature is available in the PRO version. Click for details." href="#" data-feature="recaptchav3_score" class="open-upsell pro-label">PRO</a></th>
+        <td><select id="captcha_score" name="' . esc_attr(WPCAPTCHA_OPTIONS_KEY) . '[captcha_score]" class="pro-option">
+            <option value="0.0" class="pro-option">0.0</option>
+            <option value="0.1" class="pro-option">0.1</option>
+            <option value="0.2" class="pro-option">0.2</option>
+            <option value="0.3" class="pro-option">0.3</option>
+            <option value="0.4" class="pro-option">0.4</option>
+            <option value="0.5" selected>0.5</option>
+            <option value="0.6" class="pro-option">0.6</option>
+            <option value="0.7" class="pro-option">0.7</option>
+            <option value="0.8" class="pro-option">0.8</option>
+            <option value="0.9" class="pro-option">0.9</option>
+            <option value="1.0" class="pro-option">1.0</option>
+        </select>';
+        echo '<br /><span>reCAPTCHA v3 returns a score (1.0 is very likely a good interaction, 0.0 is very likely a bot)</span>';
+
+        echo '</td></tr>';
+
         echo '<tr class="captcha_verify_wrapper" style="display:none;" valign="top">
         <th scope="row"></th>
         <td><button id="verify-captcha" class="button button-primary button-large button-yellow">Verify Captcha <i class="wpcaptcha-icon wpcaptcha-make-group"></i></button>';
-        echo '<input type="hidden" class="regular-text" id="captcha_verified" name="' . esc_attr(WPCAPTCHA_OPTIONS_KEY) . '[captcha_verified]" value="0" />';
+        echo '<input type="hidden" class="regular-text" id="captcha_verified" name="' . esc_attr(WPCAPTCHA_OPTIONS_KEY) . '[captcha_verified]" value="1" />';
         echo '<br /><span>Click the Verify Captcha button to verify that the captcha is valid and working otherwise captcha settings will not be saved</span>';
         echo '</td></tr>';
 
@@ -92,7 +111,7 @@ class WPCaptcha_Tab_Captcha extends WPCaptcha
                 echo '<div class="captcha-box-desc">';
                     echo '<h3>Built-in Math Captcha</h3>';
                     echo '<ul>';
-                    echo '<li>Medium Security</li>';
+                    echo '<li>Low Security</li>';
                     echo '<li>No API keys</li>';
                     echo '<li>No 3rd party services</li>';
                     echo '<li>GDPR Compatible</li>';
@@ -106,7 +125,7 @@ class WPCaptcha_Tab_Captcha extends WPCaptcha
                 echo '<div class="captcha-box-desc">';
                     echo '<h3>Built-in Icon Captcha</h3>';
                     echo '<ul>';
-                    echo '<li>Medium Security</li>';
+                    echo '<li>Low Security</li>';
                     echo '<li>No API keys</li>';
                     echo '<li>No 3rd party services</li>';
                     echo '<li>GDPR Compatible</li>';

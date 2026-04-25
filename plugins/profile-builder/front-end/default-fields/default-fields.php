@@ -65,5 +65,8 @@ function wppb_include_default_fields_files() {
 
     }
 
+    /* added turnstile field since version 3.15. */
+    include_once( WPPB_PLUGIN_DIR.'/front-end/default-fields/turnstile/turnstile.php' );
+
 }
 wppb_include_default_fields_files();

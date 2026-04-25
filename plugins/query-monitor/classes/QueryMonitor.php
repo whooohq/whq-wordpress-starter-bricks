@@ -57,8 +57,8 @@ class QueryMonitor extends QM_Plugin {
 	 */
 	public function filter_plugin_action_links( array $actions ) {
 		return array_merge( array(
-			'settings' => '<a href="#qm-settings">' . esc_html__( 'Settings', 'query-monitor' ) . '</a>',
-			'add-ons' => '<a href="https://github.com/johnbillion/query-monitor/wiki/Query-Monitor-Add-on-Plugins">' . esc_html__( 'Add-ons', 'query-monitor' ) . '</a>',
+			'add-ons' => '<a href="https://querymonitor.com/help/add-on-plugins/">' . esc_html__( 'Add-ons', 'query-monitor' ) . '</a>',
+			'help' => '<a href="https://querymonitor.com/wordpress-debugging/how-to-use/">' . esc_html__( 'Help', 'query-monitor' ) . '</a>',
 		), $actions );
 	}
 
@@ -70,7 +70,10 @@ class QueryMonitor extends QM_Plugin {
 	 * @return array<int, string> Updated array of the plugin's metadata.
 	 */
 	public function filter_plugin_row_meta( array $plugin_meta, $plugin_file ) {
-		if ( 'query-monitor/query-monitor.php' !== $plugin_file ) {
+		$is_qm = ( 'query-monitor/query-monitor.php' === $plugin_file );
+		$is_db = ( 'db.php' === $plugin_file && class_exists( 'QM_DB', false ) );
+
+		if ( ! $is_qm && ! $is_db ) {
 			return $plugin_meta;
 		}
 
@@ -266,7 +269,7 @@ class QueryMonitor extends QM_Plugin {
 	 * @param string $file
 	 * @return self
 	 */
-	public static function init( $file = null ) {
+	public static function init( ?string $file = null ) {
 
 		static $instance = null;
 

@@ -60,7 +60,7 @@ class Loco_admin_file_EditController extends Loco_admin_file_BaseController {
         // Parse file data into JavaScript for editor
         try {
             $this->set('modified', $file->modified() );
-            $data = Loco_gettext_Data::load( $file );
+            $data = Loco_gettext_Data::load($file);
         }
         catch( Exception $e ){
             Loco_error_AdminNotices::add( Loco_error_Exception::convert($e) );
@@ -112,11 +112,26 @@ class Loco_admin_file_EditController extends Loco_admin_file_BaseController {
                 // Validate template file as long as it exists
                 if( $potfile->exists() ){
                     try {
-                        $potdata = Loco_gettext_Data::load( $potfile );
+                        $potdata = Loco_gettext_Data::load($potfile);
+                        // If template is pulling JSON files, we must merge them in before msgid comparison
+                        if( $project && $sync->mergeJson() ){
+                            $siblings = new Loco_fs_Siblings($potfile);
+                            $jsons = $siblings->getJsons( $project->getDomain()->getName() );
+                            if( $jsons ){
+                                // using matcher because regular iterator isn't indexed, and additions must be unique
+                                $merged = new Loco_gettext_Matcher($project);
+                                $merged->loadRefs($potdata);
+                                $merged->loadJsons($jsons);
+                                $potdata = $merged->exportPo();
+                                unset($matcher);
+                            }
+                        }
                         if( ! $potdata->equalSource($data) ){
+                            // translators: %s refers to the name of a POT file
                             Loco_error_AdminNotices::info( sprintf( __("Translations don't match template. Run sync to update from %s",'loco-translate'), $potfile->basename() ) )
                             ->addLink( apply_filters('loco_external','https://localise.biz/wordpress/plugin/manual/sync'), __('Documentation','loco-translate') );
                         }
+                        unset($potdata);
                     }
                     catch( Exception $e ){
                         // translators: Where %s is the name of the invalid POT file
@@ -145,6 +160,7 @@ class Loco_admin_file_EditController extends Loco_admin_file_BaseController {
                 if ( 2 !== strlen( "\xC2\xA3" ) ) {
                     Loco_error_AdminNotices::warn('Your mbstring configuration will result in corrupt MO files. Please ensure mbstring.func_overload is disabled');
                 }
+                
             }
         }
         
@@ -188,6 +204,7 @@ class Loco_admin_file_EditController extends Loco_admin_file_BaseController {
                 'domain' => $project->getId(),
             ] : null,
             'nonces' => $this->getNonces($readonly),
+            'adminUrl' => Loco_mvc_AdminRouter::generate('loco'),
         ] ) );
         $this->set( 'ui', new Loco_mvc_ViewParams( [
              // Translators: button for adding a new string when manually editing a POT file
@@ -203,6 +220,8 @@ class Loco_admin_file_EditController extends Loco_admin_file_BaseController {
              'revert'   => _x('Revert','Editor','loco-translate'),
              // Translators: Button that opens window for auto-translating
              'auto'     => _x('Auto','Editor','loco-translate'),
+             // Translators: Button that validates current translation formatting
+             'lint'     => _x('Check','Editor','loco-translate'),
              // Translators: Button for downloading a PO, MO or POT file
              'download' => _x('Download','Editor','loco-translate'),
              // Translators: Placeholder text for text filter above editor
@@ -215,11 +234,16 @@ class Loco_admin_file_EditController extends Loco_admin_file_BaseController {
 
         // Download form params
         $hidden = new Loco_mvc_HiddenFields( [
-            'path'   => '',
-            'source' => '',
             'route'  => 'download',
             'action' => 'loco_download',
+            'path'   => '',
+            'source' => '',
         ] );
+        // zip archive will on;y be available if bundle is configured
+        if( $bundle && $project ){
+            $hidden['bundle'] = $bundle->getId();
+            $hidden['domain'] = $project->getId();
+        }
         $this->set( 'dlFields', $hidden->setNonce('download') );
         $this->set( 'dlAction', admin_url('admin-ajax.php','relative') );
 

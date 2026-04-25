@@ -3,8 +3,8 @@ Contributors: DraftPress, 99robots, charliepatel
 Tags: header, footer, code manager, snippet, functions.php, tracking, google analytics, adsense, verification, pixel
 Requires at least: 4.9
 Requires PHP: 5.6.20
-Tested up to: 6.1.1
-Stable tag: 1.1.32
+Tested up to: 6.9
+Stable tag: 1.1.44
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://draftpress.com
@@ -113,7 +113,51 @@ A. Free plugins rely on user feedback. Therefore, the best thing you can do for 
 = Q. Do you support X or Y tracking scripts? =
 A. If your script is not supported, just let us know and we'll look into it immediately. We will do our best to ensure all reputable services are supported. When requesting support for a particular script, it would be nice to get a sample of the script so that we can see its structure.
 
+= Q. What are the differences between HFCM Pro vs. Free?
+A. The PRO version contains many more powerful features not available in the FREE version in addition to forthcoming features. See the [PRO vs FREE differences](https://draftpress.com/wp-content/uploads/2024/06/hfcm-pro-vs-free-differences.png).
+
 == Changelog ==
+= 1.1.44 = 2026-01-22
+* ADDED: Compatibility with WordPress 6.9
+
+= 1.1.43 = 2025-10-03
+* ADDED: Compatibility with WordPress 6.8.3
+
+= 1.1.42 = 2025-08-27
+* FIXED: Import functionality not working
+
+= 1.1.41 = 2025-08-05
+* ADDED: Compatibility with WordPress 6.8.2
+* IMPROVED: Specific Post Types now includes options to display snippet on only posts, or archives, or both
+* FIXED: Snippets not showing on archives of specific post types
+
+= 1.1.40 = 2025-05-06
+* ADDED: Compatibility with WordPress 6.8.1
+
+= 1.1.39 = 2024-09-27
+* ADDED: Compatibility with WordPress 6.6.2
+* FIXED: NULL parent slug value in the submenu
+
+= 1.1.38 = 2024-06-06
+* ADDED: Compatibility with WordPress 6.5.4
+
+= 1.1.37 = 2024-01-31
+* ADDED: Compatibility with WordPress 6.4.3
+
+= 1.1.36 = 2023-09-04
+* ADDED: Compatibility with WordPress 6.3.1
+
+= 1.1.35 = 2023-07-04
+* ADDED: WordPress nonce checks while performing bulk actions on the snippets
+
+= 1.1.34 = 2023-06-27
+* FIXED: Check if Woocommerce installed before using its functions
+
+= 1.1.33 = 2023-06-26
+* FIXED: Snippets not showing up on Woocommerce product categories and tags
+* UPDATED: Compatibility with WordPress 6.2.2
+* UPDATED: Compatibility with PHP 8.2
+
 = 1.1.32 = 2022-12-16
 * ADDED: Warning message to caution about file editing
 * FIXED: Snippet including in case of rest api in some cases

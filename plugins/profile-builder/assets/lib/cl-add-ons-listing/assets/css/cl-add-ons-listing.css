@@ -1,34 +1,207 @@
-/**
-Style the Add-ons listing page
-*/
-#cl-add-ons-listing .cl-main-header{
-    margin-bottom:30px;
+/***********************************************************/
+/* Layout
+/***********************************************************/
+
+#cl-add-ons-listing {
+    margin: 0 20px;
 }
 
-#cl-add-ons-listing .cl-add-ons-section{
-    margin:40px 0;
+#cl-add-ons-listing .cl-add-ons-section {
+    margin-top: 50px;
 }
 
-#cl-add-ons-listing .tablenav{
-    display:none;
+#cl-add-ons-listing .cl-add-ons-section h2 {
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    line-height: 28px !important;
+    text-transform: uppercase;
+    color: #1E1E1E;
+    margin: 0 !important;
 }
 
-#cl-add-ons-listing .column-add_on{
-    width:80%;
+#cl-add-ons-listing .cl-add-ons-section p.description {
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 16px;
+    color: #757575;
+    margin: 0 0 10px 0;
 }
 
-#cl-add-ons-listing .column-icon{
-    width: 64px;
+#cl-add-ons-listing .cl-add-ons-section .cozmoslabs-description-upsell {
+    width: auto;
 }
 
-#cl-add-ons-listing .column-actions{
-    width:200px;
-    vertical-align: middle !important;
-}
-#cl-add-ons-listing .cl-add-ons-search-box{
-    margin-bottom:40px;
+#cl-add-ons-listing #cl-addons {
+    width: 100%;
+    max-width: 920px;
+    margin: 0 auto;
 }
 
-#cl-add-ons-listing #cl-add-ons-search-input{
-    width:350px;
+#cl-add-ons-listing .wp-list-table.add-ons {
+    background: none;
+    border: none;
 }
+
+#cl-add-ons-listing .tablenav,
+#cl-add-ons-listing .wp-list-table .check-column,
+#cl-add-ons-listing .wp-list-table thead,
+#cl-add-ons-listing .wp-list-table tfoot {
+    display: none;
+}
+
+#cl-add-ons-listing .wp-list-table tbody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 450px);
+    gap: 20px;
+}
+
+#cl-add-ons-listing .wp-list-table tbody tr {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    /*width: 450px;*/
+    height: 220px;
+    padding: 18px;
+    box-sizing: border-box;
+    border: 1px solid #CCCCCC;
+    border-radius: 2px;
+    background: #FFFFFF;
+}
+
+#cl-add-ons-listing .wp-list-table .column-icon {
+    width: 80px !important;
+    padding: 0;
+    margin-right: 16px;
+}
+
+#cl-add-ons-listing .wp-list-table .column-icon img {
+    width: 100%;
+    height: auto;
+}
+
+#cl-add-ons-listing .wp-list-table .column-add_on {
+    flex-basis: 290px;
+    flex-grow: 1;
+    padding: 0;
+}
+
+#cl-add-ons-listing .wp-list-table .column-actions {
+    width: 100% !important;
+    padding: 0 !important;
+    align-self: flex-end;
+
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+}
+
+
+/***********************************************************/
+/* Buttons
+/***********************************************************/
+
+#cl-add-ons-listing .button-primary {
+    height: 40px;
+    min-width: 100px;
+    background: #3858E9;
+    border: 1px solid #3858E9;
+    border-radius: 2px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 16px;
+    color: #FFFFFF;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#cl-add-ons-listing .button-primary:hover,
+#cl-add-ons-listing .button-primary:focus {
+    background: #1D35B4;
+    border-color: #1D35B4;
+    box-shadow: none;
+}
+
+#cl-add-ons-listing .button-secondary {
+    height: 40px;
+    min-width: 100px;
+    background: #FFFFFF;
+    border: 1px solid #3858E9;
+    box-sizing: border-box;
+    border-radius: 2px;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 20px;
+    color: #3858E9;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#cl-add-ons-listing .button-secondary:hover,
+#cl-add-ons-listing .button-secondary:focus {
+    font-weight: 400;
+    background: #F0F0F0;
+    border-color: #3858E9;
+    color: #3858E9;
+    box-shadow: none;
+    margin: 0;
+}
+
+
+/***********************************************************/
+/* Responsive
+/***********************************************************/
+
+@media screen and (max-width: 499px) {
+    #cl-add-ons-listing .wp-list-table tbody tr {
+        height: unset;
+    }
+
+    #cl-add-ons-listing .wp-list-table tbody tr .column-actions {
+        margin-top: 20px;
+    }
+}
+
+@media screen and (max-width: 782px) {
+
+    #cl-add-ons-listing .wp-list-table .column-add_on {
+        display: block;
+        flex-basis: 100px !important;
+    }
+
+    #cl-add-ons-listing .wp-list-table .column-add_on:before,
+    #cl-add-ons-listing .wp-list-table .column-icon .toggle-row {
+        display: none;
+    }
+
+}
+
+@media screen and (max-width: 1139px) {
+    #cl-add-ons-listing #cl-addons {
+        max-width: 450px !important;
+    }
+
+    #cl-add-ons-listing .wp-list-table tbody {
+        grid-template-columns: minmax(100%, 450px);
+    }
+}
+
+@media screen and (min-width: 1140px) and (max-width: 1609px) {
+    #cl-add-ons-listing #cl-addons {
+        max-width: 920px !important;
+    }
+}
+
+@media screen and (min-width: 1610px) {
+    #cl-add-ons-listing #cl-addons {
+        max-width: 1390px !important;
+    }
+}
+

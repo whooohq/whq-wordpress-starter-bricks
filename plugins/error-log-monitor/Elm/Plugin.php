@@ -1,4 +1,5 @@
 <?php
+
 class Elm_Plugin {
 	const MB_IN_BYTES = 1048576; //= 1024 * 1024
 	const MAX_NOTIFICATION_EMAIL_ADDRESSES = 30;
@@ -53,7 +54,7 @@ class Elm_Plugin {
 			$pluginFile,
 			array(
 				'interval' => $this->settings->get('log_size_check_interval'),
-				'callback' => array($this, 'checkLogFileSize')
+				'callback' => array($this, 'checkLogFileSize'),
 			)
 		);
 
@@ -61,45 +62,49 @@ class Elm_Plugin {
 			$pluginFile,
 			array(
 				'interval' => defined('MONTH_IN_SECONDS') ? MONTH_IN_SECONDS : (30 * 24 * 3600),
-				'callback' => array($this, 'deleteOldFixedMessages')
+				'callback' => array($this, 'deleteOldFixedMessages'),
 			)
 		);
 	}
 
 	protected function getDefaultSettings() {
 		return array(
-			'widget_line_count' => 20,
-			'strip_wordpress_path' => false,
-			'send_errors_to_email' => array(),
-			'email_line_count' => 100,
-			'email_interval' => 3600, //seconds
+			'widget_line_count'        => 20,
+			'strip_wordpress_path'     => false,
+			'send_errors_to_email'     => array(),
+			'email_line_count'         => 100,
+			'email_interval'           => 3600, //seconds
 			'email_log_check_interval' => 3600,
 
-			'last_sent_email_timestamp' => 0,
+			'last_sent_email_timestamp'   => 0,
 			//The end of the time interval that was covered by the last notification email.
 			'last_email_log_interval_end' => null,
-			'email_last_line_timestamp' => 0, //Superseded by last_email_log_interval_end.
+			'email_last_line_timestamp'   => 0, //Superseded by last_email_log_interval_end.
 
-			'timestamp_format' => 'M d, H:i:s',
-			'sort_order' => 'chronological',
+			'timestamp_format'        => 'M d, H:i:s',
+			'sort_order'              => 'chronological',
 			'extra_filter_line_count' => 1000,
-			'dashboard_log_layout' => 'list',
+			'dashboard_log_layout'    => 'list',
 
-			'enable_log_size_notification' => false,
+			'enable_log_size_notification'    => false,
 			'log_size_notification_threshold' => self::MB_IN_BYTES, //bytes
-			'log_size_check_interval' => 3600, //seconds,
-			'log_size_notification_sent' => false,
+			'log_size_check_interval'         => 3600, //seconds,
+			'log_size_notification_sent'      => false,
 
-			'dashboard_message_filter' => 'all',
+			'dashboard_message_filter'        => 'all',
 			'dashboard_message_filter_groups' => Elm_SeverityFilter::getAvailableOptions(),
-			'email_message_filter' => 'same_as_dashboard',
-			'email_message_filter_groups' => Elm_SeverityFilter::getAvailableOptions(),
+			'email_message_filter'            => 'same_as_dashboard',
+			'email_message_filter_groups'     => Elm_SeverityFilter::getAvailableOptions(),
 
 			'ignored_messages' => array(),
-			'fixed_messages' => array(),
+			'fixed_messages'   => array(),
 
-			'regex_filter_text' => '',
+			'regex_filter_text'     => '',
 			'regex_filter_patterns' => array(),
+
+			'context_group_visibility' => array(
+				'stacktrace' => true,
+			),
 
 			'enable_premium_notice' => true,
 		);
@@ -133,7 +138,7 @@ class Elm_Plugin {
 				'interval' => min(
 					$newSettings->get('email_interval'),
 					$newSettings->get('email_log_check_interval')
-				)
+				),
 			));
 		}
 
@@ -187,7 +192,7 @@ class Elm_Plugin {
 		if ( wp_mail($this->settings->get('send_errors_to_email'), $subject, $body) ) {
 			$this->settings->set('last_email_log_interval_end', $notification['intervalEnd']);
 			$this->settings->set('last_sent_email_timestamp', time());
-		} else{
+		} else {
 			trigger_error('Failed to send an email, wp_mail() returned FALSE', E_USER_WARNING);
 		}
 
@@ -412,7 +417,7 @@ class Elm_Plugin {
 	/**
 	 * Queue a message to be removed from one of the internal filter blacklists.
 	 *
-	 * Call @see flushBlacklistChanges to apply any queued changes.
+	 * Call {@see flushBlacklistChanges} to apply any queued changes.
 	 * If the queue isn't explicitly flushed, it will happen on shutdown.
 	 *
 	 * @param string $listName
@@ -561,13 +566,13 @@ class Elm_Plugin {
 
 		if ( $log->getFileSize() >= $this->settings->get('log_size_notification_threshold') ) {
 			$subject = sprintf(
-				/* translators: 1: File size limit, 2: Site URL */
+			/* translators: 1: File size limit, 2: Site URL */
 				__('PHP error log file size has exceeded %1$s on %2$s', 'error-log-monitor'),
 				self::formatByteCount($this->settings->get('log_size_notification_threshold'), 0),
 				site_url()
 			);
 			$body = sprintf(
-				/* translators: 1: Site URL, 2: Log file name, 3: Log file size */
+			/* translators: 1: Site URL, 2: Log file name, 3: Log file size */
 				__("Site URL: %1\$s\nLog file: %2\$s\nSize: %3\$s\n", 'error-log-monitor'),
 				site_url(),
 				$log->getFilename(),
@@ -576,7 +581,7 @@ class Elm_Plugin {
 
 			if ( wp_mail($this->settings->get('send_errors_to_email'), $subject, $body) ) {
 				$this->settings->set('log_size_notification_sent', true);
-			} else{
+			} else {
 				trigger_error('Failed to send an email, wp_mail() returned FALSE', E_USER_WARNING);
 			}
 		}

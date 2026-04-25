@@ -78,12 +78,13 @@ class GUI extends Instance {
 	 *
 	 * @since 2.0
 	 */
-	public function enqueue_admin() {
+	public function enqueue_admin($hook) {
 		// Only enqueue on dologin pages
 		if( empty( $_GET[ 'page' ] ) || strpos( $_GET[ 'page' ], 'dologin' ) !== 0 ) {
-			return;
+			if ( $hook !== 'users.php' ) {
+				return;
+			}
 		}
-
 		$this->enqueue_style();
 
 		wp_register_script( 'dologin_admin', DOLOGIN_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), Core::VER, false );
@@ -105,7 +106,7 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function login_form() {
-		if ( Conf::val( 'sms' ) ) {
+		if ( Conf::val( 'sms' ) || Conf::val( '2fa' ) ) {
 			echo '	<p id="dologin-process">
 						Dologin Security:
 						<span id="dologin-process-msg"></span>
@@ -117,7 +118,7 @@ class GUI extends Instance {
 				';
 		}
 
-		if ( Conf::val( 'gg' ) ) {
+		if ( Conf::val( 'cf' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}
@@ -137,7 +138,7 @@ class GUI extends Instance {
 			';
 		}
 
-		if ( Conf::val( 'gg' ) && Conf::val( 'recapt_register' ) ) {
+		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_register' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}
@@ -149,7 +150,7 @@ class GUI extends Instance {
 	 * @access public
 	 */
 	public function lostpassword_form() {
-		if ( Conf::val( 'gg' ) && Conf::val( 'recapt_forget' ) ) {
+		if ( Conf::val( 'cf' ) && Conf::val( 'recapt_forget' ) ) {
 			$this->cls( 'Captcha' )->show();
 		}
 	}

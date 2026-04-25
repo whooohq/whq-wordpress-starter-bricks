@@ -5,6 +5,8 @@
  * @package WooCommerce\Emails
  */
 
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -29,7 +31,7 @@ if ( ! class_exists( 'WC_Email_Cancelled_Order', false ) ) :
 		public function __construct() {
 			$this->id             = 'cancelled_order';
 			$this->title          = __( 'Cancelled order', 'woocommerce' );
-			$this->description    = __( 'Cancelled order emails are sent to chosen recipient(s) when orders have been marked cancelled (if they were previously processing or on-hold).', 'woocommerce' );
+			$this->email_group    = 'orders';
 			$this->template_html  = 'emails/admin-cancelled-order.php';
 			$this->template_plain = 'emails/plain/admin-cancelled-order.php';
 			$this->placeholders   = array(
@@ -44,6 +46,16 @@ if ( ! class_exists( 'WC_Email_Cancelled_Order', false ) ) :
 
 			// Call parent constructor.
 			parent::__construct();
+
+			// Must be after parent's constructor which sets `email_improvements_enabled` property.
+			$this->description = $this->email_improvements_enabled
+				? __( 'Receive an email notification when an order that was processing or on hold gets cancelled', 'woocommerce' )
+				: __( 'Cancelled order emails are sent to chosen recipient(s) when orders have been marked cancelled (if they were previously processing or on-hold).', 'woocommerce' );
+
+			if ( $this->block_email_editor_enabled ) {
+				$this->title       = __( 'Canceled order', 'woocommerce' );
+				$this->description = __( 'Notifies admins when an order that was processing or on hold has been canceled.', 'woocommerce' );
+			}
 
 			// Other settings.
 			$this->recipient = $this->get_option( 'recipient', get_option( 'admin_email' ) );
@@ -66,7 +78,9 @@ if ( ! class_exists( 'WC_Email_Cancelled_Order', false ) ) :
 		 * @return string
 		 */
 		public function get_default_heading() {
-			return __( 'Order Cancelled: #{order_number}', 'woocommerce' );
+			return $this->email_improvements_enabled
+				? __( 'Order cancelled: #{order_number}', 'woocommerce' )
+				: __( 'Order Cancelled: #{order_number}', 'woocommerce' );
 		}
 
 		/**
@@ -130,6 +144,23 @@ if ( ! class_exists( 'WC_Email_Cancelled_Order', false ) ) :
 					'sent_to_admin'      => true,
 					'plain_text'         => true,
 					'email'              => $this,
+				)
+			);
+		}
+
+		/**
+		 * Get block editor email template content.
+		 *
+		 * @return string
+		 */
+		public function get_block_editor_email_template_content() {
+			return wc_get_template_html(
+				$this->template_block_content,
+				array(
+					'order'         => $this->object,
+					'sent_to_admin' => true,
+					'plain_text'    => false,
+					'email'         => $this,
 				)
 			);
 		}
@@ -201,6 +232,13 @@ if ( ! class_exists( 'WC_Email_Cancelled_Order', false ) ) :
 					'desc_tip'    => true,
 				),
 			);
+			if ( FeaturesUtil::feature_is_enabled( 'email_improvements' ) ) {
+				$this->form_fields['cc']  = $this->get_cc_field();
+				$this->form_fields['bcc'] = $this->get_bcc_field();
+			}
+			if ( $this->block_email_editor_enabled ) {
+				$this->form_fields['preheader'] = $this->get_preheader_field();
+			}
 		}
 	}
 

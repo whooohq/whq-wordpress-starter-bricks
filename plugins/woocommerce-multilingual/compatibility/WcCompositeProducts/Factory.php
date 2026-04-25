@@ -26,6 +26,8 @@ class Factory extends ComponentFactory implements IStandAloneAction {
 
 		if ( ! isStandAlone() ) {
 			$hooks[] = new WCML_Composite_Products( getSitePress() );
+			$hooks[] = new JobHooks();
+			$hooks[] = new CompositedProductHooks();
 		}
 
 		return $hooks;

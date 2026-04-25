@@ -6,25 +6,24 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
     
     /**
      * Current ajax controller
-     * @var Loco_mvc_AjaxController
      */
-    private $ctrl;
+    private ?Loco_mvc_AjaxController $ctrl = null;
 
     /**
-     * @var Loco_output_Buffer
+     * Buffer for collecting unintentional output
      */
-    private $buffer;
+    private ?Loco_output_Buffer $buffer = null;
 
     /**
      * Generate a GET request URL containing required routing parameters
-     * @param string
-     * @param array
+     * @param string $route
+     * @param array $args
      * @return string
      */
-    public static function generate( $route, array $args = [] ){
+    public static function generate( string $route, array $args = [] ){
         // validate route autoload if debugging
-        if( loco_debugging() ){
-            class_exists( self::routeToClass($route) );
+        if( loco_debugging() && ! class_exists( self::routeToClass($route) ) ){
+            throw new Exception('Loco class not found for '.$route);
         }
         $args +=  [
             'route' => $route,
@@ -49,27 +48,19 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
      * early-ish hook that ensures controllers can initialize
      */
     public function on_init(){
-        try {
-            $class = self::routeToClass( $_REQUEST['route'] );
-            // autoloader will throw error if controller class doesn't exist
+        $this->ctrl = null;
+        $class = self::routeToClass( $_REQUEST['route'] );
+        if( class_exists($class) ){
             $this->ctrl = new $class;
             $this->ctrl->_init( $_REQUEST );
             // hook name compatible with AdminRouter, plus additional action for ajax hooks to set up
             do_action('loco_admin_init', $this->ctrl );
             do_action('loco_ajax_init', $this->ctrl );
         }
-        catch( Loco_error_Exception $e ){
-            $this->ctrl = null;
-            // throw $e; // <- debug
-        }
     }
 
     
-    /**
-     * @param string
-     * @return string
-     */
-    private static function routeToClass( $route ){
+    private static function routeToClass( string $route ):string {
         $route = explode( '-', $route );
         // convert route to class name, e.g. "foo-bar" => "Loco_ajax_foo_BarController"
         $key = count($route) - 1;
@@ -85,9 +76,9 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
      */
     public function on_wp_ajax_loco_json(){
         $json = $this->renderAjax();
-	    $this->exitScript( $json,  [
-	        'Content-Type' => 'application/json; charset=UTF-8',
-	    ] );
+        $this->exitScript( $json,  [
+            'Content-Type' => 'application/json; charset=UTF-8',
+        ] );
     }
 
 
@@ -112,31 +103,33 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
             $data = (string) $data;
         }
         $mimes =  [
-            'mo'   => 'application/x-gettext-translation',
             'po'   => 'application/x-gettext',
             'pot'  => 'application/x-gettext',
-            'xml'  => 'text/xml',
+            'mo'   => 'application/x-gettext-translation',
+            'php'  => 'application/x-httpd-php-source',
             'json' => 'application/json',
+            'zip'  => 'application/zip',
+            'xml'  => 'text/xml',
         ];
         $headers = [];
-	    if( $file instanceof Loco_fs_File && isset($mimes[$ext]) ){
+        if( $file instanceof Loco_fs_File && isset($mimes[$ext]) ){
             $headers['Content-Type'] = $mimes[$ext].'; charset=UTF-8';
             $headers['Content-Disposition'] = 'attachment; filename='.$file->basename();
         }
         else {
-	        $headers['Content-Type'] = 'text/plain; charset=UTF-8';
+            $headers['Content-Type'] = 'text/plain; charset=UTF-8';
         }
         $this->exitScript( $data, $headers );
     }
 
 
-	/**
-	 * Exit script before WordPress shutdown, avoids hijacking of exit via wp_die_ajax_handler.
-	 * Also gives us a final chance to check for output buffering problems.
-	 * @codeCoverageIgnore
-	 */
+    /**
+     * Exit script before WordPress shutdown, avoids hijacking of exit via wp_die_ajax_handler.
+     * Also gives us a final chance to check for output buffering problems.
+     * @codeCoverageIgnore
+     */
     private function exitScript( $str, array $headers ){
-	    try {
+        try {
             do_action('loco_admin_shutdown');
             Loco_output_Buffer::clear();
             $this->buffer = null;
@@ -145,13 +138,13 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
             foreach( $headers as $name => $value ){
                 header( $name.': '.$value );
             }
-	    }
-	    catch( Exception $e ){
-	        Loco_error_AdminNotices::add( Loco_error_Exception::convert($e) );
-	        $str = $e->getMessage();
-	    }
-	    echo $str;
-	    exit(0);
+        }
+        catch( Exception $e ){
+            Loco_error_AdminNotices::add( Loco_error_Exception::convert($e) );
+            $str = $e->getMessage();
+        }
+        echo $str;
+        exit(0);
     }
 
 
@@ -163,7 +156,8 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
         try {
             // respond with deferred failure from initAjax
             if( ! $this->ctrl ){
-                $route = isset($_REQUEST['route']) ? $_REQUEST['route'] : '';
+                $route = $_REQUEST['route'] ?? '';
+                // translators: Fatal error where %s represents an unexpected value
                 throw new Loco_error_Exception( sprintf( __('Ajax route not found: "%s"','loco-translate'), $route ) );
             }
             // else execute controller to get json output
@@ -173,11 +167,11 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
             }
         }
         catch( Loco_error_Exception $e ){
-            $json = json_encode( [ 'error' => $e->jsonSerialize(), 'notices' => Loco_error_AdminNotices::destroyAjax() ] );
+            $json = json_encode( [ 'error' => $e->jsonSerialize(), 'notices' => Loco_error_AdminNotices::destroy() ] );
         }
         catch( Exception $e ){
             $e = Loco_error_Exception::convert($e);
-            $json = json_encode( [ 'error' => $e->jsonSerialize(), 'notices' => Loco_error_AdminNotices::destroyAjax() ] );
+            $json = json_encode( [ 'error' => $e->jsonSerialize(), 'notices' => Loco_error_AdminNotices::destroy() ] );
         }
         $this->buffer->discard();
         return $json;
@@ -203,7 +197,7 @@ class Loco_mvc_AjaxRouter extends Loco_hooks_Hookable {
         catch( Exception $e ){
             $data = $e;
         }
-	    $this->buffer->discard();
+        $this->buffer->discard();
         return $data;
     }
 

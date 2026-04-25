@@ -14,9 +14,9 @@ Plugin URI: https://wordpress.org/plugins/imsanity/
 Description: Imsanity stops insanely huge image uploads
 Author: Exactly WWW
 Domain Path: /languages
-Version: 2.8.2
-Requires at least: 5.5
-Requires PHP: 7.2
+Version: 2.9.0
+Requires at least: 6.6
+Requires PHP: 7.4
 Author URI: https://ewww.io/about/
 License: GPLv3
 */
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IMSANITY_VERSION', '2.8.2' );
+define( 'IMSANITY_VERSION', '2.9.0' );
 define( 'IMSANITY_SCHEMA_VERSION', '1.1' );
 
 define( 'IMSANITY_DEFAULT_MAX_WIDTH', 1920 );
@@ -33,14 +33,12 @@ define( 'IMSANITY_DEFAULT_MAX_HEIGHT', 1920 );
 define( 'IMSANITY_DEFAULT_BMP_TO_JPG', true );
 define( 'IMSANITY_DEFAULT_PNG_TO_JPG', false );
 define( 'IMSANITY_DEFAULT_QUALITY', 82 );
+define( 'IMSANITY_DEFAULT_AVIF_QUALITY', 86 );
+define( 'IMSANITY_DEFAULT_WEBP_QUALITY', 86 );
 
 define( 'IMSANITY_SOURCE_POST', 1 );
 define( 'IMSANITY_SOURCE_LIBRARY', 2 );
 define( 'IMSANITY_SOURCE_OTHER', 4 );
-
-if ( ! defined( 'IMSANITY_AJAX_MAX_RECORDS' ) ) {
-	define( 'IMSANITY_AJAX_MAX_RECORDS', 250 );
-}
 
 /**
  * The full path of the main plugin file.
@@ -48,6 +46,14 @@ if ( ! defined( 'IMSANITY_AJAX_MAX_RECORDS' ) ) {
  * @var string IMSANITY_PLUGIN_FILE
  */
 define( 'IMSANITY_PLUGIN_FILE', __FILE__ );
+
+/**
+ * The directory path of the main plugin file.
+ *
+ * @var string IMSANITY_PLUGIN_DIR
+ */
+define( 'IMSANITY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+
 /**
  * The path of the main plugin file, relative to the plugins/ folder.
  *
@@ -65,33 +71,13 @@ function imsanity_init() {
 /**
  * Import supporting libraries.
  */
-require_once( plugin_dir_path( __FILE__ ) . 'libs/utils.php' );
-require_once( plugin_dir_path( __FILE__ ) . 'settings.php' );
-require_once( plugin_dir_path( __FILE__ ) . 'ajax.php' );
-require_once( plugin_dir_path( __FILE__ ) . 'media.php' );
+require_once plugin_dir_path( __FILE__ ) . 'libs/debug.php';
+require_once plugin_dir_path( __FILE__ ) . 'libs/utils.php';
+require_once plugin_dir_path( __FILE__ ) . 'settings.php';
+require_once plugin_dir_path( __FILE__ ) . 'ajax.php';
+require_once plugin_dir_path( __FILE__ ) . 'media.php';
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-	require_once( plugin_dir_path( __FILE__ ) . 'class-imsanity-cli.php' );
-}
-
-/**
- * Use the EWWW IO debugging functions (if available).
- *
- * @param string $message A message to send to the debugger.
- */
-function imsanity_debug( $message ) {
-	if ( function_exists( 'ewwwio_debug_message' ) ) {
-		if ( ! is_string( $message ) ) {
-			if ( function_exists( 'print_r' ) ) {
-				$message = print_r( $message, true );
-			} else {
-				$message = 'not a string, print_r disabled';
-			}
-		}
-		ewwwio_debug_message( $message );
-		if ( function_exists( 'ewww_image_optimizer_debug_log' ) ) {
-			ewww_image_optimizer_debug_log();
-		}
-	}
+	require_once plugin_dir_path( __FILE__ ) . 'class-imsanity-cli.php';
 }
 
 /**
@@ -151,19 +137,19 @@ function imsanity_get_source() {
  * @param int $source One of IMSANITY_SOURCE_POST | IMSANITY_SOURCE_LIBRARY | IMSANITY_SOURCE_OTHER.
  */
 function imsanity_get_max_width_height( $source ) {
-	$w = imsanity_get_option( 'imsanity_max_width', IMSANITY_DEFAULT_MAX_WIDTH );
-	$h = imsanity_get_option( 'imsanity_max_height', IMSANITY_DEFAULT_MAX_HEIGHT );
+	$w = (int) imsanity_get_option( 'imsanity_max_width', IMSANITY_DEFAULT_MAX_WIDTH );
+	$h = (int) imsanity_get_option( 'imsanity_max_height', IMSANITY_DEFAULT_MAX_HEIGHT );
 
 	switch ( $source ) {
 		case IMSANITY_SOURCE_POST:
 			break;
 		case IMSANITY_SOURCE_LIBRARY:
-			$w = imsanity_get_option( 'imsanity_max_width_library', $w );
-			$h = imsanity_get_option( 'imsanity_max_height_library', $h );
+			$w = (int) imsanity_get_option( 'imsanity_max_width_library', $w );
+			$h = (int) imsanity_get_option( 'imsanity_max_height_library', $h );
 			break;
 		default:
-			$w = imsanity_get_option( 'imsanity_max_width_other', $w );
-			$h = imsanity_get_option( 'imsanity_max_height_other', $h );
+			$w = (int) imsanity_get_option( 'imsanity_max_width_other', $w );
+			$h = (int) imsanity_get_option( 'imsanity_max_height_other', $h );
 			break;
 	}
 
@@ -178,13 +164,21 @@ function imsanity_get_max_width_height( $source ) {
  * @param Array $params The parameters submitted with the upload.
  */
 function imsanity_handle_upload( $params ) {
+	imsanity_debug( __FUNCTION__ );
+
+	if ( empty( $params['file'] ) || empty( $params['type'] ) ) {
+		imsanity_debug( 'missing file or type parameter, skipping' );
+		return $params;
+	}
 
 	// If "noresize" is included in the filename then we will bypass imsanity scaling.
 	if ( strpos( $params['file'], 'noresize' ) !== false ) {
+		imsanity_debug( "skipping {$params['file']}" );
 		return $params;
 	}
 
 	if ( apply_filters( 'imsanity_skip_image', false, $params['file'] ) ) {
+		imsanity_debug( "skipping {$params['file']} per filter" );
 		return $params;
 	}
 
@@ -197,10 +191,11 @@ function imsanity_handle_upload( $params ) {
 		$params = imsanity_convert_to_jpg( 'png', $params );
 	}
 
-	// Make sure this is a type of image that we want to convert and that it exists.
+	// Store the path for reference in case $params is modified.
 	$oldpath = $params['file'];
 
 	// Let folks filter the allowed mime-types for resizing.
+	// Also allows conditional support for WebP and AVIF if the server supports it.
 	$allowed_types = apply_filters( 'imsanity_allowed_mimes', array( 'image/png', 'image/gif', 'image/jpeg' ), $oldpath );
 	if ( is_string( $allowed_types ) ) {
 		$allowed_types = array( $allowed_types );
@@ -216,6 +211,11 @@ function imsanity_handle_upload( $params ) {
 		filesize( $oldpath ) > 0 &&
 		in_array( $params['type'], $allowed_types, true )
 	) {
+		// If the Modern Image Formats plugin is active but fallback mode is disabled, permit conversion to AVIF/WebP during upload by defining IMSANITY_ALLOW_CONVERSION.
+		// Otherwise, no conversion should be allowed at all. The upload handler will still check for conversion and work with it if it happens somehow.
+		if ( ! defined( 'IMSANITY_ALLOW_CONVERSION' ) && function_exists( 'webp_uploads_is_fallback_enabled' ) && ! webp_uploads_is_fallback_enabled() ) {
+			define( 'IMSANITY_ALLOW_CONVERSION', true );
+		}
 
 		// figure out where the upload is coming from.
 		$source = imsanity_get_source();
@@ -226,11 +226,19 @@ function imsanity_handle_upload( $params ) {
 		if ( is_array( $max_width_height ) && 2 === count( $max_width_height ) ) {
 			list( $maxw, $maxh ) = $max_width_height;
 		}
+		$maxw = (int) $maxw;
+		$maxh = (int) $maxh;
 
-		list( $oldw, $oldh ) = getimagesize( $oldpath );
+		$dimensions = getimagesize( $oldpath );
+		if ( is_array( $dimensions ) && count( $dimensions ) >= 2 ) {
+			$oldw = $dimensions[0];
+			$oldh = $dimensions[1];
+		} else {
+			imsanity_debug( "could not get dimensions for $oldpath, skipping" );
+			return $params;
+		}
 
 		if ( ( $oldw > $maxw + 1 && $maxw > 0 ) || ( $oldh > $maxh + 1 && $maxh > 0 ) ) {
-			$quality = imsanity_get_option( 'imsanity_quality', IMSANITY_DEFAULT_QUALITY );
 
 			$ftype       = imsanity_quick_mimetype( $oldpath );
 			$orientation = imsanity_get_orientation( $oldpath, $ftype );
@@ -254,22 +262,38 @@ function imsanity_handle_upload( $params ) {
 			}
 			$original_preempt    = $ewww_preempt_editor;
 			$ewww_preempt_editor = true;
-			$resizeresult        = imsanity_image_resize( $oldpath, $neww, $newh, apply_filters( 'imsanity_crop_image', false ), null, null, $quality );
+			$resizeresult        = imsanity_image_resize( $oldpath, $neww, $newh, apply_filters( 'imsanity_crop_image', false ) );
 			$ewww_preempt_editor = $original_preempt;
 
 			if ( $resizeresult && ! is_wp_error( $resizeresult ) ) {
-				$newpath = $resizeresult;
+				$newpath  = $resizeresult;
+				$new_type = $params['type'];
 
+				imsanity_debug( "checking $newpath to see if resize was successful" );
 				if ( is_file( $newpath ) && filesize( $newpath ) < filesize( $oldpath ) ) {
+					imsanity_debug( 'resized image is smaller, replacing original' );
 					// We saved some file space. remove original and replace with resized image.
+					$new_type = imsanity_mimetype( $newpath );
 					unlink( $oldpath );
 					rename( $newpath, $oldpath );
+					if ( $new_type && $new_type !== $params['type'] ) {
+						imsanity_debug( "mimetype changed from {$params['type']} to $new_type" );
+						$params['type'] = $new_type;
+						$params['file'] = imsanity_update_extension( $oldpath, $new_type );
+						if ( $params['file'] !== $oldpath ) {
+							rename( $oldpath, $params['file'] );
+						}
+						$params['url'] = imsanity_update_extension( $params['url'], $new_type );
+						imsanity_debug( "renamed file to match new extension: {$params['file']} / {$params['url']}" );
+					}
 				} elseif ( is_file( $newpath ) ) {
+					imsanity_debug( 'resized image is bigger, discarding' );
 					// The resized image is actually bigger in filesize (most likely due to jpg quality).
 					// Keep the old one and just get rid of the resized image.
 					unlink( $newpath );
 				}
 			} elseif ( false === $resizeresult ) {
+				imsanity_debug( 'resize returned false, unknown error' );
 				return $params;
 			} elseif ( is_wp_error( $resizeresult ) ) {
 				// resize didn't work, likely because the image processing libraries are missing.
@@ -285,7 +309,9 @@ function imsanity_handle_upload( $params ) {
 						'https://wordpress.org/support/plugin/imsanity'
 					)
 				);
+				imsanity_debug( 'resize result is wp_error, should have already output error to log' );
 			} else {
+				imsanity_debug( 'unknown resize result, inconceivable!' );
 				return $params;
 			}
 		}
@@ -305,8 +331,10 @@ function imsanity_handle_upload( $params ) {
  * @return array altered params
  */
 function imsanity_convert_to_jpg( $type, $params ) {
+	imsanity_debug( __FUNCTION__ );
 
 	if ( apply_filters( 'imsanity_disable_convert', false, $type, $params ) ) {
+		imsanity_debug( "skipping conversion for {$params['file']}" );
 		return $params;
 	}
 
@@ -314,6 +342,7 @@ function imsanity_convert_to_jpg( $type, $params ) {
 
 	if ( 'bmp' === $type ) {
 		if ( ! function_exists( 'imagecreatefrombmp' ) ) {
+			imsanity_debug( 'imagecreatefrombmp does not exist' );
 			return $params;
 		}
 		$img = imagecreatefrombmp( $params['file'] );
@@ -373,5 +402,7 @@ add_action( 'plugins_loaded', 'imsanity_init' );
 add_filter( 'manage_media_columns', 'imsanity_media_columns' );
 // Outputs the actual column information for each attachment.
 add_action( 'manage_media_custom_column', 'imsanity_custom_column', 10, 2 );
+// Checks for AVIF support and adds it to the allowed mime types.
+add_filter( 'imsanity_allowed_mimes', 'imsanity_add_avif_support' );
 // Checks for WebP support and adds it to the allowed mime types.
 add_filter( 'imsanity_allowed_mimes', 'imsanity_add_webp_support' );

@@ -4,8 +4,6 @@ use WPML\Core\Twig_Environment;
 use WPML\Core\Twig_Error_Syntax;
 use WPML\Core\Twig_Error_Runtime;
 use WPML\Core\Twig_Error_Loader;
-use WPML\Core\Twig_LoaderInterface;
-use WPML\Core\Twig_Loader_String;
 use WPML\Core\Twig_Loader_Filesystem;
 
 abstract class WCML_Templates_Factory extends WPML_Templates_Factory {
@@ -30,8 +28,10 @@ abstract class WCML_Templates_Factory extends WPML_Templates_Factory {
 			$template = $this->get_template();
 		}
 
+		$this->before_render();
+
 		try {
-			/* @phpstan-ignore-next-line */
+			/* @phpstan-ignore class.notFound */
 			$output = $this->twig->render( $template, $model );
 		} catch ( RuntimeException $e ) {
 			if ( $this->is_caching_enabled() ) {
@@ -42,8 +42,7 @@ abstract class WCML_Templates_Factory extends WPML_Templates_Factory {
 			} else {
 				$this->add_exception_notice( $e );
 			}
-		} catch ( Twig_Error_Syntax $e ) {
-			/* @phpstan-ignore-next-line */
+		} catch ( \WPML\Core\Twig\Error\SyntaxError $e ) {
 			$message = 'Invalid Twig template string: ' . $e->getRawMessage() . "\n" . $template;
 			$this->get_wp_api()->error_log( $message );
 		}
@@ -51,11 +50,17 @@ abstract class WCML_Templates_Factory extends WPML_Templates_Factory {
 		return $output;
 	}
 
+	protected function before_render() {
+
+	}
+
 	/**
 	 * Maybe init twig for WCML
 	 */
 	protected function maybe_init_twig() {
-		if ( ! $this->twig ) {
+		if ( $this->twig instanceof Twig_Environment ) {
+			return;
+		}
 			$loader = $this->get_twig_loader();
 
 			$environment_args = [];
@@ -76,59 +81,32 @@ abstract class WCML_Templates_Factory extends WPML_Templates_Factory {
 				}
 			}
 
-			/* @phpstan-ignore-next-line */
+			/* @phpstan-ignore assign.propertyType */
 			$this->twig = $this->get_twig_environment( $loader, $environment_args );
-			if ( $this->custom_functions && count( $this->custom_functions ) > 0 ) {
+			if ( is_array( $this->custom_functions ) ) {
 				foreach ( $this->custom_functions as $custom_function ) {
-					/* @phpstan-ignore-next-line */
 					$this->twig->addFunction( $custom_function );
 				}
 			}
-			if ( $this->custom_filters && count( $this->custom_filters ) > 0 ) {
+			if ( is_array( $this->custom_filters ) ) {
 				foreach ( $this->custom_filters as $custom_filter ) {
-					/* @phpstan-ignore-next-line */
 					$this->twig->addFilter( $custom_filter );
 				}
 			}
-		}
 	}
 
 	/**
-	 * @return Twig_Loader_Filesystem|Twig_Loader_String
-	 */
-	protected function get_twig_loader() {
-		if ( $this->is_string_template() ) {
-			$loader = $this->get_twig_loader_string();
-		} else {
-			$loader = $this->get_twig_loader_filesystem( $this->template_paths );
-		}
-
-		return $loader;
-	}
-
-	/**
-	 * @param Twig_LoaderInterface $loader
-	 * @param array                $environment_args
-	 *
-	 * @return Twig_Environment
-	 */
-	private function get_twig_environment( $loader, $environment_args ) {
-		return new Twig_Environment( $loader, $environment_args );
-	}
-
-	/**
-	 * @return Twig_Loader_String
-	 */
-	private function get_twig_loader_string() {
-		return new Twig_Loader_String();
-	}
-
-	/**
-	 * @param string|array $template_paths
-	 *
 	 * @return Twig_Loader_Filesystem
 	 */
-	private function get_twig_loader_filesystem( $template_paths ) {
-		return new Twig_Loader_Filesystem( $template_paths );
+	protected function get_twig_loader() {
+		return new Twig_Loader_Filesystem( $this->template_paths );
+	}
+
+	/**
+	 * @param Twig_Loader_Filesystem $loader
+	 * @param array                  $environment_args
+	 */
+	private function get_twig_environment( $loader, $environment_args ): Twig_Environment {
+		return new Twig_Environment( $loader, $environment_args );
 	}
 }

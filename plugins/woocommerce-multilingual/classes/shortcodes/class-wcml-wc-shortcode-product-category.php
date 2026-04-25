@@ -3,8 +3,6 @@
 use WPML\Collect\Support\Collection;
 
 /**
- * Class WCML_WC_Shortcode_Product_Category
- *
  * @since 4.2.2
  */
 class WCML_WC_Shortcode_Product_Category {
@@ -15,8 +13,6 @@ class WCML_WC_Shortcode_Product_Category {
 	private $sitepress;
 
 	/**
-	 * WCML_WC_Shortcode_Product_Category constructor.
-	 *
 	 * @param SitePress $sitepress
 	 */
 	public function __construct( \WPML\Core\ISitePress $sitepress ) {
@@ -24,9 +20,26 @@ class WCML_WC_Shortcode_Product_Category {
 	}
 
 	public function add_hooks() {
+		add_filter( 'shortcode_atts_product_categories', [ $this, 'shortcode_product_categories_convert_attributes' ] );
 		add_filter( 'woocommerce_shortcode_products_query', [ $this, 'translate_category' ], 10, 2 );
 	}
 
+	/**
+	 * @param array|mixed $attributes
+	 *
+	 * @return array|mixed
+	 */
+	public function shortcode_product_categories_convert_attributes( $attributes ) {
+		if ( ! is_array( $attributes ) ) {
+			return $attributes;
+		}
+
+		if ( ! empty( $attributes['parent'] ) ) {
+			$attributes['parent'] = (int) apply_filters( 'wpml_object_id', $attributes['parent'], \WCML\Utilities\WCTaxonomies::TAXONOMY_PRODUCT_CATEGORY, true );
+		}
+
+		return $attributes;
+	}
 
 	/**
 	 * @param array $args
@@ -73,11 +86,14 @@ class WCML_WC_Shortcode_Product_Category {
 	private function replace_category_in_query_arguments( array $args, Collection $terms ) {
 
 		foreach ( $args['tax_query'] as $i => $tax_query ) {
+			if ( ! is_array( $tax_query ) ) {
+				continue;
+			}
 			$args['tax_query'][ $i ] = [];
 			if ( ! is_int( key( $tax_query ) ) ) {
 				$tax_query = [ $tax_query ];
 			}
-			foreach ( $tax_query as $j => $condition ) {
+			foreach ( $tax_query as $condition ) {
 				if ( 'product_cat' === $condition['taxonomy'] ) {
 					$condition['terms'] = $terms->pluck( $condition['field'] )->toArray();
 				}
@@ -97,7 +113,7 @@ class WCML_WC_Shortcode_Product_Category {
 
 		$category_slugs = array_map( 'trim', explode( ',', $args['product_cat'] ) );
 
-		$filter_exists         = remove_filter( 'terms_clauses', [ $this->sitepress, 'terms_clauses' ], 10 );
+		$filter_exists         = remove_filter( 'terms_clauses', [ $this->sitepress, 'terms_clauses' ] );
 		$categories_translated = get_terms(
 			[
 				'slug'     => $category_slugs,

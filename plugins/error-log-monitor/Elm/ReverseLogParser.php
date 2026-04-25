@@ -131,6 +131,16 @@ class Elm_ReverseLogParser implements OuterIterator {
 	}
 
 	private function parseEntryWithXdebugTrace() {
+		/*
+		 * The XDebug stack trace line format is hard to parse. It might even be impossible
+		 * to do it unambiguously. The function call comes first and can contain virtually
+		 * any characters. The file name is separated from it by a single space, and both
+		 * the file name and the function call can contain spaces.
+		 *
+		 * Due to that, this method doesn't attempt to parse the individual lines aside from
+		 * verifying the index.
+		 */
+
 		//Note: XDebug stack traces are deepest-call-last (i.e. most recent call last).
 		$stackTraceRegex = '/^PHP[ ]{1,5}?(\d{1,3}?)\.\s./';
 		$stackTrace = null;

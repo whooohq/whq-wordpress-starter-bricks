@@ -10,6 +10,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use Automattic\WooCommerce\Enums\OrderStatus;
+use Automattic\WooCommerce\Internal\Utilities\Users;
+use Automattic\WooCommerce\Enums\ProductType;
 use Automattic\WooCommerce\Utilities\ArrayUtil;
 use Automattic\WooCommerce\Utilities\OrderUtil;
 use Automattic\WooCommerce\Utilities\StringUtil;
@@ -222,20 +225,20 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 
 		// Add SKU, PRICE, and IMAGE to products.
 		if ( is_callable( array( $item, 'get_product' ) ) ) {
-			$data['sku']   = $item->get_product() ? $item->get_product()->get_sku() : null;
-			$data['price'] = $item->get_quantity() ? $item->get_total() / $item->get_quantity() : 0;
+			$product = $item->get_product();
 
-			$image_id      = $item->get_product() ? $item->get_product()->get_image_id() : 0;
+			$data['sku']              = $product ? $product->get_sku() : null;
+			$data['global_unique_id'] = $product ? $product->get_global_unique_id() : null;
+			$data['price']            = $item->get_quantity() ? $item->get_total() / $item->get_quantity() : 0;
+
+			$image_id = $product ? $product->get_image_id() : 0;
+
 			$data['image'] = array(
 				'id'  => $image_id,
 				'src' => $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '',
 			);
-		}
 
-		// Add parent_name if the product is a variation.
-		if ( is_callable( array( $item, 'get_product' ) ) ) {
-			$product = $item->get_product();
-
+			// Add parent_name if the product is a variation.
 			if ( is_callable( array( $product, 'get_parent_data' ) ) ) {
 				$data['parent_name'] = $product->get_title();
 			} else {
@@ -250,8 +253,8 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 			foreach ( $data['taxes']['total'] as $tax_rate_id => $tax ) {
 				$taxes[] = array(
 					'id'       => $tax_rate_id,
-					'total'    => $tax,
-					'subtotal' => isset( $data['taxes']['subtotal'][ $tax_rate_id ] ) ? $data['taxes']['subtotal'][ $tax_rate_id ] : '',
+					'total'    => wc_format_decimal( $tax, $this->request['dp'] ),
+					'subtotal' => isset( $data['taxes']['subtotal'][ $tax_rate_id ] ) ? wc_format_decimal( $data['taxes']['subtotal'][ $tax_rate_id ], $this->request['dp'] ) : '',
 				);
 			}
 			$data['taxes'] = $taxes;
@@ -276,17 +279,25 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 			$order_item_name   = $data['name'];
 			$data['meta_data'] = array_filter(
 				$data['meta_data'],
-				function( $meta ) use ( $product, $order_item_name ) {
+				function ( $meta ) use ( $product, $order_item_name ) {
 					$display_value = wp_kses_post( rawurldecode( (string) $meta->value ) );
 
 					// Skip items with values already in the product details area of the product name.
-					if ( $product && $product->is_type( 'variation' ) && wc_is_attribute_in_product_name( $display_value, $order_item_name ) ) {
+					if ( $product && $product->is_type( ProductType::VARIATION ) && wc_is_attribute_in_product_name( $display_value, $order_item_name ) ) {
 						return false;
 					}
 
 					return true;
 				}
 			);
+		}
+
+		// Add additional applied coupon information.
+		if ( $item instanceof WC_Order_Item_Coupon ) {
+			$coupon                 = WC_Coupon::from_order_item( $item );
+			$data['discount_type']  = $coupon->get_discount_type();
+			$data['nominal_amount'] = (float) $coupon->get_amount();
+			$data['free_shipping']  = $coupon->get_free_shipping();
 		}
 
 		$data['meta_data'] = array_map(
@@ -449,7 +460,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 		}
 
 		// Format the order status.
-		$data['status'] = 'wc-' === substr( $data['status'], 0, 3 ) ? substr( $data['status'], 3 ) : $data['status'];
+		$data['status'] = OrderUtil::remove_status_prefix( $data['status'] );
 
 		// Format line items.
 		foreach ( $format_line_items as $key ) {
@@ -518,13 +529,8 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_object_for_response( $object, $request ) {
-		$this->request       = $request;
-		$this->request['dp'] = is_null( $this->request['dp'] ) ? wc_get_price_decimals() : absint( $this->request['dp'] );
-		$request['context']  = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data                = $this->get_formatted_item_data( $object );
-		$data                = $this->add_additional_fields_to_object( $data, $request );
-		$data                = $this->filter_response_by_context( $data, $request['context'] );
-		$response            = rest_ensure_response( $data );
+		$data     = $this->prepare_object_for_response_core( $object, $request );
+		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $object, $request ) );
 
 		/**
@@ -543,6 +549,26 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 	}
 
 	/**
+	 * Core method to prepare a single order object for response
+	 * (doesn't fire hooks, execute rest_ensure_response, or add links).
+	 *
+	 * @param  WC_Data         $order  Object data.
+	 * @param  WP_REST_Request $request Request object.
+	 * @return array Prepared response data.
+	 * @since  9.5.0
+	 */
+	protected function prepare_object_for_response_core( $order, $request ): array {
+		$this->request       = $request;
+		$this->request['dp'] = is_null( $this->request['dp'] ) ? wc_get_price_decimals() : absint( $this->request['dp'] );
+		$request['context']  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data                = $this->get_formatted_item_data( $order );
+		$data                = $this->add_additional_fields_to_object( $data, $request );
+		$data                = $this->filter_response_by_context( $data, $request['context'] );
+
+		return $data;
+	}
+
+	/**
 	 * Prepare links for the request.
 	 *
 	 * @param WC_Data         $object  Object data.
@@ -551,11 +577,15 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 	 */
 	protected function prepare_links( $object, $request ) {
 		$links = array(
-			'self'       => array(
+			'self'            => array(
 				'href' => rest_url( sprintf( '/%s/%s/%d', $this->namespace, $this->rest_base, $object->get_id() ) ),
 			),
-			'collection' => array(
+			'collection'      => array(
 				'href' => rest_url( sprintf( '/%s/%s', $this->namespace, $this->rest_base ) ),
+			),
+			'email_templates' => array(
+				'href'       => rest_url( sprintf( '/%s/%s/%d/actions/email_templates', $this->namespace, $this->rest_base, $object->get_id() ) ),
+				'embeddable' => true,
 			),
 		);
 
@@ -596,15 +626,19 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 		}
 
 		if ( isset( $request['customer'] ) ) {
-			if ( ! empty( $args['meta_query'] ) ) {
-				$args['meta_query'] = array(); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-			}
+			if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
+				$args['customer_id'] = $request['customer'];
+			} else {
+				if ( ! empty( $args['meta_query'] ) ) {
+					$args['meta_query'] = array(); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				}
 
-			$args['meta_query'][] = array(
-				'key'   => '_customer_user',
-				'value' => $request['customer'],
-				'type'  => 'NUMERIC',
-			);
+				$args['meta_query'][] = array(
+					'key'   => '_customer_user',
+					'value' => $request['customer'],
+					'type'  => 'NUMERIC',
+				);
+			}
 		}
 
 		// Search by product.
@@ -754,8 +788,8 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 			WC()->payment_gateways();
 
 			if ( ! is_null( $request['customer_id'] ) && 0 !== $request['customer_id'] ) {
-				// Make sure customer exists.
-				if ( false === get_user_by( 'id', $request['customer_id'] ) ) {
+				// The customer must exist, and in a multisite context must be visible to the current user.
+				if ( is_wp_error( Users::get_user_in_current_site( $request['customer_id'] ) ) ) {
 					throw new WC_REST_Exception( 'woocommerce_rest_invalid_customer_id', __( 'Customer ID is invalid.', 'woocommerce' ), 400 );
 				}
 
@@ -804,7 +838,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 	 *
 	 * @param WC_Order $order  Order data.
 	 * @param array    $posted Posted data.
-	 * @param string   $type   Address type.
+	 * @param string   $type   Type of address; 'billing' or 'shipping'.
 	 */
 	protected function update_address( $order, $posted, $type = 'billing' ) {
 		foreach ( $posted as $key => $value ) {
@@ -1018,7 +1052,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 		$item = $this->$method( $posted, $action, $item );
 
 		/**
-		 * Allow extensions be notified before the item before is saved.
+		 * Allow extensions be notified before the item is saved.
 		 *
 		 * @param WC_Order_Item $item The item object.
 		 * @param array         $posted The item data.
@@ -1032,6 +1066,31 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 			$order->add_item( $item );
 		} else {
 			$item->save();
+		}
+
+		// Maybe update product stock quantity.
+		if (
+			'line_items' === $item_type
+			&& in_array( $order->get_status(), array( OrderStatus::PROCESSING, OrderStatus::COMPLETED, OrderStatus::ON_HOLD ), true )
+		) {
+			require_once WC_ABSPATH . 'includes/admin/wc-admin-functions.php';
+			$changed_stock = wc_maybe_adjust_line_item_product_stock( $item );
+			if ( $changed_stock && ! is_wp_error( $changed_stock ) ) {
+				$order->add_order_note(
+					sprintf(
+						// translators: %s item name.
+						__( 'Adjusted stock: %s', 'woocommerce' ),
+						sprintf(
+							'%1$s (%2$s&rarr;%3$s)',
+							$item->get_name(),
+							$changed_stock['from'],
+							$changed_stock['to']
+						)
+					),
+					false,
+					true
+				);
+			}
 		}
 	}
 
@@ -1060,7 +1119,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 	 * @return array
 	 */
 	protected function get_order_statuses() {
-		$order_statuses = array( 'auto-draft' );
+		$order_statuses = array( OrderStatus::AUTO_DRAFT );
 
 		foreach ( array_keys( wc_get_order_statuses() ) as $status ) {
 			$order_statuses[] = str_replace( 'wc-', '', $status );
@@ -1118,7 +1177,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 				'status'               => array(
 					'description' => __( 'Order status.', 'woocommerce' ),
 					'type'        => 'string',
-					'default'     => 'pending',
+					'default'     => OrderStatus::PENDING,
 					'enum'        => $this->get_order_statuses(),
 					'context'     => array( 'view', 'edit' ),
 				),
@@ -1420,65 +1479,65 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'id'           => array(
+							'id'               => array(
 								'description' => __( 'Item ID.', 'woocommerce' ),
 								'type'        => 'integer',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'name'         => array(
+							'name'             => array(
 								'description' => __( 'Product name.', 'woocommerce' ),
 								'type'        => 'mixed',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'parent_name'  => array(
+							'parent_name'      => array(
 								'description' => __( 'Parent product name if the product is a variation.', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'product_id'   => array(
+							'product_id'       => array(
 								'description' => __( 'Product ID.', 'woocommerce' ),
 								'type'        => 'mixed',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'variation_id' => array(
+							'variation_id'     => array(
 								'description' => __( 'Variation ID, if applicable.', 'woocommerce' ),
 								'type'        => 'integer',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'quantity'     => array(
+							'quantity'         => array(
 								'description' => __( 'Quantity ordered.', 'woocommerce' ),
 								'type'        => 'integer',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'tax_class'    => array(
+							'tax_class'        => array(
 								'description' => __( 'Tax class of product.', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'subtotal'     => array(
+							'subtotal'         => array(
 								'description' => __( 'Line subtotal (before discounts).', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'subtotal_tax' => array(
+							'subtotal_tax'     => array(
 								'description' => __( 'Line subtotal tax (before discounts).', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'total'        => array(
+							'total'            => array(
 								'description' => __( 'Line total (after discounts).', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'total_tax'    => array(
+							'total_tax'        => array(
 								'description' => __( 'Line total tax (after discounts).', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'taxes'        => array(
+							'taxes'            => array(
 								'description' => __( 'Line taxes.', 'woocommerce' ),
 								'type'        => 'array',
 								'context'     => array( 'view', 'edit' ),
@@ -1504,7 +1563,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 									),
 								),
 							),
-							'meta_data'    => array(
+							'meta_data'        => array(
 								'description' => __( 'Meta data.', 'woocommerce' ),
 								'type'        => 'array',
 								'context'     => array( 'view', 'edit' ),
@@ -1540,19 +1599,25 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 									),
 								),
 							),
-							'sku'          => array(
+							'sku'              => array(
 								'description' => __( 'Product SKU.', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'price'        => array(
+							'global_unique_id' => array(
+								'description' => __( 'GTIN, UPC, EAN or ISBN.', 'woocommerce' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+							'price'            => array(
 								'description' => __( 'Product price.', 'woocommerce' ),
 								'type'        => 'number',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'image'        => array(
+							'image'            => array(
 								'description' => __( 'Properties of the main product image.', 'woocommerce' ),
 								'type'        => 'object',
 								'context'     => array( 'view', 'edit' ),
@@ -1596,7 +1661,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 							),
 							'rate_id'            => array(
 								'description' => __( 'Tax rate ID.', 'woocommerce' ),
-								'type'        => 'string',
+								'type'        => 'integer',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
@@ -1849,29 +1914,47 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'id'           => array(
+							'id'             => array(
 								'description' => __( 'Item ID.', 'woocommerce' ),
 								'type'        => 'integer',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'code'         => array(
+							'code'           => array(
 								'description' => __( 'Coupon code.', 'woocommerce' ),
 								'type'        => 'mixed',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'discount'     => array(
+							'discount'       => array(
 								'description' => __( 'Discount total.', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 							),
-							'discount_tax' => array(
+							'discount_tax'   => array(
 								'description' => __( 'Discount total tax.', 'woocommerce' ),
 								'type'        => 'string',
 								'context'     => array( 'view', 'edit' ),
 								'readonly'    => true,
 							),
-							'meta_data'    => array(
+							'discount_type'  => array(
+								'description' => __( 'Discount type.', 'woocommerce' ),
+								'type'        => 'string',
+								'context'     => array( 'view' ),
+								'readonly'    => true,
+							),
+							'nominal_amount' => array(
+								'description' => __( 'Discount amount as defined in the coupon (absolute value or a percent, depending on the discount type).', 'woocommerce' ),
+								'type'        => 'number',
+								'context'     => array( 'view' ),
+								'readonly'    => true,
+							),
+							'free_shipping'  => array(
+								'description' => __( 'Whether the coupon grants free shipping or not.', 'woocommerce' ),
+								'type'        => 'boolean',
+								'context'     => array( 'view' ),
+								'readonly'    => true,
+							),
+							'meta_data'      => array(
 								'description' => __( 'Meta data.', 'woocommerce' ),
 								'type'        => 'array',
 								'context'     => array( 'view', 'edit' ),
@@ -1977,7 +2060,7 @@ class WC_REST_Orders_V2_Controller extends WC_REST_CRUD_Controller {
 			'default'           => 'any',
 			'description'       => __( 'Limit result set to orders assigned a specific status.', 'woocommerce' ),
 			'type'              => 'string',
-			'enum'              => array_merge( array( 'any', 'trash' ), $this->get_order_statuses() ),
+			'enum'              => array_merge( array( 'any', OrderStatus::TRASH ), $this->get_order_statuses() ),
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

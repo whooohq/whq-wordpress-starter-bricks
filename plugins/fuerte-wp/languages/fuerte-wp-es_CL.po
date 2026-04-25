@@ -21,8 +21,8 @@ msgid "Fuerte-WP"
 msgstr "Fuerte-WP"
 
 #. Plugin URI of the plugin
-msgid "https://github.com/TCattd/Fuerte-WP"
-msgstr "https://github.com/TCattd/Fuerte-WP"
+msgid "https://github.com/EstebanForge/Fuerte-WP"
+msgstr "https://github.com/EstebanForge/Fuerte-WP"
 
 #. Description of the plugin
 msgid "Stronger WP. Limit access to critical WordPress areas, even other for admins."

@@ -30,9 +30,16 @@ interface IMedia {
 	public function sync_variation_thumbnail_id( $variation_id, $translated_variation_id, $lang );
 
 	/**
+	 * @param int    $orig_post_id
+	 * @param int    $trnsl_post_id
+	 * @param string $lang
+	 */
+	public function sync_product_gallery( $orig_post_id, $trnsl_post_id, $lang );
+
+	/**
 	 * @param int $product_id
 	 */
-	public function sync_product_gallery( $product_id );
+	public function sync_product_gallery_to_all_languages( $product_id );
 
 	/**
 	 * @param int    $attachment_id

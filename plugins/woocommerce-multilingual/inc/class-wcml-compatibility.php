@@ -29,8 +29,6 @@ class WCML_Compatibility {
 	public function init() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-		$woocommerce_wpml = getWooCommerceWpml();
-
 		// $isActiveTheme :: string -> bool
 		$isActiveTheme = Relation::equals( wp_get_theme()->get( 'Name' ) );
 
@@ -48,6 +46,7 @@ class WCML_Compatibility {
 			\WCML\Compatibility\Sensei\Factory::class                 => class_exists( 'WooThemes_Sensei' ),
 			\WCML\Compatibility\TmExtraProductOptions\Factory::class  => class_exists( 'TM_Extra_Product_Options' ),
 			\WCML\Compatibility\WcDynamicPricing\Factory::class       => class_exists( 'WC_Dynamic_Pricing' ),
+			/* @phpstan-ignore booleanAnd.rightAlwaysTrue */
 			\WCML\Compatibility\WcBookings\Factory::class             => defined( 'WC_BOOKINGS_VERSION' ) && version_compare( WC_BOOKINGS_VERSION, '1.7.8', '>=' ),
 			\WCML\Compatibility\WoobeBulkEditor\Factory::class        => defined( 'WOOBE_PATH' ),
 			\WCML\Compatibility\WcCheckoutFieldEditor\Factory::class  => function_exists( 'woocommerce_init_checkout_field_editor' ),
@@ -64,7 +63,6 @@ class WCML_Compatibility {
 			\WCML\Compatibility\WcPip\Factory::class                  => class_exists( 'WC_PIP' ),
 			\WCML\Compatibility\TheEventsCalendar\Factory::class      => class_exists( 'Tribe__Events__Main' ),
 			\WCML\Compatibility\KlarnaPayments\Factory::class         => class_exists( 'WC_Gateway_Klarna' ),
-			\WCML\Compatibility\StripePayments\Factory::class         => class_exists( 'WC_Gateway_Stripe' ) && isset( $woocommerce_wpml->multi_currency->orders ),
 			\WCML\Compatibility\YithWcQuickView\Factory::class        => class_exists( 'YITH_WCQV' ),
 			\WCML\Compatibility\WcMemberships\Factory::class          => class_exists( 'WC_Memberships' ),
 			\WCML\Compatibility\MaxStorePro\Factory::class            => function_exists( 'maxstore_pro_setup' ),
@@ -76,6 +74,7 @@ class WCML_Compatibility {
 			\WCML\Compatibility\WcProductTypeColumn\Factory::class    => class_exists( 'WC_Product_Type_Column' ),
 			\WCML\Compatibility\YikesCustomProductTabs\Factory::class => class_exists( 'YIKES_Custom_Product_Tabs' ),
 			\WCML\Compatibility\WcOrderStatusManager\Factory::class   => class_exists( 'WC_Order_Status_Manager' ),
+			\WCML\Compatibility\FacebookForWc\Factory::class          => class_exists( WC_Facebookcommerce::class ),
 		] )->filter( Logic::isTruthy() )
 			->keys()
 			->toArray();

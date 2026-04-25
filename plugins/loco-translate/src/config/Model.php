@@ -6,15 +6,13 @@ abstract class Loco_config_Model {
     
     /**
      * Root directory for calculating relative file paths
-     * @var string
      */
-    private $base;
+    private string $base;
     
     /**
      * registry of location constants that may have been overridden
-     * @var array
      */
-    private $dirs;
+    private array $dirs;
 
     /**
      * @return Iterator
@@ -79,29 +77,34 @@ abstract class Loco_config_Model {
      * @return LocoConfigElement
      */
     public function createFileElement( Loco_fs_File $file ){
-        $node = $this->getDom()->createElement( $file->isDirectory() ? 'directory' : 'file' );
-        if( $path = $file->getPath() ) {
-            // Calculate relative path to the config file itself
-            $relpath = $file->getRelativePath( $this->base );
-            // Map to a configured base path if target is not under our root. This makes XML more portable
-            // matching order is most specific first, resulting in shortest path
-            if( $relpath && ( Loco_fs_File::abs($relpath) || '..' === substr($relpath,0,2) || $this->base === $this->getDirectoryPath('ABSPATH') ) ){
-                $bases = [ 'LOCO_LANG_DIR', 'WP_LANG_DIR', 'WP_PLUGIN_DIR', 'WPMU_PLUGIN_DIR', 'WP_CONTENT_DIR', 'ABSPATH' ];
-                foreach( $bases as $key ){
-                    if( ( $base = $this->getDirectoryPath($key) ) && $base !== $this->base ){
-                        $base .= '/';
-                        $len = strlen($base);
-                        if( substr($path,0,$len) === $base ){
-                            $node->setAttribute('base',$key);
-                            $relpath = substr( $path, $len );
-                            break;
-                        }
+        $path = $file->getPath();
+        // only test concrete file type if existence is testable
+        if( '' === $path || '/' !== $path[0] ){
+            $type = $file->extension() ? 'file' : 'directory';
+        }
+        else {
+            $type = $file->isDirectory() ? 'directory' : 'file';
+        }
+        $node = $this->getDom()->createElement($type);
+        // Calculate relative path to the config file itself
+        $relpath = $file->getRelativePath($this->base);
+        // Map to a configured base path if target is not under our root. This makes XML more portable
+        // matching order is the most specific first, resulting in the shortest path
+        if( $relpath && ( Loco_fs_File::abs($relpath) || '..' === substr($relpath,0,2) || $this->base === $this->getDirectoryPath('ABSPATH') ) ){
+            $bases = [ 'LOCO_LANG_DIR', 'WP_LANG_DIR', 'WP_PLUGIN_DIR', 'WPMU_PLUGIN_DIR', 'WP_CONTENT_DIR', 'ABSPATH' ];
+            foreach( $bases as $key ){
+                if( ( $base = $this->getDirectoryPath($key) ) && $base !== $this->base ){
+                    $base .= '/';
+                    $len = strlen($base);
+                    if( substr($path,0,$len) === $base ){
+                        $node->setAttribute('base',$key);
+                        $relpath = substr( $path, $len );
+                        break;
                     }
                 }
             }
-            $path = $relpath;
         }
-        $this->setFileElementPath( $node, $path );
+        $this->setFileElementPath($node,$relpath);
         return $node;
     }
 
@@ -160,7 +163,7 @@ abstract class Loco_config_Model {
      * @param string $attr
      * @return bool
      */
-    public function evaulateBooleanAttribute( $el, $attr ){
+    public function evaluateBooleanAttribute( $el, $attr ){
         if( ! $el->hasAttribute($attr) ){
             return false;
         }

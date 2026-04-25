@@ -1,4 +1,129 @@
 == Changelog ==
+= v2.0.13.1 - 07/04/2026 =
+- Fixed: Spam Analyzer Tool Response Issue #162
+
+= v2.0.13 - 04/04/2026 =
+- Fixed: Spam Analyzer Undefined error and fixed Go to Email log button #162
+- Enhancement: PCP Check & Code Improvement #164
+- Fixed: Vulnerability reported by WPScan Security
+
+= v2.0.12 - 03/03/2026 =
+- Fixed: LifterLMS mail logged by check-email, but not passed to configured SMTP server #152
+- Enhancement: PCP check #161
+
+= v2.0.11 - 05/01/2026 =
+- Remove: Removed BFCM Banner #156
+
+= v2.0.10 - 04/12/2025 =
+- Feature Added: Error Log notification #46
+- Improvement: Create backword compatibility #148
+- Added: Promotion Banner BFCM #153
+- Tested: WordPress version upto 6.9
+
+= v2.0.9 - 09/09/2025 =
+- Fixed: PHP Errors #143
+- Fixed: Uncaught TypeError: Cannot read properties of null in checkmail-dashboard-chart.min.js when Dashboard Widget is disabled #147
+- Enhancement: improved the ux to increase the positioning of premium features #142
+
+= v2.0.8 - 07/07/2025 =
+- Fixed: PHP Fatal error: Uncaught TypeError in wp_mail_failed hook due to malformed add_action in Check_Email_Notify_Tab.php #145
+- Fixed: Tracking feature not working properly in WordPress Dashboard #134
+- Enhancement: Log retention not working #141
+- Enhancement: Other notification banner visible in Check Mail dashboard. #135
+
+= v2.0.7 - 25/04/2025 =
+- Fixed: PHP Notice: _load_textdomain_just_in_time called too early with check-email domain on WP 6.8 #139
+
+= v2.0.6 - 11/04/2025 =
+- Enhancement: Tested with WordPress 6.8 #137
+- Enhancement: Few changes in plugin's dashboard #133
+- Fixed: Critical error after update 2.0.5.1 (could already be present in 2.0.5) #132
+- Fixed: No Access to /wp-admin After Update to v2.0.5 #131
+- Fixed: Some special characters are getting ignored in the password field while configuring SMPT #127
+
+= v2.0.5.1 - 28/02/2025 =
+- Fixed: No Access to /wp-admin After Update to v2.0.5 #131
+
+= v2.0.5 - 27/02/2025 =
+- Feature: Added Notify users after X (user defined) email sending failures #20
+- Feature: Added Graph detail of mail delivered and failed  #120
+- Fixed: Conflict with Gravity Forms #128
+- Fixed: Error in debug log #123
+- Fixed: Fatal error on user end. #126
+- Fixed: Conflict Between "Check & Log Email" v2.0.4 and BackWPup Plugin Causing Dropbox Backup Failures #124
+- Enhancement: Some Enhancement #129
+- Enhancement: Updated screenshots on wp.org #122
+
+= v2.0.4 - 26/12/2024 =
+- Enhancement: Notice "Function _load_textdomain_just_in_time was called incorrectly" since wp 6.7 #116
+- Enhancement: Few improvement needed #112
+- Enhancement: Make an option to use one SMTP settings for multisite #97
+- Feature: Email Spam Analyzer #119
+- Fixed: Php error #117
+
+= v2.0.3 - 06/11/2024 =
+- Enhancement: Email Logs Show Failure as Success #113
+- Feature: Added an option for Opened mails data #79
+- Feature: Added Gmail mailer in smtp section #106
+- Feature: Added a feature to send the bulk email. #107
+- Fixed: Login OAuth Broken After Updating Check-Email Plugin to 2.0.2 #108
+
+= v2.0.2 - 27/09/2024 =
+- Feature: Added an option to use one SMTP settings for multisite #97
+- Feature: Added encoding of email and phone #55
+- Feature: Added integration with Microsoft SMTP that requires oAuth authentication. #100
+- Fixed: Some warnings appear while viewing the email log #104
+
+= v2.0.1 - 02/09/2024 =
+- Enhancement: Added confirmation box on deletion of log email #84
+- Fixed: Conflict issue with Override Emails feature. #98
+- Fixed: PHP Fatal error #101
+
+= v2.0 - 09/08/2024 =
+- Compatibility: Test with WordPress version 6.6 #95
+- Feature: Default Format for Message #86
+- Feature: Added small setup wizard #87
+- Feature: Log email content option #89
+- Enhancement: Hooks and actions #90
+- Enhancement: Fixed I18N Issues based on 1.0.13 helped by @alexclassroom #91
+- Fixed: Images folder missing for jquery-ui.min.css #93
+- Enhancement: Few improvement required #94
+- Feature: Email error tracker #96
+
+= v1.0.13 - 25/06/2024 =
+- Feature: Added Log Retention Period #69
+- Feature: Added Print the email log, or save it as a PDF #70
+- Feature: Log Attachments Sent From WordPress #71
+- Feature: Added Display Host IP option #72
+- Feature: Trigger Data UI/UX Changes #74
+- Enhancement: View loggging should be on enabled by default #76
+- Feature: More Fields #77
+- Feature: Apply status filter in log list #78
+- Feature: Added Resend email feature #81
+- Feature: Added Easy migration from other email log plugins #80
+- Enhancement: Search should be searched from whole email, including the email content #82
+- Feature: Added Forward Email #83
+
+= v1.0.12 - 29/05/2024 =
+- Feature: Feature to export logs #49
+- Feature: Added feedback form on plugin deactivation #61
+- Enhancement: Added settings link on plugin dashboard #62
+- Feature: Added Newsletter Form #64
+- Feature: Added Trigger Data (Premium) #65
+- Feature: Added SMTP feature to configure email #66
+
+= v1.0.11 - 16/05/2024 =
+- Fixed: Tested with new version of wordpress i.e. 6.5v
+
+= v1.0.10 - 14/03/2024 =
+- Fixed: Resolved security issue raised by Wordfence
+
+= v1.0.9 - 07/03/2024 =
+- Fixed: php8.2 deprecation warning #53
+- Enhancement: Added Support Form #56
+
+= v1.0.8 - 16/10/2023 = 
+- Updated: Plugin author to reflect ownership changes.
 
 = v1.0.7 - 08/03/2022 =
 - Fixed: Incompatibility with Post SMTP ( [#51]( https://github.com/WPChill/check-email/issues/51) )

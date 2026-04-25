@@ -16,6 +16,7 @@ jQuery(document).ready(function( $ ) {
 			var data = {
 				post_id: post_id,
 				post_title: post_title,
+                nonce: piotnetforms_admin_nonce_obj.nonce,
 				action: 'piotnetforms_save_draft',
 			};
 

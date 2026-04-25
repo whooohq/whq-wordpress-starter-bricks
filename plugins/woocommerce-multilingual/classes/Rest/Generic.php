@@ -3,6 +3,8 @@
 namespace WCML\Rest;
 
 use WPML\FP\Fns;
+use WPML\FP\Obj;
+use WPML\API\Sanitize;
 
 class Generic {
 
@@ -24,7 +26,7 @@ class Generic {
 	 * @param \WP_Query $wp_query
 	 */
 	public static function autoAdjustIncludedIds( \WP_Query $wp_query ) {
-		$lang    = $wp_query->get( 'lang' );
+		$lang    = Sanitize::string( (string) Obj::prop( 'lang', $_GET ) );
 		$include = $wp_query->get( 'post__in' );
 		if ( empty( $lang ) && ! empty( $include ) ) {
 			$filtered_include = [];

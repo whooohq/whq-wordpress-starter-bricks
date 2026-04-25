@@ -269,6 +269,10 @@ class Replace
             $replace = $this->replace;
         }
 
+	    if ( ! is_array( $search ) || ! is_array( $replace ) || count( $search ) !== count( $replace ) ) {
+		    return;
+	    }
+
         foreach ($search as $key => $pattern) {
             if (!$json_pairs && array_key_exists($key, $this->regex) && true === $this->regex[$key]) {
                 $this->pairs[] = $this->pair_factory->create($pattern, $replace[$key], PairFactory::REGEX);
@@ -668,19 +672,14 @@ class Replace
             if (is_string($data) && ($unserialized = Util::unserialize($data, __METHOD__)) !== false) {
                 // PHP currently has a bug that doesn't allow you to clone the DateInterval / DatePeriod classes.
                 // We skip them here as they probably won't need data to be replaced anyway
-                if ('object' == gettype($unserialized)) {
-                    if ($unserialized instanceof \DateInterval || $unserialized instanceof \DatePeriod) {
-                        return $data;
-                    }
-                    if ($unserialized instanceof \__PHP_Incomplete_Class && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                        $objectName = array();
-                        preg_match('/O:\d+:\"([^\"]+)\"/', $data, $objectName);
-                        $objectName = $objectName[1] ? $objectName[1] : $data;
-                        $error      = sprintf(__("WP Migrate - Failed to instantiate object for replacement. If the serialized object's class is defined by a plugin, you should enable that plugin for migration requests. \nClass Name: %s", 'wp-migrate-db'), $objectName);
-                        error_log($error);
-
-                        return $data;
-                    }
+                if (
+                    'object' == gettype($unserialized) &&
+                    (
+                        $unserialized instanceof \DateInterval ||
+                        $unserialized instanceof \DatePeriod
+                    )
+                ) {
+                    return $data;
                 }
                 $data = $this->recursive_unserialize_replace($unserialized, true, true, $successive_filter);
             } elseif (is_array($data)) {
@@ -691,7 +690,8 @@ class Replace
 
                 $data = $_tmp;
                 unset($_tmp);
-            } elseif (is_object($data)) { // Submitted by Tina Matter
+            //is_object does not return true for __PHP_Incomplete_Class until 7.2 using gettype instead
+            } elseif ('object' == gettype($data)) { // Submitted by Tina Matter
                 if ($this->is_object_cloneable($data)) {
                     $_tmp = clone $data;
                     foreach ($data as $key => $value) {
@@ -773,12 +773,28 @@ class Replace
         if ( $this->table_is('options', $table_prefix) && 'option_value' === $this->get_column()) {
             return true;
         }
-        if ( $table_prefix . 'duplicator_packages' === $this->get_table()  && 'package' === $this->get_column() ) {
-            return  true;
+        $table_column_for_check = [
+            [
+                'table' => $table_prefix . 'duplicator_packages',
+                'column' => 'package'
+            ],
+            [
+                'table' => $table_prefix . 'aiowps_audit_log',
+                'column' => 'stacktrace'
+            ]
+        ];
+        $table_column_for_check = apply_filters('wpmdb_check_table_column_for_reference', $table_column_for_check);
+        foreach($table_column_for_check as $table_column ) {
+            if (
+                array_key_exists('table', $table_column)
+                && $table_column['table'] === $this->get_table()
+                && array_key_exists('column', $table_column)
+                && $table_column['column'] === $this->get_column()
+                ) {
+                return true;
+            }
         }
-        if ( $table_prefix . 'aiowps_audit_log' === $this->get_table()  && 'stacktrace' === $this->get_column() ) {
-            return  true;
-        }
+
         return false;
     }
 

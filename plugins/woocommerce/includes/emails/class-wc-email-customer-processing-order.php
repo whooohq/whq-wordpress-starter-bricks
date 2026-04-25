@@ -31,7 +31,7 @@ if ( ! class_exists( 'WC_Email_Customer_Processing_Order', false ) ) :
 			$this->customer_email = true;
 
 			$this->title          = __( 'Processing order', 'woocommerce' );
-			$this->description    = __( 'This is an order notification sent to customers containing order details after payment.', 'woocommerce' );
+			$this->email_group    = 'order-updates';
 			$this->template_html  = 'emails/customer-processing-order.php';
 			$this->template_plain = 'emails/plain/customer-processing-order.php';
 			$this->placeholders   = array(
@@ -47,6 +47,16 @@ if ( ! class_exists( 'WC_Email_Customer_Processing_Order', false ) ) :
 
 			// Call parent constructor.
 			parent::__construct();
+
+			// Must be after parent's constructor which sets `email_improvements_enabled` property.
+			$this->description = $this->email_improvements_enabled
+				? __( 'Send an email to customers notifying them that their order is being processed', 'woocommerce' )
+				: __( 'This is an order notification sent to customers containing order details after payment.', 'woocommerce' );
+
+			if ( $this->block_email_editor_enabled ) {
+				$this->title       = __( 'Order confirmation', 'woocommerce' );
+				$this->description = __( 'Notifies customers when their order has been received and is being processed.', 'woocommerce' );
+			}
 		}
 
 		/**
@@ -141,7 +151,9 @@ if ( ! class_exists( 'WC_Email_Customer_Processing_Order', false ) ) :
 		 * @return string
 		 */
 		public function get_default_additional_content() {
-			return __( 'Thanks for using {site_url}!', 'woocommerce' );
+			return $this->email_improvements_enabled
+				? __( 'Thanks again! If you need any help with your order, please contact us at {store_email}.', 'woocommerce' )
+				: __( 'Thanks for using {site_url}!', 'woocommerce' );
 		}
 	}
 

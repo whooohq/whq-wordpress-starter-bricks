@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Reveal IDs
-Version: 1.6.1
+Version: 1.6.2
 Plugin URI: https://www.schloebe.de/wordpress/reveal-ids-for-wp-admin-25-plugin/
 Description: Reveals hidden IDs in Admin interface that have been removed with WordPress 2.5 (formerly known as Entry IDs in Manage Posts/Pages View for WP 2.5). See <a href="options-general.php?page=reveal-ids-for-wp-admin-25/reveal-ids-for-wp-admin-25.php">options page</a> for information.
 Author: Oliver Schl&ouml;be
@@ -9,7 +9,7 @@ Author URI: https://www.schloebe.de/
 Text Domain: reveal-ids-for-wp-admin-25
 Domain Path: /languages
 
-Copyright 2008-2023 Oliver Schlöbe (email : scripts@schloebe.de)
+Copyright 2008-2026 Oliver Schlöbe (email : wordpress@schloebe.de)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /**
  * Define the plugin version
  */
-define("RIDWPA_VERSION", "1.6.1");
+define("RIDWPA_VERSION", "1.6.2");
 
 
 /**
@@ -52,7 +52,7 @@ define('RIDWPAISWP30', version_compare($GLOBALS['wp_version'], '2.9.999', '>'));
 * @package 		WordPress_Plugins
 * @subpackage 	RevealIDsForWPAdmin
 * @since 		1.3.0
-* @author 		scripts@schloebe.de
+* @author 		wordpress@schloebe.de
 */
 class RevealIDsForWPAdmin {
 
@@ -71,9 +71,9 @@ class RevealIDsForWPAdmin {
 	* PHP 5 Constructor
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function __construct() {
+	public function __construct() {
 		$this->textdomain_loaded = false;
 
 		if ( !RIDWPAISWP30 ) {
@@ -96,9 +96,9 @@ class RevealIDsForWPAdmin {
 	* PHP 4 Compatible Constructor
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function RevealIDsForWPAdmin() {
+	public function RevealIDsForWPAdmin() {
 		$this->__construct();
 	}
 
@@ -109,9 +109,9 @@ class RevealIDsForWPAdmin {
  	*
  	* @since 		1.3.0
  	* @uses 		$pagenow
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function init() {
+	public function init() {
 		global $wpversion, $pagenow;
 		if ( !function_exists("add_action") ) return;
 
@@ -169,9 +169,9 @@ class RevealIDsForWPAdmin {
 	 * Adds a bit of CSS
 	 *
 	 * @since 1.3.0
-	 * @author scripts@schloebe.de
+	 * @author wordpress@schloebe.de
 	 */
-	function add_css() {
+	public function add_css() {
 		echo "\n" . '<style type="text/css">
 	table.widefat th.column-ridwpaid {
 		width: 80px;
@@ -188,9 +188,9 @@ class RevealIDsForWPAdmin {
  	* Add the new 'ID' column
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function column_add($cols) {
+	public function column_add($cols) {
 		$cols['ridwpaid'] = '<abbr style="cursor:help;" title="' . __('Enhanced by Reveal IDs Plugin', 'reveal-ids-for-wp-admin-25') . '">' . __('ID') . '</abbr>';
 		return $cols;
 	}
@@ -200,9 +200,9 @@ class RevealIDsForWPAdmin {
  	* Add the new 'ID' column without any HTMLy clutter
  	*
  	* @since 		1.4.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function column_add_clean($cols) {
+	public function column_add_clean($cols) {
 		$cols['ridwpaid'] = __('ID');
 		return $cols;
 	}
@@ -212,9 +212,9 @@ class RevealIDsForWPAdmin {
  	* Echo the ID for the column
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function column_value($column_name, $id) {
+	public function column_value($column_name, $id) {
 		if ($column_name == 'ridwpaid') echo $id;
 	}
 
@@ -223,9 +223,9 @@ class RevealIDsForWPAdmin {
  	* Return the ID for the column
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function column_return_value($value, $column_name, $id) {
+	public function column_return_value($value, $column_name, $id) {
 		if ($column_name == 'ridwpaid') $value = $id;
 		return $value;
 	}
@@ -236,9 +236,9 @@ class RevealIDsForWPAdmin {
  	* Initialize and load the plugin textdomain
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function load_textdomain() {
+	public function load_textdomain() {
 		if($this->textdomain_loaded) return;
 		load_plugin_textdomain('reveal-ids-for-wp-admin-25', false, dirname(plugin_basename(__FILE__)) . '/languages/');
 		$this->textdomain_loaded = true;
@@ -252,9 +252,9 @@ class RevealIDsForWPAdmin {
  	* if required WP version is less than 3.0
  	*
  	* @since 		1.3.0
- 	* @author 		scripts@schloebe.de
+ 	* @author 		wordpress@schloebe.de
  	*/
-	function require_wpversion_message() {
+	public function require_wpversion_message() {
 		echo "<div class='error fade'><p>" . sprintf(__("<strong>Reveal IDs</strong> 1.3.0 and above require at least WordPress 3.0! If you're still using a WP version prior to 3.0, please <a href='%s'>use Reveal IDs version 1.2.7</a>! Consider updating to the latest WP version for your own safety!", 'reveal-ids-for-wp-admin-25'), 'http://downloads.wordpress.org/plugin/reveal-ids-for-wp-admin-25.1.2.7.zip') . "</p></div>";
 	}
 
@@ -263,4 +263,3 @@ class RevealIDsForWPAdmin {
 if ( class_exists('RevealIDsForWPAdmin') && is_admin() ) {
 	$RevealIDsForWPAdmin = new RevealIDsForWPAdmin();
 }
-?>

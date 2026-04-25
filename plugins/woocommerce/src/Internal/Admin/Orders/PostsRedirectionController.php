@@ -2,6 +2,7 @@
 namespace Automattic\WooCommerce\Internal\Admin\Orders;
 
 use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController;
+use Automattic\WooCommerce\Utilities\OrderUtil;
 
 /**
  * When {@see OrdersTableDataStore} is in use, this class takes care of redirecting admins from CPT-based URLs
@@ -27,6 +28,14 @@ class PostsRedirectionController {
 		if ( ! wc_get_container()->get( CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled() ) {
 			return;
 		}
+
+		add_action(
+			'admin_menu',
+			function () {
+				$this->maybe_update_menu_items();
+			},
+			9999
+		);
 
 		add_action(
 			'load-edit.php',
@@ -84,7 +93,7 @@ class PostsRedirectionController {
 			$new_url = add_query_arg(
 				array(
 					'action'           => $action,
-					'order'            => $posts,
+					'id'               => $posts,
 					'_wp_http_referer' => $this->page_controller->get_orders_url(),
 					'_wpnonce'         => wp_create_nonce( 'bulk-orders' ),
 				),
@@ -126,11 +135,16 @@ class PostsRedirectionController {
 	 */
 	private function maybe_redirect_to_edit_order_page(): void {
 		$post_id = absint( $_GET['post'] ?? 0 );
+		if ( ! $post_id ) {
+			return;
+		}
 
 		$redirect_from_types   = wc_get_order_types( 'admin-menu' );
 		$redirect_from_types[] = 'shop_order_placehold';
 
-		if ( ! $post_id || ! in_array( get_post_type( $post_id ), $redirect_from_types, true ) || ! isset( $_GET['action'] ) ) {
+		$post_type  = get_post_type( $post_id );
+		$order_type = $post_type ? $post_type : OrderUtil::get_order_type( $post_id );
+		if ( ! in_array( $order_type, $redirect_from_types, true ) || ! isset( $_GET['action'] ) ) {
 			return;
 		}
 
@@ -178,5 +192,37 @@ class PostsRedirectionController {
 		exit;
 	}
 
-}
+	/**
+	 * Rewrites legacy post type menu items to point to the HPOS orders page when the main WooCommerce menu is not visible.
+	 *
+	 * @since 10.3.0
+	 */
+	private function maybe_update_menu_items(): void {
+		global $pagenow, $submenu;
 
+		// Do not conflict with CPT > HPOS redirection.
+		if ( 'edit.php' === $pagenow && in_array( $_GET['post_type'] ?? '', wc_get_order_types( 'admin-menu' ), true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+
+		if ( \WC_Admin_Menus::can_view_woocommerce_menu_item() ) {
+			return;
+		}
+
+		$post_types = array_filter( array_map( 'get_post_type_object', wc_get_order_types( 'admin-menu' ) ) );
+		foreach ( $post_types as $post_type ) {
+			if ( ! current_user_can( $post_type->cap->edit_posts ) || ! isset( $submenu[ 'edit.php?post_type=' . $post_type->name ] ) ) {
+				continue;
+			}
+
+			$post_type_menu = &$submenu[ 'edit.php?post_type=' . $post_type->name ];
+			$menu_indexes   = array_flip( array_map( fn( $x ) => $x[2], $post_type_menu ) );
+
+			// Rewrite URL for the legacy menu item.
+			$post_type_menu[ $menu_indexes[ 'edit.php?post_type=' . $post_type->name ] ][2] = $this->page_controller->get_base_page_url( $post_type->name );
+
+			// Hide the legacy "Add New" menu item.
+			unset( $post_type_menu[ $menu_indexes[ "post-new.php?post_type={$post_type->name}" ] ] );
+		}
+	}
+}

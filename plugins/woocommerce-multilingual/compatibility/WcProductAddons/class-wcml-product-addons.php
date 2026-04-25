@@ -2,34 +2,43 @@
 
 use WCML\Compatibility\WcProductAddons\SharedHooks;
 use WCML\Options\WPML;
+use WCML\PointerUi\Factory;
 use WPML\FP\Obj;
 use WPML\FP\Str;
 
 /**
  * Class WCML_Product_Addons
  */
-class WCML_Product_Addons implements \IWPML_Action {
+class WCML_Product_Addons implements IWPML_Action {
 
 	const ADDONS_OPTION_KEY = SharedHooks::ADDONS_OPTION_KEY;
+	const ADDON_PREFIX      = 'addon_';
+
+	const TRANSLATION_DOMAIN = 'wc_product_addons_strings';
 
 	/**
 	 * @var SitePress
 	 */
 	public $sitepress;
 
+	/** @var Factory */
+	protected $pointerFactory;
+
 	/**
 	 * WCML_Product_Addons constructor.
 	 *
-	 * @param SitePress        $sitepress
+	 * @param SitePress $sitepress
+	 * @param Factory   $pointerFactory
 	 */
-	public function __construct( SitePress $sitepress ) {
-		$this->sitepress = $sitepress;
+	public function __construct( SitePress $sitepress, Factory $pointerFactory ) {
+		$this->sitepress      = $sitepress;
+		$this->pointerFactory = $pointerFactory;
 	}
 
 	public function add_hooks() {
 		add_filter( 'get_product_addons_product_terms', [ $this, 'addons_product_terms' ] );
 		add_action( 'wcml_product_addons_global_updated', [ $this, 'register_addons_strings' ], 10, 4 );
-		add_action( 'woocommerce-product-addons_panel_start', [ $this, 'show_pointer_info' ] );
+		add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_addons_to_translation_package' ], 10, 2 );
 
 		if ( WPML::useAte() ) {
 			add_action( 'wpml_pro_translation_completed', [ $this, 'save_addons_to_translation' ], 10, 3 );
@@ -38,14 +47,14 @@ class WCML_Product_Addons implements \IWPML_Action {
 		if ( is_admin() ) {
 
 			if ( SharedHooks::isGlobalAddonEditPage() ) {
+				/* phpcs:ignore WordPress.Security.NonceVerification.Recommended */
+				/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
 				if ( ! isset( $_GET['edit'] ) ) {
 					add_action( 'admin_notices', [ $this, 'inf_translate_strings' ] );
 				}
 			}
 
-			if ( WPML::useAte() ) {
-				add_filter( 'wpml_tm_translation_job_data', [ $this, 'append_addons_to_translation_package' ], 10, 2 );
-			} else {
+			if ( ! WPML::useAte() ) {
 				add_action( 'wcml_gui_additional_box_html', [ $this, 'custom_box_html' ], 10, 3 );
 				add_filter( 'wcml_gui_additional_box_data', [ $this, 'custom_box_html_data' ], 10, 3 );
 				add_action( 'wcml_update_extra_fields', [ $this, 'addons_update' ], 10, 3 );
@@ -79,14 +88,17 @@ class WCML_Product_Addons implements \IWPML_Action {
 				$addon_data     = wpml_collect( $addon );
 				$addon_type     = $addon_data->get( 'type' );
 				$addon_position = $addon_data->get( 'position' );
-				// register name
-				do_action( 'wpml_register_single_string', 'wc_product_addons_strings', $id . '_addon_' . $addon_type . '_' . $addon_position . '_name', $addon_data->get( 'name' ) );
-				// register description
-				do_action( 'wpml_register_single_string', 'wc_product_addons_strings', $id . '_addon_' . $addon_type . '_' . $addon_position . '_description', $addon_data->get( 'description' ) );
-				// register options labels
+
+				do_action( 'wpml_register_single_string', self::TRANSLATION_DOMAIN, $id . '_addon_' . $addon_type . '_' . $addon_position . '_name', $addon_data->get( 'name' ) );
+				if ( $addon_data->offsetExists( 'description' ) ) {
+					do_action( 'wpml_register_single_string', self::TRANSLATION_DOMAIN, $id . '_addon_' . $addon_type . '_' . $addon_position . '_description', $addon_data->get( 'description' ) );
+				}
+				if ( $addon_data->offsetExists( 'placeholder' ) ) {
+					do_action( 'wpml_register_single_string', self::TRANSLATION_DOMAIN, $id . '_addon_' . $addon_type . '_' . $addon_position . '_placeholder', $addon_data->get( 'placeholder' ) );
+				}
 				if ( $addon_data->offsetExists( 'options' ) ) {
 					foreach ( $addon_data->get( 'options' ) as $key => $option ) {
-						do_action( 'wpml_register_single_string', 'wc_product_addons_strings', $id . '_addon_' . $addon_type . '_' . $addon_position . '_option_label_' . $key, wpml_collect( $option )->get( 'label' ) );
+						do_action( 'wpml_register_single_string', self::TRANSLATION_DOMAIN, $id . '_addon_' . $addon_type . '_' . $addon_position . '_option_label_' . $key, wpml_collect( $option )->get( 'label' ) );
 					}
 				}
 			}
@@ -94,14 +106,14 @@ class WCML_Product_Addons implements \IWPML_Action {
 	}
 
 	/**
-	 * @param null   $null
+	 * @param null   $check
 	 * @param int    $object_id
 	 * @param string $meta_key
 	 * @param bool   $single
 	 *
 	 * @return array|null
 	 */
-	public function translate_addons_strings( $null, $object_id, $meta_key, $single ) {
+	public function translate_addons_strings( $check, $object_id, $meta_key, $single ) {
 
 		if ( self::ADDONS_OPTION_KEY === $meta_key && 'global_product_addon' === get_post_type( $object_id ) ) {
 
@@ -114,14 +126,17 @@ class WCML_Product_Addons implements \IWPML_Action {
 					$addon_data     = wpml_collect( $addon );
 					$addon_type     = $addon_data->get( 'type' );
 					$addon_position = $addon_data->get( 'position' );
-					// register name
-					$addons[ $key ]['name'] = apply_filters( 'wpml_translate_single_string', $addon_data->get( 'name' ), 'wc_product_addons_strings', $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_name' );
-					// register description
-					$addons[ $key ]['description'] = apply_filters( 'wpml_translate_single_string', $addon_data->get( 'description' ), 'wc_product_addons_strings', $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_description' );
-					// register options labels
+
+					$addons[ $key ]['name']        = apply_filters( 'wpml_translate_single_string', $addon_data->get( 'name' ), self::TRANSLATION_DOMAIN, $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_name' );
+					if ( $addon_data->offsetExists( 'description' ) ) {
+						$addons[ $key ]['description'] = apply_filters( 'wpml_translate_single_string', $addon_data->get( 'description' ), self::TRANSLATION_DOMAIN, $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_description' );
+					}
+					if ( $addon_data->offsetExists( 'placeholder' ) ) {
+						$addons[ $key ]['placeholder'] = apply_filters( 'wpml_translate_single_string', $addon_data->get( 'placeholder' ), self::TRANSLATION_DOMAIN, $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_placeholder' );
+					}
 					if ( $addon_data->offsetExists( 'options' ) ) {
 						foreach ( $addon['options'] as $opt_key => $option ) {
-							$addons[ $key ]['options'][ $opt_key ]['label'] = apply_filters( 'wpml_translate_single_string', wpml_collect( $option )->get( 'label' ), 'wc_product_addons_strings', $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_option_label_' . $opt_key );
+							$addons[ $key ]['options'][ $opt_key ]['label'] = apply_filters( 'wpml_translate_single_string', wpml_collect( $option )->get( 'label' ), self::TRANSLATION_DOMAIN, $object_id . '_addon_' . $addon_type . '_' . $addon_position . '_option_label_' . $opt_key );
 						}
 					}
 				}
@@ -130,8 +145,7 @@ class WCML_Product_Addons implements \IWPML_Action {
 			return [ 0 => $addons ];
 		}
 
-		return $null;
-
+		return $check;
 	}
 
 	/**
@@ -141,37 +155,41 @@ class WCML_Product_Addons implements \IWPML_Action {
 	 */
 	public function addons_product_terms( $product_terms ) {
 		foreach ( $product_terms as $key => $product_term ) {
-			$product_terms[ $key ] = apply_filters( 'translate_object_id', $product_term, 'product_cat', true, $this->sitepress->get_default_language() );
+			$product_terms[ $key ] = apply_filters( 'wpml_object_id', $product_term, 'product_cat', true, $this->sitepress->get_default_language() );
 		}
 
 		return $product_terms;
 	}
 
 	public function inf_translate_strings() {
-
-		$pointer_ui = new WCML_Pointer_UI(
-			/* translators: %1$s and %2$s are opening and closing HTML link tags */
-			sprintf( __( 'You can translate strings related to global add-ons on the %1$sWPML String Translation page%2$s. Use the search on the top of that page to find the strings.', 'woocommerce-multilingual' ), '<a href="' . admin_url( 'admin.php?page=' . WPML_ST_FOLDER . '/menu/string-translation.php&context=wc_product_addons_strings' ) . '">', '</a>' ),
-			WCML_Tracking_Link::getWcmlProductAddonsDoc(),
-			'wpbody-content .woocommerce>h2'
-		);
-
-		$pointer_ui->show();
+		$dashboardUrl = \WCML\Utilities\AdminUrl::getWPMLTMDashboardStringDomain( self::TRANSLATION_DOMAIN );
+		$this->pointerFactory
+			->create( [
+				'content'    => sprintf(
+					/* translators: %1$s and %2$s are opening and closing HTML link tags */
+					esc_html__( 'To translate global add-ons, go to the %1$sTranslation Dashboard%2$s.', 'woocommerce-multilingual' ),
+					'<a href="' . esc_url( $dashboardUrl ) . '">',
+					'</a>'
+				),
+				'selectorId' => 'wpbody-content .woocommerce>h1',
+				'docLink'    => WCML_Tracking_Link::getWcmlProductAddonsDoc(),
+			] )
+			->show();
 	}
 
 	/**
-	 * @param array    $package
-	 * @param \WP_Post $post
+	 * @param array   $package
+	 * @param WP_Post $post
 	 *
 	 * @return array
 	 */
 	public function append_addons_to_translation_package( $package, $post ) {
 		if ( 'product' === $post->post_type ) {
-			$add_field = function( $name, $value ) use ( &$package ) {
+			$add_field = function ( $name, $value ) use ( &$package ) {
 				if ( $value ) {
 					$package['contents'][ $name ] = [
 						'translate' => 1,
-						'data'      => base64_encode( $value ),
+						'data'      => base64_encode( $value ), /* phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode */
 						'format'    => 'base64',
 					];
 				}
@@ -180,6 +198,7 @@ class WCML_Product_Addons implements \IWPML_Action {
 			foreach ( SharedHooks::getProductAddons( $post->ID ) as $addon_id => $addon_data ) {
 				$add_field( self::get_job_field_name( $addon_id, 'name' ), Obj::prop( 'name', $addon_data ) );
 				$add_field( self::get_job_field_name( $addon_id, 'description' ), Obj::prop( 'description', $addon_data ) );
+				$add_field( self::get_job_field_name( $addon_id, 'placeholder' ), Obj::prop( 'placeholder', $addon_data ) );
 
 				foreach ( (array) Obj::prop( 'options', $addon_data ) as $option_id => $option ) {
 					$add_field( self::get_job_field_name( $addon_id, $option_id ), Obj::prop( 'label', $option ) );
@@ -200,16 +219,17 @@ class WCML_Product_Addons implements \IWPML_Action {
 			Str::startsWith( 'post_', $job->original_post_type )
 			&& 'product' === get_post_type( $post_id )
 		) {
-			$get_translation = function( $field_name ) use ( $fields ) {
+			$get_translation = function ( $field_name ) use ( $fields ) {
 				return Obj::path( [ $field_name, 'data' ], $fields );
 			};
 
-			$addons = SharedHooks::getProductAddons( $post_id );
+			$addons = SharedHooks::getProductAddons( $job->original_doc_id );
 
 			foreach ( $addons as $addon_id => $addon_data ) {
 				if ( isset( $addons[ $addon_id ]['name'] ) ) {
 					$addons[ $addon_id ]['name']        = $get_translation( self::get_job_field_name( $addon_id, 'name' ) );
 					$addons[ $addon_id ]['description'] = $get_translation( self::get_job_field_name( $addon_id, 'description' ) );
+					$addons[ $addon_id ]['placeholder'] = $get_translation( self::get_job_field_name( $addon_id, 'placeholder' ) );
 				}
 
 				foreach ( (array) Obj::prop( 'options', $addon_data ) as $option_id => $option ) {
@@ -231,8 +251,8 @@ class WCML_Product_Addons implements \IWPML_Action {
 	 */
 	private static function get_job_field_name( $addon_id, $name_or_id ) {
 		return is_numeric( $name_or_id )
-			? 'addon_' . $addon_id . '_option_' . $name_or_id . '_label'
-			: 'addon_' . $addon_id . '_' . $name_or_id;
+			? self::ADDON_PREFIX . $addon_id . '_option_' . $name_or_id . '_label'
+			: self::ADDON_PREFIX . $addon_id . '_' . $name_or_id;
 	}
 
 	/**
@@ -254,11 +274,14 @@ class WCML_Product_Addons implements \IWPML_Action {
 				$addons_section = new WPML_Editor_UI_Field_Section( sprintf( __( 'Product Add-ons Group "%s"', 'woocommerce-multilingual' ), $addon_data->get( 'name' ) ) );
 
 				$group       = new WPML_Editor_UI_Field_Group( '', true );
-				$addon_field = new WPML_Editor_UI_Single_Line_Field( 'addon_' . $addon_id . '_name', __( 'Name', 'woocommerce-multilingual' ), $data, false );
+				$addon_field = new WPML_Editor_UI_Single_Line_Field( self::ADDON_PREFIX . $addon_id . '_name', __( 'Name', 'woocommerce-multilingual' ), $data, false );
 				$group->add_field( $addon_field );
-				$addon_field = new WPML_Editor_UI_Single_Line_Field( 'addon_' . $addon_id . '_description', __( 'Description', 'woocommerce-multilingual' ), $data, false );
+				$addon_field = new WPML_Editor_UI_Single_Line_Field( self::ADDON_PREFIX . $addon_id . '_description', __( 'Description', 'woocommerce-multilingual' ), $data, false );
 				$group->add_field( $addon_field );
-
+				if ( $addon_data->offsetExists( 'placeholder' ) ) {
+					$addon_field = new WPML_Editor_UI_Single_Line_Field( self::ADDON_PREFIX . $addon_id . '_placeholder', __( 'Placeholder', 'woocommerce-multilingual' ), $data, false );
+					$group->add_field( $addon_field );
+				}
 				$addons_section->add_field( $group );
 
 				if ( $addon_data->offsetExists( 'options' ) && $addon_data->get( 'options' ) ) {
@@ -266,7 +289,7 @@ class WCML_Product_Addons implements \IWPML_Action {
 					$labels_group = new WPML_Editor_UI_Field_Group( __( 'Options', 'woocommerce-multilingual' ), true );
 
 					foreach ( $addon_data->get( 'options' ) as $option_id => $option ) {
-						$option_label_field = new WPML_Editor_UI_Single_Line_Field( 'addon_' . $addon_id . '_option_' . $option_id . '_label', __( 'Label', 'woocommerce-multilingual' ), $data, false );
+						$option_label_field = new WPML_Editor_UI_Single_Line_Field( self::ADDON_PREFIX . $addon_id . '_option_' . $option_id . '_label', __( 'Label', 'woocommerce-multilingual' ), $data, false );
 						$labels_group->add_field( $option_label_field );
 					}
 					$addons_section->add_field( $labels_group );
@@ -292,25 +315,27 @@ class WCML_Product_Addons implements \IWPML_Action {
 		if ( ! empty( $product_addons ) ) {
 			foreach ( $product_addons as $addon_id => $product_addon ) {
 				$addon_data                                    = wpml_collect( $product_addon );
-				$data[ 'addon_' . $addon_id . '_name' ]        = [ 'original' => $addon_data->get( 'name' ) ];
-				$data[ 'addon_' . $addon_id . '_description' ] = [ 'original' => $addon_data->get( 'description' ) ];
+				$data[ self::ADDON_PREFIX . $addon_id . '_name' ]        = [ 'original' => $addon_data->get( 'name' ) ];
+				$data[ self::ADDON_PREFIX . $addon_id . '_description' ] = [ 'original' => $addon_data->get( 'description' ) ];
+				$data[ self::ADDON_PREFIX . $addon_id . '_placeholder' ] = [ 'original' => $addon_data->get( 'placeholder' ) ];
 				if ( $addon_data->offsetExists( 'options' ) && $addon_data->get( 'options' ) ) {
 					foreach ( $addon_data->get( 'options' ) as $option_id => $option ) {
-						$data[ 'addon_' . $addon_id . '_option_' . $option_id . '_label' ] = [ 'original' => wpml_collect( $option )->get( 'label' ) ];
+						$data[ self::ADDON_PREFIX . $addon_id . '_option_' . $option_id . '_label' ] = [ 'original' => wpml_collect( $option )->get( 'label' ) ];
 					}
 				}
 			}
 
-			if ( $translation ) {
+			if ( is_object( $translation ) ) {
 				$translated_product_addons = SharedHooks::getProductAddons( $translation->ID );
 				if ( ! empty( $translated_product_addons ) ) {
-					foreach ( $translated_product_addons as $addon_id => $transalted_product_addon ) {
-						$translated_addon_data                                        = wpml_collect( $transalted_product_addon );
-						$data[ 'addon_' . $addon_id . '_name' ]['translation']        = $translated_addon_data->get( 'name' );
-						$data[ 'addon_' . $addon_id . '_description' ]['translation'] = $translated_addon_data->get( 'description' );
+					foreach ( $translated_product_addons as $addon_id => $translated_product_addon ) {
+						$translated_addon_data                                        = wpml_collect( $translated_product_addon );
+						$data[ self::ADDON_PREFIX . $addon_id . '_name' ]['translation']        = $translated_addon_data->get( 'name' );
+						$data[ self::ADDON_PREFIX . $addon_id . '_description' ]['translation'] = $translated_addon_data->get( 'description' );
+						$data[ self::ADDON_PREFIX . $addon_id . '_placeholder' ]['translation'] = $translated_addon_data->get( 'placeholder' );
 						if ( $translated_addon_data->offsetExists( 'options' ) && $translated_addon_data->get( 'options' ) ) {
 							foreach ( $translated_addon_data->get( 'options' ) as $option_id => $option ) {
-								$data[ 'addon_' . $addon_id . '_option_' . $option_id . '_label' ]['translation'] = wpml_collect( $option )->get( 'label' );
+								$data[ self::ADDON_PREFIX . $addon_id . '_option_' . $option_id . '_label' ]['translation'] = wpml_collect( $option )->get( 'label' );
 							}
 						}
 					}
@@ -336,12 +361,13 @@ class WCML_Product_Addons implements \IWPML_Action {
 
 			foreach ( $product_addons as $addon_id => $product_addon ) {
 				$addon_data                                 = wpml_collect( $product_addon );
-				$product_addons[ $addon_id ]['name']        = $data[ md5( 'addon_' . $addon_id . '_name' ) ];
-				$product_addons[ $addon_id ]['description'] = $data[ md5( 'addon_' . $addon_id . '_description' ) ];
+				$product_addons[ $addon_id ]['name']        = $data[ md5( self::ADDON_PREFIX . $addon_id . '_name' ) ];
+				$product_addons[ $addon_id ]['description'] = $data[ md5( self::ADDON_PREFIX . $addon_id . '_description' ) ];
+				$product_addons[ $addon_id ]['placeholder'] = $data[ md5( self::ADDON_PREFIX . $addon_id . '_placeholder' ) ];
 
 				if ( $addon_data->offsetExists( 'options' ) && $addon_data->get( 'options' ) ) {
 					foreach ( $addon_data->get( 'options' ) as $option_id => $option ) {
-						$product_addons[ $addon_id ]['options'][ $option_id ]['label'] = $data[ md5( 'addon_' . $addon_id . '_option_' . $option_id . '_label' ) ];
+						$product_addons[ $addon_id ]['options'][ $option_id ]['label'] = $data[ md5( self::ADDON_PREFIX . $addon_id . '_option_' . $option_id . '_label' ) ];
 					}
 				}
 			}
@@ -351,15 +377,18 @@ class WCML_Product_Addons implements \IWPML_Action {
 	}
 
 	public function show_pointer_info() {
-
-		$pointer_ui = new WCML_Pointer_UI(
-			/* translators: %1$s and %2$s are opening and closing HTML link tags */
-			sprintf( __( 'You can translate the Group Name, Group Description and every Option Label of your product add-on on the %1$sWooCommerce product translation page%2$s', 'woocommerce-multilingual' ), '<a href="' . admin_url( 'admin.php?page=wpml-wcml' ) . '">', '</a>' ),
-			WCML_Tracking_Link::getWcmlProductAddonsDoc(),
-			'product_addons_data>p'
-		);
-
-		$pointer_ui->show();
+		$this->pointerFactory
+			->create( [
+				'content'    => sprintf(
+					/* translators: %1$s and %2$s are opening and closing HTML link tags */
+					esc_html__( 'To translate per-product add-ons, go to the %1$sTranslation Dashboard%2$s and send the associated product for translation.', 'woocommerce-multilingual' ),
+					'<a href="' . esc_url( \WCML\Utilities\AdminUrl::getWPMLTMDashboardProducts() ) . '">',
+					'</a>'
+				),
+				'selectorId' => 'product_addons_data p:first',
+				'docLink'    => WCML_Tracking_Link::getWcmlProductAddonsDoc(),
+			] )
+			->show();
 	}
 
 	public function replace_tm_editor_custom_fields_with_own_sections( $fields ) {

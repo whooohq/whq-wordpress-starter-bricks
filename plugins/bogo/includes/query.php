@@ -9,14 +9,12 @@ function bogo_parse_query( $query ) {
 		return;
 	}
 
-	if ( $query->is_preview()
-	and ( $qv['page_id'] or $qv['p'] ) ) {
+	if ( $query->is_preview() and ( $qv['page_id'] or $qv['p'] ) ) {
 		$qv['bogo_suppress_locale_query'] = true;
 		return;
 	}
 
-	if ( isset( $qv['post_type'] )
-	and 'any' != $qv['post_type'] ) {
+	if ( isset( $qv['post_type'] ) and 'any' !== $qv['post_type'] ) {
 		$localizable = array_filter(
 			(array) $qv['post_type'],
 			'bogo_is_localizable_post_type'
@@ -28,7 +26,7 @@ function bogo_parse_query( $query ) {
 		}
 	}
 
-	$lang = isset( $qv['lang'] ) ? $qv['lang'] : '';
+	$lang = $qv['lang'] ?? '';
 
 	if ( is_admin() ) {
 		$locale = $lang;
@@ -44,8 +42,7 @@ function bogo_parse_query( $query ) {
 		}
 	}
 
-	if ( empty( $locale )
-	or ! bogo_is_available_locale( $locale ) ) {
+	if ( empty( $locale ) or ! bogo_is_available_locale( $locale ) ) {
 		$qv['bogo_suppress_locale_query'] = true;
 		return;
 	}
@@ -56,9 +53,11 @@ function bogo_parse_query( $query ) {
 		return;
 	}
 
-	if ( $query->is_home
-	and 'page' == get_option( 'show_on_front' )
-	and get_option( 'page_on_front' ) ) {
+	if (
+		$query->is_home and
+		'page' === get_option( 'show_on_front' ) and
+		get_option( 'page_on_front' )
+	) {
 		$query_keys = array_keys( wp_parse_args( $query->query ) );
 		$query_keys = array_diff(
 			$query_keys,
@@ -87,19 +86,23 @@ function bogo_parse_query( $query ) {
 			unset( $query->queried_object_id );
 		}
 
-		if ( 'page' == get_option( 'show_on_front' )
-		and isset( $query->queried_object_id )
-		and $query->queried_object_id == get_option( 'page_for_posts' ) ) {
+		if (
+			'page' === get_option( 'show_on_front' ) and
+			isset( $query->queried_object_id ) and
+			$query->queried_object_id == get_option( 'page_for_posts' )
+		) {
 			$query->is_page = false;
 			$query->is_home = true;
 			$query->is_posts_page = true;
 		}
 	}
 
-	if ( isset( $qv['post_type'] )
-	and 'any' != $qv['post_type']
-	and ! is_array( $qv['post_type'] )
-	and '' != $qv['name'] ) {
+	if (
+		isset( $qv['post_type'] ) and
+		'any' !== $qv['post_type'] and
+		! is_array( $qv['post_type'] ) and
+		! empty( $qv['name'] )
+	) {
 		$query->queried_object = bogo_get_page_by_path(
 			$qv['name'], $locale, $qv['post_type']
 		);
@@ -112,8 +115,10 @@ function bogo_parse_query( $query ) {
 		}
 	}
 
-	if ( $query->is_posts_page
-	and ( ! isset( $qv['withcomments'] ) or ! $qv['withcomments'] ) ) {
+	if (
+		$query->is_posts_page and
+		( ! isset( $qv['withcomments'] ) or ! $qv['withcomments'] )
+	) {
 		$query->is_comment_feed = false;
 	}
 
@@ -123,6 +128,7 @@ function bogo_parse_query( $query ) {
 	$query->is_embed =
 		$query->is_embed && ( $query->is_singular || $query->is_404 );
 }
+
 
 add_filter( 'posts_join', 'bogo_posts_join', 10, 2 );
 
@@ -135,7 +141,7 @@ function bogo_posts_join( $join, $query ) {
 		return $join;
 	}
 
-	$locale = empty( $qv['lang'] ) ? '' : $qv['lang'];
+	$locale = $qv['lang'] ?? '';
 
 	if ( ! bogo_is_available_locale( $locale ) ) {
 		return $join;
@@ -150,6 +156,7 @@ function bogo_posts_join( $join, $query ) {
 	return $join;
 }
 
+
 add_filter( 'posts_where', 'bogo_posts_where', 10, 2 );
 
 function bogo_posts_where( $where, $query ) {
@@ -161,7 +168,7 @@ function bogo_posts_where( $where, $query ) {
 		return $where;
 	}
 
-	$locale = empty( $qv['lang'] ) ? '' : $qv['lang'];
+	$locale = $qv['lang'] ?? '';
 
 	if ( ! bogo_is_available_locale( $locale ) ) {
 		return $where;
@@ -184,23 +191,23 @@ function bogo_posts_where( $where, $query ) {
 	return $where;
 }
 
+
 add_filter( 'option_sticky_posts', 'bogo_option_sticky_posts', 10, 1 );
 
 function bogo_option_sticky_posts( $posts ) {
-	if ( is_admin() ) {
-		return $posts;
-	}
+	if ( is_home() ) {
+		$locale = get_locale();
 
-	$locale = get_locale();
-
-	foreach ( $posts as $key => $post_id ) {
-		if ( $locale != bogo_get_post_locale( $post_id ) ) {
-			unset( $posts[$key] );
-		}
+		$posts = array_filter( $posts,
+			static function ( $post_id ) use ( $locale ) {
+				return bogo_get_post_locale( $post_id ) === $locale;
+			}
+		);
 	}
 
 	return $posts;
 }
+
 
 add_filter( 'option_page_on_front', 'bogo_get_local_post', 10, 1 );
 add_filter( 'option_page_for_posts', 'bogo_get_local_post', 10, 1 );
@@ -208,22 +215,35 @@ add_filter( 'option_page_for_posts', 'bogo_get_local_post', 10, 1 );
 function bogo_get_local_post( $post_id ) {
 	global $wpdb;
 
-	if ( is_admin()
-	or empty( $post_id ) ) {
+	if ( is_admin() or empty( $post_id ) ) {
 		return $post_id;
 	}
 
 	$post_type = get_post_type( $post_id );
 
-	if ( ! post_type_exists( $post_type )
-	or ! bogo_is_localizable_post_type( $post_type ) ) {
+	if (
+		! post_type_exists( $post_type ) or
+		! bogo_is_localizable_post_type( $post_type )
+	) {
 		return $post_id;
 	}
 
 	$locale = get_locale();
 
-	if ( bogo_get_post_locale( $post_id ) == $locale ) {
+	if ( bogo_get_post_locale( $post_id ) === $locale ) {
 		return $post_id;
+	}
+
+	$locale_query = $wpdb->prepare(
+		"pm2.meta_value LIKE %s",
+		$locale
+	);
+
+	if ( bogo_is_default_locale( $locale ) ) {
+		$locale_query = $wpdb->prepare(
+			"(pm2.meta_value LIKE %s OR pm2.meta_id IS NULL)",
+			$locale
+		);
 	}
 
 	$original_post = get_post_meta( $post_id, '_original_post', true );
@@ -233,33 +253,29 @@ function bogo_get_local_post( $post_id ) {
 		$original_post = $post_id;
 	}
 
-	$q = "SELECT ID FROM $wpdb->posts AS posts";
-	$q .= " LEFT JOIN $wpdb->postmeta AS pm1";
-	$q .= " ON posts.ID = pm1.post_id AND pm1.meta_key = '_original_post'";
-	$q .= " LEFT JOIN $wpdb->postmeta AS pm2";
-	$q .= " ON posts.ID = pm2.post_id AND pm2.meta_key = '_locale'";
-	$q .= " WHERE 1=1";
-	$q .= " AND post_status = 'publish'";
-	$q .= $wpdb->prepare( " AND post_type = %s", $post_type );
+	$original_post_query = $wpdb->prepare(
+		"pm1.meta_value = %s",
+		$original_post
+	);
 
-	if ( is_int( $original_post ) ) { // For back-compat
-		$q .= $wpdb->prepare( " AND (ID = %d OR pm1.meta_value = %d)",
-			$original_post, $original_post
+	// For back-compat
+	if ( is_int( $original_post ) ) {
+		$original_post_query = $wpdb->prepare(
+			"(ID = %d OR pm1.meta_value = %d)",
+			$original_post,
+			$original_post
 		);
-	} else {
-		$q .= $wpdb->prepare( " AND pm1.meta_value = %s", $original_post );
 	}
 
-	$q .= " AND (1=0";
-	$q .= $wpdb->prepare( " OR pm2.meta_value LIKE %s", $locale );
+	$translation = $wpdb->get_var( $wpdb->prepare(
+		"SELECT ID FROM %i AS posts LEFT JOIN %i AS pm1 ON posts.ID = pm1.post_id AND pm1.meta_key = '_original_post' LEFT JOIN %i AS pm2 ON posts.ID = pm2.post_id AND pm2.meta_key = '_locale' WHERE post_status = 'publish' AND post_type = %s AND $locale_query AND $original_post_query",
+		$wpdb->posts,
+		$wpdb->postmeta,
+		$wpdb->postmeta,
+		$post_type,
+	) );
 
-	if ( bogo_is_default_locale( $locale ) ) {
-		$q .= " OR pm2.meta_id IS NULL";
-	}
-
-	$q .= ")";
-
-	$translation = absint( $wpdb->get_var( $q ) );
+	$translation = absint( $translation );
 
 	if ( $translation ) {
 		return $translation;

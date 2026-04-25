@@ -44,7 +44,7 @@ class ShippingClasses {
 			'element_id' => $shippingClass->term_id,
 			'element_type' => $shippingClass->taxonomy,
 		] );
-		return isset( $classLanguageDetails->source_language_code ) ? $classLanguageDetails->source_language_code : null;
+		return $classLanguageDetails->source_language_code ?? null;
 	}
 
 	/**

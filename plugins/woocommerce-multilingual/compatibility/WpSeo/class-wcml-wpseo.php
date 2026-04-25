@@ -12,7 +12,8 @@ class WCML_WPSEO implements \IWPML_Action {
 			add_filter( 'wpseo_robots_array', [ $this, 'noindex_all_comments_page' ], 10, 1 );
 		}
 
-		if ( defined( 'WPSEO_VERSION' ) && defined( 'WPSEO_PATH' ) && isset( $_GET['page'] ) && $_GET['page'] == 'wpml-wcml' && isset( $_GET['tab'] ) && $_GET['tab'] == 'products' ) {
+		if ( defined( 'WPSEO_VERSION' ) && defined( 'WPSEO_PATH' ) && isset( $_GET['page'] ) && \WCML\Utilities\AdminUrl::PAGE_WPML_WCML == $_GET['page'] && isset( $_GET['tab'] ) && \WCML\Utilities\AdminUrl::TAB_PRODUCTS == $_GET['tab'] ) {
+			// todo this tab will no longer be there (moved to WPML) - check if you need it
 			if ( version_compare( WPSEO_VERSION, '3', '<' ) ) {
 				require_once WPSEO_PATH . 'admin/class-metabox.php';
 			} elseif ( file_exists( WPSEO_PATH . 'admin/metabox/class-metabox.php' ) ) {

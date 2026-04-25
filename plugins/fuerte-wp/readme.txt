@@ -1,9 +1,9 @@
 === Fuerte-WP ===
 Contributors: tcattd
 Tags: security
-Stable tag: 1.4.4
+Stable tag: 1.4.12
 Requires at least: 5.8
-Tested up to: 6.1
+Tested up to: 6.2
 Requires PHP: 7.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt

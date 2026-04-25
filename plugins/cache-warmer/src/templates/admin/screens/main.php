@@ -167,7 +167,7 @@ $was_stopped_by_hand = Cache_Warmer::$options->get( 'cache-warmer-last-warmup-wa
                 </div>
 
                 <div class="cache-warmer-row cache-warmer-current-warm-up-log">
-                    <div class="cache-warmer-column cache-warmer-log-content-block" data-current-page="1" data-log-name="<?php echo Logging::get_latest_warmed_at(); ?>"><?php // @codingStandardsIgnoreLine
+                    <div class="cache-warmer-column cache-warmer-log-content-block" data-current-page="1" data-log-name="latest"><?php // @codingStandardsIgnoreLine
                         echo ! $was_stopped_by_hand ? Logging::format_log_content_array_into_string(
                             Logging::get_latest_warmed_at(), Logging::get_latest_log_content() ) : ''; // @codingStandardsIgnoreLine ?></div>
                 </div>

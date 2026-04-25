@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<ruleset name="ELM_PHPCS_Settings">
+    <description>PHPCS settings for Error Log Monitor</description>
+
+    <arg name="basepath" value="."/>
+    <arg name="warning-severity" value="5"/>
+    <arg name="error-severity" value="5"/>
+    <arg value="sp"/>
+
+    <!-- Check the current directory by default -->
+    <file>./</file>
+
+    <!-- Include the WordPress-VIP-Go standard -->
+    <rule ref="WordPress-VIP-Go">
+        <!-- Surely server-side caching isn't an issue for admin pages. -->
+        <exclude name="WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE" />
+        <exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie" />
+
+        <!-- This plugin is not exclusive to WP VIP, so it doesn't use vip_safe_wp_remote_get() and such. -->
+        <exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get" />
+
+        <!-- Questionable, but not a security issue or bug. -->
+        <exclude name="Squiz.PHP.CommentedOutCode.Found" />
+    </rule>
+
+    <rule ref="WordPress.Security" />
+
+    <exclude-pattern type="relative">^/vendor/*</exclude-pattern>
+    <!-- Freemius SDK -->
+    <exclude-pattern type="relative">^/freemius/*</exclude-pattern>
+</ruleset>

@@ -108,9 +108,9 @@ $current_user_2fa = $this->cls('TwoFA')->current_status();
 	<table class="wp-list-table striped dologin-table">
 		<tbody>
 			<tr>
-				<th><?php echo __('Google reCAPTCHA', 'dologin'); ?></th>
+				<th><?php echo __('Cloudflare Turnstile', 'dologin'); ?></th>
 				<td>
-					<?php $__gui->build_switch('gg'); ?>
+					<?php $__gui->build_switch('cf'); ?>
 					<div class="dologin-desc">
 						<?php echo sprintf(__('This will enable reCAPTCHA on %s page.', 'dologin'), __('Login')); ?>
 					</div>
@@ -118,7 +118,7 @@ $current_user_2fa = $this->cls('TwoFA')->current_status();
 			</tr>
 
 			<tr>
-				<th><?php echo __('Google reCAPTCHA on Register Page', 'dologin'); ?></th>
+				<th><?php echo __('Cloudflare Turnstile on Register Page', 'dologin'); ?></th>
 				<td>
 					<?php $__gui->build_switch('recapt_register'); ?>
 					<div class="dologin-desc">
@@ -129,7 +129,7 @@ $current_user_2fa = $this->cls('TwoFA')->current_status();
 
 			<!-- https://core.trac.wordpress.org/ticket/49521 -->
 			<tr>
-				<th><?php echo __('Google reCAPTCHA on Lost Password Page', 'dologin'); ?></th>
+				<th><?php echo __('Cloudflare Turnstile on Lost Password Page', 'dologin'); ?></th>
 				<td>
 					<?php $__gui->build_switch('recapt_forget'); ?>
 					<div class="dologin-desc">
@@ -139,22 +139,22 @@ $current_user_2fa = $this->cls('TwoFA')->current_status();
 			</tr>
 
 			<tr>
-				<th><?php echo __('Google reCAPTCHA Keys', 'dologin'); ?></th>
+				<th><?php echo __('Cloudflare Turnstile Keys', 'dologin'); ?></th>
 				<td>
 					<div class="dologin-row-flex">
 						<div style="margin-right: 50px;">
 							<p><label>
 									<span class="dologin_text_label_prefix"><?php echo __('Site Key', 'dologin'); ?>:</span>
-									<?php $__gui->build_input('gg_pub_key', ''); ?>
+									<?php $__gui->build_input('cf_pub_key', ''); ?>
 								</label></p>
 							<p><label>
 									<span class="dologin_text_label_prefix"><?php echo __('Secret Key', 'dologin'); ?>:</span>
-									<?php $__gui->build_input('gg_priv_key', ''); ?>
+									<?php $__gui->build_input('cf_priv_key', ''); ?>
 								</label></p>
 						</div>
 						<div>
 							<?php
-							if (Conf::val('gg') || (Conf::val('gg_pub_key') && Conf::val('gg_priv_key'))) {
+							if (Conf::val('cf') || (Conf::val('cf_pub_key') && Conf::val('cf_priv_key'))) {
 								$this->cls('Captcha')->show();
 							}
 							?>
@@ -162,8 +162,8 @@ $current_user_2fa = $this->cls('TwoFA')->current_status();
 					</div>
 
 					<div class="dologin-desc">
-						<?php echo sprintf(__('<a %s>Click here</a> to generate keys from Google reCAPTCHA.', 'dologin'), 'href="https://www.google.com/recaptcha/admin#list" target="_blank"'); ?>
-						<?php echo __('Note: v2 supported only.', 'dologin'); ?>
+						<?php echo sprintf(__('<a %s>Click here</a> to generate keys from Cloudflare Turnstile.', 'dologin'), 'href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank"'); ?>
+						<?php echo __('Cloudflare Turnstile is better than Google reCAPTCHA.', 'dologin'); ?>
 					</div>
 				</td>
 			</tr>

@@ -49,15 +49,15 @@ class WCML_Cart_Switch_Lang_Functions implements \IWPML_Frontend_Action, \IWPML_
 	}
 
 	public function wcml_language_switch_dialog() {
-		global $woocommerce_wpml, $sitepress, $wp, $post;
+		global $woocommerce_wpml, $sitepress, $post;
 
 		if ( make( WCML_Dependencies::class )->check() ) {
 			$current_url = $this->get_current_url();
 
 			if ( is_shop() ) {
-				$requested_page_id = apply_filters( 'translate_object_id', wc_get_page_id( 'shop' ), 'post', true, $this->lang_from );
+				$requested_page_id = apply_filters( 'wpml_object_id', wc_get_page_id( 'shop' ), 'post', true, $this->lang_from );
 			} elseif ( isset( $post->ID ) ) {
-				$requested_page_id = apply_filters( 'translate_object_id', $post->ID, get_post_type( $post->ID ), true, $this->lang_from );
+				$requested_page_id = apply_filters( 'wpml_object_id', $post->ID, get_post_type( $post->ID ), true, $this->lang_from );
 			}
 
 			if ( isset( $requested_page_id ) ) {
@@ -67,7 +67,7 @@ class WCML_Cart_Switch_Lang_Functions implements \IWPML_Frontend_Action, \IWPML_
 			}
 
 			$cart_for_session = false;
-			if ( isset( WC()->cart ) ) {
+			if ( WC()->cart instanceof WC_Cart ) {
 				$cart_for_session = WC()->cart->get_cart_for_session();
 			}
 

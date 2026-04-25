@@ -58,7 +58,7 @@ class WCML_Exchange_Rates {
 				add_action( 'wp_ajax_wcml_update_exchange_rates', [ $this, 'update_exchange_rates_ajax' ] );
 			}
 			add_filter( 'cron_schedules', [ $this, 'cron_schedules' ] );
-			add_action( self::CRONJOB_EVENT, [ $this, 'update_exchange_rates' ] );
+			add_action( self::CRONJOB_EVENT, [ $this, 'action_update_exchange_rates' ] );
 		}
 	}
 
@@ -106,7 +106,7 @@ class WCML_Exchange_Rates {
 	 * @return mixed|null
 	 */
 	public function get_setting( $key ) {
-		return isset( $this->settings[ $key ] ) ? $this->settings[ $key ] : null;
+		return $this->settings[ $key ] ?? null;
 	}
 
 	public function save_settings() {
@@ -161,6 +161,13 @@ class WCML_Exchange_Rates {
 		$this->save_settings();
 
 		return $rates;
+	}
+
+	/**
+	 * @return void
+	 */
+	public function action_update_exchange_rates() {
+		$this->update_exchange_rates();
 	}
 
 	/**
@@ -340,7 +347,7 @@ class WCML_Exchange_Rates {
 	 */
 	private function get_monthly_schedule_time_offset() {
 		$current_day           = date( 'j' );
-		$days_in_current_month = cal_days_in_month( CAL_GREGORIAN, date( 'n' ), date( 'Y' ) );
+		$days_in_current_month = cal_days_in_month( CAL_GREGORIAN, (int) date( 'n' ), (int) date( 'Y' ) );
 
 		if ( $this->settings['month_day'] >= $current_day && $this->settings['month_day'] <= $days_in_current_month ) {
 			$days = $this->settings['month_day'] - $current_day;

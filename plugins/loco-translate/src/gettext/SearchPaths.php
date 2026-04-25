@@ -7,12 +7,12 @@ class Loco_gettext_SearchPaths extends Loco_fs_FileFinder {
     
     /**
      * Look up a relative file reference against search paths
-     * @param string relative file path reference
-     * @return Loco_fs_File
+     * @param string $ref relative file path reference
+     * @return Loco_fs_File|null
      */
     public function match( $ref ){
         $excluded = new Loco_fs_Locations( $this->getExcluded() );
-        /* @var Loco_fs_Directory */
+        /* @var Loco_fs_Directory $base */
         foreach( $this->getRootDirectories() as $base ){
             $file = new Loco_fs_File($ref);
             $path = $file->normalize( (string) $base );
@@ -20,6 +20,7 @@ class Loco_gettext_SearchPaths extends Loco_fs_FileFinder {
                 return $file;
             }
         }
+        return null;
     }
 
 
@@ -28,7 +29,7 @@ class Loco_gettext_SearchPaths extends Loco_fs_FileFinder {
      * Build search paths from a given PO/POT file that references other files
      * @return Loco_gettext_SearchPaths
      */
-    public function init( Loco_fs_File $pofile, LocoHeaders $head = null ){
+    public function init( Loco_fs_File $pofile, ?LocoHeaders $head = null ){
         if( is_null($head) ){
             loco_require_lib('compiled/gettext.php');
             $head = LocoPoHeaders::fromSource( $pofile->getContents() );

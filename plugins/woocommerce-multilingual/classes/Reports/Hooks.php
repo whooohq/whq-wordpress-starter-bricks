@@ -20,7 +20,7 @@ class Hooks implements \IWPML_Backend_Action {
 	 * @param mixed $items
 	 * @return mixed
 	 */
-	function removeAllFromAnalytics( $items ) {
+	public function removeAllFromAnalytics( $items ) {
 		unset( $items['all'] );
 
 		return $items;

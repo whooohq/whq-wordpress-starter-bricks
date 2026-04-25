@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_action( 'wp_login', 'wppb_toolbox_count_user_logins', 20, 2 );
 function wppb_toolbox_count_user_logins( $user_login, $user ) {

@@ -1,0 +1,126 @@
+@use "./base-units.scss" as *;
+@use "./breakpoints.scss" as *;
+
+$typography: (
+    "h1": (
+        "font-size": (
+            "mobile": 40px,
+            "desktop": 40px
+        ),
+        "font-weight": (
+            "mobile": 600,
+            "desktop": 600,
+        ),
+        "font-style": (
+            "mobile": normal,
+            "desktop": normal,
+        ),
+        "line-height": (
+            "mobile": 120%,
+            "desktop": 120%,
+        ),
+        "letter-spacing": (
+            "mobile": 0,
+            "desktop": 0,
+        )
+    ),
+    "button-large": (
+        "font-size": (
+            "mobile": 16px,
+            "desktop": 16px,
+        ),
+        "font-weight": (
+            "mobile": 500,
+            "desktop": 500,
+        ),
+        "font-style": (
+            "mobile": normal,
+            "desktop": normal,
+        ),
+        "line-height": (
+            "mobile": 120%,
+            "desktop": 120%,
+        ),
+        "letter-spacing": (
+            "mobile": 0.15px,
+            "desktop": 0.15px,
+        )
+    ),
+    "button-medium": (
+        "font-size": (
+            "mobile": 14px,
+            "desktop": 14px,
+        ),
+        "font-weight": (
+            "mobile": 500,
+            "desktop": 500,
+        ),
+        "font-style": (
+            "mobile": normal,
+            "desktop": normal,
+        ),
+        "line-height": (
+            "mobile": 120%,
+            "desktop": 120%,
+        ),
+        "letter-spacing": (
+            "mobile": 0.15px,
+            "desktop": 0.15px,
+        )
+    ),
+    "button-small": (
+        "font-size": (
+            "mobile": 12px,
+            "desktop": 12px,
+        ),
+        "font-weight": (
+            "mobile": 500,
+            "desktop": 500,
+        ),
+        "font-style": (
+            "mobile": normal,
+            "desktop": normal,
+        ),
+        "line-height": (
+            "mobile": 120%,
+            "desktop": 120%,
+        ),
+        "letter-spacing": (
+            "mobile": 0.05px,
+            "desktop": 0.05px,
+        )
+    ),
+);
+
+@mixin tu-typography($style) {
+    font-family: Inter;
+    text-align: justify;
+    $type-map: map-get($typography, $style);
+    $properties: ('font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing');
+
+    @each $property in $properties {
+        @if map-has-key($type-map, $property) {
+            $value: map-get($type-map, $property);
+
+            @if type-of($value) == 'map' {
+                // It's a responsive map with multiple breakpoints
+                @each $breakpoint-name, $breakpoint-value in $value {
+                    // For the largest breakpoint ("desktop"), apply styles directly
+                    @if $breakpoint-name == "desktop" {
+                        #{$property}: $breakpoint-value;
+                    }
+                    // For all other breakpoints, create a media query
+                    @else {
+                        $breakpoint-width: map-get($breakpoints, $breakpoint-name);
+                        @media (max-width: #{$breakpoint-width}) {
+                            #{$property}: $breakpoint-value;
+                        }
+                    }
+                }
+            } @else {
+                // It's just a static value
+                #{$property}: $value;
+            }
+        }
+    }
+}

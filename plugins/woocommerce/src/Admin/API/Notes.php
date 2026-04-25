@@ -116,19 +116,6 @@ class Notes extends \WC_REST_CRUD_Controller {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->rest_base . '/tracker/(?P<note_id>[\d-]+)/user/(?P<user_id>[\d-]+)',
-			array(
-				array(
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'track_opened_email' ),
-					'permission_callback' => '__return_true',
-				),
-				'schema' => array( $this, 'get_public_item_schema' ),
-			)
-		);
-
-		register_rest_route(
-			$this->namespace,
 			'/' . $this->rest_base . '/update',
 			array(
 				array(
@@ -385,7 +372,7 @@ class Notes extends \WC_REST_CRUD_Controller {
 	}
 
 	/**
-	 * Prepare an array with the the requested updates.
+	 * Prepare an array with the requested updates.
 	 *
 	 * @param WP_REST_Request $request  Request object.
 	 * @return array A list of the requested updates values.
@@ -538,7 +525,7 @@ class Notes extends \WC_REST_CRUD_Controller {
 	 *
 	 * @param string $url The URL needing a nonce.
 	 * @param string $action The nonce action.
-	 * @param string $name The nonce anme.
+	 * @param string $name The nonce name.
 	 * @return string A fully formed URL.
 	 */
 	private function maybe_add_nonce_to_url( string $url, string $action = '', string $name = '' ) : string {
@@ -547,7 +534,7 @@ class Notes extends \WC_REST_CRUD_Controller {
 		}
 
 		if ( empty( $name ) ) {
-			// Default paramater name.
+			// Default parameter name.
 			$name = '_wpnonce';
 		}
 
@@ -609,19 +596,15 @@ class Notes extends \WC_REST_CRUD_Controller {
 		return apply_filters( 'woocommerce_rest_prepare_note', $response, $data, $request );
 	}
 
-
 	/**
 	 * Track opened emails.
+	 *
+	 * @deprecated 10.6.0 This method is no longer functional as the email tracking feature was removed in WooCommerce 9.9.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 */
 	public function track_opened_email( $request ) {
-		$note = NotesRepository::get_note( $request->get_param( 'note_id' ) );
-		if ( ! $note ) {
-			return;
-		}
-
-		NotesRepository::record_tracks_event_with_user( $request->get_param( 'user_id' ), 'email_note_opened', array( 'note_name' => $note->get_name() ) );
+		wc_deprecated_function( __METHOD__, '10.6.0' );
 	}
 
 	/**

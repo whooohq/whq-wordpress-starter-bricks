@@ -26,10 +26,10 @@ class WCML_Not_Translatable_Attributes extends WCML_Templates_Factory {
 
 		$model = [
 			'checked'   => $this->is_translatable(),
-			'edit_mode' => $this->attr_id ? true : false,
+			'edit_mode' => (bool) $this->attr_id,
 			'strings'   => [
 				'label'       => __( 'Translatable?', 'woocommerce-multilingual' ),
-				'description' => __( 'Enable this if you want to translate attribute values with WooCommerce Multilingual & Multicurrency', 'woocommerce-multilingual' ),
+				'description' => __( 'Enable this if you want to translate attribute values with WPML Multilingual & Multicurrency for WooCommerce', 'woocommerce-multilingual' ),
 				'notice'      => __( 'Existing translations and variations associated will be deleted.', 'woocommerce-multilingual' ),
 			],
 		];
@@ -46,7 +46,7 @@ class WCML_Not_Translatable_Attributes extends WCML_Templates_Factory {
 
 			$wcml_settings = $this->woocommerce_wpml->get_settings();
 
-			return isset( $wcml_settings['attributes_settings'][ $att_name ] ) ? $wcml_settings['attributes_settings'][ $att_name ] : true;
+			return $wcml_settings['attributes_settings'][ $att_name ] ?? true;
 		}
 
 		return true;

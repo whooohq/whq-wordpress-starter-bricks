@@ -2,12 +2,14 @@
 /**
  * Class for parameter-based Product querying
  *
- * Args and usage: https://github.com/woocommerce/woocommerce/wiki/wc_get_products-and-WC_Product_Query
+ * Args and usage: https://developer.woocommerce.com/docs/extensions/core-concepts/wc-get-products/
  *
  * @package  WooCommerce\Classes
  * @version  3.2.0
  * @since    3.2.0
  */
+
+use Automattic\WooCommerce\Enums\ProductStatus;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,7 +27,7 @@ class WC_Product_Query extends WC_Object_Query {
 		return array_merge(
 			parent::get_default_query_vars(),
 			array(
-				'status'            => array( 'draft', 'pending', 'private', 'publish' ),
+				'status'            => array( ProductStatus::DRAFT, ProductStatus::PENDING, ProductStatus::PRIVATE, ProductStatus::PUBLISH ),
 				'type'              => array_merge( array_keys( wc_get_product_types() ) ),
 				'limit'             => get_option( 'posts_per_page' ),
 				'include'           => array(),

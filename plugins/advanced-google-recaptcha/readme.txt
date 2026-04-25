@@ -1,11 +1,11 @@
 === Advanced Google reCAPTCHA ===
 
 Contributors: WebFactory
-Tags: captcha, recaptcha, google recaptcha, comment recaptcha, login recaptcha, brute force, spam, bots, protect, registration, google captcha, woocommerce recaptcha, comments captcha
+Tags: captcha, recaptcha, google recaptcha, comment recaptcha, login recaptcha
 Requires at least: 4.9
 Requires PHP: 5.6
-Tested up to: 6.4
-Stable tag: 1.16
+Tested up to: 7.0
+Stable tag: 1.34
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -16,7 +16,7 @@ Captcha protection against spam comments & brute force login attacks using Googl
 
 Using Advanced Google reCAPTCHA (most popular captcha on the market), you'll be safe from spam comments and protect user accounts, WooCommerce, Easy Digital Downloads, BuddyPress and other forms from brute-force login attacks.
 
-Works for:
+reCaptcha works for:
 
 * Login Form
 * Registration Form
@@ -28,7 +28,7 @@ Works for:
 * Easy Digital Downloads (EDD) Registration Form
 
 
-Plugin uses these 3rd party libs:
+Captcha uses these 3rd party libs:
 
 * Chart.js, 2017 Nick Downie, MIT
 * DataTables, 2008-2017 SpryMedia Ltd, MIT
@@ -57,6 +57,11 @@ Yes, it works for WordPress comment form.
 
 No, it won't. It's only loaded on the pages it protects.
 
+= How can I report security bugs? =
+
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team help validate, triage and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/vdp/advanced-google-recaptcha)
+
+
 == Screenshots ==
 
 1. Login form
@@ -70,6 +75,66 @@ No, it won't. It's only loaded on the pages it protects.
 9. Plugin settings
 
 == Changelog ==
+= 1.34 - 09/04/2026 =
+* Minor fixes
+
+= 1.33 - 26/03/2026 =
+* Wordfence compatibility fix
+
+= 1.32 - 19/03/2026 =
+* added captcha to WooCommerce payment endpoint
+* improved checkout error handling
+
+= 1.31 - 30/07/2025 =
+* minor code fixes
+
+= 1.30 - 26/03/2025 =
+* security fixes
+
+= 1.29 - 28/02/2025 =
+* Easy Digital Downloads (EDD) registration fix
+* math captcha bug fix
+
+= 1.28 - 21/02/2025 =
+* improved math captcha security
+* math captcha now printed inline to avoid direct php file request getting blocked by some firewalls
+* 200k active installs
+
+= 1.27 - 23/01/2025 =
+* fixed password reset form error message
+
+= 1.26 - 16/12/2024 =
+* increased randomness of recovery URL
+
+= 1.25 - 22/10/2024 =
+* reCAPTCHA v3 minimum score is now 0.5
+
+= 1.24 - 17/10/2024 =
+* Jetpack compatibility fix
+* comment form captcha bug fix
+
+= 1.23 - 02/10/2024 =
+* security fixes
+* added wp_login_form() support
+
+= 1.22 - 30/06/2024 =
+* minor security fix
+
+= 1.21 - 13/04/2024
+* reCAPTCHA validation request error handling fix
+
+= 1.20 - 13/03/2024
+* double slash on images bug fix
+
+= 1.19 - 04/02/2024
+* fixed reCAPTCHA bug sometimes preventing checkout form re-submission after form errors are corrected in Woo
+
+= 1.18 - 24/01/2024
+* minor bug fix for Buddypress
+
+= 1.17 - 09/12/2023 =
+* security/fatal error fix
+
 = 1.16 - 05/12/2023 =
 * Woo registration fix
 

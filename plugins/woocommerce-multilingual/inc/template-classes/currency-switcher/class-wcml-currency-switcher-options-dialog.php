@@ -55,11 +55,40 @@ class WCML_Currency_Switcher_Options_Dialog extends WCML_Templates_Factory {
 					'allowed_tags' => __( 'Allowed HTML tags: <img> <span> <u> <strong> <em>', 'woocommerce-multilingual' ),
 				],
 				'template'            => [
-					'label'           => __( 'Template for currency switcher', 'woocommerce-multilingual' ),
-					'parameters'      => __( 'Available parameters', 'woocommerce-multilingual' ),
+					'label'                  => __( 'Template for currency switcher', 'woocommerce-multilingual' ),
+					'parameters'             => __( 'Available parameters', 'woocommerce-multilingual' ),
 					/* translators: unidentified placeholders... */
-					'template_tip'    => __( 'Default: %name% (%1$symbol%) - %2$code%', 'woocommerce-multilingual' ),
-					'parameters_list' => '%code%, %symbol%, %name%',
+					'template_tip'           => __( 'Default: %name% (%1$symbol%) - %2$code%', 'woocommerce-multilingual' ),
+					'parameters_list'        => '%code%, %symbol%, %name%',
+					'learn_more'             => __( 'Learn more', 'woocommerce-multilingual' ),
+					'hide_more'              => __( 'Hide more', 'woocommerce-multilingual' ),
+					'parameters_description' => __( 'You can customize the currency switcher template using these parameters:', 'woocommerce-multilingual' ),
+					'parameter_name'         => sprintf(
+						/* translators: %1$s is the bolded placeholder for the currency name, %name% */
+						esc_html__( '%1$s: Full name of the currency (e.g., “Euro”).', 'woocommerce-multilingual' ),
+						'<strong>%name%</strong>'
+					),
+					'parameter_symbol'       => sprintf(
+						/* translators: %1$s is the bolded placeholder for the currency symbol, %symbol% */
+						esc_html__( '%1$s: Standard symbol representing the currency (e.g., “$” or “€”).', 'woocommerce-multilingual' ),
+						'<strong>%symbol%</strong>'
+					),
+					'parameter_code'         => sprintf(
+						/* translators: %1$s is the bolded placeholder for the standard currency code, %code% */
+						esc_html__( '%1$s: Standard code representing the currency (e.g., USD for United States Dollar).', 'woocommerce-multilingual' ),
+						'<strong>%code%</strong>'
+					),
+					'HTML_tags_available'    => sprintf(
+						// translators: %1$s and %2$s are <strong> tags; %3$s and %4$s are opening and closing HTML link tags.
+						esc_html__(
+							'Additionally, you can use HTML tags %1$s(img, span, em, strong, u)%2$s to customize the output when the switcher style is set to %1$sList of currencies%2$s, %3$sin line with official HTML standards for the select tag%4$s.',
+							'woocommerce-multilingual'
+						),
+						'<strong>',
+						'</strong>',
+						'<a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/option" target="_blank" rel="noopener noreferrer">',
+						'</a>'
+					),
 				],
 				'colors'              => [
 					'label'                => __( 'Currency switcher colors', 'woocommerce-multilingual' ),

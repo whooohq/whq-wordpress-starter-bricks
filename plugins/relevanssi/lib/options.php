@@ -18,7 +18,7 @@
  * @param array $request The request array from $_REQUEST.
  */
 function update_relevanssi_options( array $request ) {
-	if ( 'indexing' === $request['tab'] ) {
+	if ( 'indexing' === $request['rlv_tab'] ) {
 		relevanssi_turn_off_options(
 			$request,
 			array(
@@ -33,7 +33,7 @@ function update_relevanssi_options( array $request ) {
 		do_action( 'relevanssi_indexing_options', $request );
 	}
 
-	if ( 'searching' === $request['tab'] ) {
+	if ( 'searching' === $request['rlv_tab'] ) {
 		relevanssi_turn_off_options(
 			$request,
 			array(
@@ -51,7 +51,7 @@ function update_relevanssi_options( array $request ) {
 		relevanssi_update_floatval( $request, 'relevanssi_comment_boost', true, 1, true );
 	}
 
-	if ( 'logging' === $request['tab'] ) {
+	if ( 'logging' === $request['rlv_tab'] ) {
 		relevanssi_turn_off_options(
 			$request,
 			array(
@@ -61,7 +61,7 @@ function update_relevanssi_options( array $request ) {
 		);
 	}
 
-	if ( 'excerpts' === $request['tab'] ) {
+	if ( 'excerpts' === $request['rlv_tab'] ) {
 		relevanssi_turn_off_options(
 			$request,
 			array(
@@ -90,7 +90,7 @@ function update_relevanssi_options( array $request ) {
 		}
 	}
 
-	if ( 'debugging' === $request['tab'] ) {
+	if ( 'debugging' === $request['rlv_tab'] ) {
 		relevanssi_turn_off_options( $request, array( 'relevanssi_debugging_mode' ) );
 	}
 
@@ -146,7 +146,7 @@ function update_relevanssi_options( array $request ) {
 
 	array_walk(
 		$options,
-		function( $autoload, $option ) use ( $request ) {
+		function ( $autoload, $option ) use ( $request ) {
 			if ( isset( $request[ $option ] ) ) {
 				update_option( $option, $request[ $option ], $autoload );
 			}
@@ -217,7 +217,7 @@ function relevanssi_process_weights_and_indexing( $request ) {
 		update_option( 'relevanssi_index_post_types', array_keys( $index_post_types ) );
 	}
 
-	if ( 'indexing' === $request['tab'] ) {
+	if ( 'indexing' === $request['rlv_tab'] ) {
 		update_option( 'relevanssi_index_taxonomies_list', array_keys( $index_taxonomies_list ), false );
 		if ( RELEVANSSI_PREMIUM ) {
 			update_option( 'relevanssi_index_terms', array_keys( $index_terms_list ), false );
@@ -248,7 +248,7 @@ function relevanssi_sanitize_weights( $weight ) {
  *
  * @return boolean True, if update_option() succeeds, false otherwise.
  */
-function relevanssi_process_punctuation_options( array $request ) : bool {
+function relevanssi_process_punctuation_options( array $request ): bool {
 	$relevanssi_punct = array();
 	if ( isset( $request['relevanssi_punct_quotes'] ) ) {
 		$relevanssi_punct['quotes'] = $request['relevanssi_punct_quotes'];
@@ -275,7 +275,7 @@ function relevanssi_process_punctuation_options( array $request ) : bool {
  *
  * @return boolean True, if update_option() succeeds, false otherwise.
  */
-function relevanssi_process_synonym_options( array $request ) : bool {
+function relevanssi_process_synonym_options( array $request ): bool {
 	if ( isset( $request['relevanssi_synonyms'] ) ) {
 		$linefeeds = array( "\r\n", "\n", "\r" );
 		$value     = str_replace( $linefeeds, ';', $request['relevanssi_synonyms'] );
@@ -298,7 +298,7 @@ function relevanssi_process_synonym_options( array $request ) : bool {
  *
  * @return boolean True, if update_option() succeeds, false otherwise.
  */
-function relevanssi_process_index_fields_option( array $request ) : bool {
+function relevanssi_process_index_fields_option( array $request ): bool {
 	if ( isset( $request['relevanssi_index_fields_select'] ) ) {
 		$fields_option = '';
 		if ( 'all' === $request['relevanssi_index_fields_select'] ) {
@@ -324,7 +324,7 @@ function relevanssi_process_index_fields_option( array $request ) : bool {
  *
  * @return boolean True, if update_option() succeeds, false otherwise.
  */
-function relevanssi_process_trim_logs_option( array $request ) : bool {
+function relevanssi_process_trim_logs_option( array $request ): bool {
 	if ( isset( $request['relevanssi_trim_logs'] ) ) {
 		$trim_logs = $request['relevanssi_trim_logs'];
 		if ( ! is_numeric( $trim_logs ) || $trim_logs < 0 ) {
@@ -342,7 +342,7 @@ function relevanssi_process_trim_logs_option( array $request ) : bool {
  *
  * @return boolean True, if update_option() succeeds, false otherwise.
  */
-function relevanssi_process_cat_option( array $request ) : bool {
+function relevanssi_process_cat_option( array $request ): bool {
 	if ( isset( $request['relevanssi_cat'] ) ) {
 		if ( is_array( $request['relevanssi_cat'] ) ) {
 			return update_option(
@@ -350,10 +350,8 @@ function relevanssi_process_cat_option( array $request ) : bool {
 				implode( ',', $request['relevanssi_cat'] )
 			);
 		}
-	} else {
-		if ( isset( $request['relevanssi_cat_active'] ) ) {
-			return update_option( 'relevanssi_cat', '' );
-		}
+	} elseif ( isset( $request['relevanssi_cat_active'] ) ) {
+		return update_option( 'relevanssi_cat', '' );
 	}
 	return false;
 }
@@ -365,7 +363,7 @@ function relevanssi_process_cat_option( array $request ) : bool {
  *
  * @return boolean True, if update_option() succeeds, false otherwise.
  */
-function relevanssi_process_excat_option( array $request ) : bool {
+function relevanssi_process_excat_option( array $request ): bool {
 	if ( isset( $request['relevanssi_excat'] ) ) {
 		if ( is_array( $request['relevanssi_excat'] ) ) {
 			$array_excats = $request['relevanssi_excat'];
@@ -385,10 +383,8 @@ function relevanssi_process_excat_option( array $request ) : bool {
 			$csv_excats = implode( ',', $valid_excats );
 			return update_option( 'relevanssi_excat', $csv_excats );
 		}
-	} else {
-		if ( isset( $request['relevanssi_excat_active'] ) ) {
-			return update_option( 'relevanssi_excat', '' );
-		}
+	} elseif ( isset( $request['relevanssi_excat_active'] ) ) {
+		return update_option( 'relevanssi_excat', '' );
 	}
 
 	return false;

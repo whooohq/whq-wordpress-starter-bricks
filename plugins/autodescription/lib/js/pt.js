@@ -8,7 +8,7 @@
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2019 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2019 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -31,23 +31,181 @@
  * This is a self-constructed function assigned as an object.
  * This also is deprecated in favor for `pt-gb.js`.
  *
- * We might de-jQuery-fy this, though. TODO let's do it... Classic Editor won't go away.
- *
  * @since 3.1.0
  *
  * @constructor
- * @param {!jQuery} $ jQuery object.
  */
-window.tsfPT = function( $ ) {
+window.tsfPT = function () {
 
 	/**
 	 * Data property injected by WordPress l10n handler.
 	 *
 	 * @since 4.0.0
 	 * @access public
-	 * @type {(Object<string, *>)|boolean|null} l10n Localized strings
+	 * @type {(Object<string,*>)|Boolean|null} l10n Localized strings
 	 */
-	const l10n = 'undefined' !== typeof tsfPTL10n && tsfPTL10n;
+	const l10n = tsfPTL10n;
+
+	/**
+	 * @since 5.1.0
+	 * @access private
+	 * @type {{makePrimary: string,primary: string,name: string}|{}}
+	 */
+	const supportedTaxonomies = l10n.taxonomies;
+
+	/**
+	 * @since 5.1.0
+	 * @access private
+	 * @param {String} taxonomySlug
+	 * @param {String} what The i18n to get.
+	 * @return {String}
+	 */
+	function _geti18n( taxonomySlug, what ) {
+		return supportedTaxonomies[ taxonomySlug ]?.i18n[ what ] || '';
+	}
+
+	/**
+	 * @since 5.1.0
+	 * @access private
+	 * @param {Number} id           The term ID.
+	 * @param {String} taxonomySlug The taxonomy slug.
+	 */
+	function dispatchUpdateEvent( id, taxonomySlug ) {
+
+		document.dispatchEvent(
+			new CustomEvent(
+				'tsf-updated-primary-term',
+				{
+					detail: {
+						id,
+						taxonomy: taxonomySlug,
+					},
+				},
+			),
+		);
+	}
+
+	const _registeredFields = new Map();
+	/**
+	 * @since 5.1.0
+	 * @access private
+	 *
+	 * @param {String} taxonomySlug
+	 * @returns {{
+ 	 *     get:                   () => integer,
+	 *     set:                   ( id: string|integer, fallback: string|integer ) => integer,
+	 *     revalidate:            ( selectedTerms: integer[] ) => integer,
+	 *     registerPostField:     () => void,
+	 *     isPostFieldRegistered: () => Boolean,
+	 * }}
+	 */
+	function _primaryTermSelector( taxonomySlug ) {
+
+		const _primaryTermField = () => document.getElementById( `autodescription[_primary_term_${taxonomySlug}]` );
+
+		const get = () => +( _primaryTermField().value );
+		const set = ( id, fallback ) => {
+			id = +id;
+			_primaryTermField().value = id;
+			dispatchUpdateEvent( id || +fallback, taxonomySlug );
+			return id;
+		};
+
+		const revalidate = selectedTerms => {
+			const primaryTerm = get();
+
+			if ( selectedTerms.includes( primaryTerm ) )
+				return primaryTerm;
+
+			return set( selectedTerms?.[0] || 0 );
+		}
+
+		const registerPostField = () => {
+			// TODO create a new dataholder for TSF instead?
+			const wrap = document.getElementById( `${taxonomySlug}div` );
+
+			if ( wrap ) {
+				wrap.insertAdjacentHTML(
+					'beforeend',
+					wp.template( 'tsf-primary-term-selector' )(
+						{ taxonomy: supportedTaxonomies[ taxonomySlug ] },
+					),
+				);
+
+				_registeredFields.set( taxonomySlug, true );
+			} else {
+				_registeredFields.set( taxonomySlug, false );
+			}
+		}
+		const isPostFieldRegistered = () => !! _registeredFields.get( taxonomySlug );
+
+		return { get, set, revalidate, registerPostField, isPostFieldRegistered };
+	}
+
+	/**
+	 * @since 5.1.0
+	 * @access private
+	 * @param {String} taxonomySlug
+	 * @returns {{
+	 *     getWrap:                () => ?Element,
+	 *     getInputs:              () => Array<HTMLInputElement>,
+	 *     getAllInputs:           () => Array<HTMLInputElement>,
+	 *     getInputsUnique:        () => Array<HTMLInputElement>,
+	 *     getInputsChecked:       () => Array<HTMLInputElement>,
+	 *     getInputsCheckedValues: () => Integer[],
+	 *     subscribe:              (callback: CallableFunction) => undefined,
+	 * }}
+	 */
+	function _termCheckboxes( taxonomySlug ) {
+
+		const getWrap = () => document.getElementById( `${taxonomySlug}checklist` );
+
+		const getInputs = () => [ ...getWrap().querySelectorAll( 'input[type=checkbox]' ) ]
+			.sort( ( a, b ) => a.value - b.value );
+
+		// Classic Editor has duplicated inputs in some cases (All + Most Used).
+		const getAllInputs = () => document.getElementById( `taxonomy-${taxonomySlug}` )
+			.querySelectorAll( '.categorychecklist input[type=checkbox]' );
+
+		const getInputsChecked = () => getInputs().filter( el => el.checked );
+
+		const getInputsCheckedValues = () => getInputsChecked().map( el => +el.value );
+
+		const subscribe = callback => {
+
+			const tick = () => callback();
+
+			const registerListeners = () => {
+				getAllInputs().forEach(
+					el => {
+						el.addEventListener( 'change', tick );
+					},
+				);
+			}
+
+			new MutationObserver( () => {
+				registerListeners(); // A new listener might've been added. Reregister.
+				tick();
+			} ).observe(
+				getWrap(),
+				{ childList: true },
+			);
+
+			registerListeners();
+
+			// Immediately invoke.
+			tick();
+		}
+
+		return {
+			getWrap,
+			getInputs,
+			getAllInputs,
+			getInputsChecked,
+			getInputsCheckedValues,
+			subscribe,
+		};
+	}
 
 	/**
 	 * Initializes primary term selection.
@@ -55,303 +213,109 @@ window.tsfPT = function( $ ) {
 	 * @since 3.0.0
 	 * @since 3.0.4 1 : Added postbox toggle event listeners for help display correction.
 	 *              2 : Added tab visibility checkers.
-	 *
-	 * @function
+	 * @since 5.1.0 Rewritten.
 	 */
-	const _initPrimaryTerm = () => {
+	function _initPrimaryTerm() {
 
-		if ( ! Object.keys( l10n.taxonomies ).length ) return;
+		if ( ! Object.keys( supportedTaxonomies ).length ) return;
 
-		let taxonomies    = l10n.taxonomies,
-			inputTemplate = wp.template( 'tsf-primary-term-selector' ),
-			helpTemplate  = wp.template( 'tsf-primary-term-selector-help' );
+		const initPrimaryTermSelector = taxonomySlug => {
 
-		let termSelector = document.createElement( 'span' );
+			const primaryTerm    = _primaryTermSelector( taxonomySlug );
+			const termCheckboxes = _termCheckboxes( taxonomySlug );
 
-		termSelector.classList.add( 'tsf-primary-term-selector', 'tsf-set-primary-term' );
+			const selectorWrapId = `tsf-primary-term-${taxonomySlug}`,
+				  selectId       = `${selectorWrapId}-select`;
 
-		(() => {
-			let radio = document.createElement( 'input' );
-			radio.setAttribute( 'type', 'radio' );
-			termSelector.appendChild( radio );
-		})();
+			let selectorWrapShown = false;
 
-		// These are better set as Maps... oh well, Classic Editor will be with us for only 10 more years.
-		let input$         = {},
-			checked$       = {},
-			uniqueChecked$ = {},
-			box$           = {},
-			primaries      = {};
+			// Helper for minifier.
+			const createElement = el => document.createElement( el );
 
-		// Namespaces an action for jQuery
-		const nsAction = ( action, taxonomy ) => `${action}.tsfShowPrimary${taxonomy}`;
+			const repopulateSelect = () => {
+				const optionElement = createElement( 'option' ),
+					  selectElement = document.getElementById( selectId );
 
-		const addInput = taxonomy => {
-			let $wrap    = $( `#${taxonomy}div` ),
-				template = inputTemplate( { taxonomy: taxonomies[ taxonomy ] } );
-			$wrap.append( template );
-		}
-		const addHelp = taxonomy => {
-			let $wrap    = $( `#taxonomy-${taxonomy}` ),
-				template = helpTemplate( { taxonomy: taxonomies[ taxonomy ] } ),
-				$ulChild = $wrap.children( 'ul:first' );
+				selectElement.innerHTML = '';
+				selectElement.append(
+					...termCheckboxes.getInputsChecked().map(
+						el => {
+							const option = optionElement.cloneNode();
+							option.value = el.value;
+							option.label = tsf.decodeEntities( el.parentElement.textContent.trim() );
+							return option;
+						},
+					),
+				);
 
-			if ( $ulChild.length ) {
-				$( template ).insertAfter( $ulChild ); // Maintain tab order.
-			} else {
-				$wrap.prepend( template );
+				tsf.selectByValue( selectElement, primaryTerm.get() );
 			}
-			tsfTT.triggerReset();
-			fixHelpPos( taxonomy );
-		}
-		const fixHelpPos = taxonomy => {
-			let wrap = document.getElementById( `taxonomy-${taxonomy}` ),
-				tabs = wrap.querySelectorAll( '.tabs-panel' );
+			// This is needless work for most sites becasuse they don't have more than 1 term selected.
+			const showSelectorWrap = () => {
+				const selectorWrap  = createElement( 'div' ),
+					  labelElement  = createElement( 'label' ),
+					  selectElement = createElement( 'select' );
 
-			let postbox = wrap.closest( '.postbox' );
-			if ( postbox && postbox.classList.contains( 'closed' ) ) return;
+				selectorWrap.id = selectorWrapId;
+				selectorWrap.classList.add( 'tsf-primary-term-selector-wrap' );
 
-			let tab = [].slice.call( tabs ).filter( el => {
-				return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
-			} )[0];
+				labelElement.innerText = _geti18n( taxonomySlug, 'selectPrimary' );
 
-			if ( ! tab ) return;
+				selectElement.name = selectElement.id = selectId;
+				labelElement.setAttribute( 'for', selectId );
 
-			let offset = tab.scrollHeight > tab.clientHeight
-					   ? tab.offsetWidth - tab.clientWidth + 25 - 2 // 2px is padding or something?
-					   : 25;
+				selectorWrap.append( labelElement, selectElement );
 
-			if ( window.isRtl ) {
-				wrap.querySelector( '.tsf-primary-term-selector-help-wrap' ).style.left = `${offset}px`;
-			} else {
-				wrap.querySelector( '.tsf-primary-term-selector-help-wrap' ).style.right = `${offset}px`;
-			}
-		}
-		const fixHelpPosOnTabToggle = event => {
-			fixHelpPos( event.data.taxonomy );
-		}
-		const createSelector = taxonomy => {
-			let selector = termSelector.cloneNode( true );
-			selector.setAttribute( 'title', taxonomies[ taxonomy ].i18n.makePrimary );
-			selector.setAttribute( 'aria-label', taxonomies[ taxonomy ].i18n.makePrimary );
-			return selector;
-		}
-		const setPostValue = ( taxonomy, value ) => {
-			let element = document.getElementById( `autodescription[_primary_term_${taxonomy}]` );
-			if ( element && element instanceof Element )
-				element.value = value || 0;
-		}
+				// Insert it after the -adder if exists, otherwise at the end of the wrap.
+				document.getElementById( `taxonomy-${taxonomySlug}` )
+					.insertBefore(
+						selectorWrap,
+						document.getElementById( `${taxonomySlug}-adder` )?.nextSibling
+					);
 
-		const getBox = ( taxonomy, reset ) => {
-			if ( ! reset && box$[ taxonomy ] )
-				return box$[ taxonomy ];
-
-			box$[ taxonomy ] = $( `#${taxonomy}checklist, #${taxonomy}checklist-pop` );
-			return box$[ taxonomy ];
-		}
-		const getInputWithVal = ( taxonomy, value ) => input$[ taxonomy ].filter( `[value="${value}"]` );
-
-		const makePrimary = ( taxonomy, value ) => {
-			let $label = getInputWithVal( taxonomy, value ).closest( 'label' );
-			if ( $label.length ) {
-				$label.addClass( 'tsf-is-primary-term' );
-				$label.find( '.tsf-set-primary-term' ).each( function( index, e ) {
-					e.setAttribute( 'title', taxonomies[ taxonomy ].i18n.primary );
-					e.setAttribute( 'aria-label', taxonomies[ taxonomy ].i18n.primary );
-					e.querySelector( 'input' ).checked = true;
-				} );
-				setPostValue( taxonomy, value );
-				primaries[ taxonomy ] = value;
-			} else {
-				makeFirstPrimary( taxonomy );
-			}
-		}
-		const unsetPrimaries = taxonomy => {
-			let $label = getBox( taxonomy ).find( 'label' );
-			$label.removeClass( 'tsf-is-primary-term' );
-			$label.find( '.tsf-set-primary-term' ).each( function( index, e ) {
-				e.setAttribute( 'title', taxonomies[ taxonomy ].i18n.makePrimary );
-				e.setAttribute( 'aria-label', taxonomies[ taxonomy ].i18n.makePrimary );
-				e.querySelector( 'input' ).checked = false;
-			} );
-			setPostValue( taxonomy, 0 );
-			primaries[ taxonomy ] = 0;
-		}
-		const makeFirstPrimary = taxonomy => {
-			let $checked = uniqueChecked$[ taxonomy ].first(),
-				value;
-			if ( $checked.length ) {
-				value = $checked.val() || '';
-				makePrimary( taxonomy, value );
-				primaries[ taxonomy ] = value;
-			} else {
-				primaries[ taxonomy ] = 0;
-			}
-		}
-
-		const setPrimary = event => {
-			let taxonomy = event.data.taxonomy;
-
-			if ( event.target instanceof HTMLInputElement ) {
-				// Stop the loop.
-				event.stopPropagation();
-
-				$( event.target ).closest( '.tsf-set-primary-term' ).trigger( nsAction( 'click', taxonomy ) );
-				// Forward default: Check the button.
-				return true;
+				selectElement.addEventListener(
+					'change',
+					event => {
+						primaryTerm.set( event.target.value );
+					},
+				);
+				tsfAys.registerChangeListener( selectElement, 'change' );
 			}
 
-			unsetPrimaries( taxonomy );
-			makePrimary( taxonomy, $( event.target ).closest( 'label' ).find( 'input[type=checkbox]' ).val() );
-
-			//= Stop default, don't deselect the term.
-			return false;
-		}
-		const toggleShowSwitch = event => {
-			let taxonomy = event.data.taxonomy;
-
-			if ( event.target.checked ) {
-				addCheckedNode( taxonomy, event.target );
-				appendButton( taxonomy, event.target );
-			} else {
-				removeCheckedNode( taxonomy, event.target );
-				removeButton( taxonomy, event.target );
-			}
-
-			switch ( uniqueChecked$[ taxonomy ].length ) {
-				case 0:
-					unsetPrimaries( taxonomy );
-					break;
-
-				case 1:
-					makeFirstPrimary( taxonomy );
-					break;
-			}
-		}
-		const appendButton = ( taxonomy, element ) => {
-			let $label, selector;
-			getInputWithVal( taxonomy, element.value ).each( ( index, e ) => {
-				$label = $( e ).closest( 'label' );
-				if ( ! $label.find( '.tsf-primary-term-selector' ).length ) {
-					selector = createSelector( taxonomy );
-					$label.find( 'input' ).after( selector );
-				}
-			} );
-		}
-		const removeButton = ( taxonomy, element ) => {
-			let $label, wasPrimary;
-			getInputWithVal( taxonomy, element.value ).each( ( index, e ) => {
-				$label     = $( e ).closest( 'label' );
-				wasPrimary = $label.hasClass( 'tsf-is-primary-term' );
-
-				$label.removeClass( 'tsf-is-primary-term' );
-				// This should also remove all attached events.
-				$label.find( '.tsf-primary-term-selector' ).remove();
-
-				if ( wasPrimary ) makeFirstPrimary( taxonomy );
-			} );
-		}
-		const addCheckedNode = ( taxonomy, element ) => {
-			checked$[ taxonomy ]       = checked$[ taxonomy ].add( `[value="${element.value}"]` );
-			uniqueChecked$[ taxonomy ] = uniqueChecked$[ taxonomy ].add( element );
-		}
-		const removeCheckedNode = ( taxonomy, element ) => {
-			checked$[ taxonomy ]       = checked$[ taxonomy ].not( `[value="${element.value}"]` );
-			uniqueChecked$[ taxonomy ] = uniqueChecked$[ taxonomy ].not( `[value="${element.value}"]` );
-		}
-		const togglePostbox = ( event, postbox ) => {
-			fixHelpPos( event.data.taxonomy );
-		}
-
-		const initVars = taxonomy => {
-			let $box = getBox( taxonomy, 1 );
-
-			input$[ taxonomy ]   = $box.find( 'input[type=checkbox]' );
-			checked$[ taxonomy ] = $box.find( 'input[type=checkbox]:checked' );
-
-			let found = {}, val;
-			uniqueChecked$[ taxonomy ] = checked$[ taxonomy ];
-			uniqueChecked$[ taxonomy ].each( ( index, element ) => {
-				val = $( element ).val();
-				if ( found[ val ] ) {
-					uniqueChecked$[ taxonomy ].splice( index, 1 );
+			termCheckboxes.subscribe( () => {
+				if ( termCheckboxes.getInputsChecked().length > 1 ) {
+					if ( ! selectorWrapShown ) {
+						selectorWrapShown = true; // set first to mitigate race conditions.
+						showSelectorWrap();
+					}
+					repopulateSelect();
+					primaryTerm.revalidate( termCheckboxes.getInputsCheckedValues() );
 				} else {
-					found[ val ] = true;
+					if ( selectorWrapShown ) {
+						document.getElementById( selectorWrapId )?.remove();
+						selectorWrapShown = false;
+					}
+
+					// Reset stored selection. Append fallback.
+					primaryTerm.set(
+						0,
+						   termCheckboxes.getInputsChecked()[0]?.value
+						|| termCheckboxes.getInputs()[0]?.value
+					 	|| 0
+					);
 				}
 			} );
 		}
-		const updateList = ( event, settings, wpList ) => {
-			if ( wpList.hasOwnProperty( 'settings' ) && wpList.settings.hasOwnProperty( 'what' ) ) {
-				initVars( wpList.settings.what );
-				initActions( wpList.settings.what );
-				reload( wpList.settings.what );
-				fixHelpPos( wpList.settings.what );
+
+		for ( const taxonomySlug in supportedTaxonomies ) {
+			if ( _termCheckboxes( taxonomySlug ).getWrap() ) {
+				const primaryTerm = _primaryTermSelector( taxonomySlug );
+				primaryTerm.registerPostField();
+
+				if ( primaryTerm.isPostFieldRegistered() )
+					initPrimaryTermSelector( taxonomySlug );
 			}
 		}
-		const initActions = taxonomy => {
-			let data     = { taxonomy },
-				$box     = getBox( taxonomy ),
-				$div     = $( `#${taxonomy}div` ),
-				$tabs    = $( `#${taxonomy}-tabs` ),
-				$postbox = $box.closest( '.postbox' );
-
-			let defaultClickAction = nsAction( 'click', taxonomy );
-
-			$box.off( defaultClickAction )
-				.on( defaultClickAction, 'input[type=checkbox]', data, toggleShowSwitch )
-				.on( defaultClickAction, '.tsf-primary-term-selector', data, setPrimary );
-
-			$div.off( nsAction( 'wpListAddEnd', taxonomy ) )
-				.on( nsAction( 'wpListAddEnd', taxonomy ), `#${taxonomy}checklist`, updateList );
-
-			$tabs.off( defaultClickAction )
-				.on( defaultClickAction, 'a', data, fixHelpPosOnTabToggle );
-
-			$postbox.off( nsAction( 'click.postboxes', taxonomy ) )
-				.on( nsAction( 'click.postboxes', taxonomy ), data, togglePostbox );
-		}
-		const reload = taxonomy => {
-			getBox( taxonomy ).find( 'input[type=checkbox]:checked' )
-				.each( ( index, element ) => {
-					appendButton( taxonomy, element );
-				} );
-
-			if ( primaries[ taxonomy ] ) {
-				// One has been set previously via this script, reselect it.
-				makePrimary( taxonomy, primaries[ taxonomy ] );
-			} else {
-				// Select one according to WordPress's term list sorting.
-				makeFirstPrimary( taxonomy );
-			}
-		}
-		const load = taxonomy => {
-			getBox( taxonomy ).find( 'input[type=checkbox]:checked' )
-				.each( ( index, element ) => {
-					appendButton( taxonomy, element );
-				} );
-
-			if ( taxonomies[ taxonomy ].primary ) {
-				// One has been saved earlier via this script.
-				makePrimary( taxonomy, taxonomies[ taxonomy ].primary );
-			} else {
-				// Select one according to WordPress's term list sorting.
-				makeFirstPrimary( taxonomy );
-			}
-		}
-
-		// Hook data handles, don't overwrite vars.
-		const init = () => {
-			for ( let taxonomy in taxonomies ) {
-				if ( getBox( taxonomy ).length ) {
-					addInput( taxonomy );
-					addHelp( taxonomy );
-					initVars( taxonomy );
-					initActions( taxonomy );
-					load( taxonomy );
-				}
-			}
-		}
-		init();
 	}
 
 	return Object.assign( {
@@ -366,9 +330,9 @@ window.tsfPT = function( $ ) {
 		 */
 		load: () => {
 			document.body.addEventListener( 'tsf-onload', _initPrimaryTerm );
-		}
+		},
 	}, {
-		l10n
+		l10n,
 	} );
-}( jQuery );
+}();
 window.tsfPT.load();

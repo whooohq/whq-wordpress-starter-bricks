@@ -463,19 +463,21 @@
 
 				$attachment = array();
 
-				$not_allowed_extensions = array('php', 'phpt', 'php5', 'php7', 'exe');
+				$allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'mp3', 'wav', 'ogg', 'mp4', 'avi', 'mkv', 'mov', 'txt', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'json', 'xml', 'css', 'zip', 'rar', 'tar.gz'];
+				$allowed_extensions = apply_filters( 'piotnetforms/form_builder/allowed_upload_file_extensions', $allowed_extensions );
 
 				if( !empty($_FILES) ) {
 					foreach ($_FILES as $key=>$file) {
 						
 						for ($i=0; $i < count($file['name']); $i++) { 
-							$file_extension = pathinfo( $file['name'][$i], PATHINFO_EXTENSION );
+							$file_name_san = sanitize_file_name($file['name'][$i]);
+							$file_extension = pathinfo( $file_name_san, PATHINFO_EXTENSION );
 
-							if(in_array(strtolower($file_extension), $not_allowed_extensions)){
+							if(!in_array(strtolower($file_extension), $allowed_extensions)) {
 								wp_die();
 							}
 
-							$filename_goc = str_replace( '.' . $file_extension, '', $file['name'][$i]);
+							$filename_goc = str_replace( '.' . $file_extension, '', $file_name_san);
 							$filename = $filename_goc . '-' . uniqid() . '.' . $file_extension;
 							$filename = wp_unique_filename( $upload_dir, $filename );
 							$new_file = trailingslashit( $upload_dir ) . $filename;

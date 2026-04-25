@@ -3,42 +3,49 @@
 class WCML_Pointer_UI extends WCML_Templates_Factory {
 
     private $content;
-    private $doc_link;
+    private $documentationUrl;
     private $selector;
-    private $insert_method;
+    private $method;
+    private $anchor;
 
-    function __construct( $content, $doc_link, $insert_after_selector_id = false, $insert_method = false ){
+    public function __construct(
+      $content,
+      $documentationUrl = false,
+      $selector = false,
+      $method = false,
+      $anchor = false
+    ) {
         parent::__construct();
 
-        $this->content = $content;
-        $this->doc_link = $doc_link;
-        $this->selector = $insert_after_selector_id;
-        $this->insert_method = $insert_method;
-
+        $this->anchor           = $anchor ?: __( 'How to translate this?', 'woocommerce-multilingual' );
+				$this->selector         = $selector;
+        $this->method           = $method;
+        $this->content          = $content;
+        $this->documentationUrl = $documentationUrl;
     }
 
     public function get_model(){
 
-        $model = array(
-            'pointer' => md5( rand( 0, 100 ) ),
-            'description' => array(
-                'content'   => $this->content,
-                'trnsl_title' => __( 'How to translate this?', 'woocommerce-multilingual' ),
-                'doc_link'  => $this->doc_link,
-                'doc_link_text'     => __( 'Learn more', 'woocommerce-multilingual' ),
-            ),
-            'selector' => $this->selector,
-            'insert_method' => $this->insert_method
-        );
+        $model = [
+            'pointer'       => md5( rand( 0, 100 ) ),
+            'selector'      => $this->selector,
+            'insert_method' => $this->method,
+            'description'   => [
+                'content'       => $this->content,
+                'trnsl_title'   => $this->anchor,
+                'doc_link'      => $this->documentationUrl,
+                'doc_link_text' => __( 'Learn more', 'woocommerce-multilingual' ),
+            ],
+        ];
 
         return $model;
 
     }
 
     protected function init_template_base_dir() {
-        $this->template_paths = array(
+        $this->template_paths = [
             WCML_PLUGIN_PATH . '/templates/',
-        );
+        ];
     }
 
     public function get_template() {

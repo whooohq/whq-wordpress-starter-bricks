@@ -13,7 +13,7 @@ class PB_Elementor_User_Listing_Widget extends PB_Elementor_Widget {
     public function __construct($data = [], $args = null) {
         parent::__construct($data, $args);
 
-        if( defined( 'WPPB_PAID_PLUGIN_URL' ) ){
+        if( defined( 'WPPB_PAID_PLUGIN_URL' ) && file_exists( WPPB_PAID_PLUGIN_DIR . '/add-ons/user-listing/userlisting.php' ) ){
             wp_register_script('wppb-userlisting-js', WPPB_PAID_PLUGIN_URL . 'add-ons/user-listing/userlisting.js', array('jquery', 'jquery-touch-punch'), PROFILE_BUILDER_VERSION, true);
             wp_localize_script( 'wppb-userlisting-js', 'wppb_userlisting_obj', array( 'pageSlug' => wppb_get_users_pagination_slug() ) );
             wp_register_style('wppb-ul-slider-css', WPPB_PAID_PLUGIN_URL . 'add-ons/user-listing/jquery-ui-slider.min.css', array(), PROFILE_BUILDER_VERSION );

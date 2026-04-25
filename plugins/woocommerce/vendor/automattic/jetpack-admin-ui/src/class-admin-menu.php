@@ -13,7 +13,7 @@ namespace Automattic\Jetpack\Admin_UI;
  */
 class Admin_Menu {
 
-	const PACKAGE_VERSION = '0.2.20';
+	const PACKAGE_VERSION = '0.5.11';
 
 	/**
 	 * Whether this class has been initialized
@@ -39,6 +39,7 @@ class Admin_Menu {
 			self::$initialized = true;
 			self::handle_akismet_menu();
 			add_action( 'admin_menu', array( __CLASS__, 'admin_menu_hook_callback' ), 1000 ); // Jetpack uses 998.
+			add_action( 'network_admin_menu', array( __CLASS__, 'admin_menu_hook_callback' ), 1000 ); // Jetpack uses 998.
 		}
 	}
 
@@ -49,24 +50,24 @@ class Admin_Menu {
 	 * we use this method to move the menu item.
 	 */
 	private static function handle_akismet_menu() {
-		if ( ! class_exists( 'Jetpack' ) && class_exists( 'Akismet_Admin' ) ) {
-			// Prevent Akismet from adding a menu item.
+		if ( class_exists( 'Akismet_Admin' ) ) {
 			add_action(
 				'admin_menu',
 				function () {
+					// Prevent Akismet from adding a menu item.
 					remove_action( 'admin_menu', array( 'Akismet_Admin', 'admin_menu' ), 5 );
+
+					// Add an Anti-spam menu item for Jetpack.
+					self::add_menu( __( 'Akismet Anti-spam', 'jetpack-admin-ui' ), __( 'Akismet Anti-spam', 'jetpack-admin-ui' ), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ), 6 );
 				},
 				4
 			);
-
-			// Add an Anti-spam menu item for Jetpack.
-			self::add_menu( __( 'Anti-Spam', 'jetpack-admin-ui' ), __( 'Anti-Spam', 'jetpack-admin-ui' ), 'manage_options', 'akismet-key-config', array( 'Akismet_Admin', 'display_page' ) );
 
 		}
 	}
 
 	/**
-	 * Callback to the admin_menu hook that will register the enqueued menu items
+	 * Callback to the admin_menu and network_admin_menu hooks that will register the enqueued menu items
 	 *
 	 * @return void
 	 */
@@ -81,7 +82,7 @@ class Admin_Menu {
 			add_menu_page(
 				'Jetpack',
 				'Jetpack',
-				'read',
+				'edit_posts',
 				'jetpack',
 				'__return_null',
 				$icon,
@@ -104,7 +105,13 @@ class Admin_Menu {
 			function ( $a, $b ) {
 				$position_a = empty( $a['position'] ) ? 0 : $a['position'];
 				$position_b = empty( $b['position'] ) ? 0 : $b['position'];
-				return $position_a - $position_b;
+				$result     = $position_a <=> $position_b;
+
+				if ( 0 === $result ) {
+					$result = strcmp( $a['menu_title'], $b['menu_title'] );
+				}
+
+				return $result;
 			}
 		);
 
@@ -142,15 +149,15 @@ class Admin_Menu {
 	 * aggreagate all menu items registered by stand-alone plugins and make sure they all go under the same
 	 * Jetpack top level menu. It will also handle the top level menu registration in case the Jetpack plugin is not present.
 	 *
-	 * @param string   $page_title  The text to be displayed in the title tags of the page when the menu
-	 *                              is selected.
-	 * @param string   $menu_title  The text to be used for the menu.
-	 * @param string   $capability  The capability required for this menu to be displayed to the user.
-	 * @param string   $menu_slug   The slug name to refer to this menu by. Should be unique for this menu
-	 *                              and only include lowercase alphanumeric, dashes, and underscores characters
-	 *                              to be compatible with sanitize_key().
-	 * @param callable $function    The function to be called to output the content for this page.
-	 * @param int      $position    The position in the menu order this item should appear.
+	 * @param string        $page_title  The text to be displayed in the title tags of the page when the menu
+	 *                                   is selected.
+	 * @param string        $menu_title  The text to be used for the menu.
+	 * @param string        $capability  The capability required for this menu to be displayed to the user.
+	 * @param string        $menu_slug   The slug name to refer to this menu by. Should be unique for this menu
+	 *                                   and only include lowercase alphanumeric, dashes, and underscores characters
+	 *                                   to be compatible with sanitize_key().
+	 * @param callable|null $function    The function to be called to output the content for this page.
+	 * @param int           $position    The position in the menu order this item should appear. Leave empty typically.
 	 *
 	 * @return string The resulting page's hook_suffix
 	 */
@@ -164,6 +171,26 @@ class Admin_Menu {
 		 * Using get_plugin_page_hookname here won't work because the top level page is not registered yet.
 		 */
 		return 'jetpack_page_' . $menu_slug;
+	}
+
+	/**
+	 * Removes an already added submenu
+	 *
+	 * @param string $menu_slug   The slug of the submenu to remove.
+	 *
+	 * @return array|false The removed submenu on success, false if not found.
+	 */
+	public static function remove_menu( $menu_slug ) {
+
+		foreach ( self::$menu_items as $index => $menu_item ) {
+			if ( $menu_item['menu_slug'] === $menu_slug ) {
+				unset( self::$menu_items[ $index ] );
+
+				return $menu_item;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -198,5 +225,4 @@ class Admin_Menu {
 		$url = $fallback ? $fallback : admin_url();
 		return $url;
 	}
-
 }

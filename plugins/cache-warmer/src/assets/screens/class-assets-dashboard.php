@@ -10,8 +10,6 @@
 namespace Cache_Warmer\Assets;
 
 use Cache_Warmer\DB;
-use Cache_Warmer\Logging;
-use Cache_Warmer\Summary;
 
 /**
  * Assets class.

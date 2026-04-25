@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_action( 'wppb_edit_profile_success', 'wppb_toolbox_save_last_update_date', 20, 3 );
 function wppb_toolbox_save_last_update_date( $http_request, $form_name, $user_id ) {

@@ -104,3 +104,18 @@ if ( ! function_exists( 'WCML\functions\isCli' ) ) {
 		return defined( 'WP_CLI' ) && WP_CLI;
 	}
 }
+
+if ( ! function_exists( 'WCML\functions\flushProductCachePrefixById' ) ) {
+	/**
+	 * @param int $product_id
+	 * @return void
+	 */
+	function flushProductCachePrefixById( $product_id ) {
+		$cacheKey   = "wc_product_{$product_id}_cache_prefix";
+		$cacheGroup = "product_{$product_id}";
+
+		// See CacheNameSpaceTrait::getCachePrefix()
+		// and WC_Product_Variable_Data_Store_CPT::read_variation_attributes() functions.
+		wp_cache_delete( $cacheKey, $cacheGroup );
+	}
+}

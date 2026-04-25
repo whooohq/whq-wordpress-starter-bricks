@@ -2,9 +2,9 @@
 Contributors: piotnet
 Tags: piotnet forms, piotnet, form builder
 Requires at least: 4.7
-Tested up to: 6.0
+Tested up to: 6.5
 Requires PHP: 5.4
-Stable tag: 1.0.25
+Stable tag: 1.0.30
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -76,6 +76,16 @@ With Free Version you can build professional landing page with just Drag & Drop 
 - Activate the plugin through the ‘Plugins’ screen in WordPress
 
 == Changelog ==
+= 1.0.30 =
+* Update WordPress tested up to: 6.5
+= 1.0.29 =
+* Add allowed Upload file extensions filter hook.
+= 1.0.28 =
+* Improvement security issue.
+= 1.0.27 =
+* Improvement security issue.
+= 1.0.26 =
+* Update WordPress tested up to: 6.1
 = 1.0.25 =
 * Fix access permission of CSS assets.
 = 1.0.24 =

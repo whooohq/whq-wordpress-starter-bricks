@@ -20,7 +20,7 @@ msgid "Fuerte-WP"
 msgstr ""
 
 #. Plugin URI of the plugin
-msgid "https://github.com/TCattd/Fuerte-WP"
+msgid "https://github.com/EstebanForge/Fuerte-WP"
 msgstr ""
 
 #. Description of the plugin

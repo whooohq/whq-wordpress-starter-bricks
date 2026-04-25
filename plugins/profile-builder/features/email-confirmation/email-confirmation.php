@@ -6,7 +6,7 @@ function wppb_signup_schema( $oldVal, $newVal ){
 	// Declare these as global in case schema.php is included from a function.
 	global $wpdb, $wp_queries, $charset_collate;
 
-	if ($newVal['emailConfirmation'] == 'yes'){
+	if ( !empty( $newVal['emailConfirmation'] ) && $newVal['emailConfirmation'] == 'yes'){
 
 		//The database character collate.
 		$charset_collate = '';
@@ -19,6 +19,7 @@ function wppb_signup_schema( $oldVal, $newVal ){
 
 		$sql = "
 			CREATE TABLE $tableName (
+				signup_id bigint(20) NOT NULL AUTO_INCREMENT,
 				domain varchar(191) NOT NULL default '',
 				path varchar(100) NOT NULL default '',
 				title longtext NOT NULL,
@@ -29,6 +30,7 @@ function wppb_signup_schema( $oldVal, $newVal ){
 				active tinyint(1) NOT NULL default '0',
 				activation_key varchar(50) NOT NULL default '',
 				meta longtext,
+				PRIMARY KEY (signup_id),
 				KEY activation_key (activation_key),
 				KEY domain (domain)
 			) $charset_collate;";
@@ -39,6 +41,65 @@ function wppb_signup_schema( $oldVal, $newVal ){
 }
 add_action( 'update_option_wppb_general_settings', 'wppb_signup_schema', 10, 2 );
 
+// Function to update existing signups table to add primary key
+function wppb_update_signup_table_schema() {
+	// Check if we've already updated the table
+	$table_updated = get_option('wppb_signups_table_updated', 'no');
+	if ($table_updated === 'yes') {
+		return; // Table has already been updated, no need to run again
+	}
+
+	global $wpdb;
+	$tableName = $wpdb->prefix.'signups';
+
+	// Check if the table exists
+	$table_exists = $wpdb->get_var("SHOW TABLES LIKE '$tableName'");
+	if (!$table_exists) {
+		return; // Table doesn't exist, nothing to update
+	}
+
+	// Check if email confirmation is enabled
+	$wppb_general_settings = get_option( 'wppb_general_settings', 'not_found' );
+	if( $wppb_general_settings == 'not_found' || empty($wppb_general_settings['emailConfirmation']) || $wppb_general_settings['emailConfirmation'] != 'yes' ) {
+		return; // Email confirmation is not enabled, no need to update the table
+	}
+
+    // Check if the signup_id column exists
+    $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $tableName LIKE 'signup_id'");
+    if (empty($column_exists)) {
+        // Column doesn't exist, add it with PRIMARY KEY in a single operation
+        $result = $wpdb->query("ALTER TABLE $tableName ADD COLUMN signup_id bigint(20) NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (signup_id)");
+
+        // Successfully updated the table
+        if ($result !== false) {
+            update_option('wppb_signups_table_updated', 'yes');
+        }
+    } else {
+        // Column exists, check if it's a primary key
+        $primary_key = $wpdb->get_results("SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'");
+        if (empty($primary_key)) {
+            // No primary key, add it
+            $result = $wpdb->query("ALTER TABLE $tableName ADD PRIMARY KEY (signup_id)");
+
+            // Successfully updated the table
+            if ($result !== false) {
+                update_option('wppb_signups_table_updated', 'yes');
+            }
+        } else {
+            // Table already has primary key, mark as updated
+            update_option('wppb_signups_table_updated', 'yes');
+        }
+    }
+}
+
+// Run the update function only when the plugin is activated
+function wppb_run_signup_table_update_on_activation() {
+	// Delete the option to force the update to run again on activation
+	delete_option('wppb_signups_table_updated');
+	// Run the update function
+	wppb_update_signup_table_schema();
+}
+register_activation_hook(__FILE__, 'wppb_run_signup_table_update_on_activation');
 
 //function to add new tab in the default WP userlisting with all the users who didn't confirm their account yet
 function wppb_add_pending_users_header_script(){
@@ -74,6 +135,10 @@ function wppb_add_pending_users_header_script(){
 }
 
 function wppb_get_unconfirmed_email_number(){
+
+	if( !current_user_can( 'edit_users' ) )
+		die();
+
 	global $wpdb;
 
     /* since version 2.0.7 for multisite we add a 'registered_for_blog_id' meta in the registration process
@@ -112,10 +177,13 @@ function wppb_handle_email_confirmation_cases() {
 				die( esc_html__( "There was an error performing that action!", "profile-builder" ) );
 
 			elseif ( $todo == 'delete' ){
-				$sql_result = $wpdb->delete( $wpdb->base_prefix.'signups', array( 'user_login' => $results[0]->user_login, 'user_email' => $results[0]->user_email ) );
+
+				if( !empty( $results[0]->user_login ) && !empty( $results[0]->user_email ) ){
+					$sql_result = $wpdb->delete( $wpdb->base_prefix.'signups', array( 'user_login' => $results[0]->user_login, 'user_email' => $results[0]->user_email ) );
+				}
+
 				if ( $sql_result )
 					die( 'ok' );
-
 				else
 					die( esc_html__( "The selected user couldn't be deleted", "profile-builder" ) );
 
@@ -325,6 +393,16 @@ function wppb_add_meta_to_user_on_activation( $user_id, $password, $meta ){
 
                     update_user_meta( $user_id, $value['meta-name'], trim( $selected_values, ',' ) );
                 }
+                case 'GDPR Checkbox':{
+                    if ( isset($meta[wppb_handle_meta_name($value['meta-name'])]) ) {
+                        if (isset($meta[wppb_handle_meta_name($value['meta-name'])]) && !empty($meta[wppb_handle_meta_name($value['meta-name'])]) && $meta[wppb_handle_meta_name($value['meta-name'])]==='agree') {
+                            update_user_meta($user_id, $value['meta-name'], $meta[$value['meta-name']]);
+                            if (isset($meta['gdpr_agreement_time']) && !empty($meta['gdpr_agreement_time'])) {
+                                update_user_meta($user_id, 'gdpr_agreement_time', $meta['gdpr_agreement_time']);
+                            }
+                        }
+                    }
+                }
                 default: {
 					if ( isset( $meta[$value['meta-name']] ) ) {
 						update_user_meta($user_id, $value['meta-name'], $meta[$value['meta-name']]);
@@ -350,6 +428,11 @@ function wppb_signup_user( $username, $user_email, $login_after_register, $meta 
         $login_after_register = false;
     }
     $meta [ 'wppb_login_after_register_'.$meta['user_login'] ] = $login_after_register;
+
+    // save the gdpr_agreement_time if necessary
+    if ( array_key_exists('user_consent_gdpr', $meta) && $meta [ 'user_consent_gdpr' ] === 'agree' ) {
+        $meta [ 'gdpr_agreement_time' ] = time();
+    }
 
 	// Format data
 	$user = sanitize_user( $username, true );
@@ -472,13 +555,14 @@ function wppb_manual_activate_signup( $activation_key ) {
 		$meta = unserialize( $signup->meta );
 		$user_login = esc_sql( $signup->user_login );
 		$user_email = esc_sql( $signup->user_email );
-        /* the password is in hashed form in the signup table and we will copy it later to the user */
-		$password = NULL;
+        /* Signup meta holds the real password hash, applied after user creation. WordPress requires a non-empty user_pass when creating users. */
+		$password = '';
 
 		$user_id = username_exists($user_login);
 
-		if ( ! $user_id )
-			$user_id = wppb_create_user( $user_login, $password, $user_email );
+		if ( ! $user_id ) {
+			$user_id = wppb_create_user( $user_login, wp_generate_password( 24, true, true ), $user_email );
+		}
 		else
 			$user_already_exists = true;
 
@@ -494,6 +578,14 @@ function wppb_manual_activate_signup( $activation_key ) {
 			$retVal = ( is_multisite() ? $wpdb->update( $wpdb->signups, array('active' => 1, 'activated' => $now), array('activation_key' => $activation_key) ) : $wpdb->update( $wpdb->base_prefix.'signups', array('active' => 1, 'activated' => $now), array('activation_key' => $activation_key) ) );
 
 			wppb_add_meta_to_user_on_activation( $user_id, '', $meta );
+
+			if( apply_filters( 'wppb_admin_email_confirmation_maybe_use_admin_approval', false ) ) {
+				// if admin approval is activated, then block the user until he gets approved
+				$wppb_generalSettings = get_option('wppb_general_settings');
+				if( wppb_get_admin_approval_option_value() === 'yes' ){
+					wppb_update_user_status_to_pending( $user_id, $wppb_generalSettings );
+				}
+			}
 
             /* copy the hashed password from signup meta to wp user table */
             if( !empty( $meta['user_pass'] ) ){
@@ -572,13 +664,17 @@ function wppb_notify_user_registration_email( $bloginfo, $user_name, $email, $se
 		$adminApproval_mailAdmin = 0;
 
 		if( $wppb_generalSettings != 'not_found' && ! empty( $wppb_generalSettings['adminApprovalOnUserRole'] ) ) {
-			foreach( $user_data->roles as $role ) {
-				if( in_array( $role, $wppb_generalSettings['adminApprovalOnUserRole'] ) ) {
-					if( ! current_user_can( 'delete_users' ) ) {
-						$adminApproval_mailAdmin = 1;
+
+			if( !empty( $user_data->roles ) ) {
+				foreach( $user_data->roles as $role ) {
+					if( in_array( $role, $wppb_generalSettings['adminApprovalOnUserRole'] ) ) {
+						if( ! current_user_can( 'delete_users' ) ) {
+							$adminApproval_mailAdmin = 1;
+						}
 					}
 				}
 			}
+
 		} else {
 			if( ! current_user_can( 'delete_users' ) ) {
 				$adminApproval_mailAdmin = 1;

@@ -6,10 +6,10 @@ abstract class Loco_cli_SyncCommand {
    
 
     /**
-     * @param Loco_package_Project[] project filter
-     * @param Loco_Locale[] locale filter
-     * @param bool whether dry run
-     * @param bool whether to always update
+     * @param Loco_package_Project[] $projects project filter
+     * @param Loco_Locale[] $locales locale filter
+     * @param bool $noop whether dry run
+     * @param bool $force whether to always update
      */
     public static function run( array $projects, array $locales, $noop = true, $force = false ){
         
@@ -24,7 +24,6 @@ abstract class Loco_cli_SyncCommand {
         $updated = 0;
         $compiled = 0;
 
-        /* @var Loco_package_Project $project */
         foreach( $projects as $project ){
             $id = rtrim( $project->getId(), '.' );
             $base_dir = $project->getBundle()->getDirectoryPath();
@@ -94,15 +93,14 @@ abstract class Loco_cli_SyncCommand {
                 }
                 // Perform merge if we have a reference file
                 Loco_cli_Utils::debug('Merging %s <- %s', $pofile->basename(), $potfile->basename() );
-                $matcher = new Loco_gettext_Matcher;
+                $matcher = new Loco_gettext_Matcher($project);
                 $matcher->loadRefs($ref,$translate );
                 // Merge jsons if configured and available
                 if( $opts->mergeJson() ){
-                    $siblings = new Loco_fs_Siblings($pofile);
-                    $njson = $matcher->loadJsons( $siblings->getJsons( $project->getDomain()->getName() ) );
-                    if( 0 !== $njson ){
-                        Loco_cli_Utils::debug('> merged json files:%u', $njson );
-                    }
+                    $siblings = new Loco_fs_Siblings( $potfile->cloneBasename( $pofile->basename() ) );
+                    $jsons = $siblings->getJsons( $project->getDomain()->getName() );
+                    $njson = $matcher->loadJsons($jsons);
+                    Loco_cli_Utils::debug('> merged %u json files', $njson );
                 }
                 // Get fuzzy matching tolerance from plugin settings, can be set temporarily in command line
                 $fuzziness = Loco_data_Settings::get()->fuzziness;

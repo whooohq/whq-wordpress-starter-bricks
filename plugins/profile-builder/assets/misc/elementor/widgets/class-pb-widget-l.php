@@ -84,6 +84,20 @@ class PB_Elementor_Login_Widget extends PB_Elementor_Widget {
             );
         }
 
+        if( defined( 'WPPB_PAID_PLUGIN_DIR' ) ) {
+            $this->add_control(
+                'pb_ajax',
+                array(
+                    'label'        => __( 'AJAX Validation', 'profile-builder' ),
+                    'type'         => \Elementor\Controls_Manager::SWITCHER,
+                    'label_on'     => __( 'Yes', 'profile-builder' ),
+                    'label_off'    => __( 'No', 'profile-builder' ),
+                    'return_value' => 'true',
+                    'default'      => 'false',
+                )
+            );
+        }
+
         $this->end_controls_section();
 
         $this->start_controls_section(
@@ -124,7 +138,7 @@ class PB_Elementor_Login_Widget extends PB_Elementor_Widget {
             ];
         }
         $sections['input'] = [
-            'selector' => '#wppb-login-wrap .login-username input#user_login',
+            'selector' => '#wppb-login-wrap .login-username input#wppb_user_login',
             'section_name' => 'Input',
         ];
         $this->add_styling_control_group(
@@ -143,7 +157,7 @@ class PB_Elementor_Login_Widget extends PB_Elementor_Widget {
             ];
         }
         $sections['input'] = [
-            'selector' => '#wppb-login-wrap .login-password input#user_pass',
+            'selector' => '#wppb-login-wrap .login-password input#wppb_user_pass',
             'section_name' => 'Input',
         ];
         $this->add_styling_control_group(
@@ -178,6 +192,7 @@ class PB_Elementor_Login_Widget extends PB_Elementor_Widget {
         // reCAPTCHA Style tab
         if( !$this->is_placeholder_labels_active() ) {
             include_once(WPPB_PLUGIN_DIR . '/front-end/default-fields/recaptcha/recaptcha.php');
+            include_once(WPPB_PLUGIN_DIR . '/front-end/default-fields/turnstile/turnstile.php');
             $field = wppb_get_recaptcha_field();
             if (!empty($field) && isset($field['captcha-pb-forms']) && (strpos($field['captcha-pb-forms'], 'pb_recover_password') !== false)) {
                 $this->add_styling_control_group(

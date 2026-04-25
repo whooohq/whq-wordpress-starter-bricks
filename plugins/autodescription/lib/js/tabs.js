@@ -8,7 +8,7 @@
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2020 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2020 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -34,7 +34,7 @@
  *
  * @constructor
  */
-window.tsfTabs = function() {
+window.tsfTabs = function () {
 
 	/**
 	 * @since 4.1.3
@@ -56,11 +56,8 @@ window.tsfTabs = function() {
 	 *
 	 * @since 4.1.3
 	 * @access private
-	 *
-	 * @function
-	 * @return {(undefined|null)}
 	 */
-	const _correctTabFocus = () => {
+	function _correctTabFocus() {
 		let changeEvent = new Event( 'change' );
 
 		tabStack.forEach( args => {
@@ -72,20 +69,91 @@ window.tsfTabs = function() {
 	}
 
 	/**
+	 * Hides a tab. Also switches to the first tab if it was selected.
+	 *
+	 * @since 5.0.5
+	 * @access public
+	 *
+	 * @param {String} stackId The stack ID for which to get the stack.
+	 * @param {String} name    The name of the tab to hide.
+	 */
+	function hideTab( stackId, name ) {
+
+		const stack = getStack( stackId );
+
+		const radio = document.getElementById( name );
+
+		radio?.setAttribute( 'disabled', '' );
+		document.querySelector( `.${stack.HTMLClasses.tabLabel}[for="${name}"]` )?.classList.add( 'hidden' );
+
+		if ( radio?.checked ) {
+			// 'toggleTo' won't do because the transition stack memory might not be initialized via a change-event... should we simulate the event?
+			toggleToInstant(
+				stackId,
+				// Separate queries because :not in closest() will select first only.
+				radio.closest( `.${stack.HTMLClasses.wrapper}` )?.querySelector( `.${stack.HTMLClasses.tabRadio}:not([disabled])` ),
+			);
+		}
+	}
+
+	/**
+	 * Shows a tab.
+	 *
+	 * @since 5.0.5
+	 * @access public
+	 *
+	 * @param {String} stackId The stack ID for which to get the stack.
+	 * @param {String} name    The name of the tab to show.
+	 */
+	function showTab( stackId, name ) {
+
+		const stack = getStack( stackId );
+
+		document.getElementById( name )?.removeAttribute( 'disabled' );
+		document.querySelector( `.${stack.HTMLClasses.tabLabel}[for="${name}"]` )?.classList.remove( 'hidden' );
+	}
+
+	/**
+	 * Toggles a tab.
+	 *
+	 * @since 5.0.5
+	 * @access public
+	 *
+	 * @param {String}   stackId The stack ID for which to get the stack.
+	 * @param {String}   name    The name of the tab to show.
+	 * @param {?Boolean} toggle  Whether to show (true), hide (false), or automatically determine (?null).
+	 */
+	function toggleTab( stackId, name, toggle ) {
+
+		if ( void 0 == toggle ) {
+			if ( document.getElementById( name )?.disabled ) {
+				showTab( stackId, name );
+			} else {
+				hideTab( stackId, name );
+			}
+		} else if ( toggle ) {
+			showTab( stackId, name );
+		} else {
+			hideTab( stackId, name );
+		}
+	}
+
+	/**
 	 * Toggles a tab instantly, without animations.
 	 *
 	 * @since 4.1.3
 	 * @access public
 	 *
-	 * @function
 	 * @param {string}           stackId The stack family ID.
 	 * @param {HTMLInputElement} target  The radio input element of the tab.
-	 * @return {(undefined|null)}
 	 */
-	const toggleToInstant = ( stackId, target ) => {
+	function toggleToInstant( stackId, target ) {
 
-		const stack      = getStack( stackId );
-		const newContent = document.getElementById( `${target.id}-content` );
+		const stack      = getStack( stackId ),
+			  newContent = document.getElementById( `${target.id}-content` ),
+			  radio      = document.getElementById( target.id );
+
+		radio.checked = true;
 
 		if ( newContent && ! newContent.classList.contains( stack.HTMLClasses.activeTabContent ) ) {
 			// Toggle all active content's HTML classes.
@@ -96,7 +164,7 @@ window.tsfTabs = function() {
 			newContent.classList.add( stack.HTMLClasses.activeTabContent );
 		}
 
-		document.getElementById( target.id ).dispatchEvent( stack.tabToggledEvent );
+		radio.dispatchEvent( stack.tabToggledEvent );
 	}
 
 	/**
@@ -105,38 +173,18 @@ window.tsfTabs = function() {
 	 * @since 4.1.3
 	 * @access public
 	 *
-	 * @function
 	 * @param {string}           stackId The stack family ID.
 	 * @param {HTMLInputElement} target  The radio input element of the tab.
-	 * @return {(undefined|null)}
 	 */
-	const toggleTo = ( stackId, target ) => {
+	function toggleTo( stackId, target ) {
 
 		const cacheId = target.name;
 		const stack   = getStack( stackId );
 
-		// TODO make this a public API, and apply to media.js. and tsf.resetAjaxLoader et al.?
-		// Also add show/hide? -> new tsfUI file? tsfUI.fadeIn( element )
 		const fadeOutTimeout = 125;
 		const fadeInTimeout  = 175;
-		const fadeCSS        = {
-			fadeIn: {
-				opacity:                 1,
-				animation:               'tsf-fade-in',
-				animationDuration:       `${fadeInTimeout}ms`,
-				animationTimingFunction: 'cubic-bezier(.54,.12,.90,.60)',
-			},
-			fadeOut: {
-				opacity:                 0,
-				animation:               'tsf-fade-out',
-				animationDuration:       `${fadeOutTimeout}ms`,
-				animationTimingFunction: 'cubic-bezier(.54,.12,.90,.60)',
-			}
-		}
-		const fadeIn  = element => { for ( const prop in fadeCSS.fadeIn ) element.style[ prop ] = fadeCSS.fadeIn[ prop ] };
-		const fadeOut = element => { for ( const prop in fadeCSS.fadeOut ) element.style[ prop ] = fadeCSS.fadeOut[ prop ] };
 
-		const container   = _toggleCache.get( 'container' ).get( cacheId );
+		const container  = _toggleCache.get( 'container' ).get( cacheId );
 		const allContent = document.querySelectorAll( `.${target.name}-content` );
 
 		const lockHeight = () => {
@@ -156,9 +204,10 @@ window.tsfTabs = function() {
 
 			newContent.classList.add( stack.HTMLClasses.activeTabContent );
 			unLockHeight();
-			fadeIn( newContent );
-			// Resolve at 2/3th of fade-in time, content should already be well visible.
-			await new Promise( _resolve => setTimeout( _resolve, fadeInTimeout * 2/3 ) );
+			tsfUI.fadeIn( newContent, fadeInTimeout );
+
+			// Resolve early at 2/3th of fade-in time, content should already be well visible.
+			await tsfUtils.delay( fadeInTimeout * 2/3 );
 
 			return testTab(); // do not pass newContent!
 		}
@@ -170,13 +219,13 @@ window.tsfTabs = function() {
 			if ( ! newContent || newContent.classList.contains( stack.HTMLClasses.activeTabContent ) ) {
 				clearPromise();
 				document.getElementById( _toggleCache.get( 'target' ).get( cacheId ) )
-						.dispatchEvent( stack.tabToggledEvent );
+					.dispatchEvent( stack.tabToggledEvent );
 			} else {
 				// Lock height isothermically to prevent jumping.
 				lockHeight();
 				// Hide everything instantly. We don't make false promises here.
 				allContent.forEach( el => { el.classList.remove( stack.HTMLClasses.activeTabContent ) } );
-				// Loop until succesful. Use animationFrame so to not clog up the CPU if this lands in an infinite loop.
+				// Loop until successful. Use animationFrame so to not clog up the CPU if this lands in an infinite loop.
 				requestAnimationFrame( () => {
 					setCorrectTab() && clearPromise()
 				} );
@@ -184,11 +233,10 @@ window.tsfTabs = function() {
 		}
 
 		const doPromise = () => new Promise( async resolve => {
-			allContent.forEach( fadeOut );
+			allContent.forEach( el => { tsfUI.fadeOut( el, fadeOutTimeout ) } );
 			// Await fadeout before continuing (with fadeIn at setCorrectTab).
-			// await setTimeout( resolve, fadeOutTimeout );
-			await new Promise( _resolve => setTimeout( _resolve, fadeOutTimeout ) );
-			// resolve();
+			await tsfUtils.delay( fadeOutTimeout );
+
 			return setCorrectTab() && resolve();
 		} );
 		const clearPromise = () => _toggleCache.get( 'promises' ).delete( cacheId );
@@ -208,12 +256,10 @@ window.tsfTabs = function() {
 	 * @since 4.1.3
 	 * @access private
 	 *
-	 * @function
-	 * @param {*} stackId
-	 * @param {Event} event
-	 * @return {(undefined|null)}
+	 * @param {String} stackId
+	 * @param {Event}  event
 	 */
-	const _toggle = ( stackId, event ) => {
+	function _toggle( stackId, event ) {
 
 		const stack = getStack( stackId );
 
@@ -260,7 +306,7 @@ window.tsfTabs = function() {
 			toggleToInstant( stackId, event.target );
 		} else {
 			if ( ! _toggleCache.get( 'container' ).has( cacheId ) ) {
-				 // instead of 'inside', shouldn't we pick anything blockable?
+				// instead of 'inside', shouldn't we pick anything blockable?
 				_toggleCache.get( 'container' ).set( cacheId, currentToggle.closest( '.inside' ) );
 			}
 
@@ -281,11 +327,12 @@ window.tsfTabs = function() {
 	 * @access public
 	 * @see tsfTabs.initStack() which registers the stack via param args.
 	 *
-	 * @function
 	 * @param {String} stackId The stack ID for which to get the stack.
-	 * @return {(Object<string, *>)} Immutable Map contents.
+	 * @return {(Object<string,*>)} Immutable Map contents.
 	 */
-	const getStack = stackId => tabStack.get( stackId );
+	function getStack( stackId ) {
+		return tabStack.get( stackId );
+	}
 
 	/**
 	 * Initializes a tab-switcher stack.
@@ -300,18 +347,16 @@ window.tsfTabs = function() {
 	 * @access public
 	 * @see tsfTabs.initStack registers the stack.
 	 *
-	 * @function
-	 * @param {String}              stackId The stack ID for which to get the stack.
-	 * @param {Object}              args    The stack arguments.
-	 * @param {CustomEvent}         args.tabToggledEvent The Event firing after a tab toggled successfully.
-	 * @param {(Object<string, *>)} args.HTMLClasses     The HTML classes pertinent to the stack. Expects:
-	 *                                                   wrapper, tabRadio, tabLabel, activeTab, activeTabContent
-	 * @param {Boolean}             args.fixHistory      Whether to switch tabs based when browser history is used.
-	 *                                                   e.g. user hits back-button, non-default-tabRadio is still
-	 *                                                   checked, but not switched to correctly. Edge case.
-	 * @return {(undefined|null)}
+	 * @param {String}             stackId The stack ID for which to get the stack.
+	 * @param {Object}             args    The stack arguments.
+	 * @param {CustomEvent}        args.tabToggledEvent The Event firing after a tab toggled successfully.
+	 * @param {(Object<string,*>)} args.HTMLClasses     The HTML classes pertinent to the stack. Expects:
+	 *                                                  wrapper, tabRadio, tabLabel, activeTab, activeTabContent
+	 * @param {Boolean}            args.fixHistory      Whether to switch tabs based when browser history is used.
+	 *                                                  e.g. user hits back-button, non-default-tabRadio is still
+	 *                                                  checked, but not switched to correctly. Edge case.
 	 */
-	const initStack = ( stackId, args ) => {
+	function initStack( stackId, args ) {
 
 		tabStack.set( stackId, args );
 
@@ -349,8 +394,11 @@ window.tsfTabs = function() {
 
 			// Delay the focus fix, so not to delay the interactive state... even though it causes a page jump. This merely addresses an edge-case.
 			window.addEventListener( 'load', _correctTabFocus );
-		}
+		},
 	}, {
+		hideTab,
+		showTab,
+		toggleTab,
 		toggleToInstant,
 		toggleTo,
 		getStack,

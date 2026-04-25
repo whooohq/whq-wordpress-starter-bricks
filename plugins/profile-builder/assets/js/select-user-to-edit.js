@@ -1,5 +1,15 @@
 jQuery(document).ready(function(){
 
+    if ( jQuery('#select_user_to_edit_form').length > 0 )
+        wppb_select_user_to_edit_initialize();
+
+})
+
+/**
+ * Handle "Select User To Edit" Field (Edit Profile Form)
+ *
+ * */
+function wppb_select_user_to_edit_initialize() {
     jQuery("select").filter(function() {
         if ( this.id.startsWith( "wppb-" ) && this.id.endsWith( "user-to-edit" ) ) {
             return this;
@@ -18,5 +28,4 @@ jQuery(document).ready(function(){
             }
         });
     })
-
-})
+}

@@ -12,6 +12,8 @@ class Conf extends Instance {
 
 	public static $_default_options = array(
 		'_ver'				=> '',
+		'_pk'				=> '',
+		'_sk'				=> '',
 		'max_retries'		=> 6,
 		'duration'			=> 10,
 		'auto_upgrade'		=> true,
@@ -20,9 +22,9 @@ class Conf extends Instance {
 		'2fa_force'			=> false,
 		'sms'				=> false,
 		'sms_force'			=> false,
-		'gg'				=> false,
-		'gg_pub_key'		=> '',
-		'gg_priv_key'		=> '',
+		'cf'				=> false,
+		'cf_pub_key'		=> '',
+		'cf_priv_key'		=> '',
 		'recapt_register' 	=> false,
 		'recapt_forget' 	=> false,
 		'whitelist'			=> array(),

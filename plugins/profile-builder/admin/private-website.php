@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @return void
  */
 function wppb_private_website_submenu_page() {
-    add_submenu_page( '', __( 'Private Website', 'profile-builder' ), __( 'Private Website', 'profile-builder' ), 'manage_options', 'profile-builder-private-website', 'wppb_private_website_content' );
+    add_submenu_page( 'profile-builder', __( 'Private Website', 'profile-builder' ), __( 'Private Website', 'profile-builder' ), 'manage_options', 'profile-builder-private-website', 'wppb_private_website_content' );
 }
 add_action( 'admin_menu', 'wppb_private_website_submenu_page' );
 
@@ -49,11 +49,21 @@ function wppb_private_website_content() {
 
     $all_pages = get_posts( $args );
     ?>
-    <div class="wrap wppb-wrap wppb-private-website">
-        <h2>
-            <?php esc_html_e( 'Private Website Settings', 'profile-builder' );?>
-            <a href="https://www.cozmoslabs.com/docs/profile-builder-2/general-settings/private-website/?utm_source=wpbackend&utm_medium=pb-documentation&utm_campaign=PBDocs" target="_blank" data-code="f223" class="wppb-docs-link dashicons dashicons-editor-help"></a>
-        </h2>
+    <div class="wrap wppb-wrap wppb-private-website cozmoslabs-wrap">
+
+        <h1></h1>
+        <!-- WordPress Notices are added after the h1 tag -->
+
+        <div class="cozmoslabs-page-header">
+            <div class="cozmoslabs-section-title">
+
+                <h2 class="cozmoslabs-page-title">
+                    <?php esc_html_e( 'Private Website Settings', 'profile-builder' );?>
+                    <a href="https://www.cozmoslabs.com/docs/profile-builder/general-settings/private-website/?utm_source=wpbackend&utm_medium=pb-documentation&utm_campaign=PBDocs" target="_blank" data-code="f223" class="wppb-docs-link dashicons dashicons-editor-help"></a>
+                </h2>
+
+            </div>
+        </div>
 
         <?php settings_errors(); ?>
 
@@ -62,27 +72,31 @@ function wppb_private_website_content() {
         <form method="post" action="options.php">
             <?php settings_fields( 'wppb_private_website_settings' ); ?>
 
-            <table class="form-table">
-                <tbody>
+            <div class="cozmoslabs-settings-container">
 
-                    <tr>
-                        <th><?php esc_html_e( 'Enable Private Website', 'profile-builder' ); ?></th>
-                        <td>
-                            <select id="private-website-enable" class="wppb-select" name="wppb_private_website_settings[private_website]">
-                                <option value="no" <?php echo ( ( $wppb_private_website_settings != 'not_found' && $wppb_private_website_settings['private_website'] == 'no' ) ? 'selected' : '' ); ?>><?php esc_html_e( 'No', 'profile-builder' ); ?></option>
-                                <option value="yes" <?php echo ( ( $wppb_private_website_settings != 'not_found' && $wppb_private_website_settings['private_website'] == 'yes' ) ? 'selected' : '' ); ?>><?php esc_html_e( 'Yes', 'profile-builder' ); ?></option>
-                            </select>
-                            <ul>
-                                <li class="description"><?php esc_html_e( 'Activate Private Website. It will restrict the content, RSS and REST API for your website', 'profile-builder' ); ?></li>
-                            </ul>
-                        </td>
-                    </tr>
+                <div class="cozmoslabs-settings">
 
-                    <tr>
-                        <th><?php esc_html_e( 'Redirect to', 'profile-builder' ); ?></th>
-                        <td>
+                    <div class="cozmoslabs-form-subsection-wrapper cozmoslabs-no-title-section">
+
+                        <div class="cozmoslabs-form-field-wrapper cozmoslabs-toggle-switch">
+                            <label class="cozmoslabs-form-field-label" for="private-website-enable"><?php esc_html_e('Private Website', 'profile-builder'); ?></label>
+
+                            <div class="cozmoslabs-toggle-container">
+                                <input type="checkbox" name="wppb_private_website_settings[private_website]" id="private-website-enable" value="yes" <?php echo (!empty($wppb_private_website_settings['private_website']) && $wppb_private_website_settings['private_website'] === 'yes') ? 'checked' : ''; ?> >
+                                <label class="cozmoslabs-toggle-track" for="private-website-enable"></label>
+                            </div>
+
+                            <div class="cozmoslabs-toggle-description">
+                                <label for="private-website-enable" class="cozmoslabs-description"><?php esc_html_e( 'Activate Private Website. It will restrict the content, RSS and REST API for your website.', 'profile-builder' ); ?></label>
+                            </div>
+                        </div>
+
+                        <div class="cozmoslabs-form-field-wrapper">
+                            <label class="cozmoslabs-form-field-label" for="private-website-redirect-to-login"><?php esc_html_e('Redirect to', 'profile-builder'); ?></label>
+
                             <select id="private-website-redirect-to-login" class="wppb-select" name="wppb_private_website_settings[redirect_to]">
                                 <option value=""><?php esc_html_e( 'Default WordPress login page', 'profile-builder' ); ?></option>
+
                                 <?php
                                 if( !empty( $all_pages ) ){
                                     foreach ($all_pages as $page){
@@ -92,18 +106,18 @@ function wppb_private_website_content() {
                                     }
                                 }
                                 ?>
-
                             </select>
-                            <ul>
-                                <li class="description"><?php esc_html_e( 'Redirects to this page if not logged in. We recommend this page contains the [wppb-login] shortcode.', 'profile-builder' ); ?></li>
-                                <li class="description"><?php esc_html_e( 'You can force access to wp-login.php so you don\'t get locked out of the site by accessing the link:', 'profile-builder' ); ?> <a href="<?php echo esc_url( wp_login_url() ).'?wppb_force_wp_login=true' ?>"><?php echo esc_url( wp_login_url() ).'?wppb_force_wp_login=true' ?></a></li>
-                            </ul>
-                        </td>
-                    </tr>
 
-                    <tr>
-                        <th><?php esc_html_e( 'Allowed Pages', 'profile-builder' ); ?></th>
-                        <td>
+                            <p class="cozmoslabs-description cozmoslabs-description-space-left"><?php esc_html_e( 'Redirects to this page if not logged in. We recommend this page contains the [wppb-login] shortcode.', 'profile-builder' ); ?></p>
+                            <p class="cozmoslabs-description cozmoslabs-description-space-left">
+                                <?php esc_html_e( 'You can force access to wp-login.php so you don\'t get locked out of the site by accessing the link:', 'profile-builder' ); ?>
+                                <a href="<?php echo esc_url( wp_login_url() ).'?wppb_force_wp_login=true' ?>"><?php echo esc_url( wp_login_url() ).'?wppb_force_wp_login=true' ?></a>
+                            </p>
+                        </div>
+
+                        <div class="cozmoslabs-form-field-wrapper">
+                            <label class="cozmoslabs-form-field-label" for="private-website-allowed-pages"><?php esc_html_e('Allowed Pages', 'profile-builder'); ?></label>
+
                             <select id="private-website-allowed-pages" class="wppb-select" name="wppb_private_website_settings[allowed_pages][]" multiple="multiple">
                                 <?php
                                 if( !empty( $all_pages ) ){
@@ -116,55 +130,64 @@ function wppb_private_website_content() {
                                 ?>
 
                             </select>
-                            <ul>
-                                <li class="description"><?php esc_html_e( 'Allow these pages to be accessed even if you are not logged in', 'profile-builder' ); ?></li>
-                            </ul>
-                        </td>
-                    </tr>
 
-                    <tr>
-                        <th><?php esc_html_e( 'Allowed Paths', 'profile-builder' ); ?></th>
-                        <td>
+                            <p class="cozmoslabs-description cozmoslabs-description-space-left"><?php esc_html_e( 'Allow these pages to be accessed even if you are not logged in', 'profile-builder' ); ?></p>
+                        </div>
+
+                        <div class="cozmoslabs-form-field-wrapper">
+                            <label class="cozmoslabs-form-field-label" for="private-website-allowed-paths"><?php esc_html_e('Allowed Paths', 'profile-builder'); ?></label>
                             <textarea id="private-website-allowed-paths" class="wppb-textarea" name="wppb_private_website_settings[allowed_paths]"><?php echo ( ( $wppb_private_website_settings != 'not_found' && !empty($wppb_private_website_settings['allowed_paths']) ) ? esc_textarea( $wppb_private_website_settings['allowed_paths'] ) : '' ); ?></textarea>
-                            <ul>
-                                <li class="description"><?php esc_html_e( 'Allow these paths to be accessed even if you are not logged in (supports wildcard at the end of the path). For example to exclude https://example.com/some/path/ you can either use the rule /some/path/ or /some/* Enter each rule on it\'s own line', 'profile-builder' ); ?></li>
-                            </ul>
-                        </td>
-                    </tr>
 
-                    <tr>
-                        <th><?php esc_html_e( 'Hide all Menus', 'profile-builder' ); ?></th>
-                        <td>
-                            <select id="private-website-menu-hide" class="wppb-select" name="wppb_private_website_settings[hide_menus]">
-                                <option value="no" <?php echo ( ( $wppb_private_website_settings != 'not_found' && !empty($wppb_private_website_settings['hide_menus']) && $wppb_private_website_settings['hide_menus'] == 'no' ) ? 'selected' : '' ); ?>><?php esc_html_e( 'No', 'profile-builder' ); ?></option>
-                                <option value="yes" <?php echo ( ( $wppb_private_website_settings != 'not_found' && !empty($wppb_private_website_settings['hide_menus']) && $wppb_private_website_settings['hide_menus'] == 'yes' ) ? 'selected' : '' ); ?>><?php esc_html_e( 'Yes', 'profile-builder' ); ?></option>
-                            </select>
-                            <ul>
-                                <li class="description"><?php esc_html_e( 'Hide all menu items if you are not logged in.', 'profile-builder' ); ?></li>
-                                <li class="description"><?php wp_kses_post( printf( __( 'We recommend "<a href="%s" target="_blank">Custom Profile Menus</a>" addon if you need different menu items for logged in / logged out users.', 'profile-builder' ), 'https://www.cozmoslabs.com/add-ons/custom-profile-menus/' ) )    //phpcs:ignore; ?></li>
-                            </ul>
-                        </td>
-                    </tr>
+                            <p class="cozmoslabs-description cozmoslabs-description-space-left"><?php esc_html_e( 'Allow these paths to be accessed even if you are not logged in (supports wildcard at the end of the path). For example to exclude https://example.com/some/path/ you can either use the rule /some/path/ or /some/* Enter each rule on it\'s own line', 'profile-builder' ); ?></p>
+                        </div>
 
-                    <tr>
-                        <th><?php esc_html_e( 'Disable REST-API', 'profile-builder' ); ?></th>
-                        <td>
-                            <select id="private-website-disable-rest-api" class="wppb-select" name="wppb_private_website_settings[disable_rest_api]">
-                                <option value="yes" <?php selected ( ( $wppb_private_website_settings != 'not_found' && ( !isset( $wppb_private_website_settings[ 'disable_rest_api' ] ) || ( isset( $wppb_private_website_settings[ 'disable_rest_api' ] ) && $wppb_private_website_settings[ 'disable_rest_api' ] == 'yes' ) ) ), true ); ?>><?php esc_html_e( 'Yes', 'profile-builder' ); ?></option>
-                                <option value="no" <?php selected ( ( $wppb_private_website_settings != 'not_found' && isset( $wppb_private_website_settings[ 'disable_rest_api' ] ) && $wppb_private_website_settings[ 'disable_rest_api' ] == 'no' ), true ); ?>><?php esc_html_e( 'No', 'profile-builder' ); ?></option>
-                            </select>
-                            <ul>
-                                <li class="description"><?php esc_html_e( 'Disable the WordPress REST-API for non-logged in users when Private Website is enabled', 'profile-builder' ); ?></li>
-                            </ul>
-                        </td>
-                    </tr>
+                        <div class="cozmoslabs-form-field-wrapper">
+                            <label class="cozmoslabs-form-field-label" for="private-website-allowed-query-strings"><?php esc_html_e('Allowed Query Strings', 'profile-builder'); ?></label>
+                            <textarea id="private-website-allowed-query-strings" class="wppb-textarea" name="wppb_private_website_settings[allowed_query_strings]"><?php echo ( ( $wppb_private_website_settings != 'not_found' && !empty( $wppb_private_website_settings['allowed_query_strings'] ) ) ? esc_textarea( $wppb_private_website_settings['allowed_query_strings'] ) : '' ); ?></textarea>
 
-                </tbody>
-            </table>
+                            <p class="cozmoslabs-description cozmoslabs-description-space-left"><?php esc_html_e( 'Allow paths containing these query strings to be accessible to logged out users. For example, you can add s to exclude a search request: https://example.com/?s=search', 'profile-builder' ); ?></p>
+                        </div>
 
-            <?php submit_button( esc_html__( 'Save Changes', 'profile-builder' ) ); ?>
+                        <div class="cozmoslabs-form-field-wrapper cozmoslabs-toggle-switch">
+                            <label class="cozmoslabs-form-field-label" for="private-website-menu-hide"><?php esc_html_e('Hide all Menus', 'profile-builder'); ?></label>
+
+                            <div class="cozmoslabs-toggle-container">
+                                <input type="checkbox" name="wppb_private_website_settings[hide_menus]" id="private-website-menu-hide" value="yes" <?php echo ( !empty( $wppb_private_website_settings['hide_menus'] ) && $wppb_private_website_settings['hide_menus'] === 'yes' ) ? 'checked' : ''; ?> >
+                                <label class="cozmoslabs-toggle-track" for="private-website-menu-hide"></label>
+                            </div>
+
+                            <div class="cozmoslabs-toggle-description">
+                                <label for="private-website-menu-hide" class="cozmoslabs-description"><?php wp_kses_post( printf( __( 'Hide all menu items if you are not logged in. We recommend "<a href="%s" target="_blank">Custom Profile Menus</a>" addon if you need different menu items for logged in / logged out users.', 'profile-builder' ), 'https://www.cozmoslabs.com/add-ons/custom-profile-menus/?utm_source=pb-private-website-settings&utm_medium=client-site&utm_campaign=pb-hide-all-menus' ) )    //phpcs:ignore; ?></label>
+                            </div>
+                        </div>
+
+                        <div class="cozmoslabs-form-field-wrapper cozmoslabs-toggle-switch">
+                            <label class="cozmoslabs-form-field-label" for="private-website-disable-rest-api"><?php esc_html_e('Disable REST-API', 'profile-builder'); ?></label>
+
+                            <div class="cozmoslabs-toggle-container">
+                                <input type="checkbox" name="wppb_private_website_settings[disable_rest_api]" id="private-website-disable-rest-api" value="yes" <?php echo ( !empty( $wppb_private_website_settings['disable_rest_api'] ) && $wppb_private_website_settings['disable_rest_api'] === 'yes' ) ? 'checked' : ''; ?> >
+                                <label class="cozmoslabs-toggle-track" for="private-website-disable-rest-api"></label>
+                            </div>
+
+                            <div class="cozmoslabs-toggle-description">
+                                <label for="private-website-disable-rest-api" class="cozmoslabs-description"><?php esc_html_e( 'Disable the WordPress REST-API for non-logged in users when Private Website is enabled', 'profile-builder' ); ?></label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="submit cozmoslabs-submit">
+                    <h3 class="cozmoslabs-subsection-title"><?php esc_html_e( 'Update Settings', 'profile-builder' ) ?></h3>
+                    <div class="cozmoslabs-publish-button-group">
+                        <?php submit_button( esc_html__( 'Save Changes', 'profile-builder' ) ); ?>
+                    </div>
+                </div>
+
+            </div>
+
         </form>
-
 
     </div>
     <?php

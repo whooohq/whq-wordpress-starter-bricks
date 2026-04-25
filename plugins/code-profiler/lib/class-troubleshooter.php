@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  +=====================================================================+
  |    ____          _        ____             __ _ _                   |
  |   / ___|___   __| | ___  |  _ \ _ __ ___  / _(_) | ___ _ __         |
@@ -7,31 +7,36 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
- +=====================================================================+
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
+ +=====================================================================+ 2024-08-14
 */
 
-if (! defined('ABSPATH') ) { die('Forbidden'); }
+if (! defined('ABSPATH') ) {
+	die('Forbidden');
+}
 
 // =====================================================================
 
 class CP_Troubleshooter {
 
-	/********************************************************************
+	/**
 	 * Array to handle all results
 	 */
 	private $buffer = [];
 
-	/********************************************************************
+	/**
 	 * Initialize.
 	 */
 	public function __construct() {
 
 		$this->get_system_info('sysinfo');
+		$this->test_admin_ajax('admin-ajax');
 		$this->cp_info('code-profiler');
 		$this->function_exists('code-profiler');
 		$this->check_wpdb('wpdb');
+		$this->check_cache('cache');
 		$this->check_proxy('proxy');
+		$this->is_multisite('multisite');
 		$this->get_all_plugins('plugins');
 		$this->get_theme('themes');
 		$this->get_cp_config();
@@ -39,7 +44,7 @@ class CP_Troubleshooter {
 		echo esc_textarea( print_r( $this->buffer, true ) );
 	}
 
-	/********************************************************************
+	/**
 	 * Retrieve system info:
 	 * * PHP version
 	 * * PHP SAPI
@@ -52,6 +57,12 @@ class CP_Troubleshooter {
 	private function get_system_info( $key ) {
 
 		$this->buffer[ $key ]['OS'] = php_uname();
+
+		if (! empty( $_SERVER['SERVER_NAME'] ) ) {
+			$this->buffer[ $key ]['SERVER_NAME'] = $_SERVER['SERVER_NAME'];
+		} else {
+			$this->buffer[ $key ]['SERVER_NAME'] = 'N/A';
+		}
 
 		if (! empty( $_SERVER['SERVER_SOFTWARE'] ) ) {
 			$this->buffer[ $key ]['HTTP server'] = $_SERVER['SERVER_SOFTWARE'];
@@ -82,7 +93,7 @@ class CP_Troubleshooter {
 			if ( is_writable( $tmp ) ) {
 				$tmp .= ' (writable)';
 			} else {
-				$tmp .= ' (not writable!)';
+				$tmp .= ' (not writable!)' .' ⚠️';
 			}
 		}
 		$tmp = $this->shorten_path( $tmp );
@@ -130,9 +141,39 @@ class CP_Troubleshooter {
 		}
 		$this->buffer[ $key ]['WordPress']['WP_DEBUG_LOG'] = $wp_debug;
 
+		/**
+		 * WPMU plugins directory.
+		 */
+		$this->buffer[ $key ]['WordPress']['WPMU_PLUGIN_DIR']['DIR'] =
+			$this->shorten_path( WPMU_PLUGIN_DIR );
+		$this->buffer[ $key ]['WordPress']['WPMU_PLUGIN_DIR']['writable'] =
+			is_writable( WPMU_PLUGIN_DIR );
+
+		/**
+		 * SAVEQUERIES: make sure it is not set to false.
+		 */
+		if ( defined('SAVEQUERIES') ) {
+			if ( SAVEQUERIES === false ) {
+				$this->buffer[ $key ]['WordPress']['SAVEQUERIES'] = 'FALSE' .' ⚠️';
+			} else {
+				$this->buffer[ $key ]['WordPress']['SAVEQUERIES'] = SAVEQUERIES;
+			}
+		} else {
+			$this->buffer[ $key ]['WordPress']['SAVEQUERIES'] = 'N/A';
+		}
+
+		/**
+		 * xdebug.
+		 */
+		if ( extension_loaded('xdebug') ) {
+			$this->buffer[ $key ]['Xdebug'] = esc_html__('Extension is loaded', 'code-profiler') .' ⚠️';
+		} else {
+			$this->buffer[ $key ]['Xdebug'] = '0';
+		}
 	}
 
-	/********************************************************************
+
+	/**
 	 * Verify if some important PHP functions are available.
 	 */
 	private function function_exists( $key ) {
@@ -142,16 +183,24 @@ class CP_Troubleshooter {
 			'register_tick_function'		=> 'tick',
 			'stream_wrapper_unregister'	=> 'unregister',
 			'stream_wrapper_register'		=> 'register',
-			'stream_wrapper_restore'		=> 'restore'
+			'stream_wrapper_restore'		=> 'restore',
+			'hrtime'								=> 'hrtime'
 		];
 
 		foreach ( $required_functions as $function => $value ) {
-			$this->buffer[ $key ][ $value ] = function_exists( $function );
+			$this->buffer[ $key ]['function'][ $value ] = function_exists( $function );
+		}
+
+		$required_methods = [
+			'PhpToken' => 'tokenize'
+		];
+		foreach ( $required_methods as $class => $value ) {
+			$this->buffer[ $key ]['method'][ $value ] = method_exists( $class, $value );
 		}
 	}
 
 
-	/********************************************************************
+	/**
 	 * Return the version and type (free/pro) of Code Profiler.
 	 */
 	private function cp_info( $key ) {
@@ -179,7 +228,7 @@ class CP_Troubleshooter {
 	}
 
 
-	/********************************************************************
+	/**
 	 * Check if there are subclasses of the wpdb class and
 	 * look for wp-content/db.php
 	 */
@@ -197,16 +246,19 @@ class CP_Troubleshooter {
 	}
 
 
-	/********************************************************************
+	/**
 	 * Check for advanced cache
 	 */
 	private function check_cache( $key ) {
 
-		$this->buffer[ $key ]['cache'] = defined('WP_CACHE') && file_exists(WP_CONTENT_DIR . '/advanced-cache.php');
+		$this->buffer[ $key ] = [];
+		if ( defined('WP_CACHE') && file_exists( WP_CONTENT_DIR . '/advanced-cache.php') ) {
+			$this->buffer[ $key ][ $this->shorten_path( WP_CONTENT_DIR . '/advanced-cache.php') ] = 1;
+		}
 	}
 
 
-	/********************************************************************
+	/**
 	 * Check for reverse proxy or CDN
 	 */
 	private function check_proxy( $key ) {
@@ -227,7 +279,22 @@ class CP_Troubleshooter {
 	}
 
 
-	/********************************************************************
+	/**
+	 * Check if that is a multisite installation.
+	 */
+	private function is_multisite( $key ) {
+
+		if ( is_multisite() ) {
+			global $current_blog;
+			$this->buffer[ $key ] = "site: {$current_blog->site_id}, blog: {$current_blog->blog_id}";
+			return;
+		}
+
+		$this->buffer[ $key ] = 0;
+	}
+
+
+	/**
 	 * Retrieve the list of all plugins and sort them
 	 * (active or disabled).
 	 */
@@ -276,7 +343,7 @@ class CP_Troubleshooter {
 	}
 
 
-	/********************************************************************
+	/**
 	 * Retrieve the active theme.
 	 */
 	private function get_theme( $key ) {
@@ -300,7 +367,7 @@ class CP_Troubleshooter {
 	}
 
 
-	/********************************************************************
+	/**
 	 * Retrieve Code Profiler's configuration
 	 */
 	private function get_cp_config() {
@@ -309,26 +376,54 @@ class CP_Troubleshooter {
 
 		$list = [
 			'hide_empty_value',
-			'warn_composer',
 			'enable_wpcli',
 			'disable_wpcron',
 			// 'disable_db-php',
 			'http_response',
 			// 'backtrace_limit',
 			'accuracy',
-			'buffer'
+			'buffer',
+			'exclusions'
 		];
 		foreach( $list as $element ) {
 			$this->buffer['options'][ $element ] = isset( $cp_options[ $element ] )? $cp_options[ $element ]:0;
 		}
 	}
 
-	/********************************************************************
+	/**
 	 * Remove the ABSPATH from a path
 	 */
 	private function shorten_path( $path ) {
 
 		return str_replace( ABSPATH, '', $path );
+	}
+
+
+	/**
+	 * Test if admin-ajax is accessible.
+	 */
+	private function test_admin_ajax( $key ) {
+
+		$headers = [
+			// Devs must be allowed to use it on localhost over TLS too
+			'sslverify' => apply_filters('https_local_ssl_verify', false )
+		];
+		$res = wp_safe_remote_get( admin_url('admin-ajax.php?action=generate-password'), $headers );
+
+		/* Translators: Error message */
+		$error = __('Error: %s', 'code-profiler');
+
+		// Connection error
+		if ( is_wp_error( $res ) ) {
+			$msg = sprintf( $error, $res->get_error_message() );
+
+		} elseif ( $res['response']['code'] != 200 ) {
+			$msg = sprintf( $error, $res['response']['code'] ." ". $res['response']['message'] );
+
+		} else {
+			$msg = "OK";
+		}
+		$this->buffer[ $key ]['access'] = $msg;
 	}
 
 }

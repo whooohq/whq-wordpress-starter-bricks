@@ -1,30 +1,47 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* Set up upload field for frontend */
 /* overwrite the two functions for when an upload is made from the frontend so they don't check for a logged in user */
 if( strpos( wp_get_referer(), 'wp-admin' ) === false && isset( $_REQUEST['action'] ) && 'upload-attachment' == $_REQUEST['action'] ){
-    if( !function_exists( 'check_ajax_referer' ) ){
-        function check_ajax_referer( ) {
-            return true;
+
+    if( isset( $_REQUEST['wppb_upload'] ) && 'true' == $_REQUEST['wppb_upload'] &&
+        isset( $_REQUEST['meta_name'] ) && wppb_check_that_field_is_defined( sanitize_text_field( $_REQUEST['meta_name'] ), array( 'Avatar', 'Upload' ) ) ){
+
+        if( !function_exists( 'check_ajax_referer' ) ){
+            function check_ajax_referer( ) {
+                return true;
+            }
         }
+
+        if( !function_exists( 'auth_redirect' ) ){
+            function auth_redirect() {
+                return true;
+            }
+        }
+
     }
 
-    if( !function_exists( 'auth_redirect' ) ){
-        function auth_redirect() {
-            return true;
-        }
-    }
 }
 
 /* create a fake user with the "upload_posts" capability and assign him to the global $current_user. this is used to bypass the checks for current_user_can('upload_files') in async-upload.php */
 add_action( 'current_screen', 'wppb_create_fake_user_when_uploading_and_not_logged_in' );
 if( !function_exists( 'wppb_create_fake_user_when_uploading_and_not_logged_in' ) ) {
-    function wppb_create_fake_user_when_uploading_and_not_logged_in()
-    {
-        if ( isset($_REQUEST['action']) && 'upload-attachment' == $_REQUEST['action'] && isset($_REQUEST['wppb_upload']) && 'true' == $_REQUEST['wppb_upload'] ) {
-            if (!is_user_logged_in() || !current_user_can('upload_files') || !current_user_can('edit_posts')) {
+    function wppb_create_fake_user_when_uploading_and_not_logged_in() {
+        // don't do anything if this request is coming from the back-end
+        if( !( strpos( wp_get_referer(), 'wp-admin' ) === false ) )
+            return;
+
+        if ( isset($_REQUEST['action']) && 'upload-attachment' == $_REQUEST['action'] &&
+             isset($_REQUEST['wppb_upload']) && 'true' == $_REQUEST['wppb_upload'] &&
+             isset( $_REQUEST['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( $_REQUEST['_wpnonce'] ), 'media-form' ) &&
+             isset( $_REQUEST['meta_name'] ) && wppb_check_that_field_is_defined( sanitize_text_field( $_REQUEST['meta_name'] ), array( 'Avatar', 'Upload' ) ) ) {
+
+            if ( !is_user_logged_in() || !current_user_can( 'upload_files' ) || !current_user_can( 'edit_posts' ) ) {
                 global $current_user;
-                $current_user = new WP_User(0, 'frontend_uploader');
-                $current_user->allcaps = array("upload_files" => true, "edit_posts" => true, "edit_others_posts" => true, "edit_pages" => true, "edit_others_pages" => true);
+                $current_user = new WP_User( 0, 'frontend_uploader' );
+                $current_user->allcaps = array( "upload_files" => true, "edit_posts" => true, "edit_others_posts" => true, "edit_pages" => true, "edit_others_pages" => true );
             }
         }
     }
@@ -35,7 +52,7 @@ add_action( 'after_setup_theme', 'wppb_modify_query_attachements_when_not_logged
 if( !function_exists( 'wppb_modify_query_attachements_when_not_logged_in' ) ) {
     function wppb_modify_query_attachements_when_not_logged_in()
     {
-        if (strpos(wp_get_referer(), 'wp-admin') === false && !is_user_logged_in()) {
+        if ( strpos(wp_get_referer(), 'wp-admin') === false && !is_user_logged_in() ) {
             add_action('wp_ajax_query-attachments', 'wppb_wp_ajax_not_loggedin_query_attachments', 0);
             add_action('wp_ajax_nopriv_query-attachments', 'wppb_wp_ajax_not_loggedin_query_attachments', 0);
             function wppb_wp_ajax_not_loggedin_query_attachments()
@@ -51,7 +68,7 @@ add_filter('wp_handle_upload_prefilter', 'wppb_upload_file_type');
 if( !function_exists( 'wppb_upload_file_type' ) ) {
     function wppb_upload_file_type($file)
     {
-        if( isset( $_POST['wppb_upload'] ) && $_POST['wppb_upload'] == 'true'  ) {
+        if( isset( $_POST['wppb_upload'] ) && $_POST['wppb_upload'] == 'true' && isset( $_POST['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( $_POST['_wpnonce'] ), 'media-form' ) ) {
 
             // file size limits.
             $size = $file['size'];
@@ -68,7 +85,19 @@ if( !function_exists( 'wppb_upload_file_type' ) ) {
                 if (!empty($all_fields)) {
                     foreach ($all_fields as $field) {
                         if ($field['meta-name'] == $meta_name) {
+
+                            // per-field file size limit
+                            if ( !empty( $field['max-file-size'] ) && is_numeric( $field['max-file-size'] ) && floatval( $field['max-file-size'] ) > 0 ) {
+                                $field_limit = floatval( $field['max-file-size'] ) * 1024 * 1024;
+                                $effective_limit = min( $field_limit, $limit );
+                                if ( $size > $effective_limit ) {
+                                    $file['error'] = __( "Files must be smaller than ", "profile-builder" ) . floatval( $field['max-file-size'] ) . 'MB';
+                                    return $file;
+                                }
+                            }
+
                             $allowed_upload_extensions = '';
+
                             if ($field['field'] == 'Upload' && !empty($field['allowed-upload-extensions']))
                                 $allowed_upload_extensions = $field['allowed-upload-extensions'];
                             if ($field['field'] == 'Avatar' && !empty($field['allowed-image-extensions'])) {
@@ -94,7 +123,10 @@ if( !function_exists( 'wppb_upload_file_type' ) ) {
                                 if (strpos($key, $ext) !== false || $key == $ext)
                                     return $file;
                             }
+
                             $file['error'] = __("Sorry, you cannot upload this file type for this field.", 'profile-builder');
+
+                            break;
                         }
                     }
                 }
@@ -123,6 +155,11 @@ function wppb_valid_simple_upload( $field, $upload ){
     if ( !empty( $all_fields ) ) {
         foreach ( $all_fields as $form_field ) {
             if ($form_field[ 'meta-name' ] == $field[ 'meta-name' ] ) {
+                // apply per-field size limit if set
+                if ( !empty( $form_field['max-file-size'] ) && is_numeric( $form_field['max-file-size'] ) && floatval( $form_field['max-file-size'] ) > 0 ) {
+                    $field_limit = floatval( $form_field['max-file-size'] ) * 1024 * 1024;
+                    $limit = min( $field_limit, $limit );
+                }
                 $allowed_upload_extensions = '';
                 if ( $form_field[ 'field' ] == 'Upload' && !empty( $form_field[ 'allowed-upload-extensions' ] ) ) {
                     $allowed_upload_extensions = $form_field[ 'allowed-upload-extensions' ];
@@ -239,12 +276,17 @@ function wppb_belongs_to_repeater_with_conditional_logic( $field ){
     return false;
 }
 
-function wppb_make_upload_button( $field, $input_value, $extra_attr = '' ){
-    // change the upload limit. This is not functional.
-    // just for display in the upload window. see upload_helper_functions.php for the actual restriction.
-    add_filter('upload_size_limit', function($limit, $u, $p){
-        return apply_filters('wppb_server_max_upload_size_byte_constant', wppb_return_bytes(ini_get('upload_max_filesize')));
-    }, 10, 3);
+function wppb_default_fields_make_upload_button( $field, $input_value, $extra_attr = '' ){
+    // change the upload limit displayed in the upload window (per-field aware)
+    $per_field_max = $field;
+    add_filter('upload_size_limit', function($wp_limit) use ($per_field_max) {
+        $server_limit = apply_filters('wppb_server_max_upload_size_byte_constant', wppb_return_bytes(ini_get('upload_max_filesize')));
+        if ( !empty( $per_field_max['max-file-size'] ) && is_numeric( $per_field_max['max-file-size'] ) && floatval( $per_field_max['max-file-size'] ) > 0 ) {
+            $field_limit = floatval( $per_field_max['max-file-size'] ) * 1024 * 1024;
+            return min( $field_limit, $server_limit );
+        }
+        return $server_limit;
+    }, 10, 1);
 
     $upload_button = '';
     $upload_input_id = str_replace( '-', '_', Wordpress_Creation_Kit_PB::wck_generate_slug( $field['meta-name'] ) );
@@ -280,7 +322,7 @@ function wppb_make_upload_button( $field, $input_value, $extra_attr = '' ){
 
     if ( isset( $field[ 'simple-upload' ] ) && $field[ 'simple-upload' ] == 'yes' ){
         //If selected accordingly in form fields, generate a simple upload button
-        $upload_button .= '<input type="file" id="upload_' . esc_attr(Wordpress_Creation_Kit_PB::wck_generate_slug($field['meta-name'], $field)) . '_button" name="simple_upload_'. esc_attr( Wordpress_Creation_Kit_PB::wck_generate_slug( $field['meta-name'], $field ) ) .'"';
+        $upload_button .= '<input type="file" id="upload_' . esc_attr(Wordpress_Creation_Kit_PB::wck_generate_slug($field['meta-name'], $field)) . '_button" class="wppb_simple_upload" name="simple_upload_'. esc_attr( Wordpress_Creation_Kit_PB::wck_generate_slug( $field['meta-name'], $field ) ) .'"';
         $upload_button .=  $hide_upload_button . '>';
         $upload_button .= '<p id="p_simple_upload_'. esc_attr(Wordpress_Creation_Kit_PB::wck_generate_slug($field['meta-name'], $field)) .'"></p>';
         $limit = apply_filters( 'wppb_server_max_upload_size_byte_constant', wppb_return_bytes( ini_get( 'upload_max_filesize' ) ) );
@@ -288,6 +330,11 @@ function wppb_make_upload_button( $field, $input_value, $extra_attr = '' ){
         if ( !empty( $all_fields ) ) {
             foreach ( $all_fields as $form_field ) {
                 if ($form_field[ 'meta-name' ] == $field[ 'meta-name' ] ) {
+                    // apply per-field size limit if set
+                    if ( !empty( $form_field['max-file-size'] ) && is_numeric( $form_field['max-file-size'] ) && floatval( $form_field['max-file-size'] ) > 0 ) {
+                        $field_limit = floatval( $form_field['max-file-size'] ) * 1024 * 1024;
+                        $limit = min( $field_limit, $limit );
+                    }
                     $allowed_upload_extensions = '';
                     if ( $form_field[ 'field' ] == 'Upload' && !empty( $form_field[ 'allowed-upload-extensions' ] ) ) {
                         $allowed_upload_extensions = $form_field[ 'allowed-upload-extensions' ];
@@ -310,6 +357,7 @@ function wppb_make_upload_button( $field, $input_value, $extra_attr = '' ){
             }
         }
         $upload_button .= '<input id="allowed_extensions_simple_upload_'. esc_attr( $upload_input_id ) .'" type="hidden" size="36" name="allowed_extensions_simple_upload_'. esc_attr( Wordpress_Creation_Kit_PB::wck_generate_slug( $field['meta-name'], $field ) ) .'" value="'. $allowed_extensions .'"/>';
+        $upload_button .= '<input id="size_limit_simple_upload_'. esc_attr( $upload_input_id ) .'" type="hidden" name="size_limit_simple_upload_'. esc_attr( Wordpress_Creation_Kit_PB::wck_generate_slug( $field['meta-name'], $field ) ) .'" value="'. esc_attr( $limit ) .'"/>';
         $allowed_mime_types = get_allowed_mime_types();
         $allowed_types = '';
         if ( !empty( $allowed_mime_types ) ) {
@@ -351,7 +399,7 @@ function wppb_make_upload_button( $field, $input_value, $extra_attr = '' ){
  * @param $field_name
  * @return string|WP_Error
  */
-function wppb_save_simple_upload_file ( $field_name ){
+function wppb_default_fields_save_simple_upload_file( $field_name ) {
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     $upload_overrides = array('test_form' => false);
 
@@ -378,4 +426,112 @@ function wppb_save_simple_upload_file ( $field_name ){
     } else {
         return '';
     }
+}
+
+// Deferred to plugins_loaded so older Profile Builder Pro versions (which declare
+// wppb_verify_attachment_id unconditionally during their own file load) win the
+// declaration race and our function_exists guard then skips — avoiding a fatal.
+add_action( 'plugins_loaded', 'wppb_register_attachment_ownership_helpers', 20 );
+function wppb_register_attachment_ownership_helpers() {
+
+    /**
+     * Verifies if an attachment either doesn't exist or already belongs to the user.
+     * Used for IDOR protection on both Upload and Avatar fields.
+     *
+     * @param string|int $attachment_id The attachment post ID to verify.
+     * @param int|null   $user_id      The user ID to check ownership against.
+     *
+     * @return bool True if the attachment is valid for this user, false otherwise.
+     */
+    if ( !function_exists( 'wppb_verify_attachment_id' ) ) {
+        function wppb_verify_attachment_id( $attachment_id, $user_id = null ) {
+            if ( $attachment_id !== '' && is_numeric( $attachment_id ) ) {
+                $attachment = get_post( absint( trim( $attachment_id ) ) );
+                if ( $attachment && $attachment->post_type === 'attachment' ) {
+
+                    // Get current user info for admin bypass checks
+                    $current_user_id = get_current_user_id();
+                    $current_user = $current_user_id ? get_userdata( $current_user_id ) : null;
+                    $is_admin = $current_user && current_user_can( 'manage_options' );
+
+                    if ( $user_id ) {
+                        // Allow admins to upload files for users
+                        if ( $is_admin ) {
+                            return true;
+                        }
+                        // Only update if the attachment belongs to the user or has no author (post_author = 0)
+                        if ( $attachment->post_author == $user_id || $attachment->post_author == $current_user_id || $attachment->post_author == 0 ) {
+                            return true;
+                        }
+                    } else {
+                        // If no user ID is provided, check if current user is admin
+                        if ( $is_admin ) {
+                            return true;
+                        }
+                        // If no user ID is provided, check if the attachment has no author
+                        if ( $attachment->post_author == $current_user_id || $attachment->post_author == 0 ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Validates attachment ownership and updates the user meta and post author.
+     * Used for IDOR-safe saving on both Upload and Avatar fields.
+     *
+     * @param string|int $attachment_id The attachment post ID.
+     * @param array      $field         The field definition array (must contain 'meta-name').
+     * @param int        $user_id       The user ID to save for.
+     */
+    if ( !function_exists( 'wppb_save_attachment_id' ) ) {
+        function wppb_save_attachment_id( $attachment_id, $field, $user_id ) {
+            // Verify that the attachment either doesn't exist or already belongs to the user
+            if ( wppb_verify_attachment_id( $attachment_id, $user_id ) ) {
+                update_user_meta( $user_id, $field['meta-name'], absint( $attachment_id ) );
+                wp_update_post( array(
+                    'ID'          => absint( trim( $attachment_id ) ),
+                    'post_author' => $user_id
+                ) );
+            } else {
+                update_user_meta( $user_id, $field['meta-name'], '' );
+            }
+        }
+    }
+}
+
+function wppb_check_that_field_is_defined( $meta_name, $field_types = array() ){
+
+    if( empty( $meta_name ) )
+        return false;
+
+    $defined_fields = apply_filters( 'wppb_form_fields', get_option( 'wppb_manage_fields' ), array( 'context' => 'upload_helper', 'upload_meta_name' => $meta_name ) );
+
+    if( empty( $defined_fields ) )
+        return false;
+    else {
+
+        if( empty( $field_types ) ){
+            foreach( $defined_fields as $field ){
+
+                if( $field['meta-name'] == $meta_name )
+                    return true;
+
+            }
+        } else {
+            foreach( $defined_fields as $field ){
+
+                if( in_array( $field['field'], $field_types ) && $field['meta-name'] == $meta_name )
+                    return true;
+
+            }
+        }
+
+    }
+
+    return false;
+
 }

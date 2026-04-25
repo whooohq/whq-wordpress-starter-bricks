@@ -66,7 +66,7 @@ class Auth extends Instance
 	 */
 	public function registration_errors($errors)
 	{
-		if (Conf::val('gg') && Conf::val('recapt_register')) {
+		if (Conf::val('cf') && Conf::val('recapt_register')) {
 			try {
 				$this->cls('Captcha')->authenticate(); // Need to be before WP auth check
 			} catch (\Exception $ex) {
@@ -88,7 +88,7 @@ class Auth extends Instance
 	 */
 	public function lostpassword_errors($errors)
 	{
-		if (Conf::val('gg') && Conf::val('recapt_forget')) {
+		if (Conf::val('cf') && Conf::val('recapt_forget')) {
 			try {
 				$this->cls('Captcha')->authenticate(); // Need to be before WP auth check
 			} catch (\Exception $ex) {
@@ -248,8 +248,8 @@ class Auth extends Instance
 			}
 		}
 
-		// Google reCAPTCHA validate
-		if (!defined('DOLOGIN_ERR') && Conf::val('gg')) { #  && SMS::is_dry_run()
+		// reCAPTCHA validate
+		if (!defined('DOLOGIN_ERR') && Conf::val('cf')) { #  && SMS::is_dry_run()
 			try {
 				$this->cls('Captcha')->authenticate(); // Need to be before WP auth check
 			} catch (\Exception $ex) {

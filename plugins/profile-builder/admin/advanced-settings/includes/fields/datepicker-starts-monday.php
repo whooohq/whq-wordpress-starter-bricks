@@ -1,5 +1,8 @@
 <?php
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 function wppb_toolbox_datepicker_starts_on_monday( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){
 	$field_id = $field['meta-name'];
 

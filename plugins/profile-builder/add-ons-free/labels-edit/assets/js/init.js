@@ -8,7 +8,8 @@ function wppb_le_chosen() {
     jQuery( ".chosen-select, .mb-select" ).chosen( {
         disable_search_threshold: 5,
         no_results_text: "Nothing found!",
-        width: "80%"
+        width: "80%",
+        search_contains: true
     } );
 }
 

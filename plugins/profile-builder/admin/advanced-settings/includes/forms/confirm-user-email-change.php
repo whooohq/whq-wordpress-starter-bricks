@@ -1,10 +1,16 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 if ( !current_user_can( 'manage_options' ) )
     add_filter( 'wppb_email_confirmation_on_user_email_change', '__return_true' );
 
 
-// get transient check key
+/**
+ * Get transient check key
+ *
+ * @return string
+ */
 function wppb_toolbox_pending_email_change_request_transient_key() {
     $current_user = wp_get_current_user();
     $pending_change_request_data = get_user_meta($current_user->ID, '_wppb_pending_email_change_request', true);
@@ -20,7 +26,11 @@ function wppb_toolbox_pending_email_change_request_transient_key() {
 add_filter('wppb_pending_email_change_transient_key','wppb_toolbox_pending_email_change_request_transient_key');
 
 
-// get new email address
+/**
+ * Get new email address
+ *
+ * @return mixed|string
+ */
 function wppb_toolbox_pending_new_email_address() {
     $current_user = wp_get_current_user();
     $pending_change_request_data = get_user_meta($current_user->ID, '_wppb_pending_email_change_request', true);
@@ -34,7 +44,11 @@ function wppb_toolbox_pending_new_email_address() {
 add_filter('wppb_new_email_address','wppb_toolbox_pending_new_email_address');
 
 
-// set email input status
+/**
+ * Set email input status
+ *
+ * @return string
+ */
 function wppb_toolbox_check_pending_email() {
     $current_user = wp_get_current_user();
     $unapproved_email_address = wppb_user_meta_exists( $current_user->ID, '_wppb_epaa_email' );
@@ -57,7 +71,11 @@ function wppb_toolbox_check_pending_email() {
 add_filter('wppb_set_input_status','wppb_toolbox_check_pending_email');
 
 
-// check if approval is needed
+/**
+ * Check if approval is needed
+ *
+ * @return string
+ */
 function wppb_toolbox_check_approval() {
     $approval_needed = 'no';
     $all_fields = get_option( 'wppb_manage_fields' );
@@ -76,7 +94,13 @@ function wppb_toolbox_check_approval() {
 add_filter('wppb_check_approval_activation','wppb_toolbox_check_approval');
 
 
-// handle email change request notification (send if admin approval is not active)
+/**
+ * Handle email change request notification
+ * - send if admin approval is not active
+ *
+ * @param $input_email
+ * @return mixed|string
+ */
 function wppb_toolbox_handle_email_change_request( $input_email ) {
     if( apply_filters( 'wppb_email_confirmation_on_user_email_change', false ) && is_user_logged_in() && !isset( $_GET['wppb_epaa_review_users'] )) {
         $current_user = wp_get_current_user();
@@ -112,7 +136,12 @@ function wppb_toolbox_handle_email_change_request( $input_email ) {
 add_filter( 'wppb_before_processing_email_from_forms', 'wppb_toolbox_handle_email_change_request' );
 
 
-// edit content and send email change request notification
+/**
+ * Edit content and send email change request notification
+ *
+ * @param $new_email_address
+ * @return void
+ */
 function wppb_toolbox_send_change_request_mail( $new_email_address ) {
 
     $needs_approval = apply_filters( 'wppb_check_approval_activation','' );
@@ -139,7 +168,11 @@ function wppb_toolbox_send_change_request_mail( $new_email_address ) {
 
     $pending_request_nonce = get_user_meta($current_user->ID,'_wppb_email_change_request_nonce',true);
 
-    $arr_params = array( 'wppb_email_change_action' => 'update_email_address' ,'wppb_new_user_email' => $hash, '_wpnonce' => $pending_request_nonce );
+    $arr_params = array(
+        'wppb_email_change_action' => 'update_email_address',
+        'wppb_new_user_email' => $hash,
+        '_wpnonce' => $pending_request_nonce
+    );
 
     $confirmation_url = add_query_arg($arr_params, $current_url);
 
@@ -158,7 +191,11 @@ function wppb_toolbox_send_change_request_mail( $new_email_address ) {
 add_action('wppb_send_mail_address_change_request','wppb_toolbox_send_change_request_mail');
 
 
-// update user email | delete transient | delete change request user meta
+/**
+ * Update user email | delete transient | delete change request user meta
+ *
+ * @return void
+ */
 function wppb_toolbox_change_user_email_address() {
 
     if( !isset( $_GET['wppb_new_user_email'] ) )
@@ -182,12 +219,57 @@ function wppb_toolbox_change_user_email_address() {
         }
 
         delete_transient('wppb_pending_email_change_request_exists_' . $transient_check_key );
+
+        // remove unnecessary params
+        $current_url = remove_query_arg( array_keys( $_GET ), wppb_curpageurl());
+        $email_changed_success_nonce = wp_create_nonce( '_wppb_email_changed_success_nonce' );
+
+        $arr_params = array(
+            'wppb_user_email_changed' => 'success',
+            '_wpnonce' => $email_changed_success_nonce
+        );
+
+        // add email changed success params
+        $redirect_url = add_query_arg( $arr_params, $current_url );
+
+        wp_redirect( $redirect_url );
+        exit;
     }
 
 }
 
+/**
+ * Display user email updated success notification
+ *
+ * @param $form_name
+ * @param $form_id
+ * @param $form_type
+ * @param $is_elementor_edit_mode_or_divi_ajax
+ * @return void
+ */
+function wppb_toolbox_change_user_email_address_success_notice( $form_name, $form_id, $form_type, $is_elementor_edit_mode_or_divi_ajax ) {
 
-// cancel pending request (delete transient | delete change request user meta)
+    if ( !isset( $_GET['wppb_user_email_changed'] ) || $_GET['wppb_user_email_changed'] != 'success' || !isset( $_GET['_wpnonce'] ) || !wp_verify_nonce( sanitize_text_field( $_GET['_wpnonce'] ), '_wppb_email_changed_success_nonce' ) )
+        return;
+
+    // don't display this success message if the form is submitted after the confirmation link was accessed
+    if ( isset( $_POST['action'] ) && $_POST['action'] == 'edit_profile' )
+        return;
+
+    $notice_start   = apply_filters( 'wppb_form_message_tpl_start', '<p class="alert wppb-success" id="wppb_form_general_message">' );
+    $notice_message = apply_filters( 'wppb_user_email_changed_success_message', esc_html(__( 'Your email address has been successfully updated!', 'profile-builder' )) );
+    $notice_end     = apply_filters( 'wppb_form_message_tpl_end', '</p>' );
+
+    echo wp_kses_post( $notice_start . $notice_message . $notice_end );
+}
+add_action( 'wppb_before_edit_profile_fields', 'wppb_toolbox_change_user_email_address_success_notice', 10, 4 );
+
+
+/**
+ * Cancel pending request (delete transient | delete change request user meta)
+ *
+ * @return void
+ */
 function wppb_toolbox_cancel_pending_user_email_change_request() {
     $current_user = wp_get_current_user();
     $transient_check_key = apply_filters('wppb_pending_email_change_transient_key', '');
@@ -203,9 +285,17 @@ function wppb_toolbox_cancel_pending_user_email_change_request() {
     }
 
     delete_transient('wppb_pending_email_change_request_exists_' . $transient_check_key );
+
+    wp_redirect( remove_query_arg( array_keys( $_GET ), wppb_curpageurl() ) );
+    exit;
 }
 
 
+/**
+ * Handle email change request
+ *
+ * @return void
+ */
 function wppb_toolbox_handle_email_change() {
     if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce(sanitize_text_field( $_GET['_wpnonce'] ), 'wppb_email_change_action_nonce' ) && isset( $_GET['wppb_email_change_action'] ) ) {
         if ( $_GET['wppb_email_change_action'] == 'update_email_address' && isset( $_GET['wppb_new_user_email'] ) )
@@ -217,12 +307,22 @@ function wppb_toolbox_handle_email_change() {
 add_action('init', 'wppb_toolbox_handle_email_change');
 
 
-// if there is an email change request we don't update the email address until the confirmation link, sent to user by email, is clicked
+/**
+ * Handle user email address update
+ * - if there is an email change request we don't update the email address until the confirmation link, sent to user by email, is clicked
+ *
+ * @param $userdata
+ * @return mixed
+ */
 function wppb_toolbox_remove_email_from_userdata_update( $userdata ) {
-    $transient_check_key = apply_filters('wppb_pending_email_change_transient_key', '');
-    $transient_check = get_transient('wppb_pending_email_change_request_exists_' . $transient_check_key);
+    $transient_check_key = apply_filters( 'wppb_pending_email_change_transient_key', '' );
 
-    if ($transient_check !== false && ( !isset( $_POST['action'] ) || $_POST['action'] != 'register' ) )
+    if( empty( $transient_check_key ) )
+        return $userdata;
+
+    $transient_check = get_transient( 'wppb_pending_email_change_request_exists_' . $transient_check_key );
+
+    if ( $transient_check !== false && ( !isset( $_POST['action'] ) || $_POST['action'] != 'register' ) )
         unset( $userdata['user_email'] );
 
     return $userdata;

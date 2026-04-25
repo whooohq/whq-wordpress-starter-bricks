@@ -1,4 +1,16 @@
-jQuery(function($) {
+//Below is the js-cookie library, included here in-line to avoid loading another
+//JS file for such a small library. This is the minified version of the library.
+//Origin: https://github.com/js-cookie/js-cookie
+//License: MIT
+
+/*! js-cookie v3.0.5 | MIT */
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(e="undefined"!=typeof globalThis?globalThis:e||self,function(){var n=e.Cookies,o=e.Cookies=t();o.noConflict=function(){return e.Cookies=n,o}}())}(this,(function(){"use strict";function e(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var o in n)e[o]=n[o]}return e}var t=function t(n,o){function r(t,r,i){if("undefined"!=typeof document){"number"==typeof(i=e({},o,i)).expires&&(i.expires=new Date(Date.now()+864e5*i.expires)),i.expires&&(i.expires=i.expires.toUTCString()),t=encodeURIComponent(t).replace(/%(2[346B]|5E|60|7C)/g,decodeURIComponent).replace(/[()]/g,escape);var c="";for(var u in i)i[u]&&(c+="; "+u,!0!==i[u]&&(c+="="+i[u].split(";")[0]));return document.cookie=t+"="+n.write(r,t)+c}}return Object.create({set:r,get:function(e){if("undefined"!=typeof document&&(!arguments.length||e)){for(var t=document.cookie?document.cookie.split("; "):[],o={},r=0;r<t.length;r++){var i=t[r].split("="),c=i.slice(1).join("=");try{var u=decodeURIComponent(i[0]);if(o[u]=n.read(c,u),e===u)break}catch(e){}}return e?o[e]:o}},remove:function(t,n){r(t,"",e({},n,{expires:-1}))},withAttributes:function(n){return t(this.converter,e({},this.attributes,n))},withConverter:function(n){return t(e({},this.converter,n),this.attributes)}},{attributes:{value:Object.freeze(o)},converter:{value:Object.freeze(n)}})}({read:function(e){return'"'===e[0]&&(e=e.slice(1,-1)),e.replace(/(%[\dA-F]{2})+/gi,decodeURIComponent)},write:function(e){return encodeURIComponent(e).replace(/%(2[346BF]|3[AC-F]|40|5[BDE]|60|7[BCD])/g,decodeURIComponent)}},{path:"/"});return t}));
+
+//End of js-cookie library.
+
+jQuery(function ($) {
+	const elmCookies = window.Cookies.noConflict();
+
 	var widget = $('#ws_php_error_log'),
 
 		dashboardNoFilterOption = widget.find('#elm_dashboard_message_filter_all'),
@@ -13,6 +25,7 @@ jQuery(function($) {
 	function updateDashboardOptions() {
 		dashboardFilterOptions.prop('disabled', !dashboardCustomFilterOption.is(':checked'))
 	}
+
 	function updateEmailOptions() {
 		emailFilterOptions.prop('disabled', !emailCustomFilterOption.is(':checked'));
 	}
@@ -22,20 +35,20 @@ jQuery(function($) {
 	updateEmailOptions();
 
 	//Then refresh them when the user changes filter settings.
-	dashboardCustomFilterOption.add(dashboardNoFilterOption).on('change', function() {
+	dashboardCustomFilterOption.add(dashboardNoFilterOption).on('change', function () {
 		updateDashboardOptions();
 	});
-	emailCustomFilterOption.add(emailMatchFilterOption).on('change', function() {
+	emailCustomFilterOption.add(emailMatchFilterOption).on('change', function () {
 		updateEmailOptions();
 	});
 
 	//Handle the "Ignore" and "Mark as fixed" links.
-	widget.on('click', '.elm-ignore-message, .elm-mark-as-fixed', function() {
+	widget.on('click', '.elm-ignore-message, .elm-mark-as-fixed', function () {
 		var row = $(this).closest('.elm-entry'),
 			message = row.data('raw-message');
 
 		//Hide all copies of this message.
-		row.closest('.elm-log-entries').find('.elm-entry').filter(function() {
+		row.closest('.elm-log-entries').find('.elm-entry').filter(function () {
 			return $(this).data('raw-message') === message;
 		}).hide().remove();
 
@@ -45,13 +58,13 @@ jQuery(function($) {
 		} else {
 			action = AjawV1.getAction('elm-ignore-message');
 		}
-		action.post({ message: message });
+		action.post({message: message});
 
 		return false;
 	});
 
 	//And the "Unignore" and "Mark as not fixed" links.
-	widget.on('click', '.elm-unignore-message, .elm-mark-as-not-fixed', function() {
+	widget.on('click', '.elm-unignore-message, .elm-mark-as-not-fixed', function () {
 		var row = $(this).closest('tr'),
 			message = row.data('raw-message');
 
@@ -63,7 +76,7 @@ jQuery(function($) {
 		} else {
 			action = AjawV1.getAction('elm-unignore-message');
 		}
-		action.post({ message: message });
+		action.post({message: message});
 
 		return false;
 	});
@@ -122,7 +135,7 @@ jQuery(function($) {
 	});
 
 	//Handle the "Show X more" context link.
-	widget.on('click', '.elm-show-mundane-context', function() {
+	widget.on('click', '.elm-show-mundane-context', function () {
 		var link = $(this),
 			container = link.closest('.elm-context-group-content');
 		container.removeClass('elm-hide-mundane-items');
@@ -130,8 +143,73 @@ jQuery(function($) {
 		return false;
 	});
 
+	//Handle collapsible context groups.
+	//Remember the state of the last N toggled groups.
+	let groupVisibility = null;
+	const maxStoredGroupStates = 40; //Could fit about 120 in 4 KiB, but let's be conservative.
+	const groupStateCookie = 'elm_context_group_state';
+	widget.on('click', '.elm-context-group-caption', function () {
+		const $group = $(this).closest('.elm-context-group');
+		$group.toggleClass('elm-closed-context-group');
+
+		//Parse the stored group states.
+		if (groupVisibility === null) {
+			groupVisibility = new Map();
+			const cookie = elmCookies.get(groupStateCookie);
+			if (cookie && (typeof cookie === 'string')) {
+				try {
+					const storedStates = JSON.parse(cookie);
+					//Expected format: Array of [groupName, isOpen] pairs.
+					if (Array.isArray(storedStates)) {
+						for (const state of storedStates) {
+							if (
+								Array.isArray(state)
+								&& (typeof state[0] === 'string')
+								&& (typeof state[1] === 'boolean')
+							) {
+								groupVisibility.set(state[0], state[1]);
+							}
+						}
+					}
+				} catch (e) {
+					//Ignore errors.
+				}
+			}
+		}
+
+		const $entry = $group.closest('.elm-entry');
+		const groupName = $group.data('group');
+		const hash = $entry.data('hash');
+		if (groupName && hash) {
+			const key = hash + ':' + groupName;
+			//Always add the changed group state at the end of the map, so it stays
+			//sorted from oldest to most recent. JS maps use insertion order.
+			groupVisibility.delete(key);
+			groupVisibility.set(key, !$group.hasClass('elm-closed-context-group'));
+
+			if (groupVisibility.size > maxStoredGroupStates) {
+				//Delete the oldest entries.
+				const keys = Array.from(groupVisibility.keys());
+				const numKeysToDelete = groupVisibility.size - maxStoredGroupStates;
+				for (let i = 0; i < numKeysToDelete; i++) {
+					groupVisibility.delete(keys[i]);
+				}
+			}
+
+			//Store the group states in a cookie.
+			const states = Array.from(groupVisibility.entries());
+			elmCookies.set(
+				groupStateCookie,
+				JSON.stringify(states),
+				{expires: 90, sameSite: 'lax'}
+			);
+		}
+
+		return false;
+	});
+
 	//Handle the "Hide" link that hides the "Upgrade to Pro" notice.
-	widget.on('click', '.elm-hide-upgrade-notice', function(event) {
+	widget.on('click', '.elm-hide-upgrade-notice', function (event) {
 		$(this).closest('.elm-upgrade-to-pro-footer').hide();
 		AjawV1.getAction('elm-hide-pro-notice').post();
 		event.preventDefault();

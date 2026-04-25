@@ -3,7 +3,7 @@
 class WCML_Append_Gallery_To_Post_Media_Ids implements IWPML_Action {
 
 	public function add_hooks() {
-		add_filter( 'wpml_ids_of_media_used_in_post', array( $this, 'add_product_gallery_images' ), 10, 2 );
+		add_filter( 'wpml_ids_of_media_used_in_post', [ $this, 'add_product_gallery_images' ], 10, 2 );
 	}
 
 	/**

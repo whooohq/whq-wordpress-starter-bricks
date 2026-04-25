@@ -1,10 +1,16 @@
 <?php
 
 class WCML_Status_Taxonomies_UI extends WCML_Templates_Factory {
-
+	/** @var \woocommerce_wpml */
 	private $woocommerce_wpml;
+
+	/** @var \SitePress */
 	private $sitepress;
 
+	/**
+	 * @param \SitePress        $sitepress
+	 * @param \woocommerce_wpml $woocommerce_wpml
+	 */
 	public function __construct( $sitepress, $woocommerce_wpml ) {
 		parent::__construct();
 
@@ -62,12 +68,7 @@ class WCML_Status_Taxonomies_UI extends WCML_Templates_Factory {
 			$taxonomy_object                          = get_taxonomy( $taxonomy );
 			$taxonomies_data[ $key ]['name']          = ucfirst( ! empty( $taxonomy_object->labels->name ) ? $taxonomy_object->labels->name : $taxonomy_object->labels->singular_name );
 			$taxonomies_data[ $key ]['name_singular'] = ucfirst( $taxonomy_object->labels->singular_name );
-
-			if ( substr( $taxonomy, 0, 3 ) == 'pa_' ) {
-				$taxonomies_data[ $key ]['url'] = admin_url( 'admin.php?page=wpml-wcml&tab=product-attributes&taxonomy=' . $taxonomy );
-			} else {
-				$taxonomies_data[ $key ]['url'] = admin_url( 'admin.php?page=wpml-wcml&tab=' . $taxonomy );
-			}
+			$taxonomies_data[ $key ]['url']           = \WCML\Utilities\AdminUrl::getWPMLTaxonomyTranslation( $taxonomy );
 		}
 
 		return $taxonomies_data;

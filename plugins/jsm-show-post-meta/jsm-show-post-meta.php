@@ -10,10 +10,10 @@
  * License: GPLv3
  * License URI: https://www.gnu.org/licenses/gpl.txt
  * Description: Show post metadata (aka custom fields) in a metabox when editing posts / pages - a great tool for debugging issues with post metadata.
- * Requires PHP: 7.2.34
- * Requires At Least: 5.5
- * Tested Up To: 6.2.2
- * Version: 3.1.1
+ * Requires PHP: 7.4.33
+ * Requires At Least: 6.0
+ * Tested Up To: 6.9.4
+ * Version: 4.8.0
  *
  * Version Numbering: {major}.{minor}.{bugfix}[-{stage}.{level}]
  *
@@ -22,7 +22,7 @@
  *      {bugfix}        Backwards-compatible bug fixes or small improvements.
  *      {stage}.{level} Pre-production release: dev < a (alpha) < b (beta) < rc (release candidate).
  *
- * Copyright 2016-2023 Jean-Sebastien Morisset (https://surniaulula.com/)
+ * Copyright 2016-2026 Jean-Sebastien Morisset (https://surniaulula.com/)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -45,7 +45,6 @@ if ( ! class_exists( 'JsmSpm' ) ) {
 			require_once $plugin_dir . 'lib/config.php';
 
 			JsmSpmConfig::set_constants( __FILE__ );
-
 			JsmSpmConfig::require_libs( __FILE__ );
 
 			add_action( 'init', array( $this, 'init_textdomain' ) );

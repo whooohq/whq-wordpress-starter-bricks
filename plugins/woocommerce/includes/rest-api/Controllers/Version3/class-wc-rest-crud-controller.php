@@ -166,7 +166,21 @@ abstract class WC_REST_CRUD_Controller extends WC_REST_Posts_Controller {
 				return $object;
 			}
 
-			$object->save();
+			try {
+				$object->save();
+			} catch ( Exception $e ) {
+				$error = "woocommerce_rest_{$this->post_type}_not_created";
+
+				wc_get_logger()->error(
+					$e->getMessage(),
+					array(
+						'source' => 'woocommerce-rest-api',
+						'error'  => $error,
+						'code'   => 400,
+					)
+				);
+				return new WP_Error( $error, $e->getMessage(), array( 'status' => 400 ) );
+			}
 
 			return $this->get_object( $object->get_id() );
 		} catch ( WC_Data_Exception $e ) {
@@ -285,8 +299,9 @@ abstract class WC_REST_CRUD_Controller extends WC_REST_Posts_Controller {
 		$args['s']                   = $request['search'];
 		$args['fields']              = $this->get_fields_for_response( $request );
 
-		if ( 'date' === $args['orderby'] ) {
-			$args['orderby'] = 'date ID';
+		// Add ID to orderby for consistency with pagination.
+		if ( in_array( $args['orderby'], array( 'date', 'modified' ), true ) ) {
+			$args['orderby'] = $args['orderby'] . ' ID';
 		}
 
 		$date_query = array();
@@ -354,7 +369,7 @@ abstract class WC_REST_CRUD_Controller extends WC_REST_Posts_Controller {
 		$result = $query->query( $query_args );
 
 		$total_posts = $query->found_posts;
-		if ( $total_posts < 1 ) {
+		if ( $total_posts < 1 && isset( $query_args['paged'] ) && absint( $query_args['paged'] ) > 1 ) {
 			// Out-of-bounds, run the query again without LIMIT for total count.
 			unset( $query_args['paged'] );
 			$count_query = new WP_Query();

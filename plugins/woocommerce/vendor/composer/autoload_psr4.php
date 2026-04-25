@@ -6,15 +6,14 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
-    'Symfony\\Component\\CssSelector\\' => array($vendorDir . '/symfony/css-selector'),
-    'Sabberworm\\CSS\\' => array($vendorDir . '/sabberworm/php-css-parser/src'),
-    'Pelago\\Emogrifier\\' => array($vendorDir . '/pelago/emogrifier/src'),
+    'WP\\MCP\\' => array($vendorDir . '/wordpress/mcp-adapter/includes'),
+    'Opis\\Uri\\' => array($vendorDir . '/opis/uri/src'),
+    'Opis\\String\\' => array($vendorDir . '/opis/string/src'),
+    'Opis\\JsonSchema\\' => array($vendorDir . '/opis/json-schema/src'),
     'MaxMind\\Db\\' => array($vendorDir . '/maxmind-db/reader/src/MaxMind/Db'),
     'Composer\\Installers\\' => array($vendorDir . '/composer/installers/src/Composer/Installers'),
     'Automattic\\WooCommerce\\Vendor\\' => array($baseDir . '/lib/packages'),
-    'Automattic\\WooCommerce\\StoreApi\\' => array($baseDir . '/packages/woocommerce-blocks/src/StoreApi'),
-    'Automattic\\WooCommerce\\Blocks\\' => array($baseDir . '/packages/woocommerce-blocks/src'),
+    'Automattic\\WooCommerce\\Blueprint\\' => array($baseDir . '/packages/blueprint/src'),
     'Automattic\\WooCommerce\\' => array($baseDir . '/src'),
     'Automattic\\Jetpack\\Autoloader\\' => array($vendorDir . '/automattic/jetpack-autoloader/src'),
 );

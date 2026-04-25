@@ -45,7 +45,7 @@ class WCML_Requests {
 
 			$wcml_file_path_sync = filter_input( INPUT_POST, 'wcml_file_path_sync', FILTER_SANITIZE_NUMBER_INT );
 
-			$woocommerce_wpml->settings['file_path_sync'] = $wcml_file_path_sync;
+			$woocommerce_wpml->settings[ \WCML_Downloadable_Products::SYNC_MODE_SETTING_KEY ] = $wcml_file_path_sync;
 
 			if ( isset( $_POST['cart_sync_lang'] ) && isset( $_POST['cart_sync_currencies'] ) ) {
 				$woocommerce_wpml->settings['cart_sync']['lang_switch']     = (int) filter_input( INPUT_POST, 'cart_sync_lang', FILTER_SANITIZE_NUMBER_INT );

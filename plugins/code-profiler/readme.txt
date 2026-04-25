@@ -1,9 +1,9 @@
 === Code Profiler - WordPress Performance Profiling and Debugging Made Easy ===
 Contributors: bruandet, nintechnet
-Tags: profiler, debug, optimize, performance, seo, benchmark, statistics, debugging, speed, profiling
+Tags: profiler, debug, optimize, performance, benchmark
 Requires at least: 5.0
-Tested up to: 6.3
-Stable tag: 1.6.4
+Tested up to: 6.9
+Stable tag: 1.9.2
 License: GPLv3 or later
 Requires PHP: 7.1
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -16,7 +16,7 @@ A profiler to measure the performance of your WordPress plugins and themes.
 
 Code Profiler helps you to measure the performance of your plugins and themes at the PHP level and to quickly find any potential problem in your WordPress installation.
 
-You can profile the frontend and backend of WordPress, a custom URL, or even send a POST payload, custom cookies and HTTP headers to profile a contact form, a checkout process or an AJAX action among many other possibilities.
+You can profile the frontend and backend of WordPress, as well a cron events, a custom URL, send a POST payload, custom cookies and HTTP headers to profile a contact form, a checkout process or an AJAX action among many other possibilities.
 
 It generates an extremely detailed and easy to read analysis in the form of charts and tables that shows not only which plugin or theme, but also which PHP script, class, method and function is slowing down your website. It displays many useful additional information such as database queries, file I/O operations and disk I/O usage as well.
 
@@ -43,7 +43,7 @@ Install, activate it and you can start profiling your site right away.
 * [Pro] Export all tables and charts in CSV file format.
 * [Pro] Filtering options
 
-Learn more about [Code Profiler Pro](https://code-profiler.com/).
+Learn more about [Code Profiler Pro](https://nintechnet.com/codeprofiler/).
 
 == Frequently Asked Questions ==
 
@@ -51,31 +51,13 @@ Learn more about [Code Profiler Pro](https://code-profiler.com/).
 
 They are completely different: Code Profiler analyzes the code performance of your plugins and themes on your server, at the PHP level. Google PageSpeed and GTmetrix, instead, analyze the content of a web page from a browser's perspective.
 
-= Will Code Profiler work if I have a caching plugin or a PHP opcode cache, or if my website is using a CDN service? =
-
-In most cases, Code Profiler will be able to bypass caching from plugins and CDN services, as well as your PHP opcode cache. If there were a problem, it would warn you about it.
-
-= Why do I see numbers such as "3E-06" or "1.2E-05" after opening the CSV file with my spreadsheet editor? =
-
-Spreadsheet editors such as LibreOffice Calc and Microsoft Excel can use scientific exponential notation to display very small numbers, for instance, 0.000025 will become 2.5e-5. Select the whole column of numbers and, in the toolbar of your spreadsheet editor, click the button to increase the number of decimals to 6.
-
-= Why do some scripts show an execution time of 0 second? =
-
-That can happen if your PHP version is 7.1 or 7.2. With those versions, Code Profiler can only use microseconds for its metrics, while with versions 7.3 and above it can use the system's high resolution time in nanoseconds. It can also happen if a PHP script has only a couple of lines of code, its execution time is too quick to be measured, hence it will show 0.
-
 = Do I need to deactivate Code Profiler when I'm not using it ? =
 
 There's no need to deactivate Code Profiler when you don't use it, it has no performance impact on your site.
-
-= Why does Code Profiler warn me that I have multiple plugins using Composer? =
-
-Composer, a tool for dependency management in PHP, is included in many popular plugins and themes. It is used to autoload PHP classes.
-Code Profiler will inform you if two or more activated plugins use it because you will need to take it into consideration when reading and interpreting the results. Let's take an example:
-Assuming you have four plugins, #1, #2, #3 and #4. Both plugins #1 and #4 include and require Composer. WordPress will start and load plugin #1, which will run an instance of Composer to load its classes. Immediately after, WordPress will load plugins #2 and #3. Then, it will load plugin #4, which too will need to load its classes. However, plugin #4 will not start a new instance of Composer but, instead, will rely on the one from plugin #1 to load its own classes.
-As a result, the execution time of plugin #1 will increase (its instance of Composer is used to load classes for plugin #4 too), while the execution time of plugin #4 will decrease (it doesn't need to start a new instance of Composer). Therefore, if you have a dozen or more plugins using Composer, it is important to take into consideration that the execution time of plugin #1 may be much higher than other plugins.
-Also, assuming you are a developer and just want to profile a plugin that you wrote and that includes Composer, you will need to disable any other plugin using Composer in order to get the most accurate results for your plugin only.
+Because an update can affect the performance of your site, you should consider running it after every plugin or theme update.
 
 = Is Code Profiler multisite compatible? =
+
 Code Profiler is multisite compatible. Note however that for security reasons, only the superadmin can run it.
 
 = What are the requirements for running Code Profiler? =
@@ -110,6 +92,130 @@ Code Profiler does not collect any private data from you or your visitors. It do
 12. [Pro version]: Remote connections monitoring.
 
 == Changelog ==
+
+= 1.9.2 (24 April 2026) =
+
+* Removed the warning about composer; it was confusing and has become obsolete.
+* Updated the profiler's browser signatures.
+* [Pro version] : Removed a double-slash bug in file paths.
+* Fixed a bug where the HTTP response log could be empty.
+
+= 1.9.1 (19 March 2026) =
+
+* Cron events can be profiled with WP-CLI using the `--wpcron` parameter.
+
+= 1.9 (05 February 2026) =
+
+* It is now possible to profile cron events: on the profiler main page, click "WP-Cron" and select the cron to profile.
+* Updated browser's signatures.
+* Updated Chartjs library.
+* Small fixes and adjustments.
+
+= 1.8.2 (23 December 2025) =
+
+* A warning message will be displayed if the Xdebug extension is loaded as it can impact the profiler's results.
+* [Pro version] : Code Profiler will warn if SAVEQUERIES has been disabled by the user.
+
+= 1.8.1 (09 Octobre 2025) =
+
+* When profiling with WP-CLI, the results can be returned in JSON-encoded or CSV format, using the new `--out=<json|csv>` parameter. The output can be redirected to a file, e.g., `wp code-profiler run --out=csv > /tmp/results.csv`.
+
+= 1.8 (1st October, 2025) =
+
+* This version introduces a new feature requested by many users: the possibility to re-run an existing profile. In the "Profiles List" table, click on the "Re-run" row action link and Code Profiler will run again the profile with the same options and parameters.
+* Fixed an "Automatic conversion of false to array is deprecated" message in PHP 8.1+.
+* Small fixes and adjustments.
+
+= 1.7.7 (23 June, 2025) =
+
+* Fixed an issue where the profiler wasn't able to detect if the connection was over HTTPS when running WP CLI.
+* Fixed a potential "Function _load_textdomain_just_in_time was called incorrectly" notice when running WP CLI.
+
+= 1.7.6 (19 June, 2025) =
+
+* You can now enter a raw POST payload as opposed to a formatted one, by selecting the "Profiler > Advanced Options > HTTP Method > Content-type > application/x-www-form-urlencoded (raw)" option.
+* [Free version] : Fixed a PHP "WP_List_Table::__set(): The property is_empty is not declared" error.
+* The "HTTP response log" will show the POST payload (if any) for the last profile.
+* Updated ChartJS.
+* Small fixes and adjustments.
+
+= 1.7.5 (06 May, 2025) =
+
+* An option to enable PHP error debugging when the profiler is running was added. It is enabled by default and can be turned off in the "Settings" page.
+* Updated ChartJS.
+* Fixed a few deprecated notices in translation loading, when starting the profiler.
+
+= 1.7.4 (April 11, 2025) =
+
+* Prevent duplicate items in the "File and folder exclusions" list.
+* Fixed a PHP 8.4 "fgetcsv(): the $escape parameter must be provided" deprecated notice.
+* [Pro version] : Fixed several PHP 8.4 "fputcsv(): the $escape parameter must be provided" deprecated notices.
+* Ensure compatibility with the latest WordPress 6.8.
+* Updated ChartJS.
+
+= 1.7.3 (February 15, 2025) =
+
+* Updated ChartJS.
+* Updated browser's signatures.
+* Truncated exported CSV data to max 32,000 characters per cell to prevent a "maximum numbers of characters per cell was exceeded" error in Libre Office and similar spreadsheet apps.
+
+= 1.7.2 (November 26, 2024) =
+
+* The profiler will now save to a log the HTTP headers and body response of the last profile. It can be useful to debug errors. To view the log, click on the "Logs" tab of the main page.
+* Fixed a "Function _load_textdomain_just_in_time was called incorrectly" PHP notice.
+* Updated ChartJS.
+* Small fixes and adjustments.
+
+= 1.7.1 (September 27, 2024) =
+
+* Fixed a "Security keys do not match" error message that occurred when some object caching plugins were installed on the site. The profiler will no longer temporarily save the key to the database to prevent it from being cached by such plugins.
+* Fixed a fatal error when profiling a child site on a multisite installation with WP CLI.
+* [Pro version] : Fixed a bug with some row action links in the "Methods and Functions Performance" that were displaying "View function" instead of "View script" when the script was loaded either with the PHP "require" or "include" expression.
+
+= 1.7 (August 14, 2024) =
+
+* The system information report includes now an AJAX API test to make sure the endpoint is accessible to the profiler.
+* If the profiler returned a 301/302 HTTP redirection error message, the new location would be written to the log.
+* Updated ChartJS.
+
+= 1.6.10 (May 30, 2024) =
+
+* Fixed a bug that affected Microsoft Windows OS only. In some cases, it wasn't possible to view, delete or rename a profile.
+
+= 1.6.9 (May 27, 2024) =
+
+* You can now exclude files and folders from the profiling process. See "Advanced Options > File and folder exclusions" in the profiler's main page.
+* Fixed a bug where optional HTTP headers could be truncated.
+* Replaced all calls to glob() with DirectoryIterator() to make file search compatible with remote files.
+* Updated ChartJS.
+* Updated browser's signatures.
+
+= 1.6.8 (February 14, 2024) =
+
+* Fixed an issue in the theme switcher where, in some cases, a child theme could throw an error because the wrong stylesheet was loaded.
+* Improved the parsing of the backtrace when attempting to find which plugin or theme initiated a remote connection.
+
+= 1.6.7 (February 10, 2024) =
+
+* If you want to profile different themes, you can now select which theme to load when the profiler is running.
+* Updated ChartJS.
+
+= 1.6.6 (December 6, 2023) =
+
+* You can now profile JSON-encoded payloads: In the profiler's main page, click the "Advanced Options" button, then select "HTTP Method > POST > Content-type > application/json".
+* The Accuracy/precision level is now displayed in the tooltip when viewing a profile.
+* Performance and memory optimization.
+* [Pro version] : In the "Methods and Functions Performance" section "{main}" is now replaced with the corresponding include/require function (e.g., {include_once} , {require} etc).
+* [Pro version] : 2 new columns were added to the "File I/O List": Status and Resource id. The former will display if the file was closed or not, which could be helpful to detect plugins or themes that open files but don't close them before exiting, the latter the ID of that resource.
+* [Free version]: The directory were the profiler stores its logs can be user-defined, by adding the `CODE_PROFILER_UPLOAD_DIR` constant to your wp-config.php (e.g., `define('CODE_PROFILER_UPLOAD_DIR', '/full/path/to/folder');`.
+* [Pro version]: The directory were the profiler stores its logs can be user-defined, by adding the `CODE_PROFILER_PRO_UPLOAD_DIR` constant to your wp-config.php (e.g., `define('CODE_PROFILER_PRO_UPLOAD_DIR', '/full/path/to/folder');`.
+* Several small fixes and adjustments.
+
+= 1.6.5 (October 5, 2023) =
+
+* Updated Charts.js libraries.
+* Fixed potential PHP error when calling number_format function.
+* Small fixes and adjustments.
 
 = 1.6.4 (August 3, 2023) =
 

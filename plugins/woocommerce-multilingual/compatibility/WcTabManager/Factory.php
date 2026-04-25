@@ -13,6 +13,11 @@ class Factory extends ComponentFactory {
 	 * @inheritDoc
 	 */
 	public function create() {
-		return new WCML_Tab_Manager( getSitePress(), self::getWooCommerce(), getWooCommerceWpml(), self::getWpdb(), self::getElementTranslationPackage() );
+		$hooks = [];
+
+		$hooks[] = new WCML_Tab_Manager( getSitePress(), getWooCommerceWpml(), self::getWpdb(), self::getElementTranslationPackage() );
+		$hooks[] = new TranslationEditor\GroupsAndLabels();
+
+		return $hooks;
 	}
 }

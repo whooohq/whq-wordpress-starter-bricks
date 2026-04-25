@@ -7,8 +7,12 @@
 
 namespace Automattic\Jetpack\Connection;
 
+use IXR_Error;
+
 /**
  * Registers the XML-RPC methods for Connections.
+ *
+ * @phan-constructor-used-for-side-effects
  */
 class XMLRPC_Connector {
 	/**
@@ -69,10 +73,10 @@ class XMLRPC_Connector {
 				$code = -10520;
 			}
 
-			if ( ! class_exists( \IXR_Error::class ) ) {
+			if ( ! class_exists( IXR_Error::class ) ) {
 				require_once ABSPATH . WPINC . '/class-IXR.php';
 			}
-			return new \IXR_Error(
+			return new IXR_Error(
 				$code,
 				sprintf( 'Jetpack: [%s] %s', $data->get_error_code(), $data->get_error_message() )
 			);

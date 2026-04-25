@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -20,12 +20,16 @@ class CodeProfiler_Profiler {
 	static $tick_list;
 	static $buffer;
 	static $metrics;
+	static $fh;
 	static $connections_list = [];
 	static $connections_start;
+	static $exclusions = [];
 	private $tmp_iostats;
 	private $tmp_summary;
 	private $tmp_diskio;
-	private $tmp_ticks;
+	private $tmp_calls;
+	private $tmp_connections;
+	private $tmp_rerun;
 
 	/**
 	 * Initialize
@@ -38,24 +42,57 @@ class CodeProfiler_Profiler {
 											CODE_PROFILER_TMP_SUMMARY_LOG;
 		$this->tmp_iostats 		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
 											CODE_PROFILER_TMP_IOSTATS_LOG;
-		$this->tmp_ticks   		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
-											CODE_PROFILER_TMP_TICKS_LOG;
+		$this->tmp_calls   		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
+											CODE_PROFILER_TMP_CALLS_LOG;
 		$this->tmp_diskio  		= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
 											CODE_PROFILER_TMP_DISKIO_LOG;
 		$this->tmp_connections	= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
 											CODE_PROFILER_TMP_CONNECTIONS_LOG;
-
-		// Clear the temporary log because the buffer will be written
-		// with the FILE_APPEND flag
-		if ( file_exists( $this->tmp_ticks ) ) {
-			unlink( $this->tmp_ticks );
-		}
+		$this->tmp_rerun			= CODE_PROFILER_UPLOAD_DIR ."/$microtime." .
+											CODE_PROFILER_TMP_RERUN_LOG;
 
 		if ( function_exists('hrtime') ) {
 			// PHP >=7.3
 			self::$metrics = 'hrtime';
 		} else {
 			self::$metrics = 'microtime';
+		}
+
+		// Select theme (stylesheet::template)
+		if (! empty( $_SERVER['HTTP_THEME'] ) ) {
+
+			$theme = explode('::', $_SERVER['HTTP_THEME'] );
+			if (! empty( $theme[1] ) ) {
+				define('CODE_PROFILER_STYLESHEET',	sanitize_file_name( $theme[0] ) );
+				define('CODE_PROFILER_TEMPLATE',		sanitize_file_name( $theme[1] ) );
+
+				if ( is_file( WP_CONTENT_DIR .'/themes/'. CODE_PROFILER_STYLESHEET .'/style.css' ) ) {
+
+					add_filter('pre_option_template', function () {
+						return CODE_PROFILER_TEMPLATE;
+					}, 1000 );
+
+					add_filter('pre_option_stylesheet', function () {
+						return CODE_PROFILER_STYLESHEET;
+					}, 1000 );
+
+					code_profiler_log_debug(
+						sprintf(
+							// We cannot load translation here.
+							'Setting theme to %s',
+							CODE_PROFILER_STYLESHEET
+						)
+					);
+				} else {
+					code_profiler_log_error(
+						sprintf(
+							// We cannot load translation here.
+							'Unable to switch theme, %s not found',
+							CODE_PROFILER_STYLESHEET
+						)
+					);
+				}
+			}
 		}
 
 		$cp_options = get_option('code-profiler');
@@ -76,18 +113,32 @@ class CodeProfiler_Profiler {
 		}
 		code_profiler_log_debug(
 			sprintf(
-				esc_html__('Setting size of memory buffer to %sMB', 'code-profiler'),
+				// We cannot load translation here.
+				'Setting size of memory buffer to %sMB',
 				self::$buffer / 1000000
 			)
 		);
+
+		// File & folder exclusions
+		if ( isset( $cp_options['exclusions'] ) ) {
+			self::$exclusions = json_decode( $cp_options['exclusions'] );
+		}
 
 		add_filter('pre_http_request', [ $this, 'pre_http_request'], 10000, 3 );
 		add_action('http_api_debug', [ $this, 'http_api_debug'], 10000, 5 );
 		register_shutdown_function( [ $this, 'code_profiler_shutdown'] );
 		code_profiler_log_debug(
-			esc_html__('Starting profiler', 'code-profiler')
+			// We cannot load translation here.
+			'Starting profiler'
 		);
 		require 'class-stream.php';
+
+		// Clear the temporary log because the buffer will be appended to it
+		if ( file_exists( $this->tmp_calls ) ) {
+			unlink( $this->tmp_calls );
+		}
+		self::$fh = fopen( $this->tmp_calls, 'wb');
+
 		CodeProfiler_Stream::start();
 		register_tick_function( array( $this, 'code_profiler_tick_handler') );
 	}
@@ -99,8 +150,17 @@ class CodeProfiler_Profiler {
 
 		CodeProfiler_Stream::stop();
 
-		$summary['memory']	= memory_get_peak_usage();
-		$summary['queries']	= get_num_queries() - 2;
+		fclose( self::$fh );
+
+		// Summary file (metadata)
+		$summary = [];
+		if ( is_file( $this->tmp_rerun ) ) {
+			$summary['rerun'] = json_decode( file_get_contents( $this->tmp_rerun ), true );
+			unlink( $this->tmp_rerun );
+		}
+		$summary['memory']		= memory_get_peak_usage();
+		$summary['queries']		= get_num_queries() - 2;
+		$summary['precision']	= CODE_PROFILER_TICKS;
 		file_put_contents( $this->tmp_summary, json_encode( $summary ) );
 
 		// Catch potential error
@@ -122,9 +182,9 @@ class CodeProfiler_Profiler {
 			$msg = sprintf( $err_msg, $this->tmp_iostats );
 			code_profiler_log_error( $msg );
 		}
-		$res = file_put_contents( $this->tmp_ticks, self::$tick_list, FILE_APPEND );
+		$res = file_put_contents( $this->tmp_calls, self::$tick_list, FILE_APPEND );
 		if ( $res === false ) {
-			$msg = sprintf( $err_msg, $this->tmp_ticks );
+			$msg = sprintf( $err_msg, $this->tmp_calls );
 			code_profiler_log_error( $msg );
 		}
 		$res = file_put_contents(
@@ -169,11 +229,7 @@ class CodeProfiler_Profiler {
 		// Buffer can grow *very* big hence we flush it every 10MB by default
 		if ( strlen( self::$tick_list ) > self::$buffer ) {
 			CodeProfiler_Stream::stop();
-			file_put_contents(
-				$this->tmp_ticks,
-				self::$tick_list ."\t{$start}\t". $this->time() ."\n",
-				FILE_APPEND
-			);
+			fwrite( self::$fh, self::$tick_list ."\t{$start}\t". $this->time() ."\n" );
 			CodeProfiler_Stream::start();
 			self::$tick_list = '';
 

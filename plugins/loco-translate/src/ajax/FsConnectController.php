@@ -32,13 +32,13 @@ class Loco_ajax_FsConnectController extends Loco_mvc_AjaxController {
      * @param Loco_fs_File target path (should not exist)
      * @return bool
      */
-    private function authorizeMove( Loco_fs_File $source, Loco_fs_File $target = null ){
+    private function authorizeMove( Loco_fs_File $source, ?Loco_fs_File $target = null ){
         return $this->api->authorizeMove($source,$target);
     }
 
 
     /**
-     * @param Loco_fs_File new file path (should not exist)
+     * @param Loco_fs_File $file new file path (should not exist)
      * @return bool
      */
     private function authorizeCreate( Loco_fs_File $file ){
@@ -47,7 +47,7 @@ class Loco_ajax_FsConnectController extends Loco_mvc_AjaxController {
 
 
     /**
-     * @param Loco_fs_File file path to update (should exist)
+     * @param Loco_fs_File $file path to update (should exist)
      * @return bool
      */
     private function authorizeUpdate( Loco_fs_File $file ){
@@ -70,7 +70,7 @@ class Loco_ajax_FsConnectController extends Loco_mvc_AjaxController {
 
 
     /**
-     * @param Loco_fs_File path which may exist (update it) or may not (create it)
+     * @param Loco_fs_File $file path which may exist (update it) or may not (create it)
      * @return bool
      */
     private function authorizeUpload( Loco_fs_File $file ){

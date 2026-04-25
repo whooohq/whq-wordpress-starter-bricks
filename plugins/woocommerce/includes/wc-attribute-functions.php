@@ -6,6 +6,8 @@
  * @version 2.1.0
  */
 
+use Automattic\WooCommerce\Enums\ProductType;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -189,7 +191,7 @@ function wc_attribute_label( $name, $product = '' ) {
 		$all_labels = wc_get_attribute_taxonomy_labels();
 		$label      = isset( $all_labels[ $slug ] ) ? $all_labels[ $slug ] : $slug;
 	} elseif ( $product ) {
-		if ( $product->is_type( 'variation' ) ) {
+		if ( $product->is_type( ProductType::VARIATION ) ) {
 			$product = wc_get_product( $product->get_parent_id() );
 		}
 		$attributes = array();
@@ -605,6 +607,17 @@ function wc_create_attribute( $args ) {
 				array( 'meta_key' => 'attribute_pa_' . sanitize_title( $data['attribute_name'] ) ), // WPCS: slow query ok.
 				array( 'meta_key' => 'attribute_pa_' . sanitize_title( $old_slug ) ) // WPCS: slow query ok.
 			);
+
+			// Update global vars to reflect migration. This ensures any functions dealing with terms later in this request
+			// use the correct info.
+			global $wc_product_attributes;
+			if ( isset( $wc_product_attributes[ $old_taxonomy_name ] ) && ! isset( $wc_product_attributes[ $new_taxonomy_name ] ) ) {
+				$wc_product_attributes[ $new_taxonomy_name ] = $wc_product_attributes[ $old_taxonomy_name ];
+			}
+			global $wp_taxonomies;
+			if ( isset( $wp_taxonomies[ $old_taxonomy_name ] ) && ! isset( $wp_taxonomies[ $new_taxonomy_name ] ) ) {
+				$wp_taxonomies[ $new_taxonomy_name ] = $wp_taxonomies[ $old_taxonomy_name ]; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			}
 		}
 	}
 
@@ -632,6 +645,16 @@ function wc_update_attribute( $id, $args ) {
 	$attribute = wc_get_attribute( $id );
 
 	$args['id'] = $attribute ? $attribute->id : 0;
+
+	// When updating an existing attribute, populate any undefined args with the existing value.
+	// This prevents those values from being reset to their respective defaults.
+	if ( $args['id'] ) {
+		$args['has_archives'] = $args['has_archives'] ?? $attribute->has_archives;
+		$args['name']         = $args['name'] ?? $attribute->name;
+		$args['order_by']     = $args['order_by'] ?? $attribute->order_by;
+		$args['slug']         = $args['slug'] ?? $attribute->slug;
+		$args['type']         = $args['type'] ?? $attribute->type;
+	}
 
 	if ( $args['id'] && empty( $args['name'] ) ) {
 		$args['name'] = $attribute->name;

@@ -61,17 +61,27 @@ class PB_Elementor {
 		$this->include_widgets_files();
 
         if( version_compare( ELEMENTOR_VERSION, '3.5,', '>=' ) ){
+
             \Elementor\Plugin::instance()->widgets_manager->register( new PB_Elementor_Edit_Profile_Widget() );
             \Elementor\Plugin::instance()->widgets_manager->register( new PB_Elementor_Login_Widget() );
             \Elementor\Plugin::instance()->widgets_manager->register( new PB_Elementor_Recover_Password_Widget() );
             \Elementor\Plugin::instance()->widgets_manager->register( new PB_Elementor_Register_Widget() );
-            \Elementor\Plugin::instance()->widgets_manager->register( new PB_Elementor_User_Listing_Widget() );
+
+            if( defined( 'WPPB_PAID_PLUGIN_DIR' ) && file_exists( WPPB_PAID_PLUGIN_DIR . '/add-ons/user-listing/userlisting.php' ) ){
+                \Elementor\Plugin::instance()->widgets_manager->register( new PB_Elementor_User_Listing_Widget() );
+            }
+
         } else {
+
             \Elementor\Plugin::instance()->widgets_manager->register_widget_type( new PB_Elementor_Edit_Profile_Widget() );
             \Elementor\Plugin::instance()->widgets_manager->register_widget_type( new PB_Elementor_Login_Widget() );
             \Elementor\Plugin::instance()->widgets_manager->register_widget_type( new PB_Elementor_Recover_Password_Widget() );
             \Elementor\Plugin::instance()->widgets_manager->register_widget_type( new PB_Elementor_Register_Widget() );
-            \Elementor\Plugin::instance()->widgets_manager->register_widget_type( new PB_Elementor_User_Listing_Widget() );
+
+            if( defined( 'WPPB_PAID_PLUGIN_DIR' ) && file_exists( WPPB_PAID_PLUGIN_DIR . '/add-ons/user-listing/userlisting.php' ) ){
+                \Elementor\Plugin::instance()->widgets_manager->register_widget_type( new PB_Elementor_User_Listing_Widget() );
+            }
+
         }
 	}
 

@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 add_filter('wppb_send_credentials_checkbox_logic', 'wppb_toolbox_send_credentials_enabled', 10, 2);
 function wppb_toolbox_send_credentials_enabled($requestdata, $form){

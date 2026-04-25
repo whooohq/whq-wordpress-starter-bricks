@@ -21,10 +21,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.6.0
  */
-function cptui_about_assets() {
-	$current_screen = get_current_screen();
+function cptui_about_assets( $hook ) {
 
-	if ( ! is_object( $current_screen ) || 'toplevel_page_cptui_main_menu' !== $current_screen->base ) {
+	if ( 'toplevel_page_cptui_main_menu' !== $hook ) {
 		return;
 	}
 
@@ -47,6 +46,12 @@ function cptui_settings() {
 	?>
 	<div class="wrap about-wrap">
 		<?php
+		/**
+		 * Fires immediately after wrap div started on all of the cptui admin pages.
+		 *
+		 * @since 1.14.0
+		 */
+		do_action( 'cptui_inside_wrap' );
 
 		/**
 		 * Fires inside and at the top of the wrapper for the main plugin landing page.
@@ -80,30 +85,6 @@ function cptui_settings() {
 		 */
 		do_action( 'cptui_main_page_before_changelog' );
 		?>
-
-		<h2>
-			<?php
-			printf(
-			// translators: Placeholder will hold the plugin version.
-				esc_html__( "What's new in version %s", 'custom-post-type-ui' ),
-				esc_html( CPTUI_VERSION )
-			);
-			?>
-		</h2>
-		<div class="changelog about-integrations">
-			<div class="cptui-feature feature-section col three-col">
-				<div class="col">
-					<h2><?php esc_html_e( 'Post type descriptions', 'custom-post-type-ui' ); ?></h2>
-					<p><?php esc_html_e( 'We have updated a number of details around the post type description field. First we addressed issues with the Tools area when descriptions included quotes. Second we fixed an issue around stripping HTML from the field from previous security updates.', 'custom-post-type-ui' ); ?></p>
-					<h2><?php esc_html_e( 'Miscellaneous code cleanup and separation.', 'custom-post-type-ui' ); ?></h2>
-					<p><?php esc_html_e( 'Largely under the hood, but we have done some separation of our code and done more to help ensure code quality.', 'custom-post-type-ui' ); ?></p>
-					<h2><?php esc_html_e( 'Branding.', 'custom-post-type-ui' ); ?></h2>
-					<p><?php esc_html_e( 'We updated our branding for the plugin. Both within our UI but also on WordPress.org', 'custom-post-type-ui' ); ?></p>
-					<h2><?php esc_html_e( 'Miscellaneous.', 'custom-post-type-ui' ); ?></h2>
-					<p><?php esc_html_e( 'Added notes about some post type features also needing theme support declared for them to work. Fixed a pluralization issue with our UI and forms.', 'custom-post-type-ui' ); ?></p>
-				</div>
-			</div>
-		</div>
 
 		<div class="extranotes">
 			<?php
@@ -142,7 +123,7 @@ function cptui_pluginize_content() {
 
 			// Escaping $the_ad breaks the html.
 			printf(
-				'<p><a href="%s">%s</a></p>',
+				'<p><a href="%s" target="_blank">%s</a></p>',
 				esc_url( $ad['url'] ),
 				$the_ad // phpcs:ignore
 			);

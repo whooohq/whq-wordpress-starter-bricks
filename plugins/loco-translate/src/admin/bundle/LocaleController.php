@@ -31,7 +31,7 @@ class Loco_admin_bundle_LocaleController extends Loco_mvc_AdminController {
      */
     public function getHelpTabs(){
         return  [
-            __('Overview','default') => $this->viewSnippet('tab-locale-view'),
+            __('Overview','loco-translate') => $this->viewSnippet('tab-locale-view'),
         ];
     }
 
@@ -53,6 +53,14 @@ class Loco_admin_bundle_LocaleController extends Loco_mvc_AdminController {
         
         $tag = (string) $locale;
         $package = new Loco_package_Locale( $locale );
+        
+        // search for base language, unless it's a separate, installed language
+        if( $locale->lang !== (string) $locale ){
+            $fallback = new Loco_Locale($locale->lang);
+            if( ! $api->isInstalled($fallback) ){
+                $package->addLocale($fallback);
+            }
+        }
 
         // Get PO files for this locale
         $files = $package->findLocaleFiles();
@@ -154,6 +162,13 @@ class Loco_admin_bundle_LocaleController extends Loco_mvc_AdminController {
             'name' => $locale->getName(),
             'attr' => 'class="'.$locale->getIcon().'" lang="'.$locale->lang.'"',
         ] ) );
+        
+        // Sort each translation set alphabetically by bundle name...
+        foreach( array_keys($translations) as $type ){
+            usort( $translations[$type], function( ArrayAccess $a, ArrayAccess $b ):int { 
+                return strcasecmp($a['title'],$b['title']);
+            } );
+        }
 
         return $this->view( 'admin/bundle/locale', compact('breadcrumb','translations','types','npofiles','modified') );
     }

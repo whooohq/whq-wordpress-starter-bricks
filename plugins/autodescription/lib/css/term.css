@@ -27,16 +27,11 @@
 .tsf-term-checkbox-wrap {
 	display: inline-block;
 	margin-top: 14px;
-	margin-left: 2px;
+	margin-inline-start: 2px;
 	max-width: calc( 95% - 2px );
 }
 
-body.rtl .tsf-term-checkbox-wrap {
-	margin-left: 0;
-	margin-right: 2px;
-}
-
-@media only screen and (max-width: 782px) {
+@media only screen and ( max-width: 782px ) {
 	.tsf-term-button-wrap,
 	.tsf-term-select-wrap {
 		max-width: 100%;

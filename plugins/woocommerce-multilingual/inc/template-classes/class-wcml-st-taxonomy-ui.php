@@ -14,10 +14,10 @@ class WCML_St_Taxonomy_UI extends WCML_Templates_Factory {
 
 		if ( $this->taxonomy_obj->publicly_queryable ) {
 			$model = [
-				'link_url'   => admin_url( 'admin.php?page=wpml-wcml&tab=slugs' ),
+				'link_url'   => \WCML\Utilities\AdminUrl::getStoreURLTab(),
 				/* translators: %s is a taxonomy name */
-				'link_label' => sprintf( __( 'Set different slugs in different languages for %s on WooCommerce Multilingual & Multicurrency URLs translations page',
-					'woocommerce-multilingual' ), $this->taxonomy_obj->labels->name ),
+				'link_label' => sprintf( __( 'Set different slugs in different languages for %s on WPML Multilingual & Multicurrency for WooCommerce URLs translations page',
+				'woocommerce-multilingual' ), $this->taxonomy_obj->labels->name ),
 			];
 		} else {
 			$attrid = wc_attribute_taxonomy_id_by_name( $this->taxonomy_obj->name );
@@ -25,7 +25,7 @@ class WCML_St_Taxonomy_UI extends WCML_Templates_Factory {
 				'link_url'   => admin_url( 'edit.php?post_type=product&page=product_attributes&edit=' . $attrid ),
 				/* translators: %s is an attribute name */
 				'link_label' => sprintf( __( 'To translate the attribute slug, please set the option "Enable archives?" for the attribute %s in WooCommerce',
-					'woocommerce-multilingual' ), $this->taxonomy_obj->labels->name ),
+				'woocommerce-multilingual' ), $this->taxonomy_obj->labels->name ),
 			];
 
 		}

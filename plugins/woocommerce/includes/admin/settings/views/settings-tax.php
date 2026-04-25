@@ -21,7 +21,7 @@ $settings = array(
 		'id'       => 'woocommerce_prices_include_tax',
 		'default'  => 'no',
 		'type'     => 'radio',
-		'desc_tip' => __( 'This option is important as it will affect how you input prices. Changing it will not update existing products.', 'woocommerce' ),
+		'desc_tip' => __( 'This option is important as it will affect how you input prices. If you select "Yes", enter prices including your base location\'s tax rate, the baseline for tax calculations. Changing this option will not update existing products.', 'woocommerce' ),
 		'options'  => array(
 			'yes' => __( 'Yes, I will enter prices inclusive of tax', 'woocommerce' ),
 			'no'  => __( 'No, I will enter prices exclusive of tax', 'woocommerce' ),
@@ -98,6 +98,7 @@ $settings = array(
 	),
 
 	array( 'type' => 'conflict_error' ), // React mount point for embedded banner slotfill.
+	array( 'type' => 'add_settings_slot' ), // React mount point for settings slotfill.
 
 	array(
 		'title'       => __( 'Price display suffix', 'woocommerce' ),

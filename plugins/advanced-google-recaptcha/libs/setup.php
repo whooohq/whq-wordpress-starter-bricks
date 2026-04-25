@@ -3,7 +3,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Setup extends WPCaptcha
@@ -79,7 +79,8 @@ class WPCaptcha_Setup extends WPCaptcha
      */
     static function notice_min_wp_version()
     {
-        WPCaptcha_Utility::wp_kses_wf('<div class="error"><p>' . sprintf(__('WP Captcha plugin <b>requires WordPress version 4.6</b> or higher to function properly. You are using WordPress version %s. Please <a href="%s">update it</a>.', 'advanced-google-recaptcha'), get_bloginfo('version'), admin_url('update-core.php')) . '</p></div>');
+        /* translators: %1$s is replaced with the current WordPress version, %2$s is replaced with the URL to WordPress update page in the Dashboard */
+        WPCaptcha_Utility::wp_kses_wf('<div class="error"><p>' . sprintf(__('WP Captcha plugin <b>requires WordPress version 4.6</b> or higher to function properly. You are using WordPress version %1$s. Please <a href="%2$s">update it</a>.', 'advanced-google-recaptcha'), get_bloginfo('version'), admin_url('update-core.php')) . '</p></div>');
     } // notice_min_wp_version_error
 
     /**
@@ -92,7 +93,8 @@ class WPCaptcha_Setup extends WPCaptcha
      */
     static function notice_min_php_version()
     {
-        WPCaptcha_Utility::wp_kses_wf('<div class="error"><p>' . sprintf(__('WP Captcha plugin <b>requires PHP version 5.6.20</b> or higher to function properly. You are using PHP version %s. Please <a href="%s" target="_blank">update it</a>.', 'advanced-google-recaptcha'), phpversion(), 'https://wordpress.org/support/update-php/') . '</p></div>');
+        /* translators: %1$s is replaced with the current PHP version, %2$s is replaced with the URL to WordPress update PHP support page */
+        WPCaptcha_Utility::wp_kses_wf('<div class="error"><p>' . sprintf(__('WP Captcha plugin <b>requires PHP version 5.6.20</b> or higher to function properly. You are using PHP version %1$s. Please <a href="%2$s" target="_blank">update it</a>.', 'advanced-google-recaptcha'), phpversion(), 'https://wordpress.org/support/update-php/') . '</p></div>');
     } // notice_min_wp_version_error
 
 
@@ -214,7 +216,7 @@ class WPCaptcha_Setup extends WPCaptcha
             'uninstall_delete'                        => 0,
             'block_message'                           => 'We\'re sorry, but your IP has been blocked due to too many recent failed login attempts.',
             'block_message_country'                   => 'We\'re sorry, but access from your location is not allowed.',
-            'global_unblock_key'                      => 'll' . md5(time() . rand(10000, 9999)),
+            'global_unblock_key'                      => 'agr' . md5(wp_generate_password(24)),
             'whitelist'                               => array(),
             'firewall_block_bots'                     => 0,
             'firewall_directory_traversal'            => 0,
@@ -284,23 +286,6 @@ class WPCaptcha_Setup extends WPCaptcha
         if (isset($options['captcha']) && ($options['captcha'] == 'disabled' || $options['captcha'] == 'builtin')) {
             $options['captcha_site_key']   = '';
             $options['captcha_secret_key'] = '';
-        }
-
-        if (isset($_POST['submit'])) {
-            foreach ($options as $key => $value) {
-                switch ($key) {
-                    case 'lockout_invalid_usernames':
-                    case 'mask_login_errors':
-                    case 'show_credit_link':
-                        $options[$key] = trim($value);
-                        break;
-                    case 'max_login_retries':
-                    case 'retries_within':
-                    case 'lockout_length':
-                        $options[$key] = (int) $value;
-                        break;
-                } // switch
-            } // foreach
         }
 
         if (!isset($options['login_protection'])) {
@@ -397,35 +382,6 @@ class WPCaptcha_Setup extends WPCaptcha
 
         if (!isset($options['captcha_show_bp_registration'])) {
             $options['captcha_show_bp_registration'] = 0;
-        }
-
-        if (isset($_POST['wpcaptcha_import_file'])) {
-            $mimes = array(
-                'text/plain',
-                'text/anytext',
-                'application/txt'
-            );
-
-            if (!in_array($_FILES['wpcaptcha_import_file']['type'], $mimes)) {
-                WPCaptcha_Utility::display_notice(
-                    sprintf(
-                        "WARNING: Not a valid CSV file - the Mime Type '%s' is wrong! No settings have been imported.",
-                        $_FILES['wpcaptcha_import_file']['type']
-                    ),
-                    "error"
-                );
-            } else if (($handle = fopen($_FILES['wpcaptcha_import_file']['tmp_name'], "r")) !== false) {
-                $options_json = json_decode(fread($handle, 8192), ARRAY_A);
-
-                if (is_array($options_json) && array_key_exists('max_login_retries', $options_json) && array_key_exists('retries_within', $options_json) && array_key_exists('lockout_length', $options_json)) {
-                    $options = $options_json;
-                    WPCaptcha_Utility::display_notice("Settings have been imported.", "success");
-                } else {
-                    WPCaptcha_Utility::display_notice("Invalid import file! No settings have been imported.", "error");
-                }
-            } else {
-                WPCaptcha_Utility::display_notice("Invalid import file! No settings have been imported.", "error");
-            }
         }
 
         if ($old_options['firewall_block_bots'] != $options['firewall_block_bots'] || $old_options['firewall_directory_traversal'] != $options['firewall_directory_traversal']) {
@@ -593,7 +549,7 @@ class WPCaptcha_Setup extends WPCaptcha
     static function firewall_test_htaccess($new_content)
     {
         $uploads_directory = wp_upload_dir();
-        $test_id = rand(1000, 9999);
+        $test_id = wp_rand(1000, 9999);
         $htaccess_test_folder = $uploads_directory['basedir'] . '/htaccess-test-' . $test_id . '/';
         $htaccess_test_url = $uploads_directory['baseurl'] . '/htaccess-test-' . $test_id . '/';
 
@@ -657,7 +613,6 @@ class WPCaptcha_Setup extends WPCaptcha
 
                 $new_content = trim($new_content, PHP_EOL);
 
-                $f = @fopen(WPCaptcha_Utility::get_home_path() . '.htaccess', 'w');
                 self::$wp_filesystem->put_contents(WPCaptcha_Utility::get_home_path() . '.htaccess', $new_content);
 
                 return true;
@@ -712,9 +667,9 @@ class WPCaptcha_Setup extends WPCaptcha
             delete_option(WPCAPTCHA_META_KEY);
             delete_option(WPCAPTCHA_POINTERS_KEY);
             delete_option(WPCAPTCHA_NOTICES_KEY);
-
-            $wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "wpc_login_fails");
-            $wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "wpc_accesslocks");
+            // phpcs:ignore db call warnings as we are using a custom table
+            $wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "wpc_login_fails"); // phpcs:ignore
+            $wpdb->query("DROP TABLE IF EXISTS " . $wpdb->prefix . "wpc_accesslocks"); // phpcs:ignore
         }
     } // uninstall
 } // class

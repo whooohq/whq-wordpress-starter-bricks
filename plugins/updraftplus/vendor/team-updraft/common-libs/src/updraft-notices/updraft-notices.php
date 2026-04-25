@@ -2,7 +2,9 @@
 
 if (!defined('ABSPATH')) die('No direct access allowed');
 
-abstract class Updraft_Notices_1_2 {
+abstract class Updraft_Notices_1_3 {
+
+	protected $widget_title;
 
 	protected $notices_content;
 	
@@ -10,6 +12,8 @@ abstract class Updraft_Notices_1_2 {
 	protected $dashboard_top = array('top');
 
 	protected $dashboard_top_or_report = array('top', 'report', 'report-plain');
+
+	protected $dashboard_top_or_report_or_widget = array('top', 'report', 'report-plain', 'widget');
 
 	protected $dashboard_bottom_or_report = array('bottom', 'report', 'report-plain');
 
@@ -217,4 +221,58 @@ abstract class Updraft_Notices_1_2 {
 	 * @return mixed
 	 */
 	abstract protected function check_notice_dismissed($dismiss_time);
+
+	/**
+	 * This function will add the seasonal notice WordPress dashboard widget.
+	 *
+	 * @return void
+	 */
+	public function seasonal_widget() {
+		global $wp_meta_boxes;
+
+		$notice = $this->do_notice(false, 'widget', true);
+		if (!$notice) return;
+
+		$widget_id = 'updraft-seasonal-widget';
+
+		/**
+		 * We only want to display one seasonal notice across all our plugins, 
+		 * so here we have a random chance to allow this plugin to replace the existing notice with it's own
+		 */
+		$random_number = rand(1, 50);
+
+		if (isset($wp_meta_boxes['dashboard']['normal']['core'][$widget_id]) && 25 >= $random_number) return;
+
+		if (isset($wp_meta_boxes['dashboard']['normal']['core'][$widget_id])) {
+			unset($wp_meta_boxes['dashboard']['normal']['core'][$widget_id]);
+		}
+
+		$this->widget_enqueue();
+
+		if (!isset($wp_meta_boxes['dashboard']['normal']['core'][$widget_id])) {
+			// Initialization of the WordPress dashboard widget.
+			wp_add_dashboard_widget($widget_id, $this->widget_title, array($this, 'widget_view'), null, compact('notice'));
+		}
+	
+	}
+
+	/**
+	 * This function will add the dashboard widget output.
+	 *
+	 * @param Int   $post          post ID
+	 * @param Array $callback_args callback args
+	 *
+	 * @return void
+	 */
+	public function widget_view($post, $callback_args) {
+		extract($callback_args['args']);
+		echo $notice; // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable
+	}
+
+	/**
+	 * This function will enqueue the WordPress dashboard widget styles or scripts.
+	 *
+	 * @return void
+	 */
+	abstract protected function widget_enqueue();
 }

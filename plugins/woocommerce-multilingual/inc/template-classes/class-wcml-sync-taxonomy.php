@@ -1,5 +1,7 @@
 <?php
 
+use WCML\Utilities\WCTaxonomies;
+
 class WCML_Sync_Taxonomy extends WCML_Templates_Factory {
 
 	private $woocommerce_wpml;
@@ -27,7 +29,7 @@ class WCML_Sync_Taxonomy extends WCML_Templates_Factory {
 		$wcml_settings        = $this->woocommerce_wpml->get_settings();
 		$attribute_taxonomies = wc_get_attribute_taxonomies();
 		foreach ( $attribute_taxonomies as $a ) {
-			$attribute_taxonomies_arr[] = 'pa_' . $a->attribute_name;
+			$attribute_taxonomies_arr[] = WCTaxonomies::TAXONOMY_PREFIX_ATTRIBUTE . $a->attribute_name;
 		}
 
 		$model = [
@@ -36,7 +38,7 @@ class WCML_Sync_Taxonomy extends WCML_Templates_Factory {
 			'display_attr'         => isset( $wcml_settings['sync_variations'] ) && $wcml_settings['sync_variations'] ? '' : 'display: none',
 			'display_tax'          => ( isset( $wcml_settings[ 'sync_' . $this->taxonomy ] ) && $wcml_settings[ 'sync_' . $this->taxonomy ] ) ? '' : 'display: none',
 			'loader_url'           => \WCML\functions\assetLink( '/res/img/ajax-loader.gif' ),
-			'vars_to_create'       => isset( $wcml_settings['variations_needed'][ $this->taxonomy ] ) ? $wcml_settings['variations_needed'][ $this->taxonomy ] : false,
+			'vars_to_create'       => $wcml_settings['variations_needed'][ $this->taxonomy ] ?? false,
 			'tax_name'             => $this->taxonomy_obj->labels->name,
 			'tax_singular_name'    => '<i>' . $this->taxonomy_obj->labels->singular_name . '</i>',
 			'strings'              => [

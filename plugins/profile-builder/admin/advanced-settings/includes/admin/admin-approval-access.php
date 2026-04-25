@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 function wppb_toolbox_rehook_admin_approval_page() {
 	remove_action( 'admin_menu', 'wppb_add_au_submenu_page' );

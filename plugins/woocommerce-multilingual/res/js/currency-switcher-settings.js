@@ -18,6 +18,8 @@ jQuery( function($){
                 $(document).on('keyup','input[name="wcml_curr_template"]', WCML_Currency_Switcher_Settings.setup_currency_switcher_template_keyup);
                 $(document).on('change','input[name="wcml_curr_template"]', WCML_Currency_Switcher_Settings.setup_currency_switcher_template_change);
 
+                $( document ).on( 'click', '.js-wcml-learn-more-button', WCML_Currency_Switcher_Settings.open_learn_more_diaglog );
+
                 WCML_Currency_Switcher_Settings.open_dialog_from_hash();
 
                 document.addEventListener('wcmlActiveCurrenciesChange', function(e) {
@@ -273,6 +275,26 @@ jQuery( function($){
             if(!$(this).val()){
                 $(this).val($('#currency_switcher_default').val())
             }
+        },
+
+        open_learn_more_diaglog: function( event ){
+            event.preventDefault();
+
+            const arrow = $( this ).closest( '.wcml-ui-dialog' ).find( '.js-arrow-toggle' );
+            const description = $( '.js-wcml-learn-more-content' );
+            const learnLabel = $( this ).closest( '.wcml-ui-dialog' ).find( '.js-wcml-learn-more-text' );
+            const hideLabel = $( this ).closest( '.wcml-ui-dialog' ).find( '.js-wcml-hide-more-text' );
+
+            description.toggle();
+
+            const isVisible = description.is( ':visible' );
+
+            learnLabel.toggle( !isVisible );
+            hideLabel.toggle( isVisible );
+        
+            arrow
+                .toggleClass( 'otgs-ico-caret-down', !isVisible )
+                .toggleClass( 'otgs-ico-caret-up', isVisible );
         },
 
         open_dialog_from_hash: function(){

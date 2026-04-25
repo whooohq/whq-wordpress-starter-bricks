@@ -1,0 +1,14 @@
+.translation_controls{
+	margin-top:4px;
+	width:25em;
+}
+.translation_controls .wpml_select2-container{
+	max-width: 50%;
+	margin-right: 10px;
+}
+.translation_controls .wpml_select2-container .wpml_select2-choice {
+background-color: #fff;
+}
+.translation_controls .wpml_select2-container .wpml_select2-choice .wpml_select2-arrow b:after{
+	display: none;
+}

@@ -38,9 +38,6 @@ abstract class QM_Dispatcher {
 		if ( ! defined( 'QM_COOKIE' ) ) {
 			define( 'QM_COOKIE', 'wp-query_monitor_' . COOKIEHASH );
 		}
-		if ( ! defined( 'QM_EDITOR_COOKIE' ) ) {
-			define( 'QM_EDITOR_COOKIE', 'wp-query_monitor_editor_' . COOKIEHASH );
-		}
 
 		add_action( 'init', array( $this, 'init' ) );
 
@@ -50,6 +47,21 @@ abstract class QM_Dispatcher {
 	 * @return bool
 	 */
 	abstract public function is_active();
+
+	/**
+	 * @param string $message
+	 * @param mixed[] $e
+	 * @phpstan-param array{
+	 *   message: string,
+	 *   file: string,
+	 *   line: int,
+	 *   type?: int,
+	 *   trace?: mixed|null,
+	 * } $e
+	 */
+	public function output_fatal( $message, array $e ): void {
+		print_r( $e );
+	}
 
 	/**
 	 * @return bool
@@ -178,12 +190,11 @@ abstract class QM_Dispatcher {
 	}
 
 	/**
+	 * @deprecated
+	 *
 	 * @return string
 	 */
 	public static function editor_cookie() {
-		if ( defined( 'QM_EDITOR_COOKIE' ) && isset( $_COOKIE[QM_EDITOR_COOKIE] ) ) { // phpcs:ignore
-			return $_COOKIE[QM_EDITOR_COOKIE]; // phpcs:ignore
-		}
 		return '';
 	}
 
@@ -203,15 +214,16 @@ abstract class QM_Dispatcher {
 	 * Attempts to switch to the given locale.
 	 *
 	 * This is a wrapper around `switch_to_locale()` which is safe to call at any point, even
-	 * before the `$wp_locale_switcher` global is initialised or if the function does not exist.
+	 * before the `$wp_locale_switcher` global is initialised.
 	 *
 	 * @param string $locale The locale.
 	 * @return bool True on success, false on failure.
 	 */
 	public static function switch_to_locale( $locale ) {
+		/** @var ?WP_Locale_Switcher $wp_locale_switcher */
 		global $wp_locale_switcher;
 
-		if ( function_exists( 'switch_to_locale' ) && ( $wp_locale_switcher instanceof WP_Locale_Switcher ) ) {
+		if ( $wp_locale_switcher instanceof WP_Locale_Switcher ) {
 			return switch_to_locale( $locale );
 		}
 
@@ -222,14 +234,15 @@ abstract class QM_Dispatcher {
 	 * Attempts to restore the previous locale.
 	 *
 	 * This is a wrapper around `restore_previous_locale()` which is safe to call at any point, even
-	 * before the `$wp_locale_switcher` global is initialised or if the function does not exist.
+	 * before the `$wp_locale_switcher` global is initialised.
 	 *
 	 * @return string|false Locale on success, false on error.
 	 */
 	public static function restore_previous_locale() {
+		/** @var ?WP_Locale_Switcher $wp_locale_switcher */
 		global $wp_locale_switcher;
 
-		if ( function_exists( 'restore_previous_locale' ) && ( $wp_locale_switcher instanceof WP_Locale_Switcher ) ) {
+		if ( $wp_locale_switcher instanceof WP_Locale_Switcher ) {
 			return restore_previous_locale();
 		}
 

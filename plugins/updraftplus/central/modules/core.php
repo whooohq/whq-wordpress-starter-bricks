@@ -11,6 +11,215 @@ if (!defined('UPDRAFTCENTRAL_CLIENT_DIR')) die('No access.');
 class UpdraftCentral_Core_Commands extends UpdraftCentral_Commands {
 
 	/**
+	 * Retrieve site icon (favicon)
+	 *
+	 * @return array An array containing the site icon (favicon) byte string if available
+	 */
+	public function get_site_icon() {
+
+		if (!function_exists('get_site_icon_url')) {
+			include_once(ABSPATH.'wp-includes/general-template.php');
+		}
+
+		if (!class_exists('UpdraftCentral_Media_Commands') && defined('UPDRAFTCENTRAL_CLIENT_DIR')) {
+			include_once(UPDRAFTCENTRAL_CLIENT_DIR.'/modules/media.php');
+		}
+
+		$media = new UpdraftCentral_Media_Commands($this);
+		$icon_details = array();
+
+		$site_icon_url = get_site_icon_url();
+
+		// If none is set in WordPress, let's try to search for the default favicon
+		// within the site's directory
+		if (empty($site_icon_url)) {
+
+			if (!function_exists('get_site_url')) {
+				include_once(ABSPATH.'wp-includes/link-template.php');
+			}
+
+			// Common favicon locations to check
+			$potential_locations = array(
+				'/favicon.ico',
+				'/favicon.png',
+				'/favicon.svg',
+				'/assets/favicon.ico',
+				'/assets/images/favicon.ico',
+				'/apple-touch-icon.png',
+				'/apple-touch-icon-precomposed.png',
+			);
+
+			foreach ($potential_locations as $location) {
+				$path = rtrim(ABSPATH, '/\\').$location;
+				if (file_exists($path)) {
+					$site_icon_url = get_site_url().$location;
+					break;
+				}
+			}
+		} else {
+			$site_icon_id = (int) get_option('site_icon');
+			if ($site_icon_id) $icon_details = $media->get_media_item(array('id' => $site_icon_id), null, true);
+		}
+
+		// We are returning the site icon as byte string instead of URL in order to avoid
+		// any hotlink protection that might prevent us to show the icon in UpdraftCentral
+		// dashboard successfully.
+		$site_icon = '';
+		if (!empty($site_icon_url)) {
+			$content = file_get_contents($site_icon_url);
+
+			$mime_type = '';
+			foreach ($http_response_header as $value) {
+				if (false !== stripos($value, 'content-type:')) {
+					list(, $mime_type) = explode(':', preg_replace('/\s+/', '', $value));
+					break;
+				}
+			}
+
+			if ($content && !empty($mime_type)) {
+				$site_icon = 'data: '.$mime_type.';base64,'.base64_encode($content);
+			}
+		}
+
+		return $this->_response(array('site_icon' => $site_icon, 'icon_details' => $icon_details));
+	}
+
+	/**
+	 * Handles site icon upload
+	 *
+	 * @param Array $query An array containing the image data.
+	 *
+	 * @return Array
+	 */
+	public function handle_site_icon_upload($query) {
+		if (!current_user_can('upload_files')) {
+			return $this->_generic_error_response('insufficient_permission', array('error_message' => __('You do not have the necessary permissions to upload files.', 'updraftplus')));
+		}
+
+		$data_uri = sanitize_text_field($query['data_uri']);
+		$filename = sanitize_text_field(basename($query['filename']));
+		$file_ext = pathinfo($filename, PATHINFO_EXTENSION);
+		$history = sanitize_text_field($query['history']);
+		$preview = sanitize_text_field($query['preview']);
+		$pattern = '/^data:(image\/[^;]+);base64,([A-Za-z0-9+\/=]+)$/i';
+
+		if (!empty($data_uri) && preg_match($pattern, $data_uri, $matches)) {
+			list(, $data) = explode(';', $data_uri);
+			list(, $data) = explode(',', $data);
+
+			$decoded_data = base64_decode($data);
+			if (!class_exists('wp_tempnam')) include_once(ABSPATH.'/wp-admin/includes/file.php');
+			$temp_img_file = wp_tempnam();
+			@file_put_contents($temp_img_file, $decoded_data); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the call.
+			$mime_type = wp_get_image_mime($temp_img_file);
+			@unlink($temp_img_file); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise if the file doesn't exist.
+			$allowed_ext = array('jpg', 'jpeg', 'png', 'gif', 'bmp', 'tif', 'webp', 'avif', 'heic');
+			if (false !== $mime_type && !empty($matches[1]) && strtolower($mime_type) === strtolower($matches[1]) && !empty($file_ext) && in_array(strtolower($file_ext), $allowed_ext)) {
+				$upload = wp_upload_bits($filename, null, $decoded_data);
+			} else {
+				$upload = array('error' => __("Couldn't verify the actual MIME type of the given site icon image data.", 'updraftplus'));
+			}
+
+			if (!$upload['error']) {
+				$attachment = array(
+					'guid' => $upload['url'],
+					'post_mime_type' => $upload['type'],
+					'post_title' => sanitize_file_name($filename),
+					'post_content' => '',
+					'post_status' => 'inherit',
+				);
+
+				$attach_id = wp_insert_attachment($attachment, $upload['file']);
+
+				if (!function_exists('wp_generate_attachment_metadata')) {
+					require_once(ABSPATH.'wp-admin/includes/image.php');
+				}
+
+				// Generate metadata and thumbnails
+				$attach_data = wp_generate_attachment_metadata($attach_id, $upload['file']);
+				wp_update_attachment_metadata($attach_id, $attach_data);
+
+				if (update_option('site_icon', $attach_id)) {
+					if (1 == intval($preview)) {
+						if (!class_exists('UpdraftCentral_Media_Commands') && defined('UPDRAFTCENTRAL_CLIENT_DIR')) {
+							include_once(UPDRAFTCENTRAL_CLIENT_DIR.'/modules/media.php');
+						}
+
+						$media = new UpdraftCentral_Media_Commands($this);
+						$icon_details = $media->get_media_item(array('id' => $attach_id), null, true);
+
+						$params = array(
+							'_ajax_nonce' => $icon_details->nonce,
+							'postid' => $attach_id,
+							'history' => $history,
+							'rand' => $icon_details->misc['rand'],
+						);
+
+						$result = $media->image_preview($params);
+						$result['data']['icon_details'] = $icon_details;
+
+						return $result;
+					} else {
+						return $this->get_site_icon();
+					}
+				} else {
+					return $this->_generic_error_response('upload_error', array('error_message' => __('Unable to set uploaded file as site icon.', 'updraftplus')));
+				}
+			} else {
+				return $this->_generic_error_response('upload_error', array('error_message' => $upload['error']));
+			}
+		} else {
+			return $this->_generic_error_response('data_uri_field_empty_or_invalid', array('error_message' => __('Required data URI is either missing or invalid.', 'updraftplus')));
+		}
+	}
+
+	/**
+	 * Pulls blog sites available
+	 * for the current WP instance.
+	 * If the site is a multisite, then sites under the network
+	 * will be pulled, otherwise, it will return an empty array.
+	 *
+	 * @return Array - an array of sites
+	 */
+	public function get_blog_sites() {
+
+		if (!is_multisite()) {
+			return $this->_generic_error_response('not_multisite');
+		}
+
+		$sites = array();
+		$network_sites = array();
+
+		// Use `get_sites` for WP version >= 4.6 else use old `wp_get_sites`.
+		if (function_exists('get_sites') && class_exists('WP_Site_Query')) {
+			$network_sites = get_sites();
+		} else {
+			if (function_exists('wp_get_sites')) {
+				$network_sites = wp_get_sites();// phpcs:ignore WordPress.WP.DeprecatedFunctions.wp_get_sitesFound -- This function was only intended for backward compatibility with versions below 4.6.
+			}
+		}
+
+		if (!empty($network_sites)) {
+			foreach ($network_sites as $site) {
+
+				// Check if the site type is an array,
+				// because `wp_get_sites` returns site data as associative array while,
+				// `get_sites` returns the data as WP_Site object.
+				$blog_id = is_array($site) ? $site['blog_id'] : $site->blog_id;
+
+				$sites[] = array(
+					'site_id' => $blog_id,
+					'name' => get_blog_details($blog_id)->blogname,
+				);
+			}
+		}
+
+		return $this->_response(array(
+			'sites' => $sites,
+		));
+	}
+
+	/**
 	 * Executes a list of submitted commands (multiplexer)
 	 *
 	 * @param Array $query An array containing the commands to execute and a flag to indicate how to handle command execution failure.
@@ -50,7 +259,7 @@ class UpdraftCentral_Core_Commands extends UpdraftCentral_Commands {
 					if (class_exists($command_php_class)) {
 						$instance = new $command_php_class($this->rc);
 
-						if (method_exists($instance, $action)) {
+						if (method_exists($instance, $action) || is_a($instance, 'UpdraftCentral_UpdraftPlus_Commands') || is_a($instance, 'UpdraftCentral_WP_Optimize_Commands')) {
 							$params = empty($params) ? array() : $params;
 							$call_result = call_user_func(array($instance, $action), $params);
 
@@ -333,9 +542,9 @@ class UpdraftCentral_Core_Commands extends UpdraftCentral_Commands {
 	 * @return Array
 	 */
 	public function _get_autologin_key($user_id) {
-		$secure_auth_key = defined('SECURE_AUTH_KEY') ? SECURE_AUTH_KEY : hash('sha256', DB_PASSWORD).'_'.rand(0, 999999999);
+		$secure_auth_key = defined('SECURE_AUTH_KEY') ? SECURE_AUTH_KEY : hash('sha256', DB_PASSWORD).'_'.wp_rand(0, 999999999);
 		if (!defined('SECURE_AUTH_KEY')) return false;
-		$hash_it = $user_id.'_'.microtime(true).'_'.rand(0, 999999999).'_'.$secure_auth_key;
+		$hash_it = $user_id.'_'.microtime(true).'_'.wp_rand(0, 999999999).'_'.$secure_auth_key;
 		$hash = hash('sha256', $hash_it);
 		return $hash;
 	}
@@ -408,7 +617,7 @@ class UpdraftCentral_Core_Commands extends UpdraftCentral_Commands {
 	private function _get_phpinfo_array() {
 		if (!function_exists('phpinfo')) return null;
 		ob_start();
-		phpinfo(INFO_GENERAL|INFO_CREDITS|INFO_MODULES);
+		phpinfo(INFO_GENERAL|INFO_CREDITS|INFO_MODULES); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_phpinfo -- we call the phpinfo() function to display PHP information in the advanced tools.
 		$phpinfo = array('phpinfo' => array());
 
 		if (preg_match_all('#(?:<h2>(?:<a name=".*?">)?(.*?)(?:</a>)?</h2>)|(?:<tr(?: class=".*?")?><t[hd](?: class=".*?")?>(.*?)\s*</t[hd]>(?:<t[hd](?: class=".*?")?>(.*?)\s*</t[hd]>(?:<t[hd](?: class=".*?")?>(.*?)\s*</t[hd]>)?)?</tr>)#s', ob_get_clean(), $matches, PREG_SET_ORDER)) {

@@ -71,7 +71,18 @@ function addMeta(value, id, nonce){
 					jQuery( '#'+value+' .field-label[for="' + field + '"]' ).addClass('error');
 				});
 
-				alert( response.error );
+				// Extend with a custom tooltip instead of alert
+				jQuery('<div>' + response.error + '</div>').dialog({
+					modal: true,
+					title: 'Error',
+					width: 400,
+					minHeight: 200,
+					buttons: {
+						Ok: function() {
+							jQuery(this).dialog('close');
+						}
+					}
+				});
 			}
 			else{
 				/* refresh the list */

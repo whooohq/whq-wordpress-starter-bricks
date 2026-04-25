@@ -29,7 +29,6 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
 
     /**
      * Pre-init call invoked by router
-     * @param array
      * @return static
      */    
     final public function _init( array $args ){
@@ -50,7 +49,7 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
                 $tabs = $this->getHelpTabs();
                 // always append common help tabs
                 $tabs[ __('Help & support','loco-translate') ] = $this->view->render('tab-support');
-                // set all tabs and common side bar
+                // set all tabs and common sidebar
                 $i = 0;
                 foreach( $tabs as $title => $content ){
                     $id = sprintf('loco-help-%u', $i++ );
@@ -154,7 +153,7 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
      * All admin screens must define help tabs, even if they return empty
      * @return array
      */
-    public function getHelpTabs(){
+    public function getHelpTabs() {
         return [];
     }
 
@@ -176,11 +175,10 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
     }
 
 
-
     /**
      * Render template for echoing into admin screen
-     * @param string template name
-     * @param array template arguments
+     * @param string $tpl template name
+     * @param array $args template arguments
      * @return string
      */
     public function view( $tpl, array $args = [] ){
@@ -238,7 +236,7 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
 
     /**
      * Shortcut to render template without full page arguments as per view
-     * @param string
+     * @param string $tpl
      * @return string
      */
     public function viewSnippet( $tpl ){
@@ -248,9 +246,9 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
 
     /**
      * Add CSS to head
-     * @param string stem name of file, e.g "editor"
-     * @param string[] dependencies of this stylesheet
-     * @return Loco_mvc_Controller
+     * @param string $name stem name of file, e.g "editor"
+     * @param string[] $deps dependencies of this stylesheet
+     * @return self
      */
     public function enqueueStyle( $name, array $deps = [] ){
         $base = $this->baseurl;
@@ -268,9 +266,9 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
 
     /**
      * Add JavaScript to footer
-     * @param string stem name of file, e.g "editor"
-     * @param string[] dependencies of this script
-     * @return Loco_mvc_Controller
+     * @param string $name stem name of file, e.g "editor"
+     * @param string[] $deps dependencies of this script
+     * @return string
      */
     public function enqueueScript( $name, array $deps = [] ){
         $base = $this->baseurl;
@@ -283,14 +281,27 @@ abstract class Loco_mvc_AdminController extends Loco_mvc_Controller {
         $id = 'loco-translate-'.strtr($name,'/','-');
         wp_enqueue_script( $id, $href, $deps, $vers, true );
         $this->scripts[$id] = $href;
-        return $this;
+        return $id;
+    }
+
+
+    /**
+     * @param string $name
+     * @return void
+     */
+    public function dequeueScript( $name ){
+        $id = 'loco-translate-'.strtr($name,'/','-');
+        if( array_key_exists($id,$this->scripts) ){
+            wp_dequeue_script($id);
+            unset($this->scripts[$id]);
+        }
     }
 
 
     /**
      * @internal
-     * @param string
-     * @param string
+     * @param string $tag
+     * @param string $id
      * @return string
      */
     public function filter_script_loader_tag( $tag, $id ) {

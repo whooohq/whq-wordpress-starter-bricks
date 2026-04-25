@@ -2,7 +2,7 @@
 
 /**
  * Universal fly-out menu for WebFactory plugins
- * (c) WebFactory Ltd, 2023
+ * (c) WebFactory Ltd, 2026
  */
 
 

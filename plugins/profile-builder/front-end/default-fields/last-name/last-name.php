@@ -13,6 +13,7 @@ function wppb_last_name_handler( $output, $form_location, $field, $user_id, $fie
 		$input_value = $field['default-value'];
 		
 	$input_value = ( isset( $request_data['last_name'] ) ? trim( $request_data['last_name'] ) : $input_value );
+	$input_value = apply_filters( 'wppb_form_last_name_field_value', $input_value, $field, $form_location );
 	
 	if ( $form_location != 'back_end' ){
 		$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );

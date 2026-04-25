@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /*
 Description: Extends the functionality of Profile Builder by adding the possibility to have custom css classes on fields
 */

@@ -144,6 +144,20 @@ jQuery( function ( $ ) {
 				$( 'input#_virtual' ).prop( 'checked', false );
 			}
 
+			const cogs_field_tip = $( '._cogs_value_field' ).find( '.woocommerce-help-tip' );
+			const cogs_field_tip_text =
+				'variable' === select_val ?
+					woocommerce_admin_meta_boxes.cogs_value_tooltip_variable_products :
+					woocommerce_admin_meta_boxes.cogs_value_tooltip_simple_products;
+			$( cogs_field_tip ).attr( 'aria-label', cogs_field_tip_text );
+			$( cogs_field_tip ).tipTip( {
+				attribute: 'aria-label',
+				fadeIn: 50,
+				fadeOut: 50,
+				delay: 200,
+				keepAlive: true,
+			} );
+
 			show_and_hide_panels();
 			change_product_type_tip( get_product_tip_content( select_val ) );
 
@@ -176,7 +190,10 @@ jQuery( function ( $ ) {
 	function change_product_type_tip( content ) {
 		$( '#tiptip_holder' ).removeAttr( 'style' );
 		$( '#tiptip_arrow' ).removeAttr( 'style' );
-		$( '.woocommerce-product-type-tip' ).tipTip( {
+		$( '.woocommerce-product-type-tip' )
+		.attr( 'tabindex', '0' )
+		.attr( 'aria-label', $( '<div />' ).html( content ).text() ) // Remove HTML tags.
+		.tipTip( {
 			attribute: 'data-tip',
 			content: content,
 			fadeIn: 50,
@@ -240,6 +257,16 @@ jQuery( function ( $ ) {
 		}
 
 		$( '.hide_if_' + product_type, context ).hide();
+
+		// POS visibility - requires combination of type AND downloadable status.
+		var is_pos_supported = ( product_type === 'simple' || product_type === 'variable' ) && ! is_downloadable;
+		if ( is_pos_supported ) {
+			$( '#pos_visibility_supported', context ).show();
+			$( '#pos_visibility_unsupported', context ).hide();
+		} else {
+			$( '#pos_visibility_supported', context ).hide();
+			$( '#pos_visibility_unsupported', context ).show();
+		}
 	}
 
 	function show_and_hide_panels() {
@@ -463,6 +490,16 @@ jQuery( function ( $ ) {
 				.find( 'option[value="' + $( el ).data( 'taxonomy' ) + '"]' )
 				.attr( 'disabled', 'disabled' );
 		}
+
+		if ( 'undefined' === $(el).attr( 'data-taxonomy' ) ||
+			false === $(el).attr( 'data-taxonomy' ) ||
+			'' === $(el).attr( 'data-taxonomy' ) ) {
+			add_placeholder_to_attribute_values_field( $(el) );
+
+			$( '.woocommerce_attribute input.woocommerce_attribute_used_for_variations' ).on( 'change', function() {
+				add_placeholder_to_attribute_values_field( $(el) );
+			} );
+		}
 	} );
 	$( 'select.wc-attribute-search' ).data(
 		'disabled-items',
@@ -514,6 +551,19 @@ jQuery( function ( $ ) {
 		$attributeListItem.find( 'h3' ).trigger( 'click' );
 	}
 
+	function add_placeholder_to_attribute_values_field( $attributeListItem ) {
+
+		var $used_for_variations_checkbox = $attributeListItem.find( 'input.woocommerce_attribute_used_for_variations' );
+
+		if ( $used_for_variations_checkbox.length && $used_for_variations_checkbox.is( ':checked' ) ) {
+			$attributeListItem.find( 'textarea' )
+				.attr( 'placeholder', woocommerce_admin_meta_boxes.i18n_attributes_used_for_variations_placeholder );
+		} else {
+			$attributeListItem.find( 'textarea' )
+				.attr( 'placeholder', woocommerce_admin_meta_boxes.i18n_attributes_default_placeholder );
+		}
+	}
+
 	function init_select_controls() {
 		$( document.body ).trigger( 'wc-enhanced-select-init' );
 	}
@@ -546,6 +596,15 @@ jQuery( function ( $ ) {
 			update_attribute_row_indexes();
 
 			toggle_expansion_of_attribute_list_item( $attributeListItem );
+
+			// Conditionally change the placeholder of product-level Attributes depending on the value of the "Use for variations" checkbox.
+			if ( 'undefined' === typeof globalAttributeId ) {
+				add_placeholder_to_attribute_values_field( $attributeListItem );
+
+				$( '.woocommerce_attribute input.woocommerce_attribute_used_for_variations' ).on( 'change', function() {
+					add_placeholder_to_attribute_values_field( $(this).closest( '.woocommerce_attribute' ) );
+				} );
+			}
 
 			$( document.body ).trigger( 'woocommerce_added_attribute' );
 
@@ -601,6 +660,17 @@ jQuery( function ( $ ) {
 			}
 		}
 	}
+
+	// Handle the Attributes onboarding dismissible notice.
+	// If users dismiss the notice, never show it again.
+	if ( localStorage.getItem('attributes-notice-dismissed' ) ) {
+		$( '#product_attributes .notice' ).hide();
+	}
+
+	$( '#product_attributes .notice.woocommerce-message button' ).on( 'click', function( e ) {
+		$( '#product_attributes .notice' ).hide();
+		localStorage.setItem( 'attributes-notice-dismissed', 'true');
+	} );
 
 	$( 'select.wc-attribute-search' ).on( 'select2:select', function ( e ) {
 		const attributeId = e && e.params && e.params.data && e.params.data.id;
@@ -1210,7 +1280,8 @@ jQuery( function ( $ ) {
 
 	// add a tooltip to the right of the product image meta box "Set product image" and "Add product gallery images"
 	const setProductImageLink = $( '#set-post-thumbnail' );
-	const tooltipMarkup = `<span class="woocommerce-help-tip" tabindex="0" aria-label="${ woocommerce_admin_meta_boxes.i18n_product_image_tip }"></span>`;
+	const tooltipMarkup =
+		`<span class="woocommerce-help-tip" tabindex="0" aria-label="${ woocommerce_admin_meta_boxes.i18n_product_image_tip }"></span>`;
 	const tooltipData = {
 		attribute: 'data-tip',
 		content: woocommerce_admin_meta_boxes.i18n_product_image_tip,

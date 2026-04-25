@@ -71,14 +71,22 @@ final class Notifications {
      * Schedules the interval.
      */
     public function schedule_interval() {
-        as_schedule_recurring_action(
-            time(),
-            self::INTERVAL,
-            $this->interval_hook_name,
-            [],
-            '',
-            true
-        );
+        $schedule_interval_action = function() {
+            as_schedule_recurring_action(
+                time(),
+                self::INTERVAL,
+                $this->interval_hook_name,
+                [],
+                '',
+                true
+            );
+        };
+
+        if ( did_action( 'action_scheduler_init' ) ) {
+            $schedule_interval_action();
+        } else {
+            add_action( 'action_scheduler_init', $schedule_interval_action );
+        }
     }
 
     /**

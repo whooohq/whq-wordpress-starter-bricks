@@ -39,6 +39,7 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 	 */
 	private function getFTP($server, $user, $pass, $disable_ssl = false, $disable_verify = true, $use_server_certs = false, $passive = true) {
 
+		/* translators: %s: Storage method name */
 		if ('' == trim($server) || '' == trim($user) || '' == trim($pass)) return new WP_Error('no_settings', sprintf(__('No %s settings were found', 'updraftplus'), 'FTP'));
 
 		if (!class_exists('UpdraftPlus_ftp_wrapper')) updraft_try_include_file('includes/ftp.class.php', 'include_once');
@@ -113,11 +114,23 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 				'ftpsslexplicit' => __('encrypted FTP (explicit encryption)', 'updraftplus')
 			);
 			foreach ($possible as $type => $missing) {
-				$ftp_not_possible[] = wp_kses('<strong>'.__('Warning', 'updraftplus').':</strong> '. sprintf(__("Your web server's PHP installation has these functions disabled: %s.", 'updraftplus'), implode(', ', $missing)).' '.sprintf(__('Your hosting company must enable these functions before %s can work.', 'updraftplus'), $trans[$type]), $this->allowed_html_for_content_sanitisation());
+				$ftp_not_possible[] = wp_kses(
+					'<strong>'.__('Warning', 'updraftplus').':</strong> '.sprintf(
+						/* translators: %s: Disabled PHP functions */
+						__("Your web server's PHP installation has these functions disabled: %s.", 'updraftplus'),
+						implode(', ', $missing)
+					).' '.
+					sprintf(
+						/* translators: %s: Storage method name requiring enabled functions */
+						__('Your hosting company must enable these functions before %s can work.', 'updraftplus'),
+						$trans[$type]
+					),
+					$this->allowed_html_for_content_sanitisation()
+				);
 			}
 		}
 		$properties = array(
-			'updraft_sftp_ftps_notice' => wp_kses(apply_filters('updraft_sftp_ftps_notice', '<strong>'.__('Only non-encrypted FTP is supported by regular UpdraftPlus.').'</strong> <a href="'.esc_url($updraftplus->get_url('premium')).'" target="_blank">'.__('If you want encryption (e.g. you are storing sensitive business data), then an add-on is available in the Premium version.', 'updraftplus')), $this->allowed_html_for_content_sanitisation()),
+			'updraft_sftp_ftps_notice' => wp_kses(apply_filters('updraft_sftp_ftps_notice', '<strong>'.__('Only non-encrypted FTP is supported by regular UpdraftPlus.', 'updraftplus').'</strong> <a href="'.esc_url($updraftplus->get_url('premium_ftp_encryption')).'" target="_blank">'.__('If you want encryption (e.g. you are storing sensitive business data), then choose UpdraftPlus Premium.', 'updraftplus').'</a>'), $this->allowed_html_for_content_sanitisation()),
 			'ftp_not_possible_warnings' => $ftp_not_possible,
 			'input_host_label' => __('FTP server', 'updraftplus'),
 			'input_user_label' => __('FTP login', 'updraftplus'),
@@ -127,6 +140,7 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 			'input_path_title' => __('Needs to already exist', 'updraftplus'),
 			'input_passive_label' => __('Passive mode', 'updraftplus'),
 			'input_passive_title' => __('Almost all FTP servers will want passive mode; but if you need active mode, then uncheck this.', 'updraftplus'),
+			/* translators: %s: Backup method name */
 			'input_test_label' => sprintf(__('Test %s Settings', 'updraftplus'), $updraftplus->backup_methods[$this->get_id()])
 		);
 		return wp_parse_args($properties, $this->get_persistent_variables_and_methods());
@@ -205,6 +219,7 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 
 		if (is_wp_error($ftp)) return $ftp;
 
+		/* translators: %s: Storage method name */
 		if (!$ftp->connect()) return new WP_Error('ftp_login_failed', sprintf(__("%s login failure", 'updraftplus'), 'FTP'));
 
 		$ftp_remote_path = $opts['path'];
@@ -431,15 +446,17 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 		$use_server_certs = $posted_settings['useservercerts'];
 
 		if (empty($server)) {
-			_e('Failure: No server details were given.', 'updraftplus');
+			esc_html_e('Failure: No server details were given.', 'updraftplus');
 			return;
 		}
 		if (empty($login)) {
-			printf(__('Failure: No %s was given.', 'updraftplus'), __('login', 'updraftplus'));
+			/* translators: %s: Missing credential type (e.g., login) */
+			echo esc_html(sprintf(__('Failure: No %s was given.', 'updraftplus'), __('login', 'updraftplus')));
 			return;
 		}
 		if (empty($pass)) {
-			printf(__('Failure: No %s was given.', 'updraftplus'), __('password', 'updraftplus'));
+			/* translators: %s: Missing credential type (e.g., password) */
+			echo esc_html(sprintf(__('Failure: No %s was given.', 'updraftplus'), __('password', 'updraftplus')));
 			return;
 		}
 
@@ -449,7 +466,7 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 		$ftp = $this->getFTP($server, $login, $pass, $nossl, $disable_verify, $use_server_certs, $passive);
 
 		if (!$ftp->connect()) {
-			_e('Failure: we did not successfully log in with those credentials.', 'updraftplus');
+			esc_html_e('Failure: we did not successfully log in with those credentials.', 'updraftplus');
 			return;
 		}
 		// $ftp->make_dir(); we may need to recursively create dirs? TODO
@@ -458,12 +475,12 @@ class UpdraftPlus_BackupModule_ftp extends UpdraftPlus_BackupModule {
 		$fullpath = trailingslashit($path).$file;
 		
 		if ($ftp->put(ABSPATH.WPINC.'/version.php', $fullpath, FTP_BINARY, false, true)) {
-			echo __("Success: we successfully logged in, and confirmed our ability to create a file in the given directory (login type:", 'updraftplus')." ".$ftp->login_type.')';
+			echo esc_html(__("Success: we successfully logged in, and confirmed our ability to create a file in the given directory (login type:", 'updraftplus')." ".$ftp->login_type.')');
 			@$ftp->delete($fullpath);// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the method.
 		} else {
-			_e('Failure: we successfully logged in, but were not able to create a file in the given directory.', 'updraftplus');
+			esc_html_e('Failure: we successfully logged in, but were not able to create a file in the given directory.', 'updraftplus');
 			if (!empty($ftp->ssl)) {
-				echo ' '.__('This is sometimes caused by a firewall - try turning off SSL in the expert settings, and testing again.', 'updraftplus');
+				echo ' '.esc_html__('This is sometimes caused by a firewall - try turning off SSL in the expert settings, and testing again.', 'updraftplus');
 			}
 		}
 

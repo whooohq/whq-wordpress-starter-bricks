@@ -18,68 +18,16 @@ class WCML_WC_Memberships implements \IWPML_Action {
 	}
 
 	public function add_hooks() {
-		add_filter( 'wcml_register_endpoints_query_vars', [ $this, 'register_endpoints_query_vars' ], 10, 3 );
-		add_filter( 'parse_request', [ $this, 'adjust_query_vars' ] );
-		add_filter( 'wcml_endpoint_permalink_filter', [ $this, 'endpoint_permalink_filter' ], 10, 2 );
+		add_filter( 'wcml_endpoint_keys_to_options', [ $this, 'endpoint_keys_to_options' ] );
+		add_filter( 'wcml_register_endpoints_store_urls', [ $this, 'register_endpoints_store_urls' ] );
+		add_filter( 'wcml_endpoints_translation_controls', [ $this, 'register_translation_controls' ] );
 		add_filter( 'wc_memberships_members_area_my-memberships_actions', [ $this, 'filter_actions_links' ] );
 		add_filter( 'wpml_pre_parse_query', [ $this, 'save_post_parent' ] );
 		add_filter( 'wpml_post_parse_query', [ $this, 'restore_post_parent' ] );
 		add_filter( 'wc_memberships_rule_object_ids', [ $this, 'add_translated_object_ids' ] );
 		add_action( 'wp_enqueue_scripts', [ $this, 'load_assets' ] );
-	}
 
-	/**
-	 * @param array          $query_vars
-	 * @param array          $wc_vars
-	 * @param WCML_Endpoints $object
-	 *
-	 * @return array
-	 */
-	public function register_endpoints_query_vars( $query_vars, $wc_vars, $object ) {
-		$query_vars['members_area'] = $this->get_translated_endpoint( $object );
-
-		return $query_vars;
-	}
-
-	/**
-	 * @param WCML_Endpoints $object
-	 *
-	 * @return string
-	 */
-	public function get_translated_endpoint( $object ) {
-		$translation = $object->get_endpoint_translation(
-			'members_area',
-			get_option( 'woocommerce_myaccount_members_area_endpoint', 'members-area' )
-		);
-
-		return $translation;
-	}
-
-	/**
-	 * @param WP $q
-	 *
-	 * @return WP
-	 */
-	public function adjust_query_vars( $q ) {
-		if ( ! isset( $q->query_vars['members-area'] ) && isset( $q->query_vars['members_area'] ) ) {
-			$q->query_vars['members-area'] = $q->query_vars['members_area'];
-		}
-
-		return $q;
-	}
-
-	/**
-	 * @param string $endpoint
-	 * @param string $key
-	 *
-	 * @return string
-	 */
-	public function endpoint_permalink_filter( $endpoint, $key ) {
-		if ( 'members_area' === $key ) {
-			$endpoint = get_option( 'woocommerce_myaccount_members_area_endpoint', 'members-area' );
-		}
-
-		return $endpoint;
+		add_filter( 'woocommerce_order_get__wc_memberships_access_granted', [ $this, 'orderMemberships' ] );
 	}
 
 	/**
@@ -127,9 +75,9 @@ class WCML_WC_Memberships implements \IWPML_Action {
 	}
 
 	/**
-	 * @param array $object_ids
+	 * @param int[] $object_ids
 	 *
-	 * @return array
+	 * @return int[]
 	 */
 	public function add_translated_object_ids( $object_ids ) {
 		$result = [];
@@ -141,10 +89,10 @@ class WCML_WC_Memberships implements \IWPML_Action {
 				'element_id'
 			) );
 
-			$result = array_merge( $result, $translations );
+			$result = array_merge( $result, [ $object_id ], $translations );
 		}
 
-		return $result;
+		return array_values( array_unique( array_map( 'intval', $result ) ) );
 	}
 
 	public function load_assets() {
@@ -162,13 +110,82 @@ class WCML_WC_Memberships implements \IWPML_Action {
 	 */
 	private function get_members_area_endpoint() {
 		$endpoint            = get_option( 'woocommerce_myaccount_members_area_endpoint', 'members-area' );
-		$string_context      = class_exists( 'WPML_Endpoints_Support' ) ? WPML_Endpoints_Support::STRING_CONTEXT : 'WooCommerce Endpoints';
+		$string_context      = WCML_Url_Translation::get_endpoints_string_context();
 		$translated_endpoint = apply_filters( 'wpml_translate_single_string', $endpoint, $string_context, 'members_area' );
 
 		return [
 			'original'   => $endpoint,
 			'translated' => $translated_endpoint,
 		];
+	}
+
+	/**
+	 * @param array $memberships
+	 *
+	 * @return array
+	 */
+	public function orderMemberships( $memberships ) {
+		if ( ! doing_action( 'woocommerce_thankyou' ) ) {
+			return $memberships;
+		}
+
+		$relevantMemberships = [];
+		$wpmlCurrentLanguage = apply_filters( 'wpml_current_language', null );
+		foreach ( $memberships as $membershipId => $membershipData ) {
+			$userMembership = wc_memberships_get_user_membership( (int) $membershipId );
+			$membershipPlan = $userMembership ? $userMembership->get_plan() : null;
+
+			if ( null === $membershipPlan ) {
+				continue;
+			}
+
+			$membershipPlanLanguageDetails = apply_filters( 'wpml_element_language_details', null, [
+				'element_id'   => $membershipPlan->id,
+				'element_type' => 'wc_membership_plan',
+			] );
+
+			if (
+				null === $membershipPlanLanguageDetails
+				|| $wpmlCurrentLanguage === $membershipPlanLanguageDetails->language_code
+			) {
+				$relevantMemberships[ $membershipId ] = $membershipData;
+			}
+		}
+
+		return $relevantMemberships;
+	}
+
+	/**
+	 * @param array<string,string> $endpoint_keys_to_options
+	 *
+	 * @return array<string,string>
+	 */
+	public function endpoint_keys_to_options( $endpoint_keys_to_options ) {
+		$endpoint_keys_to_options['members_area']        = 'woocommerce_myaccount_members_area_endpoint';
+		$endpoint_keys_to_options['profile_fields_area'] = 'woocommerce_myaccount_profile_fields_area_endpoint';
+		return $endpoint_keys_to_options;
+	}
+
+	/**
+	 * @param array<string,string> $store_urls
+	 *
+	 * @return array<string,string>
+	 */
+	public function register_endpoints_store_urls( $store_urls ) {
+		$store_urls['members_area']        = get_option( 'woocommerce_myaccount_members_area_endpoint', 'members-area' );
+		$store_urls['profile_fields_area'] = get_option( 'woocommerce_myaccount_profile_fields_area_endpoint', 'my-profile' );
+		return $store_urls;
+	}
+
+	/**
+	 * @param array<string,string> $translation_controls
+	 *
+	 * @return array<string,string>
+	 */
+	public function register_translation_controls( $translation_controls ) {
+		$translation_controls['members_area']        = 'woocommerce_myaccount_members_area_endpoint';
+		$translation_controls['profile_fields_area'] = 'woocommerce_myaccount_profile_fields_area_endpoint';
+		return $translation_controls;
 	}
 
 }

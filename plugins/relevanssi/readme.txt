@@ -3,9 +3,9 @@ Contributors: msaari
 Donate link: https://www.relevanssi.com/buy-premium/
 Tags: search, relevance, better search, product search, woocommerce search
 Requires at least: 4.9
-Tested up to: 6.2
-Requires PHP: 7.0
-Stable tag: 4.20.0
+Tested up to: 6.9
+Requires PHP: 7.1
+Stable tag: 4.26.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,68 +128,20 @@ Each document database is full of useless words. All the little words that appea
 * John Calahan for extensive 4.0 beta testing.
 
 == Changelog ==
-= 4.20.0 =
-* New feature: Relevanssi can now create custom field specific excerpts that come from one custom field only and know which field that is.
-* New feature: You can see the list of indexed custom field names in the indexing and excerpt settings.
-* New feature: New filter hook `relevanssi_excerpt_specific_custom_field_content` filters the excerpt custom field content if `relevanssi_excerpt_specific_fields` is enabled.
-* Changed behaviour: The `relevanssi_get_custom_field_content()` function now returns an array instead of string. If `relevanssi_excerpt_specific_fields` is off, the previous string return value is returned as a single-item array with the string in index 0. If the setting is on, the array keys are the field names.
-* Minor fix: The stopword population during the multisite installation used the wrong database table, leading to failed population.
-* Minor fix: Multisite installation is moved from `wp_insert_site` (priority 10) to `wp_initialize_site` (priority 200) in order to avoid trouble.
-* Minor fix: The session ID is now included in the log export.
-* Minor fix: The "none" value in category dropdowns from the searchform shortcode is changed from -1 to 0.
+= 4.26.1 =
+* Changed behaviour: The `relevanssi_results` filter hook gets the search query as a second parameter.
+* Changed behaviour: Exact match bonus was added to posts once per search term. Now it's applied once per post.
+* Minor fix: Exact match bonus is now significantly faster when processing large posts.
+* Minor fix: Post part targeting with phrases is now more precise and doesn't include false matches. New post part tag 'media' is available to target attachment content.
 
-= 4.19.0 =
-* New feature: Logging now includes a session ID (based on user ID for logged-in users, HTTP user agent for others, and current time, stable for 10 minutes per user). This is used to remove duplicate searches from live searches, keeping only the final search query.
 
-= 4.18.4 =
-* New feature: New filter hook `relevanssi_highlight_query` lets you modify the search query for highlighting.
-* Changed behavior: Relevanssi no longer searches in feed searches by default.
-
-= 4.18.3 =
-* New feature: New filter hook `relevanssi_blocked_field_types` can be used to control which ACF field types are excluded from the index. By default, this includes 'repeater', 'flexible_content', and 'group'.
-* New feature: New filter hook `relevanssi_acf_field_object` can be used to filter the ACF field object before Relevanssi indexes it. Return false to have Relevanssi ignore the field type.
-* New feature: Relevanssi debug mode has more features now.
-* Minor fix: ACF field exclusion is now recursive. If a parent field is excluded, all sub fields will also be excluded.
-* Minor fix: Handling of data attributes in in-document highlighting had a bug that caused problems with third-party plugins.
-* Minor fix: The indexing settings tab now checks if the wp_relevanssi database table exists and will create the table if it doesn't.
-
-= 4.18.2 =
-* New feature: Relevanssi now has a debug mode that will help troubleshooting and support.
-* Minor fix: Using the_permalink() caused problems with search result links. That is now fixed. Relevanssi no longer hooks onto `the_permalink` hook and instead uses `post_link` and other similar hooks.
-
-= 4.18.1 =
-* New feature: New filter hook `relevanssi_add_highlight_and_tracking` can be used to force Relevanssi to add the `highlight` and tracking parameters to permalinks.
-* Changed behaviour: The 'relevanssi_wpml_filter' filter function now runs on priority 9 instead of 10 to avoid problems with custom filters on relevanssi_hits_filter.
-* Minor fix: Handle cases of missing posts better; relevanssi_get_post() now returns a WP_Error if no post is found.
-* Minor fix: Search queries that contain apostrophes and quotes can now be deleted from the log.
-* Minor fix: Avoid a slow query on the searching tab when the throttle is not enabled.
-
-= 4.18.0 =
-* New feature: Relevanssi now shows the MySQL `max_allowed_packet` size on the debug tab.
-* New feature: Relevanssi now shows the indexing query on the debug tab.
-* New feature: ACF field settings now include a 'Exclude from Relevanssi index' setting. You can use that to exclude ACF fields from the Relevanssi index.
-* Minor fix: Relevanssi was adding extra quotes around search terms in the `highlight` parameter.
-* Minor fix: Yet another update to data attributes in highlighting. Thanks to Faeddur.
-* Minor fix: Taxonomy query handling was improved. This should help in particular Polylang users who've had problems with Relevanssi ignoring Polylang language restrictions.
+= 4.26.0 =
+* Security: Fixes a vulnerability where a contributor-level user could make a SQL injection.
+* Minor fix: Relevanssi now ignores the contents of SVG tags.
+* Minor fix: The `relevanssi_missing_sort_key` hook did not fire for `menu_order`. It does now, if `menu_order` is 0.
+* Minor fix: Relevanssi no longer breaks image cloning in MultilingualPress.
+* Minor fix: Synced pattern contents are now indexed recursively so that, for example, the `relevanssi_noindex` class works.
 
 == Upgrade notice ==
-= 4.20.0 =
-* Better method for handling custom fields in excerpts, bug fixes.
-
-= 4.19.0 =
-* Logs now include a session ID.
-
-= 4.18.4 =
-* No more searching in RSS feeds, new filter hook.
-
-= 4.18.3 =
-* Better ACF field controls, bug fixes.
-
-= 4.18.2 =
-* Fixes problems with broken permalinks.
-
-= 4.18.1 =
-* Small bug fixes.
-
-= 4.18.0 =
-* Debugging features, improved ACF support and bug fixes.
+= 4.26.1 =
+* Minor updates and improvements.

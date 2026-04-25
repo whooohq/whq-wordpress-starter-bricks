@@ -4,6 +4,7 @@ namespace WCML\Rest\Wrapper\Orders;
 
 use WCML\Rest\Wrapper\Handler;
 use WCML\Rest\Exceptions\InvalidLanguage;
+use WPML\FP\Obj;
 
 use function WCML\functions\getId;
 
@@ -18,10 +19,10 @@ class Languages extends Handler {
 	public function query( $args, $request ) {
 		$lang = $request->get_param( 'lang' );
 
-		if ( ! is_null( $lang ) && $lang !== 'all' ) {
+		if ( ! is_null( $lang ) && 'all' !== $lang ) {
 			$args['meta_query'][] = [
-				'key'   => 'wpml_language',
-				'value' => strval( $lang )
+				'key'   => \WCML_Orders::KEY_LANGUAGE,
+				'value' => strval( $lang ),
 			];
 		}
 
@@ -39,21 +40,32 @@ class Languages extends Handler {
 	 * @return \WP_REST_Response
 	 */
 	public function prepare( $response, $object, $request ) {
-		$language      = get_query_var( 'lang' );
-		$orderLanguage = get_post_meta( $this->get_id( $object ), 'wpml_language', true );
+		$language = $request->get_param( 'lang' );
+		if ( empty( $language ) ) {
+			$language = apply_filters( 'wpml_default_language', null );
+		}
+
+		$orderLanguage = \WCML_Orders::getLanguage( $this->get_id( $object ) );
 
 		if ( $orderLanguage !== $language ) {
-			foreach ( $response->data['line_items'] as $k => $item ) {
-				$translatedProductId = wpml_object_id_filter( $item['product_id'], 'product', false, $language );
+			$lineItems = Obj::propOr( [], 'line_items', $response->data );
+			foreach ( $lineItems as $k => $item ) {
+				$translatedProductId   = wpml_object_id_filter( $item['product_id'], 'product', false, $language );
+				$translatedVariationId = ( empty( $item['variation_id'] ) ) ? 0 : wpml_object_id_filter( $item['variation_id'], 'product_variation', false, $language );
+
 				if ( $translatedProductId ) {
-					$translatedProduct                                = get_post( $translatedProductId );
 					$response->data['line_items'][ $k ]['product_id'] = $translatedProductId;
-					if ( $translatedProduct->post_type === 'product_variation' ) {
-						$postParent = get_post( $translatedProduct->post_parent );
-						$postName   = $postParent->post_title;
-					} else {
-						$postName = $translatedProduct->post_title;
+
+					$translatedProduct = get_post( $translatedProductId );
+					$postName          = $translatedProduct->post_title;
+
+					if ( $translatedVariationId ) {
+						$response->data['line_items'][ $k ]['variation_id'] = $translatedVariationId;
+
+						$translatedVariation = get_post( $translatedVariationId );
+						$postName            = $translatedVariation->post_title;
 					}
+
 					$response->data['line_items'][ $k ]['name'] = $postName;
 				}
 			}
@@ -85,7 +97,7 @@ class Languages extends Handler {
 	 * @param \WP_REST_Request $request
 	 * @param bool             $creating
 	 *
-	 * @throws InvalidLanguage
+	 * @throws InvalidLanguage If relevant language is not active.
 	 */
 	public function insert( $object, $request, $creating ) {
 		$data = $request->get_params();
@@ -95,7 +107,7 @@ class Languages extends Handler {
 				throw new InvalidLanguage( $data['lang'] );
 			}
 
-			update_post_meta( $object->get_id(), 'wpml_language', $data['lang'] );
+			\WCML_Orders::setLanguage( $object->get_id(), $data['lang'] );
 		}
 	}
 }

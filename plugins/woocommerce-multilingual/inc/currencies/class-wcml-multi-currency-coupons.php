@@ -4,7 +4,7 @@ class WCML_Multi_Currency_Coupons {
 
 	public function __construct() {
 
-		add_action('woocommerce_coupon_loaded', array($this, 'filter_coupon_data'));
+		add_action( 'woocommerce_coupon_loaded', [ $this, 'filter_coupon_data' ] );
 
 	}
 
@@ -16,8 +16,8 @@ class WCML_Multi_Currency_Coupons {
 			$coupon->set_amount( apply_filters( 'wcml_raw_price_amount', $coupon->get_amount() ) );
 		}
 
-		$coupon->set_minimum_amount( apply_filters('wcml_raw_price_amount', $coupon->get_minimum_amount() ) );
-		$coupon->set_maximum_amount( apply_filters('wcml_raw_price_amount', $coupon->get_maximum_amount() ) );
+		$coupon->set_minimum_amount( apply_filters( 'wcml_raw_price_amount', $coupon->get_minimum_amount() ) );
+		$coupon->set_maximum_amount( apply_filters( 'wcml_raw_price_amount', $coupon->get_maximum_amount() ) );
 
 	}
 

@@ -184,6 +184,17 @@ function relevanssi_default_post_ok( $post_ok, $post_id ) {
 		$post_ok = false;
 	}
 
+	if ( relevanssi_post_password_required( $post_id ) ) {
+		/**
+		 * Filters whether password protected posts are shown in the search
+		 * results.
+		 *
+		 * @param boolean $post_ok True if the post can be shown, false if not.
+		 * @param int     $post_id The post ID.
+		 */
+		$post_ok = apply_filters( 'relevanssi_show_password_protected', false, $post_id );
+	}
+
 	// Let's look a bit closer at private posts.
 	if ( 'private' === $status ) {
 		$post_ok = false;
@@ -273,7 +284,21 @@ function relevanssi_populate_array( $matches, $blog_id = -1 ) {
 			foreach ( $posts as $post ) {
 				$cache_id = $blog_id . '|' . $post->ID;
 
-				$relevanssi_post_array[ $cache_id ] = $post;
+				/**
+				 * Filters each post object Relevanssi caches.
+				 *
+				 * The post objects are stdClass objects created from wp_posts
+				 * database rows. If you need them to be WP_Post objects, you
+				 * can use this filter hook to run new WP_Post( $post ) on them.
+				 * If you do that, set $post->filter to "raw" in the objects to
+				 * avoid problems.
+				 *
+				 * @param stdClass $post The post object.
+				 */
+				$relevanssi_post_array[ $cache_id ] = apply_filters(
+					'relevanssi_cached_post_object',
+					$post
+				);
 			}
 		}
 	} while ( $ids );
@@ -482,12 +507,15 @@ function relevanssi_prevent_default_request( $request, $query ) {
 			}
 		}
 
-		if ( isset( $_REQUEST['action'] ) && 'acf' === substr( $_REQUEST['action'], 0, 3 ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		if ( isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) && 'acf' === substr( $_REQUEST['action'], 0, 3 ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 			// ACF stuff, do not touch (eg. a relationship field search).
 			return $request;
 		}
-		if ( isset( $query->query_vars['action'] ) && 'acf' === substr( $query->query_vars['action'], 0, 3 ) ) {
+		if ( isset( $query->query_vars['action'] ) && is_string( $query->query_vars['action'] ) && 'acf' === substr( $query->query_vars['action'], 0, 3 ) ) {
 			// ACF stuff, do not touch (eg. a relationship field search).
+			return $request;
+		}
+		if ( isset( $query->is_feed ) && $query->is_feed ) {
 			return $request;
 		}
 
@@ -551,7 +579,7 @@ function relevanssi_prevent_default_request( $request, $query ) {
  * source material. If the parameter is an array of string, each string is
  * tokenized separately and the resulting tokens are combined into one array.
  *
- * @param string|array   $string          The string, or an array of strings, to
+ * @param string|array   $str             The string, or an array of strings, to
  *                                        tokenize.
  * @param boolean|string $remove_stops    If true, stopwords are removed. If
  * 'body', also removes the body stopwords. Default true.
@@ -563,14 +591,14 @@ function relevanssi_prevent_default_request( $request, $query ) {
  * @return int[] An array of tokens as the keys and their frequency as the
  * value.
  */
-function relevanssi_tokenize( $string, $remove_stops = true, int $min_word_length = -1, $context = 'indexing' ) : array {
-	if ( ! $string || ( ! is_string( $string ) && ! is_array( $string ) ) ) {
+function relevanssi_tokenize( $str, $remove_stops = true, int $min_word_length = -1, $context = 'indexing' ): array {
+	if ( ! $str || ( ! is_string( $str ) && ! is_array( $str ) ) ) {
 		return array();
 	}
 
 	$phrase_words = array();
 	if ( RELEVANSSI_PREMIUM && 'search_query' === $context ) {
-		$string_for_phrases = is_array( $string ) ? implode( ' ', $string ) : $string;
+		$string_for_phrases = is_array( $str ) ? implode( ' ', $str ) : $str;
 		$phrases            = relevanssi_extract_phrases( $string_for_phrases );
 		$phrase_words       = array();
 		foreach ( $phrases as $phrase ) {
@@ -579,9 +607,9 @@ function relevanssi_tokenize( $string, $remove_stops = true, int $min_word_lengt
 	}
 
 	$tokens = array();
-	if ( is_array( $string ) ) {
+	if ( is_array( $str ) ) {
 		// If we get an array, tokenize each string in the array.
-		foreach ( $string as $substring ) {
+		foreach ( $str as $substring ) {
 			if ( is_string( $substring ) ) {
 				$tokens = array_merge( $tokens, relevanssi_tokenize( $substring, $remove_stops, $min_word_length ) );
 			}
@@ -614,7 +642,7 @@ function relevanssi_tokenize( $string, $remove_stops = true, int $min_word_lengt
 
 	if ( function_exists( 'relevanssi_apply_thousands_separator' ) ) {
 		// A Premium feature.
-		$string = relevanssi_apply_thousands_separator( $string );
+		$str = relevanssi_apply_thousands_separator( $str );
 	}
 
 	/**
@@ -623,13 +651,13 @@ function relevanssi_tokenize( $string, $remove_stops = true, int $min_word_lengt
 	 * The default function on this filter is relevanssi_remove_punct(), which
 	 * removes some punctuation and replaces some with spaces.
 	 *
-	 * @param string $string String with punctuation.
+	 * @param string $str String with punctuation.
 	 */
-	$string = apply_filters( 'relevanssi_remove_punctuation', $string );
+	$str = apply_filters( 'relevanssi_remove_punctuation', $str );
 
-	$string = relevanssi_strtolower( $string );
+	$str = relevanssi_strtolower( $str );
 
-	$token = strtok( $string, "\n\t " );
+	$token = strtok( $str, "\n\t " );
 	while ( false !== $token ) {
 		$token  = strval( $token );
 		$accept = true;
@@ -672,7 +700,7 @@ function relevanssi_tokenize( $string, $remove_stops = true, int $min_word_lengt
 				if ( ! isset( $tokens[ $token ] ) ) {
 					$tokens[ $token ] = 1;
 				} else {
-					$tokens[ $token ]++;
+					++$tokens[ $token ];
 				}
 			}
 		}
@@ -946,11 +974,8 @@ function relevanssi_async_update_doc_count() {
  * @global object $wpdb                 The WordPress database interface.
  *
  * @author Teemu Muikku
- *
- * @param int $new_blog  The new blog ID.
- * @param int $prev_blog The old blog ID.
  */
-function relevanssi_switch_blog( $new_blog, $prev_blog ) {
+function relevanssi_switch_blog() {
 	global $relevanssi_variables, $wpdb;
 
 	if ( ! isset( $relevanssi_variables ) || ! isset( $relevanssi_variables['relevanssi_table'] ) ) {
@@ -1004,7 +1029,7 @@ function relevanssi_add_highlight( $permalink, $link_post = null ) {
  * $post ID. Default null.
  * @return boolean True if the post ID or global $post matches the front page.
  */
-function relevanssi_is_front_page_id( int $post_id = null ) : bool {
+function relevanssi_is_front_page_id( $post_id = null ): bool {
 	$frontpage_id = intval( get_option( 'page_on_front' ) );
 	if ( $post_id === $frontpage_id ) {
 		return true;
@@ -1043,7 +1068,7 @@ function relevanssi_permalink( $link, $link_post = null ) {
 	} elseif ( is_int( $link_post ) ) {
 		$link_post = relevanssi_get_post( $link_post );
 	}
-	if ( is_object( $link_post ) && ! property_exists( $link_post, 'relevance_score' ) ) {
+	if ( is_object( $link_post ) && ! is_wp_error( $link_post ) && ! property_exists( $link_post, 'relevance_score' ) ) {
 		// get_permalink( $post_id ) uses get_post() which eliminates Relevanssi
 		// data from the post, thus we use relevanssi_get_post() to get it.
 		$link_post = relevanssi_get_post( $link_post->ID );
@@ -1177,105 +1202,119 @@ function relevanssi_common_words( $limit = 25, $wp_cli = false ) {
  * @return array An array of post type names.
  */
 function relevanssi_get_forbidden_post_types() {
-	return array(
-		'wp_template_part',     // WP template parts.
-		'wp_global_styles',     // WP global styles.
-		'wp_navigation',        // Navigation menus.
-		'nav_menu_item',        // Navigation menu items.
-		'revision',             // Never index revisions.
-		'acf',                  // Advanced Custom Fields.
-		'acf-field',            // Advanced Custom Fields.
-		'acf-field-group',      // Advanced Custom Fields.
-		'oembed_cache',         // Mysterious caches.
-		'customize_changeset',  // Customizer change sets.
-		'user_request',         // User data request.
-		'custom_css',           // Custom CSS data.
-		'cpt_staff_lst_item',   // Staff List.
-		'cpt_staff_lst',        // Staff List.
-		'wp_block',             // Gutenberg block.
-		'amp_validated_url',    // AMP.
-		'jp_pay_order',         // Jetpack.
-		'jp_pay_product',       // Jetpack.
-		'jp_mem_plan',          // Jetpack.
-		'tablepress_table',     // TablePress.
-		'ninja-table',          // Ninja Tables.
-		'shop_coupon',          // WooCommerce.
-		'shop_order',           // WooCommerce.
-		'shop_order_refund',    // WooCommerce.
-		'wc_order_status',      // WooCommerce.
-		'wc_order_email',       // WooCommerce.
-		'shop_webhook',         // WooCommerce.
-		'woo_product_tab',      // Woo Product Tab.
-		'et_theme_builder',     // Divi.
-		'et_template',          // Divi.
-		'et_header_layout',     // Divi.
-		'et_body_layout',       // Divi.
-		'et_footer_layout',     // Divi.
-		'wpforms',              // WP Forms.
-		'amn_wpforms',          // WP Forms.
-		'wpforms_log',          // WP Forms.
-		'dlm_download_version', // Download Monitor.
-		'wpcf7_contact_form',   // WP Contact Form 7.
-		'amn_exact-metrics',    // Google Analytics Dashboard.
-		'edd_commission',       // Easy Digital Downloads.
-		'edd_payment',          // Easy Digital Downloads.
-		'edd_discount',         // Easy Digital Downloads.
-		'eddpointslog',         // Easy Digital Downloads.
-		'edd_log',              // Easy Digital Downloads.
-		'edd-zapier-sub',       // Easy Digital Downloads.
-		'pys_event',            // Pixel Your Site.
-		'wp-types-group',       // WP Types.
-		'wp-types-term-group',  // WP Types.
-		'wp-types-user-group',  // WP Types.
-		'vc_grid_item',         // Visual Composer.
-		'bigcommerce_task',     // BigCommerce.
-		'slides',               // Qoda slides.
-		'carousels',            // Qoda carousels.
-		'pretty-link',          // Pretty Links.
-		'fusion_tb_layout',     // Fusion Builder.
-		'fusion_tb_section',    // Fusion Builder.
-		'fusion_form',          // Fusion Builder.
-		'fusion_icons',         // Fusion Builder.
-		'fusion_template',      // Fusion Builder.
-		'fusion_element',       // Fusion Builder.
-		'acfe-dbt',             // ACF Extended.
-		'acfe-form',            // ACF Extended.
-		'acfe-dop',             // ACF Extended.
-		'acfe-dpt',             // ACF Extended.
-		'acfe-dt',              // ACF Extended.
-		'um_form',              // Ultimate Member.
-		'um_directory',         // Ultimate Member.
-		'mailpoet_page',        // Mailpoet Page.
-		'mc4wp_form',           // MailChimp.
-		'elementor_font',       // Elementor.
-		'elementor_icons',      // Elementor.
-		'elementor_library',    // Elementor.
-		'elementor_snippet',    // Elementor.
-		'wffn_landing',         // WooFunnel.
-		'wffn_ty',              // WooFunnel.
-		'wffn_optin',           // WooFunnel.
-		'wffn_oty',             // WooFunnel.
-		'wp_template',          // Block templates.
-		'memberpressrule',      // Memberpress.
-		'memberpresscoupon',    // Memberpress.
-		'fl-builder-template',  // Beaver Builder.
-		'itsec-dashboard',      // iThemes Security.
-		'itsec-dash-card',      // iThemes Security.
-		'astra-advanced-hook',  // Astra.
-		'astra_adv_header',     // Astra.
-		'astra_adv_header',     // Astra.
-		'udb_widgets',          // Ultimate Dashboard.
-		'udb_admin_page',       // Ultimate Dashboard.
-		'oxy_user_library',     // Oxygen.
-		'aw_workflow',          // AutomateWoo.
-		'paypal_transaction',   // PayPal for WooCommerce.
-		'scheduled-action',
-		'divi_bars',            // Divi Bars.
-		'br_product_filter',    // BeRocket Product Filters.
-		'br_filters_group',     // BeRocket Product Filters.
-		'wfob_bump',            // WooFunnel.
-		'wfocu_funnel',         // WooFunnel.
-		'wfocu_offer',          // WooFunnel.
+	/**
+	 * Filters the list of post types Relevanssi does not want to use.
+	 *
+	 * @param array $forbidden_post_types An array of post type names.
+	 */
+	return apply_filters(
+		'relevanssi_forbidden_post_types',
+		array(
+			'wp_template_part',     // WP template parts.
+			'wp_global_styles',     // WP global styles.
+			'wp_navigation',        // Navigation menus.
+			'nav_menu_item',        // Navigation menu items.
+			'revision',             // Never index revisions.
+			'acf',                  // Advanced Custom Fields.
+			'acf-field',            // Advanced Custom Fields.
+			'acf-field-group',      // Advanced Custom Fields.
+			'acf-taxonomy',         // Advanced Custom Fields.
+			'acf-post-type',        // Advanced Custom Fields.
+			'acf-ui-options-page',  // Advanced Custom Fields.
+			'oembed_cache',         // Mysterious caches.
+			'customize_changeset',  // Customizer change sets.
+			'user_request',         // User data request.
+			'custom_css',           // Custom CSS data.
+			'cpt_staff_lst_item',   // Staff List.
+			'cpt_staff_lst',        // Staff List.
+			'wp_block',             // Gutenberg block.
+			'amp_validated_url',    // AMP.
+			'jp_pay_order',         // Jetpack.
+			'jp_pay_product',       // Jetpack.
+			'jp_mem_plan',          // Jetpack.
+			'tablepress_table',     // TablePress.
+			'ninja-table',          // Ninja Tables.
+			'shop_coupon',          // WooCommerce.
+			'shop_order',           // WooCommerce.
+			'shop_order_refund',    // WooCommerce.
+			'wc_order_status',      // WooCommerce.
+			'wc_order_email',       // WooCommerce.
+			'shop_webhook',         // WooCommerce.
+			'woo_product_tab',      // Woo Product Tab.
+			'et_theme_builder',     // Divi.
+			'et_template',          // Divi.
+			'et_header_layout',     // Divi.
+			'et_body_layout',       // Divi.
+			'et_footer_layout',     // Divi.
+			'wpforms',              // WP Forms.
+			'amn_wpforms',          // WP Forms.
+			'wpforms_log',          // WP Forms.
+			'dlm_download_version', // Download Monitor.
+			'wpcf7_contact_form',   // WP Contact Form 7.
+			'amn_exact-metrics',    // Google Analytics Dashboard.
+			'edd_commission',       // Easy Digital Downloads.
+			'edd_payment',          // Easy Digital Downloads.
+			'edd_discount',         // Easy Digital Downloads.
+			'eddpointslog',         // Easy Digital Downloads.
+			'edd_log',              // Easy Digital Downloads.
+			'edd-zapier-sub',       // Easy Digital Downloads.
+			'pys_event',            // Pixel Your Site.
+			'wp-types-group',       // WP Types.
+			'wp-types-term-group',  // WP Types.
+			'wp-types-user-group',  // WP Types.
+			'vc_grid_item',         // Visual Composer.
+			'bigcommerce_task',     // BigCommerce.
+			'slides',               // Qoda slides.
+			'carousels',            // Qoda carousels.
+			'pretty-link',          // Pretty Links.
+			'fusion_tb_layout',     // Fusion Builder.
+			'fusion_tb_section',    // Fusion Builder.
+			'fusion_form',          // Fusion Builder.
+			'fusion_icons',         // Fusion Builder.
+			'fusion_template',      // Fusion Builder.
+			'fusion_element',       // Fusion Builder.
+			'acfe-dbt',             // ACF Extended.
+			'acfe-form',            // ACF Extended.
+			'acfe-dop',             // ACF Extended.
+			'acfe-dpt',             // ACF Extended.
+			'acfe-dt',              // ACF Extended.
+			'um_form',              // Ultimate Member.
+			'um_directory',         // Ultimate Member.
+			'mailpoet_page',        // Mailpoet Page.
+			'mc4wp_form',           // MailChimp.
+			'elementor_font',       // Elementor.
+			'elementor_icons',      // Elementor.
+			'elementor_library',    // Elementor.
+			'elementor_snippet',    // Elementor.
+			'wffn_landing',         // WooFunnel.
+			'wffn_ty',              // WooFunnel.
+			'wffn_optin',           // WooFunnel.
+			'wffn_oty',             // WooFunnel.
+			'wp_template',          // Block templates.
+			'memberpressrule',      // Memberpress.
+			'memberpresscoupon',    // Memberpress.
+			'fl-builder-template',  // Beaver Builder.
+			'itsec-dashboard',      // iThemes Security.
+			'itsec-dash-card',      // iThemes Security.
+			'astra-advanced-hook',  // Astra.
+			'astra_adv_header',     // Astra.
+			'astra_adv_header',     // Astra.
+			'udb_widgets',          // Ultimate Dashboard.
+			'udb_admin_page',       // Ultimate Dashboard.
+			'oxy_user_library',     // Oxygen.
+			'aw_workflow',          // AutomateWoo.
+			'paypal_transaction',   // PayPal for WooCommerce.
+			'scheduled-action',
+			'divi_bars',            // Divi Bars.
+			'br_product_filter',    // BeRocket Product Filters.
+			'br_filters_group',     // BeRocket Product Filters.
+			'wfob_bump',            // WooFunnel.
+			'wfocu_funnel',         // WooFunnel.
+			'wfocu_offer',          // WooFunnel.
+			'wp_font_family',       // WordPress.
+			'wp_font_face',         // WordPress.
+			'wpforms-template',     // WP Forms.
+		)
 	);
 }
 
@@ -1285,22 +1324,32 @@ function relevanssi_get_forbidden_post_types() {
  * @return array An array of taxonomy names.
  */
 function relevanssi_get_forbidden_taxonomies() {
-	return array(
-		'wp_template_part_area',        // WP templates.
-		'nav_menu',                     // Navigation menus.
-		'link_category',                // Link categories.
-		'amp_validation_error',         // AMP.
-		'product_visibility',           // WooCommerce.
-		'wpforms_log_type',             // WP Forms.
-		'amp_template',                 // AMP.
-		'edd_commission_status',        // Easy Digital Downloads.
-		'edd_log_type',                 // Easy Digital Downloads.
-		'elementor_library_type',       // Elementor.
-		'elementor_library_category',   // Elementor.
-		'elementor_font_type',          // Elementor.
-		'wp_theme',                     // WordPress themes.
-		'fl-builder-template-category', // Beaver Builder.
-		'fl-builder-template-type',     // Beaver Builder.
+	/**
+	 * Filters the list of taxonomies Relevanssi does not want to use.
+	 *
+	 * @param array $forbidden_taxonomies An array of taxonomy names.
+	 */
+	return apply_filters(
+		'relevanssi_forbidden_taxonomies',
+		array(
+			'wp_template_part_area',        // WP templates.
+			'nav_menu',                     // Navigation menus.
+			'link_category',                // Link categories.
+			'amp_validation_error',         // AMP.
+			'product_visibility',           // WooCommerce.
+			'wpforms_log_type',             // WP Forms.
+			'amp_template',                 // AMP.
+			'edd_commission_status',        // Easy Digital Downloads.
+			'edd_log_type',                 // Easy Digital Downloads.
+			'elementor_library_type',       // Elementor.
+			'elementor_library_category',   // Elementor.
+			'elementor_font_type',          // Elementor.
+			'wp_theme',                     // WordPress themes.
+			'fl-builder-template-category', // Beaver Builder.
+			'fl-builder-template-type',     // Beaver Builder.
+			'wp_pattern_category',          // WordPress patterns.
+			'wpforms_form_tag',             // WP Forms.
+		)
 	);
 }
 
@@ -1332,7 +1381,7 @@ function relevanssi_filter_custom_fields( $values, $field ) {
 	}
 
 	$values = array_map(
-		function( $value ) {
+		function ( $value ) {
 			if ( is_string( $value ) && 'field_' === substr( $value, 0, 6 ) ) {
 				return '';
 			}
@@ -1369,13 +1418,13 @@ function relevanssi_remove_page_builder_shortcodes( $content ) {
 		'relevanssi_page_builder_shortcodes',
 		array(
 			// Remove content.
-			'/\[et_pb_code.*?\].*\[\/et_pb_code\]/im',
-			'/\[et_pb_sidebar.*?\].*\[\/et_pb_sidebar\]/im',
-			'/\[et_pb_fullwidth_slider.*?\].*\[\/et_pb_fullwidth_slider\]/im',
-			'/\[et_pb_fullwidth_code.*?\].*\[\/et_pb_fullwidth_code\]/im',
-			'/\[vc_raw_html.*?\].*\[\/vc_raw_html\]/im',
-			'/\[fusion_imageframe.*?\].*\[\/fusion_imageframe\]/im',
-			'/\[fusion_code.*?\].*\[\/fusion_code\]/im',
+			'/\[et_pb_code.*?\].*?\[\/et_pb_code\]/im',
+			'/\[et_pb_sidebar.*?\].*?\[\/et_pb_sidebar\]/im',
+			'/\[et_pb_fullwidth_slider.*?\].*?\[\/et_pb_fullwidth_slider\]/im',
+			'/\[et_pb_fullwidth_code.*?\].*?\[\/et_pb_fullwidth_code\]/im',
+			'/\[vc_raw_html.*?\].*?\[\/vc_raw_html\]/im',
+			'/\[fusion_imageframe.*?\].*?\[\/fusion_imageframe\]/im',
+			'/\[fusion_code.*?\].*?\[\/fusion_code\]/im',
 			// Remove only the tags.
 			'/\[\/?et_pb.*?\]/im',
 			'/\[\/?vc.*?\]/im',
@@ -1413,6 +1462,7 @@ function relevanssi_remove_page_builder_shortcodes( $content ) {
 function relevanssi_block_on_admin_searches( $allow, $query ) {
 	$blocked_post_types = array(
 		'rc_blocks', // Reusable Content Blocks.
+		'wp_block', // Reusable Content Blocks.
 	);
 	/**
 	 * Filters the post types that are blocked in the admin search.
@@ -1715,7 +1765,7 @@ function relevanssi_generate_list_of_custom_fields( $post_id, $custom_fields = n
 	if ( $remove_underscore_fields ) {
 		$custom_fields = array_filter(
 			$custom_fields,
-			function( $field ) {
+			function ( $field ) {
 				if ( '_relevanssi_pdf_content' === $field || '_' !== substr( $field, 0, 1 ) ) {
 					return $field;
 				}
@@ -1772,7 +1822,7 @@ function relevanssi_update_synonyms_setting() {
  *
  * @return array An array of words with backwards synonym replacement.
  */
-function relevanssi_replace_synonyms_in_terms( array $terms ) : array {
+function relevanssi_replace_synonyms_in_terms( array $terms ): array {
 	$all_synonyms = get_option( 'relevanssi_synonyms', array() );
 	$synonyms     = explode( ';', $all_synonyms[ relevanssi_get_current_language() ] ?? '' );
 
@@ -1781,6 +1831,9 @@ function relevanssi_replace_synonyms_in_terms( array $terms ) : array {
 			$new_term = array();
 			foreach ( $synonyms as $pair ) {
 				if ( empty( $pair ) ) {
+					continue;
+				}
+				if ( strpos( $pair, '=' ) === false ) {
 					continue;
 				}
 				list( $key, $value ) = explode( '=', $pair );
@@ -1806,8 +1859,8 @@ function relevanssi_replace_synonyms_in_terms( array $terms ) : array {
  * @return array An array of words with stemmed words replaced with their
  * originals.
  */
-function relevanssi_replace_stems_in_terms( array $terms, array $all_terms = null ) : array {
-	if ( ! $all_terms ) {
+function relevanssi_replace_stems_in_terms( array $terms, array $all_terms = array() ): array {
+	if ( empty( $all_terms ) ) {
 		$all_terms = $terms;
 	}
 	$term_for_stem = array();
@@ -1844,7 +1897,7 @@ function relevanssi_replace_stems_in_terms( array $terms, array $all_terms = nul
  *
  * @return array An array of name => user-agent pairs.
  */
-function relevanssi_bot_block_list() : array {
+function relevanssi_bot_block_list(): array {
 	$bots = array(
 		'Google Mediapartners' => 'Mediapartners-Google',
 		'GoogleBot'            => 'Googlebot',
@@ -1857,6 +1910,7 @@ function relevanssi_bot_block_list() : array {
 		'Exalead'              => 'Exabot',
 		'Majestic'             => 'MJ12Bot',
 		'Ahrefs'               => 'AhrefsBot',
+		'Apple'                => 'AppleBot',
 	);
 	return $bots;
 }
@@ -1870,9 +1924,9 @@ function relevanssi_bot_block_list() : array {
  *
  * @param array $custom_fields A list of custom field names.
  *
- * @return @array The custom fields with the excluded fields removed.
+ * @return array The custom fields with the excluded fields removed.
  */
-function relevanssi_remove_metadata_fields( array $custom_fields ) : array {
+function relevanssi_remove_metadata_fields( array $custom_fields ): array {
 	$excluded_fields = array(
 		'_edit_last',
 		'_edit_lock',
@@ -1916,21 +1970,21 @@ function relevanssi_list_all_indexed_custom_fields() {
 
 	if ( 'visible' === $custom_fields ) {
 		$custom_fields = $wpdb->get_col(
-			"SELECT DISTINCT(meta_key)
-			FROM $wpdb->postmeta AS pm, {$relevanssi_variables['relevanssi_table']} AS r
-			WHERE pm.post_id = r.doc AND meta_key NOT LIKE '\_%'
+			'SELECT DISTINCT(meta_key) ' .
+			"FROM $wpdb->postmeta AS pm, {$relevanssi_variables['relevanssi_table']} AS r " . // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"WHERE pm.post_id = r.doc AND meta_key NOT LIKE '\_%'
 			ORDER BY meta_key ASC"
 		);
-	} else if ( 'all' === $custom_fields ) {
+	} elseif ( 'all' === $custom_fields ) {
 		$custom_fields = $wpdb->get_col(
-			"SELECT DISTINCT(meta_key)
-			FROM $wpdb->postmeta AS pm, {$relevanssi_variables['relevanssi_table']} AS r
-			WHERE pm.post_id = r.doc
-			ORDER BY meta_key ASC"
+			'SELECT DISTINCT(meta_key) ' .
+			"FROM $wpdb->postmeta AS pm, {$relevanssi_variables['relevanssi_table']} AS r " . // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			'WHERE pm.post_id = r.doc
+			ORDER BY meta_key ASC'
 		);
 	} else {
 		$custom_fields = explode( ',', $custom_fields );
 	}
 
-	return implode( ', ', $custom_fields );
+	return htmlspecialchars( implode( ', ', $custom_fields ) );
 }

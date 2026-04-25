@@ -1,8 +1,7 @@
 <?php
+// phpcs:disable WordPress.WP.I18n.NonSingularStringLiteralDomain 
 
-if (!defined('UPDRAFTCENTRAL_CLIENT_DIR')) die('Security check');
-
-// Developer note: Please avoid using the 'updraftplus' string within the actual text unless it is being used as a translation domain (e.g. __('TEXT_THAT_NEEDS_TO_BE_TRANSLATED', 'updraftplus'))
+if (!defined('ABSPATH')) die('No direct access allowed');
 
 // Translations for UpdraftCentral
 return array(
@@ -12,18 +11,25 @@ return array(
 	'unknown_key' => __('The key referred to was unknown.', 'updraftplus'),
 	'not_logged_in' => __('You are not logged into this WordPress site in your web browser.', 'updraftplus'),
 	'must_visit_url' => __('You must visit this URL in the same browser and login session as you created the key in.', 'updraftplus'),
-	'security_check' => __('Security check. ', 'updraftplus'),
+	'security_check' => __('Security check.', 'updraftplus'),
 	'must_visit_link' => __('You must visit this link in the same browser and login session as you created the key in.', 'updraftplus'),
 	'connection_already_made' => __('This connection appears to already have been made.', 'updraftplus'),
 	'close' => __('Close', 'updraftplus'),
 	'nothing_yet_logged' => __('(Nothing yet logged)', 'updraftplus'),
 	'invalid_url' => __('An invalid URL was entered', 'updraftplus'),
 	'updraftcentral_key_created' => __('UpdraftCentral key created successfully', 'updraftplus'),
+	/* translators: %s: Location where key should be entered */
 	'need_to_copy_key' => __('You now need to copy the key below and enter it at your %s.', 'updraftplus'),
 	'press_add_site_button' => __('At your UpdraftCentral dashboard you should press the "Add Site" button then paste the key in the input box.', 'updraftplus'),
+	/* translators: %s: URL for detailed instructions */
 	'detailed_instructions' => __('Detailed instructions for this can be found at %s', 'updraftplus'),
+	/* translators: %s: UpdraftCentral dashboard URL */
 	'control_this_site' => __('You can now control this site via your UpdraftCentral dashboard at %s.', 'updraftplus'),
-	'attempt_to_register_failed' => __('A key was created, but the attempt to register it with %1$s was unsuccessful. You can try again, or try using the alternative connection method if the problem persists. For more information visit %2$s', 'updraftplus'),
+	/* translators: %s: Service name */
+	'attempt_to_register_failed' => __('A key was created, but the attempt to register it with %s was unsuccessful.', 'updraftplus').' '.
+	__('You can try again, or try using the alternative connection method if the problem persists.', 'updraftplus').' '.
+	/* translators: %s: URL for more information */
+	__('For more information visit %s', 'updraftplus'),
 	'key_created_successfully' => __('Key created successfully.', 'updraftplus'),
 	'copy_paste_key' => __('You must copy and paste this key now - it cannot be shown again.', 'updraftplus'),
 	'no_updraftcentral_dashboards' => __('There are no UpdraftCentral dashboards that can currently control this site.', 'updraftplus'),
@@ -31,15 +37,19 @@ return array(
 	'access_as_user' => __('Access this site as user:', 'updraftplus'),
 	'public_key_sent' => __('Public key was sent to:', 'updraftplus'),
 	'created' => __('Created:', 'updraftplus'),
+	/* translators: %d: Key size in bits */
 	'key_size' => __('Key size: %d bits', 'updraftplus'),
 	'delete' => __('Delete...', 'updraftplus'),
+	/* translators: %d: Number of existing keys */
 	'manage_keys' => __('Manage existing keys (%d)...', 'updraftplus'),
 	'key_description' => __('Key description', 'updraftplus'),
 	'details' => __('Details', 'updraftplus'),
 	'connect_to_updraftcentral_dashboard' => __('Connect this site to an UpdraftCentral dashboard found at...', 'updraftplus'),
+	/* translators: %s: Example content */
 	'in_example' => __('i.e. if you have %s there', 'updraftplus'),
 	'an_account' => __('an account', 'updraftplus'),
 	'self_hosted_dashboard' => __('Self-hosted dashboard', 'updraftplus'),
+	/* translators: %s: Installed service name */
 	'website_installed' => __('A website where you have installed %s', 'updraftplus'),
 	'enter_url' => __('Enter the URL where your self-hosted install of UpdraftCentral is located:', 'updraftplus'),
 	'updraftcentral_dashboard_url' => __('URL for the site of your UpdraftCentral dashboard', 'updraftplus'),
@@ -48,7 +58,9 @@ return array(
 	'description' => __('Description', 'updraftplus'),
 	'enter_description' => __('Enter any description', 'updraftplus'),
 	'encryption_key_size' => __('Encryption key size:', 'updraftplus'),
+	/* translators: %s: Number of bits */
 	'bits' => __('%s bits', 'updraftplus'),
+	/* translators: %s: Number of bytes */
 	'bytes' => __('%s bytes', 'updraftplus'),
 	'easy_to_break' => __('easy to break, fastest', 'updraftplus'),
 	'faster' => __('faster (possibility for slow PHP installs)', 'updraftplus'),
@@ -61,6 +73,7 @@ return array(
 	'back' => __('Back...', 'updraftplus'),
 	'view_log_events' => __('View recent UpdraftCentral log events', 'updraftplus'),
 	'updraftcentral_remote_control' => __('UpdraftCentral (Remote Control)', 'updraftplus'),
+	/* translators: %s: Location where WordPress sites can be controlled from */
 	'updraftcentral_description' => __('UpdraftCentral enables control of your WordPress sites %s from a central dashboard.', 'updraftplus'),
 	'including_description' => array(
 		'wp_optimize_desc' => __('(including management of WP-Optimize)', 'updraftplus'),
@@ -69,8 +82,16 @@ return array(
 	'read_more' => __('Read more about it here.', 'updraftplus'),
 	'create_another_key' => __('Create another key', 'updraftplus'),
 	'unable_to_connect' => __('Unable to connect to the filesystem', 'updraftplus'),
-	'unable_to_activate' => __('Unable to activate %s successfully. Make sure that this %s is compatible with your remote WordPress version. WordPress version currently installed in your remote website is %s.', 'updraftplus'),
-	'unable_to_install' => __('Unable to install %s. Make sure that the zip file is a valid %s file and a previous version of this %s does not exist. If you wish to overwrite an existing %s then you will have to manually delete it from the %s folder on the remote website and try uploading the file again.', 'updraftplus'),
+	/* translators: %s: Service name */
+	'unable_to_activate' => __('Unable to activate %s successfully.', 'updraftplus').' '.
+		/* translators: %s: Service name */
+		__('Make sure that this %s is compatible with your remote WordPress version.', 'updraftplus').' '.
+		/* translators: %s: Installed WordPress version */
+		__('WordPress version currently installed in your remote website is %s.', 'updraftplus'),
+	/* translators: %s: Service name */
+	'unable_to_install' => __('Unable to install %s.', 'updraftplus').' '.
+		/* translators: %s: Expected file type */
+		__('Make sure you upload the correct file and that the zip file is a valid %s file (not corrupted) and try uploading the file again.', 'updraftplus'),
 	'failed_to_attach_media' => __('Failed to attach media.', 'updraftplus'),
 	'media_attached' => __('Media has been attached to post.', 'updraftplus'),
 	'failed_to_detach_media' => __('Failed to detach media.', 'updraftplus'),
@@ -88,4 +109,15 @@ return array(
 	'updraftcentral_wizard_empty_url' => __('Please enter the URL where your UpdraftCentral dashboard is hosted.', 'updraftplus'),
 	'updraftcentral_wizard_invalid_url' => __('Please enter a valid URL e.g http://example.com', 'updraftplus'),
 	'insufficient_privilege' => __('Sorry, you do not have enough privilege to execute the requested action.', 'updraftplus'),
+	'copy_to_clipboard' => __('Copy to clipboard', 'updraftplus'),
+	'key_copied' => __('The key was copied to the clipboard.', 'updraftplus'),
+	'unable_to_copy' => __('The attempt to copy to the clipboard failed.', 'updraftplus'),
+	'wpo_not_active' => __('WP_Optimize is not installed or active.', 'updraftplus'),
+	'log_file_not_exist' => __('Log file does not exist or could not be read.', 'updraftplus'),
+	'security_check_failed' => __('Security check failed; try refreshing the page.', 'updraftplus').' '.__('If refreshing the page does not help then perhaps you do not have sufficient privilege to manage WP-Optimize.', 'updraftplus'),
+	'no_such_command' => __('No such command found.', 'updraftplus'),
+	'command_not_allowed' => __('You are not allowed to run this command.', 'updraftplus'),
+	'command_not_found' => __('The command is either not found or not allowed.', 'updraftplus'),
+	'network_admin_only' => __('The command can only be executed by a network admin.', 'updraftplus'),
+	'create_key'            => __('Create key', 'updraftplus'),
 );

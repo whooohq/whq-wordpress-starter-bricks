@@ -1,4 +1,8 @@
 <?php
+
+use WCML\Utilities\WpAdminPages;
+use WPML\API\Sanitize;
+
 /**
  * Class WCML_Admin_Currency_Selector
  */
@@ -23,8 +27,6 @@ class WCML_Admin_Currency_Selector {
 	}
 
 	public function add_hooks() {
-		global $pagenow;
-
 		if ( is_admin() ) {
 
 			if ( $this->user_can_manage_woocommerce() ) {
@@ -118,7 +120,7 @@ class WCML_Admin_Currency_Selector {
 		global $pagenow;
 
 		if ( ! $currency_code && 'index.php' === $pagenow && ! headers_sent() ) {
-			$currency_code = $this->woocommerce_wpml->multi_currency->get_currency_code();
+			$currency_code = $this->get_cookie_dashboard_currency();
 		}
 
 		if ( $currency_code ) {
@@ -144,20 +146,28 @@ class WCML_Admin_Currency_Selector {
 	/**
 	 * Filter currency symbol on dashboard page
 	 *
-	 * @param string $currency Currency code
+	 * @param string $currencySymbol Currency symbol
 	 *
 	 * @return string
 	 */
-	public function filter_dashboard_currency_symbol( $currency ) {
-		global $pagenow;
-
-		remove_filter( 'woocommerce_currency_symbol', [ $this, 'filter_dashboard_currency_symbol' ] );
-		if ( 'index.php' === $pagenow && empty( $_REQUEST['action'] ) && isset( $_COOKIE ['_wcml_dashboard_currency'] ) ) {
-			$currency = get_woocommerce_currency_symbol( $_COOKIE ['_wcml_dashboard_currency'] );
+	public function filter_dashboard_currency_symbol( $currencySymbol ) {
+		if (
+			( WpAdminPages::isDashboard() && empty( $_REQUEST['action'] ) )
+			|| self::isDashboardWidgetRequest()
+		) {
+			remove_filter( 'woocommerce_currency_symbol', [ $this, 'filter_dashboard_currency_symbol' ] );
+			$currencySymbol = get_woocommerce_currency_symbol( $this->get_cookie_dashboard_currency() );
+			add_filter( 'woocommerce_currency_symbol', [ $this, 'filter_dashboard_currency_symbol' ] );
 		}
-		add_filter( 'woocommerce_currency_symbol', [ $this, 'filter_dashboard_currency_symbol' ] );
 
-		return $currency;
+		return $currencySymbol;
 	}
 
+	/**
+	 * @return bool
+	 */
+	public static function isDashboardWidgetRequest() {
+		return wp_doing_ajax()
+				&& 'woocommerce_load_status_widget' === Sanitize::stringProp( 'action', $_GET );
+	}
 }

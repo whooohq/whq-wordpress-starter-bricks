@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) die('No direct access.');
 class UpdraftPlus_Manipulation_Functions {
 
 	/**
-	 * Replace last occurence
+	 * Replace last occurrence
 	 *
 	 * @param  String  $search         The value being searched for, otherwise known as the needle
 	 * @param  String  $replace        The replacement value that replaces found search values
@@ -53,13 +53,92 @@ class UpdraftPlus_Manipulation_Functions {
 	 *
 	 * The function wp_unslash() is WP 3.6+, so therefore we have a compatibility method here
 	 *
-	 * @param String|Array $value String or array of strings to unslash.
+	 * @param String|Array $value         String or array of strings to unslash.
+	 * @param Boolean      $force_unslash Strip slashes without checking whether wp_magic_quotes function and/or plugins_loaded action have already been called or not
 	 * @return String|Array Unslashed $value
 	 */
-	public static function wp_unslash($value) {
+	public static function wp_unslash($value, $force_unslash = true) {
+		if (!$force_unslash && (!did_action('plugins_loaded') || !isset($GLOBALS['wp_the_query']))) return $value;
 		return function_exists('wp_unslash') ? wp_unslash($value) : stripslashes_deep($value);
 	}
-	
+
+	/**
+	 * Return the value of a member of a superglobal, after slash-stripping and sanitisation.
+	 *
+	 * When using, it is recommended that if the $type or $sanitisation parameters are not used then a code comment is added to state the reason.
+	 *
+	 * @param String        $superglobal  - Should be one of 'get', 'post', 'request' or 'cookie'
+	 * @param String        $key          - The key to fetch from the superglobal array
+	 * @param Mixed         $default      - Value to return if the key is not found or if the value is invalid
+	 * @param Boolean       $auto_unslash - Whether to automatically strip slashes from the variable value but not to force it
+	 * @param String|Null   $type         - If specified, then this must (modulo case) match what is returned by gettype() upon the returned value; otherwise, $default will be used. If it is not possible to return a value of the correct type (e.g. if $default itself is not of the correct type) then a TypeError will be thrown. This can be useful if the caller wishes to distinguish between the fetched value being equal to the default, and being invalid (the caller can catch the TypeError to detect this).
+	 * @param Callable|Null $sanitisation - The sanitisation function to run the result through (any function), with the first parameter being the putative value. Any $default value will not be sanitised, which allows different cases to be distinguished as described above.
+	 *
+	 * @see https://developer.wordpress.org/apis/security/sanitizing/
+	 * @see https://www.php.net/manual/en/function.gettype.php
+	 *
+	 * @throws Exception    If the fetched value does not match the specified $type or if $default itself is not of the correct type.
+	 *
+	 * @return Mixed The superglobal or global variable value or null
+	 */
+	public static function fetch_superglobal($superglobal, $key, $default = null, $auto_unslash = false, $type = null, $sanitisation = null) {
+
+		$superglobal = '_'.strtoupper($superglobal);
+		
+		// N.B. Superglobals can only be dereferenced by variable variables in the global scope; this is why we have to use $GLOBALS
+		if (!is_array($GLOBALS[$superglobal]) || !isset($GLOBALS[$superglobal][$key])) {
+			$putative_return = $default;
+		} else {
+			$putative_return = (is_string($GLOBALS[$superglobal][$key]) || is_array($GLOBALS[$superglobal][$key])) && $auto_unslash ? self::wp_unslash($GLOBALS[$superglobal][$key], false) : $GLOBALS[$superglobal][$key];
+			if (null !== $sanitisation) {
+				$putative_return = call_user_func($sanitisation, $putative_return);
+			}
+			if (null !== $type) {
+				if (strtolower(gettype($putative_return)) !== strtolower($type)) {
+					$putative_return = $default;
+				}
+			}
+		}
+		
+		if (null !== $type) {
+			if (strtolower(gettype($putative_return)) !== strtolower($type)) {
+				throw new Exception('fetch_superglobal() was unable to return any value of the required type '.$type, 255);
+			}
+		}
+		
+		return $putative_return;
+
+	}
+
+	/**
+	 * Fetch multiple values from superglobals using fetch_superglobal().
+	 *
+	 * Each argument should be an array with the structure:
+	 * array( $superglobal, $key, $default, $auto_unslash, $type, $sanitisation )
+	 *
+	 * @return array
+	 */
+	public static function fetch_superglobal_array() {
+		$args = func_get_args();
+		if (empty($args)) return array();
+
+		$results = array();
+		foreach ($args as $arg) {
+			if (!is_array($arg) || count($arg) < 2) continue;
+
+			$superglobal  = $arg[0];
+			$key = $arg[1];
+			$default = isset($arg[2]) ? $arg[2] : null;
+			$auto_unslash = isset($arg[3]) ? $arg[3] : false;
+			$type = isset($arg[4]) ? $arg[4] : null;
+			$sanitisation = isset($arg[5]) ? $arg[5] : null;
+
+			$results[$key] = self::fetch_superglobal($superglobal, $key, $default, $auto_unslash, $type, $sanitisation);
+		}
+
+		return $results;
+	}
+
 	/**
 	 * Parse a filename into components
 	 *
@@ -209,7 +288,7 @@ class UpdraftPlus_Manipulation_Functions {
 	 *
 	 * @param array   $str_arr1                  array of strings
 	 * @param array   $str_arr2                  array of strings
-	 * @param boolean $match_until_first_numeric only match until first numeric occurence
+	 * @param boolean $match_until_first_numeric only match until first numeric occurrence
 	 * @return string matching str which will be best for replacement
 	 */
 	public static function get_matching_str_from_array_elems($str_arr1, $str_arr2, $match_until_first_numeric = true) {
@@ -220,7 +299,7 @@ class UpdraftPlus_Manipulation_Functions {
 				$str1_str_length = strlen($str1);
 				$temp_str1_chars = str_split($str1);
 				$temp_partial_str = '';
-				// The flag is for whether non-numeric character passed after numeric character occurence in str1. For ex. str1 is utf8mb4, the flag wil be true when parsing m after utf8.
+				// The flag is for whether non-numeric character passed after numeric character occurrence in str1. For ex. str1 is utf8mb4, the flag wil be true when parsing m after utf8.
 				$numeric_char_pass_flag = false;
 				$char_position_in_str1 = 0;
 				while ($char_position_in_str1 < $str1_str_length) {
@@ -422,7 +501,7 @@ class UpdraftPlus_Manipulation_Functions {
 		$characters_length = strlen($characters);
 		$random_string = '';
 		for ($i = 0; $i < $length; $i++) {
-			$random_string .= $characters[rand(0, $characters_length - 1)];
+			$random_string .= $characters[wp_rand(0, $characters_length - 1)];
 		}
 		return $random_string;
 	}
@@ -513,5 +592,18 @@ class UpdraftPlus_Manipulation_Functions {
 				break;
 		}
 		return $anonymous;
+	}
+
+	/**
+	 * Send the error message to the PHP system logger if the 'WP_DEBUG' constant is 'true' or the 'updraft_debug_mode' is activated.
+	 *
+	 * @param string $message - the error message
+	 *
+	 * @return void
+	 */
+	public static function error_log($message) {
+		if ((defined('WP_DEBUG') && WP_DEBUG) || (class_exists('UpdraftPlus_Options') && UpdraftPlus_Options::get_updraft_option('updraft_debug_mode'))) {
+			error_log($message); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log() is intentionally used to log the error when debug mode is enabled.
+		}
 	}
 }

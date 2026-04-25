@@ -47,7 +47,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 		$this->woocommerce_wpml = $woocommerce_wpml;
 		$this->sitepress        = $sitepress;
 
-		$this->currencies    = $this->woocommerce_wpml->multi_currency->get_currencies( true );
+		$this->currencies    = $this->woocommerce_wpml->get_multi_currency()->get_currencies( true );
 		$this->wc_currencies = get_woocommerce_currencies();
 		$this->wc_currency   = wcml_get_woocommerce_currency_option();
 
@@ -81,7 +81,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 					'The multi-currency mode cannot be enabled as a specific currency was not set. Go to the %1$sWooCommerce settings%2$s page and select the default currency for your store.',
 					'woocommerce-multilingual'
 				),
-				'<a href="' . admin_url( 'admin.php?page=wc-settings' ) . '">',
+				'<a href="' . \WCML\Utilities\AdminUrl::getWooSettings() . '">',
 				'</a>'
 			),
 			'wcml_settings'          => $this->woocommerce_wpml->settings,
@@ -89,7 +89,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 				'action'                => $_SERVER['REQUEST_URI'],
 				'nonce'                 => wp_nonce_field( 'wcml_mc_options', 'wcml_nonce', true, false ),
 				'multi_currency_option' => WCML_MULTI_CURRENCIES_INDEPENDENT,
-				'mco_disabled'          => empty( $wc_currency ),
+				'mco_disabled'          => empty( $this->wc_currency ),
 				'label_mco'             => __( 'Enable the multicurrency mode', 'woocommerce-multilingual' ),
 				'label_mco_learn_url'   => $this->tracking_link->getWcmlMultiCurrencyDoc(),
 				'label_mco_learn_txt'   => __( 'Multicurrency documentation', 'woocommerce-multilingual' ),
@@ -142,10 +142,8 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 				'delete_nonce'              => wp_create_nonce( 'delete_currency_switcher' ),
 				'order_tip'                 => __( 'Drag and drop the currencies to change their order', 'woocommerce-multilingual' ),
 				'visibility_label'          => __( 'Show a currency switcher on the product page template', 'woocommerce-multilingual' ),
-				'visibility_on'             => isset( $this->woocommerce_wpml->settings['currency_switcher_product_visibility'] ) ?
-										$this->woocommerce_wpml->settings['currency_switcher_product_visibility'] : 1,
-				'additional_css'            => isset( $this->woocommerce_wpml->settings['currency_switcher_additional_css'] ) ?
-										$this->woocommerce_wpml->settings['currency_switcher_additional_css'] : '',
+				'visibility_on'             => $this->woocommerce_wpml->settings['currency_switcher_product_visibility'] ?? 1,
+				'additional_css'            => $this->woocommerce_wpml->settings['currency_switcher_additional_css'] ?? '',
 			],
 			'exchange_rates'         => $exchange_rates_ui->get_model(),
 		];
@@ -175,7 +173,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 	public function load_curency_switcher_option_boxes() {
 
 		$wcml_settings      = $this->woocommerce_wpml->get_settings();
-		$currency_switchers = isset( $wcml_settings['currency_switchers'] ) ? $wcml_settings['currency_switchers'] : [];
+		$currency_switchers = $wcml_settings['currency_switchers'] ?? [];
 
 		// Add empty dialog for new sidebar currency switcher.
 		$currency_switchers['new_widget'] = [
@@ -234,7 +232,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 
 	public function get_currency_switchers_preview() {
 		$preview = [
-			'product' => $this->woocommerce_wpml->multi_currency->currency_switcher->wcml_currency_switcher(
+			'product' => $this->woocommerce_wpml->multi_currency->currency_switcher->do_currency_switcher(
 				[
 					'switcher_id' => 'product',
 					'echo'        => false,
@@ -243,7 +241,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 		];
 
 		foreach ( $this->widget_currency_switchers() as $switcher ) {
-			$preview[ $switcher['id'] ] = $this->woocommerce_wpml->multi_currency->currency_switcher->wcml_currency_switcher(
+			$preview[ $switcher['id'] ] = $this->woocommerce_wpml->multi_currency->currency_switcher->do_currency_switcher(
 				[
 					'switcher_id' => $switcher['id'],
 					'echo'        => false,
@@ -265,7 +263,7 @@ class WCML_Multi_Currency_UI extends WCML_Templates_Factory {
 
 	public function widget_currency_switchers() {
 		$wcml_settings      = $this->woocommerce_wpml->get_settings();
-		$currency_switchers = isset( $wcml_settings['currency_switchers'] ) ? $wcml_settings['currency_switchers'] : [];
+		$currency_switchers = $wcml_settings['currency_switchers'] ?? [];
 		$sidebars           = $this->woocommerce_wpml->multi_currency->currency_switcher->get_registered_sidebars();
 		foreach ( $sidebars as $key => $sidebar ) {
 			if ( ! isset( $currency_switchers[ $key ] ) ) {

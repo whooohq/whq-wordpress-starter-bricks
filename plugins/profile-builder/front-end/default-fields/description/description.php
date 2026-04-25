@@ -1,6 +1,26 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
+/**
+ * Sanitize Default Biographical Info (stored as the WordPress user description).
+ *
+ * @param array $request Request data (e.g. $_POST) that may contain a `description` key.
+ * @return string
+ */
+function wppb_sanitize_default_biographical_info_from_request( $request ) {
+	if ( ! is_array( $request ) || ! array_key_exists( 'description', $request ) ) {
+		return '';
+	}
+
+	$meta_value = sanitize_textarea_field( wp_unslash( $request['description'] ) );
+
+	if ( apply_filters( 'wppb_form_field_textarea_escape_on_save', false ) ) {
+		$meta_value = esc_textarea( $meta_value );
+	}
+
+	return apply_filters( 'pre_user_description', $meta_value );
+}
+
 /* handle field output */
 function wppb_description_handler( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){	
 	$item_title = apply_filters( 'wppb_'.$form_location.'_description_item_title', wppb_icl_t( 'plugin profile-builder-pro', 'default_field_'.$field['id'].'_title_translation', $field['field-title'], true ) );
@@ -15,6 +35,7 @@ function wppb_description_handler( $output, $form_location, $field, $user_id, $f
 		$input_value = $field['default-content'];
 		
 	$input_value = ( isset( $request_data['description'] ) ? trim( $request_data['description'] ) : $input_value );
+	$input_value = apply_filters( 'wppb_form_description_field_value', $input_value, $field, $form_location );
 
 	$extra_attr = apply_filters( 'wppb_extra_attribute', '', $field, $form_location );
 
@@ -52,10 +73,9 @@ add_filter( 'wppb_check_form_field_default-biographical-info', 'wppb_check_descr
 /* handle field save */
 function wppb_userdata_add_description( $userdata, $global_request, $form_args ){
     if( wppb_field_exists_in_form( 'Default - Biographical Info', $form_args ) ) {
-        if (isset($global_request['description'])) {
-            $description = apply_filters('pre_user_description', trim($global_request['description']));
-            $userdata['description'] = $description;
-        }
+        if ( array_key_exists( 'description', $global_request ) ){
+            $userdata['description'] = wppb_sanitize_default_biographical_info_from_request( $global_request );
+		}
     }
 	return $userdata;
 }

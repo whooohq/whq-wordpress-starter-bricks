@@ -1,17 +1,19 @@
 <?php
 
+use function WCML\functions\isStandAlone;
+use WCML\PaymentGateways\Strings;
 use WCML\StandAlone\NullSitePress;
 use WCML\Utilities\WcAdminPages;
 use WPML\API\Sanitize;
 use WPML\Collect\Support\Collection;
 use WPML\Core\ISitePress;
 use WPML\FP\Fns;
-use function WCML\functions\isStandAlone;
 
 class WCML_WC_Gateways {
 
 	const WCML_BACS_ACCOUNTS_CURRENCIES_OPTION = 'wcml_bacs_accounts_currencies';
-	const STRINGS_CONTEXT                      = 'admin_texts_woocommerce_gateways';
+
+	/** @var string */
 	private $current_language;
 
 	/** @var woocommerce_wpml */
@@ -19,16 +21,15 @@ class WCML_WC_Gateways {
 	/** @var SitePress|NullSitePress */
 	private $sitepress;
 
-	/**
-	 * @param woocommerce_wpml        $woocommerce_wpml
-	 * @param SitePress|NullSitePress $sitepress
-	 */
 	public function __construct( woocommerce_wpml $woocommerce_wpml, ISitePress $sitepress ) {
+		/* @phpstan-ignore assign.propertyType */
 		$this->sitepress        = $sitepress;
 		$this->woocommerce_wpml = $woocommerce_wpml;
 
+		/* @phpstan-ignore method.notFound */
 		$this->current_language = $this->sitepress->get_current_language();
 		if ( 'all' === $this->current_language ) {
+			/* @phpstan-ignore method.notFound */
 			$this->current_language = $this->sitepress->get_default_language();
 		}
 	}
@@ -47,9 +48,9 @@ class WCML_WC_Gateways {
 	public function on_init_hooks() {
 		add_filter( 'woocommerce_gateway_title', [ $this, 'translate_gateway_title' ], 10, 2 );
 		add_filter( 'woocommerce_gateway_description', [ $this, 'translate_gateway_description' ], 10, 2 );
+		add_filter( 'woocommerce_paypal_payments_gateway_description', [ $this, 'translate_paypal_payments_gateway_description' ], 10, 2 );
 
 		if ( WcAdminPages::isPaymentSettings() ) {
-			add_action( 'admin_footer', [ $this, 'show_language_links_for_gateways' ] );
 			$this->load_bacs_gateway_currency_selector_hooks();
 		}
 	}
@@ -91,8 +92,13 @@ class WCML_WC_Gateways {
 		if ( isset( $settings['enabled'] ) && 'yes' === $settings['enabled'] ) {
 			foreach ( $this->get_gateway_text_keys_to_translate() as $text_key ) {
 				if ( isset( $settings[ $text_key ] ) && ! $this->get_gateway_string_id( $settings[ $text_key ], $gateway_id, $text_key ) ) {
-					$language = $this->gateway_setting_language( $settings[ $text_key ], $gateway_id, $text_key );
-					icl_register_string( self::STRINGS_CONTEXT, $gateway_id . '_gateway_' . $text_key, $settings[ $text_key ], false, $language );
+					icl_register_string(
+						Strings::TRANSLATION_DOMAIN,
+						Strings::getStringName( $gateway_id, $text_key ),
+						$settings[ $text_key ],
+						false,
+						$this->sitepress->get_default_language()
+					);
 				}
 			}
 		}
@@ -102,28 +108,25 @@ class WCML_WC_Gateways {
 	 * @param WC_Payment_Gateway $gateway
 	 */
 	public function payment_gateways_filters( $gateway ) {
-
+		/* @phpstan-ignore isset.property */
 		if ( isset( $gateway->id ) ) {
 			$this->translate_gateway_strings( $gateway );
 		}
 
 	}
 
-	/**
-	 * @param WC_Payment_Gateway $gateway
-	 */
-	public function translate_gateway_strings( $gateway ) {
-
-		if ( isset( $gateway->enabled ) && $gateway->enabled !== 'no' ) {
-
+	public function translate_gateway_strings( WC_Payment_Gateway $gateway ) {
+		// @todo debug
+		/* @phpstan-ignore isset.property */
+		if ( isset( $gateway->enabled ) && 'no' !== $gateway->enabled ) {
 			if ( isset( $gateway->instructions ) ) {
 				$gateway->instructions = $this->translate_gateway_instructions( $gateway->instructions, $gateway->id );
 			}
-
+			/* @phpstan-ignore isset.property */
 			if ( isset( $gateway->description ) ) {
 				$gateway->description = $this->translate_gateway_description( $gateway->description, $gateway->id );
 			}
-
+			/* @phpstan-ignore isset.property */
 			if ( isset( $gateway->title ) ) {
 				$gateway->title = $this->translate_gateway_title( $gateway->title, $gateway->id );
 			}
@@ -135,6 +138,24 @@ class WCML_WC_Gateways {
 		return $this->get_translated_gateway_string( $title, $gateway_id, 'title' );
 	}
 
+	/**
+	 * @since WooCommerce PayPal Payments 3.3.0
+	 *
+	 * @param string $description Gateway description (already sanitized with wp_kses_post).
+	 * @param object $gateway     Gateway instance.
+	 * @see \WooCommerce\PayPalCommerce\WcGateway\Gateway\PayPalGateway
+	 *
+	 * @return string
+	 */
+	public function translate_paypal_payments_gateway_description( $description, $gateway ) {
+		$id = \WPML\FP\Obj::prop( 'id', $gateway );
+		if ( is_null( $id ) ) {
+			return $description;
+		}
+
+		return $this->translate_gateway_description( $description, $id );
+	}
+
 	public function translate_gateway_description( $description, $gateway_id ) {
 		return $this->get_translated_gateway_string( $description, $gateway_id, 'description' );
 	}
@@ -144,35 +165,49 @@ class WCML_WC_Gateways {
 	}
 
 	public function get_translated_gateway_string( $string, $gateway_id, $name ) {
-		$translated_string = apply_filters(
-			'wpml_translate_single_string',
-			$string,
-			self::STRINGS_CONTEXT,
-			$gateway_id . '_gateway_' . $name,
-			$this->get_current_gateway_language()
-		);
-
-		if ( $translated_string === $string ) {
-			$translated_string = __( $string, 'woocommerce' );
-			if ( 'cheque' === $gateway_id && $translated_string === $string && 'title' === $name ) {
-				$translated_string = _x( $string, 'Check payment method', 'woocommerce' );
-			}
+		if ( ! is_string( $string ) ) { /** @see https://onthegosystems.myjetbrains.com/youtrack/issue/wcml-4735 */
+			return $string;
 		}
 
-		return $translated_string;
+		$gatewayLanguage  = $this->get_current_gateway_language();
+		$translatedString = apply_filters(
+			'wpml_translate_single_string',
+			$string,
+			Strings::TRANSLATION_DOMAIN,
+			Strings::getStringName( $gateway_id, $name ),
+			$gatewayLanguage
+		);
+
+		if ( $translatedString !== $string ) {
+			return $translatedString;
+		}
+
+		if ( $this->isSendingOrderDetails() ) {
+			$this->sitepress->switch_lang( $gatewayLanguage );
+		}
+
+		if ( 'cheque' === $gateway_id && 'title' === $name ) {
+			/* phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText */
+			$translatedString = _x( $string, 'Check payment method', 'woocommerce' );
+		} else {
+			/* phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText */
+			$translatedString = __( $string, 'woocommerce' );
+		}
+
+		return $translatedString;
 	}
 
 	/**
 	 * @return string
 	 */
 	private function get_current_gateway_language() {
-
+		/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
 		$postData = wpml_collect( $_POST );
 		if ( $postData->isNotEmpty() ) {
 			if ( $this->is_user_order_note( $postData ) ) {
-				$current_gateway_language = get_post_meta( $postData->get( 'post_id' ), 'wpml_language', true );
+				$current_gateway_language = WCML_Orders::getLanguage( (int) $postData->get( 'post_id' ) );
 			} elseif ( $this->is_refund_line_item( $postData ) ) {
-				$current_gateway_language = get_post_meta( $postData->get( 'order_id' ), 'wpml_language', true );
+				$current_gateway_language = WCML_Orders::getLanguage( (int) $postData->get( 'order_id' ) );
 			} else {
 				$current_gateway_language = $this->get_order_action_gateway_language( $postData );
 			}
@@ -205,8 +240,19 @@ class WCML_WC_Gateways {
 	 * @return bool
 	 */
 	private function is_refund_line_item( Collection $postData ){
-	    return 'woocommerce_refund_line_items' === $postData->get( 'action' );
-    }
+		return 'woocommerce_refund_line_items' === $postData->get( 'action' );
+	}
+
+	/**
+	 * @return bool
+	 */
+	private function isSendingOrderDetails() {
+		/* phpcs:ignore WordPress.VIP.SuperGlobalInputUsage.AccessDetected */
+		$postData = wpml_collect( $_POST );
+		return $postData->get( 'post_ID' )
+			&& 'shop_order' === $postData->get( 'post_type' )
+			&& 'send_order_details' === $postData->get( 'wc_order_action' );
+	}
 
 
 	/**
@@ -219,25 +265,25 @@ class WCML_WC_Gateways {
 		if ( $postData->get( 'post_ID' ) ) {
 
 			$is_saving_new_order = wpml_collect( [
-					'auto-draft',
-					'draft'
-				] )->contains( $postData->get( 'post_status' ) )
-			                       && 'editpost' === $postData->get( 'action' )
-			                       && $postData->get( 'save' );
+				'auto-draft',
+				'draft'
+			] )->contains( $postData->get( 'post_status' ) )
+				&& 'editpost' === $postData->get( 'action' )
+				&& $postData->get( 'save' );
 			if ( $is_saving_new_order && isset( $_COOKIE[ WCML_Orders::DASHBOARD_COOKIE_NAME ] ) ) {
 				return $_COOKIE[ WCML_Orders::DASHBOARD_COOKIE_NAME ];
 			}
 
-			$is_order_emails_status       = wpml_collect( [
+			$is_order_emails_status = wpml_collect( [
 				'wc-completed',
 				'wc-processing',
 				'wc-refunded',
 				'wc-on-hold'
 			] )->contains( $postData->get( 'order_status' ) );
 
-			$is_send_order_details_action = 'send_order_details' === $postData->get( 'wc_order_action' );
+			$is_send_order_details_action = $this->isSendingOrderDetails();
 			if ( $is_order_emails_status || $is_send_order_details_action ) {
-				return get_post_meta( $postData->get( 'post_ID' ), 'wpml_language', true );
+				return WCML_Orders::getLanguage( (int) $postData->get( 'post_ID' ) );
 			}
 		}
 
@@ -256,80 +302,15 @@ class WCML_WC_Gateways {
 					'processing'
 				] )->contains( $getData->get( 'status' ) );
 			if ( $is_order_ajax_action && $getData->get( 'order_id' ) ) {
-				return get_post_meta( $getData->get( 'order_id' ), 'wpml_language', true );
+				return WCML_Orders::getLanguage( (int) $getData->get( 'order_id' ) );
 			}
 		}
 
 		return $this->current_language;
-    }
-
-	public function show_language_links_for_gateways() {
-
-		$text_keys = $this->get_gateway_text_keys_to_translate();
-
-		$wc_payment_gateways = WC_Payment_Gateways::instance();
-
-		foreach ( $wc_payment_gateways->payment_gateways() as $payment_gateway ) {
-
-			if ( isset( $_GET['section'] ) && $_GET['section'] == $payment_gateway->id ) {
-
-				foreach ( $text_keys as $text_key ) {
-
-					if ( isset( $payment_gateway->settings[ $text_key ] ) ) {
-						$setting_value = $payment_gateway->settings[ $text_key ];
-					} elseif ( $text_key === 'instructions' ) {
-						$setting_value = $payment_gateway->description;
-					} else {
-						$setting_value = $payment_gateway->$text_key;
-					}
-
-					$input_name     = $payment_gateway->plugin_id . $payment_gateway->id . '_' . $text_key;
-					$gateway_option = $payment_gateway->plugin_id . $payment_gateway->id . '_settings';
-
-					$lang_selector = new WPML_Simple_Language_Selector( $this->sitepress );
-					$language      = $this->gateway_setting_language( $setting_value, $payment_gateway->id, $text_key );
-
-					$lang_selector->render(
-						[
-							'id'                 => $gateway_option . '_' . $text_key . '_language_selector',
-							'name'               => 'wcml_lang-' . $gateway_option . '-' . $text_key,
-							'selected'           => $language,
-							'show_please_select' => false,
-							'echo'               => true,
-							'style'              => 'width: 18%;float: left;margin-top: 3px;',
-						]
-					);
-
-					$st_page = admin_url( 'admin.php?page=' . WPML_ST_FOLDER . '/menu/string-translation.php&context=' . self::STRINGS_CONTEXT . '&search=' . esc_attr( preg_replace( "/[\n\r]/", '', $setting_value ) ) );
-					?>
-					<script>
-						var input = jQuery('#<?php echo esc_js( $input_name ); ?>');
-						if ( input.length > 0 ) {
-							input.parent().append('<div class="translation_controls"></div>');
-							input.parent().find('.translation_controls').append('<a href="<?php echo $st_page; ?>" style="margin-left: 10px"><?php _e( 'translations', 'woocommerce-multilingual' ); ?></a>');
-							jQuery('#<?php echo $gateway_option . '_' . $text_key . '_language_selector'; ?>').prependTo( input.parent().find('.translation_controls') );
-						}else{
-							jQuery('#<?php echo $gateway_option . '_' . $text_key . '_language_selector'; ?>').remove();
-						}
-					</script>
-					<?php
-				}
-			}
-		}
-	}
-
-	private function gateway_setting_language( $setting_value, $gateway_id, $text_key ) {
-
-		if ( $this->get_gateway_string_id( $setting_value, $gateway_id, $text_key ) ) {
-			return $this->woocommerce_wpml->strings->get_string_language( $setting_value, self::STRINGS_CONTEXT, $gateway_id . '_gateway_' . $text_key );
-		} else {
-			return $this->sitepress->get_default_language();
-		}
-
 	}
 
 	private function get_gateway_string_id( $value, $gateway_id, $name ) {
-		return icl_get_string_id( $value, self::STRINGS_CONTEXT, $gateway_id . '_gateway_' . $name );
+		return icl_get_string_id( $value, Strings::TRANSLATION_DOMAIN, $gateway_id . '_gateway_' . $name );
 	}
 
 	public function set_bacs_gateway_currency() {
@@ -349,14 +330,7 @@ class WCML_WC_Gateways {
 	}
 
 	public function get_gateway_text_keys_to_translate() {
-
-		$text_keys = [
-			'title',
-			'description',
-			'instructions',
-		];
-
-		return apply_filters( 'wcml_gateway_text_keys_to_translate', $text_keys );
+		return apply_filters( 'wcml_gateway_text_keys_to_translate', Strings::TRANSLATABLE_SETTINGS );
 	}
 
 	public function append_currency_selector_to_bacs_account_settings() {

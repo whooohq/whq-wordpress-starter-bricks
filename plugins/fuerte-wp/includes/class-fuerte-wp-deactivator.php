@@ -1,17 +1,14 @@
 <?php
 
 /**
- * Fired during plugin deactivation
+ * Fired during plugin deactivation.
  *
  * @link       https://actitud.xyz
  * @since      1.3.0
- *
- * @package    Fuerte_Wp
- * @subpackage Fuerte_Wp/includes
  */
 
 // No access outside WP
-defined( 'ABSPATH' ) || die();
+defined('ABSPATH') || die();
 
 /**
  * Fired during plugin deactivation.
@@ -19,21 +16,30 @@ defined( 'ABSPATH' ) || die();
  * This class defines all code necessary to run during the plugin's deactivation.
  *
  * @since      1.3.0
- * @package    Fuerte_Wp
- * @subpackage Fuerte_Wp/includes
+ *
  * @author     Esteban Cuevas <esteban@attitude.cl>
  */
-class Fuerte_Wp_Deactivator {
+class Fuerte_Wp_Deactivator
+{
+    /**
+     * Short Description. (use period).
+     *
+     * Long Description.
+     *
+     * @since    1.3.0
+     */
+    public static function deactivate()
+    {
+        self::clear_cron_jobs();
+    }
 
-	/**
-	 * Short Description. (use period)
-	 *
-	 * Long Description.
-	 *
-	 * @since    1.3.0
-	 */
-	public static function deactivate() {
-
-	}
-
+    /**
+     * Clear scheduled cron jobs on deactivation.
+     *
+     * @since 1.7.0
+     */
+    public static function clear_cron_jobs()
+    {
+        wp_clear_scheduled_hook('fuertewp_cleanup_login_logs');
+    }
 }

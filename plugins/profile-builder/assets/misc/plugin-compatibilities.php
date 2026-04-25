@@ -6,8 +6,8 @@
 
 
     /****************************************************
-     * Plugin Name: Captcha
-     * Plugin URI: https://wordpress.org/plugins/captcha/
+     * Name of the plugin: Captcha
+     * Homepage: https://wordpress.org/plugins/captcha/
      ****************************************************/
 
     /*
@@ -220,8 +220,8 @@
 
 
 	/****************************************************
-	 * Plugin Name: Easy Digital Downloads
-	 * Plugin URI: https://wordpress.org/plugins/easy-digital-downloads/
+	 * Name of the plugin: Easy Digital Downloads
+	 * Homepage: https://wordpress.org/plugins/easy-digital-downloads/
 	 ****************************************************/
 
 		/* Function that checks if a user is approved before loggin in, when admin approval is on */
@@ -248,8 +248,8 @@
 
 
         /****************************************************
-         * Plugin Name: Page Builder by SiteOrigin && Yoast SEO
-         * Plugin URI: https://wordpress.org/plugins/siteorigin-panels/  && https://wordpress.org/plugins/wordpress-seo/
+         * Name of the plugin: Page Builder by SiteOrigin && Yoast SEO
+         * Homepage: https://wordpress.org/plugins/siteorigin-panels/  && https://wordpress.org/plugins/wordpress-seo/
          * When both plugins are activated SEO generates description tags that execute shortcodes because of the filter on "the_content" added by Page Builder when generating the excerpt
          ****************************************************/
         if( function_exists( 'siteorigin_panels_filter_content' ) ){
@@ -275,7 +275,7 @@
         }
 
         /****************************************************
-         * Plugin Name: WPML
+         * Name of the plugin: WPML
          * Compatibility with wp_login_form() that wasn't getting the language code in the site url
          ****************************************************/
         add_filter( 'site_url', 'wppb_wpml_login_form_compatibility', 10, 4 );
@@ -303,7 +303,7 @@
         }
 
         /****************************************************
-         * Plugin Name: ACF
+         * Name of the plugin: ACF
          * Compatibility with Role Editor where ACF includes it's own select 2 and a bit differently then the standard hooks
          ****************************************************/
         add_action( 'admin_enqueue_scripts', 'wppb_acf_and_user_role_select_2_compatibility' );
@@ -363,7 +363,7 @@
 
 
         /****************************************************
-         * Plugin Name: xCRUD
+         * Name of the plugin: xCRUD
          * Compatibility in terms of preventing jQuery to be loaded twice
          ****************************************************/
         if ( class_exists( 'Xcrud_config' ) ){
@@ -371,8 +371,8 @@
         }
 
     /****************************************************
-     * Plugin Name: bbPress Messages
-     * Plugin URI: https://wordpress.org/plugins/bbp-messages/
+     * Name of the plugin: bbPress Messages
+     * Homepage: https://wordpress.org/plugins/bbp-messages/
      * This plugin relies on the 'bbp_template_before_user_profile' hook
      ****************************************************/
     if ( function_exists( 'bbp_messages_loaded' ) ){
@@ -383,7 +383,7 @@
     }
 
 	/****************************************************
-	 * Plugin Name: LearnDash LMS
+	 * Name of the plugin: LearnDash LMS
 	 * This plugin hijacks the 'wp_login_failed' hook not allowing the PB login form to show errors
 	 ****************************************************/
 	if ( class_exists( 'Semper_Fi_Module' ) ){
@@ -398,7 +398,7 @@
 	}
 
     /****************************************************
-     * Plugin Name: MailPoet
+     * Name of the plugin: MailPoet
      * By default MailPoet disables custom scripts and styles to prevent JavaScript and CSS conflicts with their interface
      * With these filters we can whitelist our styles and scripts
      ****************************************************/
@@ -420,8 +420,8 @@
     add_filter('mailpoet_conflict_resolver_whitelist_script', 'wppb_mailpoet_conflict_resolver_whitelist_script');
 
     /****************************************************
-     * Plugin Name: Advanced Product Fields for Woocommerce
-     * Plugin URI: https://wordpress.org/plugins/advanced-product-fields-for-woocommerce/
+     * Name of the plugin: Advanced Product Fields for Woocommerce
+     * Homepage: https://wordpress.org/plugins/advanced-product-fields-for-woocommerce/
      * When both plugins are activated an '&&' operator from the JS code APF adds to product $content for its Datepicker is encoded
      ****************************************************/
     if( function_exists( 'SW_WAPF_PRO_auto_loader' ) ){
@@ -434,10 +434,41 @@
     }
 
     /****************************************************
-     * Plugin Name: WooCommerce
-     * Plugin URI: https://wordpress.org/plugins/woocommerce/
+     * Name of the plugin: WooCommerce
+     * Homepage: https://wordpress.org/plugins/woocommerce/
      * Don't allow WooCommerce to Login User after registration if PB Admin Approval is Active
      ****************************************************/
     if( wppb_get_admin_approval_option_value() === 'yes' ) {
         add_filter( 'woocommerce_registration_auth_new_customer', '__return_false' );
+    }
+
+    /****************************************************
+     * Name of the plugin: WooCommerce
+     * Homepage: https://wordpress.org/plugins/woocommerce/
+     * Starting with version 7.7 WooCommerce is restricting access to the dashboard through the admin_init hook.
+     * This hook runs on async-upload.php and they disallow the uploading of files from logged out users.
+     * We remove this restriction so that our users can upload files correctly
+     ****************************************************/
+    add_filter( 'woocommerce_prevent_admin_access', 'wppb_woo_admin_access_uploads_compatibility' );
+    function wppb_woo_admin_access_uploads_compatibility( $prevent_access ){
+
+        if( isset( $_REQUEST['wppb_upload'] ) && $_REQUEST['wppb_upload'] == 'true' ){
+            return false;
+        }
+
+        return $prevent_access;
+
+    }
+
+    // This filter makes the PayPal Express confirmation form appear normally when automatic login is enabled for PB
+    add_filter( 'pms_paypal_express_enable_the_content_hook_for_confirmation_form', 'wppb_pms_maybe_enable_the_content_hook_for_paypal_express_confirmation_form' );
+    function wppb_pms_maybe_enable_the_content_hook_for_paypal_express_confirmation_form( $setting ){
+        
+        $wppb_general_settings = get_option( 'wppb_general_settings' );
+
+        if( isset( $wppb_general_settings['automaticallyLogIn'] ) && $wppb_general_settings['automaticallyLogIn'] == 'Yes' )
+            return true;
+
+        return $setting;
+
     }

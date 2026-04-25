@@ -4,36 +4,19 @@
  */
 $this->extend('../layout');
 
-    // warn if doing direct extraction
     /* @var Loco_mvc_ViewParams $params */
-    /* @var Loco_mvc_ViewParams $ext */
-    if( $params->has('ext') ):?> 
-    <div class="notice inline notice-info">
-        <p>
-            <?php esc_html_e("You're creating translations directly from source code",'loco-translate')?>.
-            <a href="<?php $ext->e('link')?>"><?php esc_html_e('Create template instead','loco-translate')?></a>.
+    /* @var Loco_mvc_ViewParams $prompt */
+    if( $params->has('prompt') ):?> 
+    <div class="panel panel-info">
+        <p><?php 
+            $prompt->e('title')?>.
+            <a href="<?php $prompt->e('link')?>"><?php $prompt->e('text')?></a>.
         </p>
     </div><?php
-    endif;
+    endif?> 
 
 
-    /*/ warning to show/hide when locations are marked unsafe
-    if( $params->has('fsNotice') ):?> 
-    <div id="loco-fs-info" class="has-nav notice inline notice-info jshide">
-        <p>
-            <strong class="has-icon"><?php esc_html_e('Warning','loco-translate')?>:</strong>
-            <span><?php $params->e('fsNotice')?>.</span>
-        </p>
-        <nav>
-            <a href="<?php echo $help?>#locations" target="_blank"><?php esc_html_e('Documentation','loco-translate')?></a>
-            <span>|</span>
-            <a href="<?php $this->route('config')->e('href')?>#loco--fs-protect"><?php esc_html_e('Settings','loco-translate')?></a>
-        </nav>
-    </div><?php
-    endif*/?> 
-
-
-    <div class="notice inline notice-generic">
+    <div class="panel">
 
         <h2><?php $params->e('subhead')?></h2>
         <p><?php $params->e('summary')?></p>
@@ -43,7 +26,7 @@ $this->extend('../layout');
             $hidden->_e();?> 
             <table class="form-table">
                 <tbody class="loco-locales">
-                    <tr valign="top">
+                    <tr>
                         <th scope="row">
                             <label for="loco-select-locale">
                                 1. <?php esc_html_e('Choose a language','loco-translate')?>:
@@ -62,26 +45,26 @@ $this->extend('../layout');
                                         <optgroup label="<?php esc_attr_e( 'Installed languages', 'loco-translate' )?>"><?php
                                             /* @var Loco_mvc_ViewParams[] $installed */
                                             foreach( $installed as $option ):?> 
-                                            <option value="<?php $option->e('value')?>" data-icon="<?php $option->e('icon')?>"><?php $option->e('label')?></option><?php
+                                            <option value="<?php $option->e('value')?>" data-icon="<?php $option->e('icon')?>"<?php $option->e('selected')?>><?php $option->e('label')?></option><?php
                                             endforeach;?> 
                                         </optgroup>
                                         <optgroup label="<?php esc_attr_e( 'Available languages', 'loco-translate' )?>"><?php
                                             /* @var Loco_mvc_ViewParams[] $locales */
                                             foreach( $locales as $option ):?> 
-                                            <option value="<?php $option->e('value')?>" data-icon="<?php $option->e('icon')?>"><?php $option->e('label')?></option><?php
+                                            <option value="<?php $option->e('value')?>" data-icon="<?php $option->e('icon')?>"<?php $option->e('selected')?>><?php $option->e('label')?></option><?php
                                             endforeach;?> 
                                         </optgroup>
                                     </select>
                                 </div>
                             </fieldset>
                             <fieldset class="disabled">
-                                <label for="loco-user-selector-0">
-                                    <span><input type="radio" name="use-selector" value="0" /></span>
+                                <label for="loco-use-selector-0">
+                                    <span><input type="radio" name="use-selector" value="0" id="loco-use-selector-0" <?php $params->has('custom') && print 'checked '?>/></span>
                                     <?php esc_attr_e('Custom language','loco-translate')?>:
                                 </label>
                                 <div>
                                     <span class="lang nolang"></span>
-                                    <span class="loco-clearable"><input type="text" maxlength="14" name="custom-locale" value="" /></span>
+                                    <span class="loco-clearable"><input type="text" maxlength="14" name="custom-locale" value="<?php $params->e('custom')?>" /></span>
                                 </div>
                             </fieldset>
                         </td>
@@ -95,7 +78,9 @@ $this->extend('../layout');
                             </label>
                         </th>
                         <td>
-                            <a href="<?php $help->e('href')?>#locations" class="has-icon icon-help" target="_blank" tabindex="-1"><?php $help->e('text')?></a>
+                            <a href="<?php
+                            /* @var Loco_mvc_ViewParams $help */
+                            $help->e('href')?>#locations" class="has-icon icon-help" target="_blank" tabindex="-1"><?php $help->e('text')?></a>
                         </td>
                     </tr><?php
                     $choiceId = 0;
@@ -131,8 +116,8 @@ $this->extend('../layout');
                 </tbody><?php
     
                 if( $params->has('sourceLocale') ):?> 
-                <tbody>
-                    <tr valign="top">
+                <tbody id="loco-copy" data-locale="<?php $params->e('sourceLocale')?>">
+                    <tr>
                         <th scope="row" rowspan="4">
                             3. <?php esc_html_e('Template options','loco-translate')?>:
                         </th>
@@ -140,7 +125,7 @@ $this->extend('../layout');
                             <a href="<?php $help->e('href')?>#copy" class="has-icon icon-help" target="_blank" tabindex="-1"><?php $help->e('text')?></a>
                         </td>
                     </tr>
-                    <tr valign="top" class="compact">
+                    <tr class="compact">
                         <td>
                             <p>
                                 <label>
@@ -156,21 +141,21 @@ $this->extend('../layout');
                             </p>
                         </td>
                     </tr>
-                    <tr valign="top" class="compact">
+                    <tr class="compact">
                         <td>
                             <p>
                                 <label>
-                                    <input type="checkbox" name="json" value="1" />
+                                    <input type="checkbox" name="json" value="1" checked />
                                     <?php esc_html_e('Merge strings from related JSON files','loco-translate')?>
                                 </label>
                             </p>
                         </td>
                     </tr>
-                    <tr valign="top" class="compact">
+                    <tr class="compact">
                         <td>
                             <p>
                                 <label>
-                                    <input type="checkbox" name="link" value="1" />
+                                    <input type="checkbox" name="link" value="1" checked />
                                     <?php esc_html_e('Use this file as template when running Sync','loco-translate')?>
                                 </label>
                             </p>

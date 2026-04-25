@@ -10,11 +10,34 @@ if( !class_exists('WPPB_toolbox') ){
     class WPPB_Advanced_Settings {
 
         public $tabs;
+        public $tab_slugs;
         public $advanced_settings_dir;
         protected $active_tab = 'forms';
 
         public function __construct() {
 
+            $this->tab_slugs = array(
+                'forms',
+                'fields',
+                'userlisting',
+                'shortcodes',
+                'admin',
+            );
+
+            $this->advanced_settings_dir = plugin_dir_path( __FILE__ );
+
+            //$this->generate_settings();
+
+            add_action( 'admin_menu',            array( &$this, 'register_submenu_page' ) );
+            add_action( 'admin_enqueue_scripts', array( &$this, 'enqueue_scripts' ), 9 );
+            add_action( 'admin_init',            array( &$this, 'register_settings' ) );
+
+            add_action( 'admin_init', array( $this, 'setup_tabs' ) );
+
+            $this->setup_functions();
+        }
+
+        public function setup_tabs(){
             $this->tabs = array(
                 'forms'       => __( 'Forms', 'profile-builder' ),
                 'fields'      => __( 'Fields', 'profile-builder' ),
@@ -22,16 +45,6 @@ if( !class_exists('WPPB_toolbox') ){
                 'shortcodes'  => __( 'Shortcodes', 'profile-builder' ),
                 'admin'       => __( 'Admin', 'profile-builder' ),
             );
-
-            $this->advanced_settings_dir = plugin_dir_path( __FILE__ );
-
-            $this->generate_settings();
-
-            add_action( 'admin_menu',            array( &$this, 'register_submenu_page' ) );
-            add_action( 'admin_enqueue_scripts', array( &$this, 'enqueue_scripts' ), 9 );
-            add_action( 'admin_init',            array( &$this, 'register_settings' ) );
-
-            $this->setup_functions();
         }
 
         public function register_submenu_page() {
@@ -41,14 +54,24 @@ if( !class_exists('WPPB_toolbox') ){
         public function submenu_page_callback() {
             reset( $this->tabs );
 
-            if ( isset( $_GET['tab'] ) && array_key_exists( sanitize_text_field( $_GET['tab'] ), $this->tabs) )
+            if ( isset( $_GET['tab'] ) && array_key_exists( sanitize_text_field( $_GET['tab'] ), $this->tabs ) )
                 $this->active_tab = sanitize_text_field( $_GET['tab'] );
             ?>
-            <div class="wrap wppb-wrap wppb-toolbox-wrap">
-                <h2>
-                    <?php esc_html_e( 'Advanced Settings', 'profile-builder'); ?>
-                    <a href="https://www.cozmoslabs.com/docs/profile-builder-2/general-settings/advanced-settings/?utm_source=wpbackend&utm_medium=pb-documentation&utm_campaign=PBDocs" target="_blank" data-code="f223" class="wppb-docs-link dashicons dashicons-editor-help"></a>
-                </h2>
+            <div class="wrap wppb-wrap wppb-toolbox-wrap cozmoslabs-wrap">
+
+                <h1></h1>
+                <!-- WordPress Notices are added after the h1 tag -->
+
+                <div class="cozmoslabs-page-header">
+                    <div class="cozmoslabs-section-title">
+
+                        <h2 class="cozmoslabs-page-title">
+                            <?php esc_html_e( 'Advanced Settings', 'profile-builder'); ?>
+                            <a href="https://www.cozmoslabs.com/docs/profile-builder/general-settings/advanced-settings/?utm_source=wpbackend&utm_medium=pb-documentation&utm_campaign=PBDocs" target="_blank" data-code="f223" class="wppb-docs-link dashicons dashicons-editor-help"></a>
+                        </h2>
+
+                    </div>
+                </div>
 
                 <?php settings_errors(); ?>
 
@@ -159,6 +182,11 @@ if( !class_exists('WPPB_toolbox') ){
 
         public function sanitize_forms_settings( $settings ) {
 
+            if ( isset( $_POST['wppb_toolbox_current_tab'] ) && array_key_exists( sanitize_text_field( $_POST['wppb_toolbox_current_tab'] ), $this->tabs ) )
+                $this->active_tab = sanitize_text_field( $_POST['wppb_toolbox_current_tab'] );
+
+            $previous_settings = get_option( 'wppb_toolbox_' . $this->active_tab . '_settings', array() );
+
             if( !empty( $settings['restricted-email-domains-data'] ) ){
                 foreach( $settings['restricted-email-domains-data'] as $key => $email )
                     $settings['restricted-email-domains-data'][$key] = strtolower( $email );
@@ -210,12 +238,18 @@ if( !class_exists('WPPB_toolbox') ){
             if( empty( $settings['admin-emails'] ) )
                 $settings['admin-emails'] = sanitize_email( get_option('admin_email') );
 
+            if ( $this->active_tab === 'forms' && !empty( $settings['restricted-email-domains-message'] ) && function_exists( 'wppb_icl_register_string' ) ) {
+                wppb_icl_register_string( 'plugin profile-builder-pro', 'restricted_email_domains_message_translation', $settings['restricted-email-domains-message']);
+            }
+
+            $settings = apply_filters( 'wppb_advanced_settings_sanitize', $settings, $previous_settings );
+
             return $settings;
 
         }
 
         private function setup_functions() {
-            foreach( $this->tabs as $slug => $label ) {
+            foreach( $this->tab_slugs as $slug ) {
                 $settings = get_option( 'wppb_toolbox_' . $slug . '_settings', array() );
 
                 if ( is_array( $settings ) ) {

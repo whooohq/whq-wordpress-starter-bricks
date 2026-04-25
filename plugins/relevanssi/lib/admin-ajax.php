@@ -266,7 +266,7 @@ function relevanssi_admin_search_format_posts( $posts, $total, $offset, $query )
 
 	foreach ( $posts as $post ) {
 		$blog_name = '';
-		if ( isset( $post->blog_id ) ) {
+		if ( isset( $post->blog_id ) && function_exists( 'switch_to_blog' ) ) {
 			switch_to_blog( $post->blog_id );
 			$blog_name = get_bloginfo( 'name' ) . ': ';
 		}
@@ -313,7 +313,7 @@ EOH;
 		 * @param object $post         The post object.
 		 */
 		$result .= apply_filters( 'relevanssi_admin_search_element', $post_element, $post );
-		if ( isset( $post->blog_id ) ) {
+		if ( isset( $post->blog_id ) && function_exists( 'restore_current_blog' ) ) {
 			restore_current_blog();
 		}
 	}
@@ -442,6 +442,12 @@ function relevanssi_admin_search_debugging_info( $query ) {
  */
 function relevanssi_update_counts() {
 	global $wpdb, $relevanssi_variables;
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		die();
+	}
+
+	check_admin_referer( 'update_counts', '_wpnonce' );
 
 	relevanssi_update_doc_count();
 

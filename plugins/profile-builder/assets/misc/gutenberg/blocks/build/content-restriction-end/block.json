@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wppb/content-restriction-end",
+  "title": "Content Restriction End",
+  "category": "wppb-block",
+  "keywords": [
+    "Content",
+    "Restriction"
+  ],
+  "description": "The final element of a Content Restriction block pair.",
+  "textdomain": "profile-builder",
+  "attributes": {
+    "wppb_content_restriction_block_end": {
+      "type": "bool",
+      "default": true
+    },
+    "cover": {
+      "type": "bool",
+      "default": false
+    }
+  },
+  "example": {
+    "attributes": {
+      "wppb_content_restriction_block_end": true,
+      "cover": true
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

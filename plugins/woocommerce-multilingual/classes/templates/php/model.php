@@ -8,7 +8,7 @@ namespace WPML\Templates\PHP;
 
 class Model {
 	/**
-	 * @var \WPML\Templates\PHP\Model[]|mixed[]
+	 * @var \WPML\Templates\PHP\Model[]|array
 	 */
 	private $attributes = [];
 
@@ -51,7 +51,7 @@ class Model {
 			$value = get_object_vars( $value );
 		}
 		if ( is_array( $value ) ) {
-			$is_assoc = is_array( $value ) && count( array_filter( array_keys( $value ), 'is_string' ) ) > 0;
+			$is_assoc = count( array_filter( array_keys( $value ), 'is_string' ) ) > 0;
 			if($is_assoc) {
 				$value = new Model( $value );
 			}
@@ -87,7 +87,7 @@ class Model {
 	}
 
 	/**
-	 * @return mixed[]|\WPML\Templates\PHP\Model[]
+	 * @return array|\WPML\Templates\PHP\Model[]
 	 */
 	public function getAttributes() {
 		return $this->attributes;

@@ -1,6 +1,7 @@
 <title>You shall not pass!</title>
 <style type="text/css">
-	html, body {
+	html,
+	body {
 		padding: 0;
 		margin: 0;
 	}

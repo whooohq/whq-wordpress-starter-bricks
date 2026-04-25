@@ -67,7 +67,7 @@ final class Warm_Up {
         );
     }
 
-    /*  *
+    /**
      * Updates failed to retrieve links.
      *
      * @param string $link  Link.
@@ -163,6 +163,7 @@ final class Warm_Up {
         $exclude_pages_with_warmed_canonical  = isset( $meta['exclude_pages_with_warmed_canonical'] ) &&
                                                 $meta['exclude_pages_with_warmed_canonical'];
         $user_agents                          = $meta['user_agents'];
+        $use_external_warmer                  = $meta['use_external_warmer'];
 
         $user_agent = $link_meta['user_agent'];
 
@@ -349,6 +350,82 @@ final class Warm_Up {
             );
             Tree::delete_the_first_leaf( $tree );
         } else {
+            /**
+             * External warmer logic.
+             */
+
+            $external_warmer_results = [];
+
+            $domain = wp_parse_url( $link, PHP_URL_HOST );
+
+            if ( $domain ) {
+                $external_warmer_request_args = [
+                    [
+                        $link,
+                    ],
+                    External_Warmer::get_request_headers(
+                        $user_agent,
+                        $cookies,
+                        $request_headers
+                    ),
+                ];
+
+                // Add to "external_warmup_request_args" - for interval-based external warmer warmings.
+
+                if ( ! isset( $meta['external_warmup_request_args'][ $domain ] ) ) {
+                    $meta['external_warmup_request_args'][ $domain ] = [];
+                }
+                $meta['external_warmup_request_args'][ $domain ][] = $external_warmer_request_args;
+
+                // Warm the link from the external warmer servers.
+
+                if ( $use_external_warmer ) {
+                    $external_warmer_license_key = get_option(
+                        'cache-warmer-setting-external-warmer-license-key' . $domain
+                    );
+
+                    $external_warmer_last_response_code = (int) get_option(
+                        'cache-warmer-setting-external-warmer-key-validation-endpoint-last-response-code' . $domain
+                    );
+
+                    $servers_to_use = get_option(
+                        'cache-warmer-setting-external-warmer-servers-to-use' . $domain
+                    );
+
+                    if (
+                        $external_warmer_license_key &&
+                        200 === $external_warmer_last_response_code &&
+                        $servers_to_use
+                    ) {
+                        // Visit with the external warmer, and prepare the log array.
+
+                        $external_warmer_response = External_Warmer::warm_the_link( ... $external_warmer_request_args );
+
+                        foreach ( $external_warmer_response as $value ) {
+                            $time   = 0;
+                            $status = '';
+
+                            if ( isset( $value['body'] ) ) {
+                                $body = json_decode( $value['body'], true );
+
+                                $time   = round( $body[0]['time'], 2 );
+                                $status = $body[0]['status'];
+                            }
+
+                            $external_warmer_results[] = [
+                                'server' => $value['server_code'],
+                                'code'   => $value['code'],
+                                'time'   => $time,
+                                'at'     => $value['time'],
+                                'status' => $status,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // The standard logic.
+
             Cache_Warmer::$options->set( 'last-retrieved-link', $link );
 
             $content_type_header = explode( ';', is_array( $header_val = wp_remote_retrieve_header( $response, 'content-type' ) ) ? reset( $header_val ) : $header_val )[0]; // @codingStandardsIgnoreLine
@@ -496,6 +573,7 @@ final class Warm_Up {
                 $response_code,
                 self::get_phase( $meta ),
                 $user_agent,
+                $external_warmer_results,
                 $content_type_header,
                 is_array( $header_val = wp_remote_retrieve_header( $response, 'content-length' ) ) ? reset( $header_val ) : $header_val, // @codingStandardsIgnoreLine
                 is_array( $header_val = wp_remote_retrieve_header( $response, 'cf-cache-status' ) ) ? reset( $header_val ) : $header_val, // @codingStandardsIgnoreLine
@@ -649,39 +727,28 @@ final class Warm_Up {
     }
 
     /**
-     * Returns log content.
+     * Returns the count of how many fetches were done for the warmup, for the last minute.
      *
-     * @param string $warmed_at        File name to get the log content for.
-     * @param int    $for_last_minutes For how many minutes to get the fetches for.
+     * @param array $visited_links The array of visited links.
      *
      * @return int Count.
      */
-    public static function how_many_fetches_were_done_for_the_warmup( $warmed_at, $for_last_minutes = 1 ) {
-        global $wpdb;
+    public static function how_many_fetches_were_done_for_the_warmup( array &$visited_links ) {
+        $current_time = time();
 
-        $logs_table = DB::get_tables_prefix() . 'warm_ups_logs';
-        $list_table = DB::get_tables_prefix() . 'warm_ups_list';
-
-        $threshold = wp_date(
-            'Y-m-d H:i:s',
-            time() - MINUTE_IN_SECONDS * $for_last_minutes
+        // Remove timestamps older than 60 seconds.
+        $visited_links = array_filter(
+            $visited_links,
+            function ( $timestamp ) use ( $current_time ) {
+                return ( $current_time - $timestamp ) <= 60;
+            }
         );
 
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "
-                SELECT COUNT(*)
-                FROM $logs_table
-                INNER JOIN $list_table ON $logs_table.list_id=$list_table.id
-                WHERE $list_table.warmed_at = %s AND $logs_table.log_date >= %s
-                ",
-                $warmed_at,
-                $threshold
-            ),
-            ARRAY_N
-        );
+        // Add the current timestamp.
+        $visited_links[] = $current_time;
 
-        return (int) $results[0][0];
+        // Return the count of the visited links.
+        return count( $visited_links );
     }
 
     /**
@@ -708,13 +775,17 @@ final class Warm_Up {
         $tree = $data['tree'];
         $meta = $data['meta'];
 
-        $warmup_start_date = $meta['start_date'];
-
         if ( ! array_key_exists( 'speed_limit', $meta ) ) {
             $meta['speed_limit'] = 1000;
         }
 
         $speed_limit = &$meta['speed_limit'];
+
+        if ( ! array_key_exists( 'visited_links', $meta ) ) {
+            $meta['visited_links'] = [];
+        }
+
+        $visited_links = &$meta['visited_links'];
 
         self::$failed_links_option_key = ! $warm_up_for_unscheduled ?
             'cache-warmer-failed-to-retrieve-links' :
@@ -735,12 +806,16 @@ final class Warm_Up {
             $speed_limit = $meta['initial_speed_limit'];
         }
 
+        if ( ! isset( $meta['external_warmup_request_args'] ) ) {
+            $meta['external_warmup_request_args'] = [];
+        }
+
         $i = 0;
         while (
             $tree && // Iterates through the tree until all links are retrieved.
             ++ $i <= self::BATCH_SIZE && // Or until batch size is hit.
             // Or until the current speed is too fast and over the limit.
-            ( $how_many_fetches_were_done = self::how_many_fetches_were_done_for_the_warmup( $warmup_start_date ) ) < $speed_limit // @codingStandardsIgnoreLine
+            ( $how_many_fetches_were_done = self::how_many_fetches_were_done_for_the_warmup( $visited_links ) ) < $speed_limit // @codingStandardsIgnoreLine
         ) {
             $first_link_data = Tree::get_the_first_leaf_data( $tree );
 
@@ -758,6 +833,19 @@ final class Warm_Up {
 
             // Don't fetch more pages when warm-up was stopped by hand.
             if ( ! $warm_up_for_unscheduled && Cache_Warmer::$options->get( 'cache-warmer-last-warmup-was-stopped-by-hand' ) ) {
+                Cache_Warmer::$options->set( 'last-stopped-by-hand-warmup-id', $meta['start_date'] );
+
+                // Update last success warmup meta (for external interval warming).
+
+                if (
+                    isset( $meta['external_warmup_request_args'] ) &&
+                    $meta['external_warmup_request_args'] &&
+                    '0000-00-00 00:00:00' !== $meta['start_date'] // Not for unscheduled.
+                ) {
+                    Cache_Warmer::$options->set( 'last-external-warmup-request-args-id', $meta['start_date'] );
+                    Cache_Warmer::$options->set( 'last-success-warmup-external-warmup-request-args', $meta['external_warmup_request_args'] );
+                }
+
                 die();
             }
         }
@@ -791,6 +879,7 @@ final class Warm_Up {
             }
         } else { // All links in the tree are visited.
             $failed_to_retrieve_links = Cache_Warmer::$options->get( self::$failed_links_option_key );
+
             // If failed to retrieve links were not handled yet, then do it using the standard tree's iteration.
             if (
                 $failed_to_retrieve_links &&
@@ -813,6 +902,20 @@ final class Warm_Up {
                     ( ! $warm_up_for_unscheduled && Cache_Warmer::$options->get( 'cache-warmer-unscheduled-links-tree-leftovers' ) ) // Unscheduled tree.
                 ) {
                     self::schedule_async_warmup(); // Schedule another warm-up if anything is left in the other tree.
+                }
+
+                // Update last success warmup meta (for external interval warming).
+
+                Cache_Warmer::$options->set( 'last-success-warmup-id', $meta['start_date'] );
+
+                // Success warmup links tree.
+                if (
+                    isset( $meta['external_warmup_request_args'] ) &&
+                    $meta['external_warmup_request_args'] &&
+                    '0000-00-00 00:00:00' !== $meta['start_date'] // Not for unscheduled.
+                ) {
+                    Cache_Warmer::$options->set( 'last-external-warmup-request-args-id', $meta['start_date'] );
+                    Cache_Warmer::$options->set( 'last-success-warmup-external-warmup-request-args', $meta['external_warmup_request_args'] );
                 }
             }
         }

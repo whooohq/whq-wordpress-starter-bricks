@@ -1,0 +1,65 @@
+body.user-edit-php #your-profile .wp-editor-wrap {
+    width: 500px !important;
+}
+
+body.user-edit-php #your-profile .custom_field_select,
+body.user-edit-php #your-profile .select2-container,
+body.user-edit-php #your-profile .custom_field_multiple_select {
+    min-width: 25em;
+}
+
+/*--------------------------------------------------------------
+International Telephone Input
+--------------------------------------------------------------*/
+body.user-edit-php #your-profile .iti .iti__search-input {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    padding-left: 30px !important;
+    padding-right: 28px !important;
+}
+
+/* Increase horizontal spacing used by the intl-tel-input internals. */
+body.user-edit-php #your-profile .iti {
+    --iti-spacer-horizontal: 12px;
+}
+
+/* Keep dropdown corners clean and clip item highlight backgrounds. */
+body.user-edit-php #your-profile .iti--inline-dropdown .iti__dropdown-content {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* Add vertical breathing room for the list container. */
+body.user-edit-php #your-profile .iti .iti__country-list {
+    padding: 4px 0;
+    margin: 0;
+}
+
+/* Add balanced horizontal padding for each country option row. */
+body.user-edit-php #your-profile .iti .iti__country {
+    padding: 8px 12px;
+}
+
+/* Ensure visible gap between flag and country label/dial code. */
+body.user-edit-php #your-profile .iti .iti__country-list .iti__flag {
+    margin-right: 10px;
+}
+
+/* Mirror flag spacing when page direction is right-to-left. */
+[dir="rtl"] body.user-edit-php #your-profile .iti .iti__country-list .iti__flag {
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+body.user-edit-php #your-profile td .iti {
+    min-width: 25em;
+    max-width: 100%;
+}
+
+body.user-edit-php #your-profile td .iti + .wppb-iti-error {
+    display: block;
+    margin-top: 6px;
+    margin-left: 0;
+    color: #c0392b !important;
+    font-size: 13px !important;
+}

@@ -1,9 +1,9 @@
 === Bogo ===
-Contributors: takayukister, itpixelz
+Contributors: rocklobsterinc, takayukister, itpixelz
 Tags: multilingual, localization, language, locale, admin
-Requires at least: 6.1
-Tested up to: 6.2
-Stable tag: 3.7
+Requires at least: 6.7
+Tested up to: 6.9
+Stable tag: 3.9.1
 Requires PHP: 7.4
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -12,8 +12,6 @@ Donate link: https://contactform7.com/donate/
 A straight-forward multilingual plugin. No more double-digit custom DB tables or hidden HTML comments that could cause you headaches later on.
 
 == Description ==
-
-https://ideasilo.wordpress.com/bogo/
 
 Bogo is a straight-forward multilingual plugin for WordPress.
 
@@ -65,24 +63,25 @@ With the default configuration, this plugin, in itself, does not:
 
 == Changelog ==
 
-= 3.7 =
+= 3.9.1 =
 
-* Language switcher: Adds the language suggestion view.
-* Improves `bogo_format_atts()`.
-* Updates the languages list in `bogo_languages()` based on translate.wordpress.org.
-* Uses a static list to retrieve language native names.
-* National flags: Drops famfamfam.com icons in favor of Unicode regional indicator symbols.
-* New filter hook: `bogo_get_language`
-* New filter hook: `bogo_get_language_native_name`
-* New filter hook: `bogo_get_country_code`
+* Confirmed WordPress 6.9 compatibility.
 
-= 3.6.1 =
+= 3.9 =
 
-* Updates bundled JS libraries.
-* Includes asset files in the wp.org SVN repository.
+* Overhauls the JavaScript used in the admin screens.
+* Fixes a lot of errors that the Plugin Check plugin (PCP) has reported.
 
-= 3.6 =
+= 3.8.2 =
 
-* Introduces the language switcher block.
-* Fixes a bug that causes multiple serialization on post duplication.
-* Fixes a bug in jQuery code that makes the site language unable to switch.
+* Fixes a bug that prevents block editor from working correctly on 6.4-6.5 versions of WordPress.
+
+= 3.8.1 =
+
+* Language packs: Fixes a bug that blocks language pack deactivation.
+
+= 3.8 =
+
+* Language switcher: Updates `apiVersion` to `3` in the `block.json` file.
+* Lets `bogo_http_accept_languages()` always return an array.
+* Fixes a bug that makes it impossible to have two sticky posts or more.

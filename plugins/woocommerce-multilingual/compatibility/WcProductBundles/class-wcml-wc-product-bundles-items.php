@@ -8,14 +8,9 @@ class WCML_WC_Product_Bundles_Items {
 	 * @return array
 	 */
 	public function get_items( $product_id ) {
-
-		$items          = [];
 		$product_bundle = new WC_Product_Bundle( $product_id );
-		if ( $product_bundle ) {
-			$items = $product_bundle->get_bundled_items();
-		}
-		return $items;
 
+		return $product_bundle->get_bundled_items();
 	}
 
 	/**

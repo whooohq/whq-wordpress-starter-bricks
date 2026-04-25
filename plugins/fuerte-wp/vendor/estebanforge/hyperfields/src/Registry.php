@@ -1,0 +1,516 @@
+<?php
+
+declare(strict_types=1);
+
+namespace HyperFields;
+
+class Registry
+{
+    private static ?self $instance = null;
+    private array $fields = [];
+    private array $field_groups = [];
+    private array $contexts = [];
+
+    /**
+     *   construct.
+     */
+    private function __construct()
+    {
+        // Private constructor for singleton
+    }
+
+    /**
+     * GetInstance.
+     *
+     * @return self
+     */
+    public static function getInstance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+    /**
+     * RegisterField.
+     *
+     * @return self
+     */
+    public function registerField(string $context, string|Field $name_or_field, ?Field $field = null): self
+    {
+        // Handle both old and new signatures
+        if ($name_or_field instanceof Field) {
+            // New signature: registerField($context, $field)
+            $field = $name_or_field;
+            $name = $field->getName();
+        } else {
+            // Old signature: registerField($context, $name, $field)
+            $name = $name_or_field;
+        }
+
+        if (!isset($this->fields[$context])) {
+            $this->fields[$context] = [];
+        }
+
+        $this->fields[$context][$name] = $field;
+
+        return $this;
+    }
+
+    /**
+     * GetFields.
+     *
+     * @return array
+     */
+    public function getFields(string $context): array
+    {
+        return array_values($this->fields[$context] ?? []);
+    }
+
+    /**
+     * RegisterFieldGroup.
+     *
+     * @return self
+     */
+    public function registerFieldGroup(string $name, array $fields): self
+    {
+        $this->field_groups[$name] = $fields;
+
+        return $this;
+    }
+
+    /**
+     * GetField.
+     *
+     * @return ?Field
+     */
+    public function getField(string $context, string $name): ?Field
+    {
+        return $this->fields[$context][$name] ?? null;
+    }
+
+    /**
+     * GetFieldGroup.
+     *
+     * @return ?array
+     */
+    public function getFieldGroup(string $name): ?array
+    {
+        return $this->field_groups[$name] ?? null;
+    }
+
+    /**
+     * GetFieldsByContext.
+     *
+     * @return array
+     */
+    public function getFieldsByContext(string $context): array
+    {
+        return $this->fields[$context] ?? [];
+    }
+
+    /**
+     * GetAllFields.
+     *
+     * @return array
+     */
+    public function getAllFields(): array
+    {
+        return $this->fields;
+    }
+
+    /**
+     * GetAllFieldGroups.
+     *
+     * @return array
+     */
+    public function getAllFieldGroups(): array
+    {
+        return $this->field_groups;
+    }
+
+    /**
+     * HasField.
+     *
+     * @return bool
+     */
+    public function hasField(string $context, string $name): bool
+    {
+        return isset($this->fields[$context][$name]);
+    }
+
+    /**
+     * HasFieldGroup.
+     *
+     * @return bool
+     */
+    public function hasFieldGroup(string $name): bool
+    {
+        return isset($this->field_groups[$name]);
+    }
+
+    /**
+     * RemoveField.
+     *
+     * @return self
+     */
+    public function removeField(string $context, string $name): self
+    {
+        if (isset($this->fields[$context][$name])) {
+            unset($this->fields[$context][$name]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * RemoveFieldGroup.
+     *
+     * @return self
+     */
+    public function removeFieldGroup(string $name): self
+    {
+        if (isset($this->field_groups[$name])) {
+            unset($this->field_groups[$name]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * ContainerExists.
+     *
+     * @return bool
+     */
+    public function containerExists(string $context): bool
+    {
+        return isset($this->fields[$context]) && !empty($this->fields[$context]);
+    }
+
+    /**
+     * RemoveContainer.
+     *
+     * @return self
+     */
+    public function removeContainer(string $context): self
+    {
+        if (isset($this->fields[$context])) {
+            unset($this->fields[$context]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Clear.
+     *
+     * @return self
+     */
+    public function clear(): self
+    {
+        $this->fields = [];
+        $this->field_groups = [];
+        $this->contexts = [];
+
+        return $this;
+    }
+
+    /**
+     * RegisterPostFields.
+     *
+     * @return self
+     */
+    public function registerPostFields(array $fields): self
+    {
+        foreach ($fields as $name => $field) {
+            $this->registerField('post', $name, $field);
+        }
+
+        return $this;
+    }
+
+    /**
+     * RegisterUserFields.
+     *
+     * @return self
+     */
+    public function registerUserFields(array $fields): self
+    {
+        foreach ($fields as $name => $field) {
+            $this->registerField('user', $name, $field);
+        }
+
+        return $this;
+    }
+
+    /**
+     * RegisterTermFields.
+     *
+     * @return self
+     */
+    public function registerTermFields(array $fields): self
+    {
+        foreach ($fields as $name => $field) {
+            $this->registerField('term', $name, $field);
+        }
+
+        return $this;
+    }
+
+    /**
+     * RegisterOptionFields.
+     *
+     * @return self
+     */
+    public function registerOptionFields(array $fields): self
+    {
+        foreach ($fields as $name => $field) {
+            $this->registerField('option', $name, $field);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Init.
+     *
+     * @return self
+     */
+    public function init(): self
+    {
+        add_action('init', [$this, 'registerAll']);
+
+        return $this;
+    }
+
+    /**
+     * RegisterAll.
+     *
+     * @return void
+     */
+    public function registerAll(): void
+    {
+        do_action('hyperfields/register');
+        $this->registerAdminHooks();
+    }
+
+    /**
+     * RegisterAdminHooks.
+     *
+     * @return void
+     */
+    private function registerAdminHooks(): void
+    {
+        if (!is_admin()) {
+            return;
+        }
+
+        add_action('add_meta_boxes', [$this, 'registerPostMetaBoxes']);
+        add_action('show_user_profile', [$this, 'renderUserFields']);
+        add_action('edit_user_profile', [$this, 'renderUserFields']);
+        add_action('personal_options_update', [$this, 'saveUserFields']);
+        add_action('edit_user_profile_update', [$this, 'saveUserFields']);
+        add_action('edit_term', [$this, 'renderTermFields']);
+        add_action('add_tag_form_fields', [$this, 'renderTermFields']);
+        add_action('edit_tag_form_fields', [$this, 'renderTermFields']);
+        add_action('created_term', [$this, 'saveTermFields']);
+        add_action('edited_term', [$this, 'saveTermFields']);
+    }
+
+    /**
+     * RegisterPostMetaBoxes.
+     *
+     * @return void
+     */
+    public function registerPostMetaBoxes(): void
+    {
+        $post_fields = $this->getFieldsByContext('post');
+        if (empty($post_fields)) {
+            return;
+        }
+
+        add_meta_box(
+            'hyperpress_post_fields',
+            'Custom Fields',
+            [$this, 'renderPostMetaBox'],
+            null,
+            'normal',
+            'default'
+        );
+    }
+
+    /**
+     * RenderPostMetaBox.
+     *
+     * @return void
+     */
+    public function renderPostMetaBox(): void
+    {
+        $post_fields = $this->getFieldsByContext('post');
+        if (empty($post_fields)) {
+            return;
+        }
+
+        wp_nonce_field('hyperpress_post_fields', 'hyperpress_post_fields_nonce');
+
+        foreach ($post_fields as $field) {
+            $this->renderFieldInput($field);
+        }
+    }
+
+    /**
+     * RenderUserFields.
+     *
+     * @return void
+     */
+    public function renderUserFields(): void
+    {
+        $user_fields = $this->getFieldsByContext('user');
+        if (empty($user_fields)) {
+            return;
+        }
+
+        foreach ($user_fields as $field) {
+            $this->renderFieldInput($field);
+        }
+    }
+
+    /**
+     * RenderTermFields.
+     *
+     * @return void
+     */
+    public function renderTermFields(): void
+    {
+        $term_fields = $this->getFieldsByContext('term');
+        if (empty($term_fields)) {
+            return;
+        }
+
+        foreach ($term_fields as $field) {
+            $this->renderFieldInput($field);
+        }
+    }
+
+    /**
+     * RenderFieldInput.
+     *
+     * @return void
+     */
+    private function renderFieldInput(Field $field): void
+    {
+        $value = '';
+        $context = $field->getContext();
+
+        switch ($context) {
+            case 'post':
+                $post_field = PostField::forPost(get_the_ID(), $field->getType(), $field->getName(), $field->getLabel());
+                $value = $post_field->getValue();
+                break;
+            case 'user':
+                $user_id = get_current_user_id();
+                if (isset($_GET['user_id'])) {
+                    $user_id = intval($_GET['user_id']);
+                }
+                $user_field = UserField::forUser($user_id, $field->getType(), $field->getName(), $field->getLabel());
+                $value = $user_field->getValue();
+                break;
+            case 'term':
+                $term_id = 0;
+                if (isset($_GET['tag_ID'])) {
+                    $term_id = intval($_GET['tag_ID']);
+                }
+                if ($term_id > 0) {
+                    $term_field = TermField::forTerm($term_id, $field->getType(), $field->getName(), $field->getLabel());
+                    $value = $term_field->getValue();
+                }
+                break;
+            case 'option':
+                $option_field = OptionField::forOption($field->getName(), $field->getType(), $field->getName(), $field->getLabel());
+                $value = $option_field->getValue();
+                break;
+        }
+
+        $field_data = $field->toArray();
+        $field_data['value'] = $value;
+
+        include __DIR__ . '/templates/field-input.php';
+    }
+
+    /**
+     * SavePostFields.
+     *
+     * @return void
+     */
+    public function savePostFields(int $post_id): void
+    {
+        if (!isset($_POST['hyperpress_post_fields_nonce'])) {
+            return;
+        }
+
+        if (!wp_verify_nonce($_POST['hyperpress_post_fields_nonce'], 'hyperpress_post_fields')) {
+            return;
+        }
+
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        $post_fields = $this->getFieldsByContext('post');
+        foreach ($post_fields as $field) {
+            $field_name = $field->getName();
+            if (isset($_POST[$field_name])) {
+                $post_field = PostField::forPost($post_id, $field->getType(), $field_name, $field->getLabel());
+                $post_field->setValue($_POST[$field_name]);
+            }
+        }
+    }
+
+    /**
+     * SaveUserFields.
+     *
+     * @return void
+     */
+    public function saveUserFields(int $user_id): void
+    {
+        if (!current_user_can('edit_user', $user_id)) {
+            return;
+        }
+
+        $user_fields = $this->getFieldsByContext('user');
+        foreach ($user_fields as $field) {
+            $field_name = $field->getName();
+            if (isset($_POST[$field_name])) {
+                $user_field = UserField::forUser($user_id, $field->getType(), $field_name, $field->getLabel());
+                $user_field->setValue($_POST[$field_name]);
+            }
+        }
+    }
+
+    /**
+     * SaveTermFields.
+     *
+     * @return void
+     */
+    public function saveTermFields(int $term_id): void
+    {
+        if (!current_user_can('manage_categories')) {
+            return;
+        }
+
+        $term_fields = $this->getFieldsByContext('term');
+        foreach ($term_fields as $field) {
+            $field_name = $field->getName();
+            if (isset($_POST[$field_name])) {
+                $term_field = TermField::forTerm($term_id, $field->getType(), $field_name, $field->getLabel());
+                $term_field->setValue($_POST[$field_name]);
+            }
+        }
+    }
+}

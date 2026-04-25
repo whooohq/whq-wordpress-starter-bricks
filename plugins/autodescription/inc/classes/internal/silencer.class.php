@@ -6,9 +6,13 @@
 
 namespace The_SEO_Framework\Internal;
 
+\defined( 'THE_SEO_FRAMEWORK_PRESENT' ) or die;
+
+// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter -- That's the whole premise of this file.
+
 /**
  * The SEO Framework plugin
- * Copyright (C) 2018 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2018 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -23,39 +27,38 @@ namespace The_SEO_Framework\Internal;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-\defined( 'THE_SEO_FRAMEWORK_PRESENT' ) or die;
-
-// phpcs:disable, VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- That's the whole premise of this file.
-
 /**
  * Class The_SEO_Framework\Internal\Silencer
  *
- * This is an empty class to silence invalid API calls when the plugin is soft-disabled.
+ * This is an empty class to silence invalid API calls when a class is soft-disabled.
  * This alleviates redundant checks throughout the plugin API.
  *
  * @since 3.1.0
  * @since 4.2.0 Changed namespace from \The_SEO_Framework to \The_SEO_Framework\Internal
- * @ignore
- * @property false $loaded
+ * @since 5.0.5 Repurposed for silencing the pool (\The_SEO_Framework\Pool).
+ * @access private
+ * @property The_SEO_Framework\Internal\Silencer $instance
  */
 final class Silencer {
 
 	/**
-	 * Tells if this plugin is loaded.
-	 *
-	 * @NOTE: Only `\The_SEO_Framework\_init_tsf()` should adjust this.
-	 *
-	 * @since 3.1.0
-	 * @access protected
-	 *         Don't alter this variable.
-	 * @var boolean $loaded
+	 * @since 5.0.5
+	 * @var The_SEO_Framework\Internal\Silencer
 	 */
-	public $loaded = false;
+	private static $instance;
 
 	/**
 	 * @since 3.1.0
 	 */
 	public function __construct() {}
+
+	/**
+	 * @since 5.0.5
+	 * @return The_SEO_Framework\Internal\Silencer
+	 */
+	public static function instance() {
+		return self::$instance ??= new self;
+	}
 
 	/**
 	 * @since 3.1.0
@@ -91,6 +94,15 @@ final class Silencer {
 	 * @param array  $arguments The method arguments.
 	 */
 	public function __call( $name, $arguments ) {
+		return null;
+	}
+
+	/**
+	 * @since 5.0.5
+	 * @param string $name      The method name.
+	 * @param array  $arguments The method arguments.
+	 */
+	public static function __callStatic( $name, $arguments ) {
 		return null;
 	}
 }

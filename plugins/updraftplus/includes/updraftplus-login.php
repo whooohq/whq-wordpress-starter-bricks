@@ -52,8 +52,15 @@ abstract class UpdraftPlus_Login {
 		if (!is_array($response) || !isset($response['mothership']) || !isset($response['status'])) {
 
 			if (preg_match('/has banned your IP address \(([\.:0-9a-f]+)\)/', $result['body'], $matches)) {
-				return new WP_Error('banned_ip', sprintf(__("UpdraftPlus.com has responded with 'Access Denied'.", 'updraftplus').'<br>'.__("It appears that your web server's IP Address (%s) is blocked.", 'updraftplus').' '.__('This most likely means that you share a webserver with a hacked website that has been used in previous attacks.', 'updraftplus').'<br> <a href="'.apply_filters("updraftplus_com_link", "https://updraftplus.com/unblock-ip-address/").'" target="_blank">'.__('To remove the block, please go here.', 'updraftplus').'</a> ', $matches[1]));
+				return new WP_Error('banned_ip', sprintf(__("UpdraftPlus.com has responded with 'Access Denied'.", 'updraftplus').'<br>'.
+					/* translators: %s: Server IP address */
+					__("It appears that your web server's IP Address (%s) is blocked.", 'updraftplus').' '.
+					__('This most likely means that you share a webserver with a hacked website that has been used in previous attacks.', 'updraftplus').
+					'<br> <a href="'.apply_filters("updraftplus_com_link", "https://teamupdraft.com/blog/unblock-ip-address/").'" target="_blank">'.
+					__('To remove the block, please go here.', 'updraftplus').'</a> ',
+				$matches[1]));
 			} else {
+				/* translators: %s: Response data from UpdraftPlus.com */
 				return new WP_Error('unknown_response', sprintf(__('UpdraftPlus.Com returned a response which we could not understand (data: %s)', 'updraftplus'), wp_remote_retrieve_body($result)));
 			}
 		}

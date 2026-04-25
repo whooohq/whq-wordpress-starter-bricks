@@ -1,101 +1,3 @@
-function validate_simple_upload(){
-    jQuery("input:file").on('change', function(e){
-        //handle simple upload
-        var uploadInputName = jQuery(this).attr('name');
-        var uploadButton = jQuery(this);
-        var oFReader = new FileReader();
-        var attachment = e.target.files[0];
-        oFReader.readAsDataURL(attachment);
-        oFReader.onload = function (oFREvent) {
-            var src = oFREvent.target.result;
-            var error = '';
-            jQuery("#p_" + uploadInputName).text(error);
-            uploadInputId = uploadInputName.split('-').join('_');
-            //Check allowed upload type by wordpress
-            allowed_mime_types = wppb_allowed_wordpress_formats.allowed_wordpress_formats;
-            allowed_by_wordpress = false;
-            for (var key in allowed_mime_types){
-                allowed_type = allowed_mime_types[key];
-                if (attachment.type === allowed_type){
-                    allowed_by_wordpress = true;
-                    possible_extensions = key.split('|');
-                }
-            }
-            if (allowed_by_wordpress) {
-                //Check allowed extensions
-                allowed_extensions = jQuery("#allowed_extensions_" + uploadInputId).val();
-                if (allowed_extensions !== '') {
-                    var allowed = false;
-                    allowed_extensions = allowed_extensions.split(',');
-                    for (var i = 0; i < allowed_extensions.length; i++) {
-                        if (possible_extensions.includes(allowed_extensions[i])) {
-                            allowed = true;
-                        }
-                    }
-                    if (allowed == false) {
-                        error = wppb_error_messages.upload_type_error_message;
-                    }
-                }
-                //Check size limit
-                allowed_size_limit = wppb_limit.size_limit;
-                if (attachment.size > allowed_size_limit) {
-                    var limit = allowed_size_limit / (1024 * 1024) + 1;
-                    error = wppb_error_messages.limit_error_message + limit + 'MB.';
-                }
-            }
-            else{
-                error = wppb_error_messages.upload_type_error_message;
-            }
-            if (error !== '') {
-                jQuery("#p_" + uploadInputName).text(error);
-                uploadButton.val('');
-            } else {
-                var fieldName = uploadInputName.replace(/^(simple_upload_)/, '').replace(/(-)/, '_');;
-                var formData = new FormData();
-                if (uploadButton.closest('.wppb-upload').length > 0) {
-                    formData.append('action', 'wppb_ajax_simple_upload');
-                    formData.append(fieldName, jQuery(e.target).prop('files')[0]);
-                } else {
-                    formData.append('action', 'wppb_ajax_simple_avatar');
-                    formData.append(fieldName, jQuery(e.target).prop('files')[0]);
-                }
-                formData.append('nonce', wppb_upload_script_vars.nonce);
-                formData.append('name', fieldName);
-
-                var alreadyDisabled = false;
-                if ( jQuery( 'p.form-submit .submit.button' ).prop( 'disabled' ) ) {
-                    alreadyDisabled = true;
-                } else {
-                    jQuery( "p.form-submit .submit.button" ).prop( 'disabled', true );
-                }
-
-                jQuery.ajax({
-                    url: wppb_upload_script_vars.ajaxUrl,
-                    type: 'POST',
-                    contentType: false,
-                    processData: false,
-                    data: formData,
-                    success: function(response){
-                        
-                        var response = JSON.parse(response)
-
-                        if( response.errors ){
-                            jQuery("input#" + fieldName).val(null);
-                            jQuery('.wppb_simple_upload', jQuery("input#" + fieldName).parent()).val(null);
-                        } else {
-                            jQuery("input#" + fieldName).val(response);
-                        }
-
-                        if ( !alreadyDisabled ) {
-                            jQuery("p.form-submit .submit.button").prop('disabled', false);
-                        }
-                        
-                    },
-                });
-            }
-        };
-    });
-}
 jQuery(document).ready(function(){
     validate_simple_upload();
 
@@ -245,8 +147,118 @@ jQuery(document).ready(function(){
                 jQuery(this).parent().parent('.upload-field-details').remove();
 
                 jQuery(document).trigger( 'wppb_removed_uploaded_file' )
-                
+
             }
         });
     }
 });
+
+function validate_simple_upload(){
+    jQuery("input:file").on('change', function(e){
+        //handle simple upload
+        var uploadInputName = jQuery(this).attr('name');
+        var uploadButton = jQuery(this);
+        var oFReader = new FileReader();
+        var attachment = e.target.files[0];
+        oFReader.readAsDataURL(attachment);
+        oFReader.onload = function (oFREvent) {
+            var src = oFREvent.target.result;
+            var error = '';
+            jQuery("#p_" + uploadInputName).text(error);
+            uploadInputId = uploadInputName.split('-').join('_');
+            //Check allowed upload type by wordpress
+            allowed_mime_types = wppb_allowed_wordpress_formats.allowed_wordpress_formats;
+            allowed_by_wordpress = false;
+            for (var key in allowed_mime_types){
+                allowed_type = allowed_mime_types[key];
+                if (attachment.type === allowed_type){
+                    allowed_by_wordpress = true;
+                    possible_extensions = key.split('|');
+                }
+            }
+            if (allowed_by_wordpress) {
+                //Check allowed extensions
+                allowed_extensions = jQuery("#allowed_extensions_" + uploadInputId).val();
+                if (allowed_extensions !== '') {
+                    var allowed = false;
+                    allowed_extensions = allowed_extensions.split(',');
+                    for (var i = 0; i < allowed_extensions.length; i++) {
+                        if (possible_extensions.includes(allowed_extensions[i])) {
+                            allowed = true;
+                        }
+                    }
+                    if (allowed == false) {
+                        error = wppb_error_messages.upload_type_error_message;
+                    }
+                }
+                //Check size limit — prefer per-field limit, fall back to global
+                var perFieldLimit = jQuery("#size_limit_" + uploadInputId).val();
+                var allowed_size_limit = perFieldLimit ? parseFloat(perFieldLimit) : wppb_limit.size_limit;
+                if (attachment.size > allowed_size_limit) {
+                    var limit = allowed_size_limit / (1024 * 1024);
+                    error = wppb_error_messages.limit_error_message + limit + 'MB.';
+                }
+            }
+            else{
+                error = wppb_error_messages.upload_type_error_message;
+            }
+            if (error !== '') {
+                jQuery("#p_" + uploadInputName).text(error);
+                uploadButton.val('');
+            } else {
+                var fieldName = uploadInputName.replace(/^(simple_upload_)/,'').replace(/-/g,'_');
+                var formData = new FormData();
+                if (uploadButton.closest('.wppb-upload').length > 0) {
+                    formData.append('action', 'wppb_ajax_simple_upload');
+                    formData.append(fieldName, jQuery(e.target).prop('files')[0]);
+                } else {
+                    formData.append('action', 'wppb_ajax_simple_avatar');
+                    formData.append(fieldName, jQuery(e.target).prop('files')[0]);
+                }
+                formData.append('nonce', wppb_upload_script_vars.nonce);
+                formData.append('name', fieldName);
+
+                var simpleUploadFields = uploadButton.closest('.wppb-user-forms').find('.wppb_simple_upload');
+
+                simpleUploadFields.each(function() {
+                    jQuery( this ).prop( 'disabled', true );
+                });
+
+                var submitAlreadyDisabled = false;
+                var submitButtonText = uploadButton.closest('.wppb-user-forms').find('.submit.button').val();
+                jQuery("input#"+fieldName).closest('.wppb-user-forms').find('.submit.button').val( 'Uploading file...' );
+                if ( jQuery( 'p.form-submit .submit.button' ).prop( 'disabled' ) ) {
+                    submitAlreadyDisabled = true;
+                } else {
+                    jQuery( 'p.form-submit .submit.button' ).prop( 'disabled', true );
+                }
+
+                jQuery.ajax({
+                    url: wppb_upload_script_vars.ajaxUrl,
+                    type: 'POST',
+                    contentType: false,
+                    processData: false,
+                    data: formData,
+                    success: function(response){
+                        var parsed = JSON.parse(response);
+
+                        if ( parsed && parsed.errors ) {
+                            jQuery("input#"+fieldName).val(null);
+                            jQuery('.wppb_simple_upload', jQuery("input#"+fieldName).parent()).val(null);
+                        } else {
+                            jQuery("input#"+fieldName).val(parsed);
+                        }
+
+                        if ( !submitAlreadyDisabled ) {
+                            jQuery("p.form-submit .submit.button").prop('disabled', false);
+                        }
+                        simpleUploadFields.each(function() {
+                            jQuery( this ).prop( 'disabled', false );
+                        });
+                        jQuery("input#"+fieldName).closest('.wppb-user-forms').find('.submit.button').val( submitButtonText );
+                    },
+                });
+            }
+        };
+    });
+}

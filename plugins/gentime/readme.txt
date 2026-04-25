@@ -1,20 +1,24 @@
-=== GenTime ===
+=== GenTime: Inspect page generation time ===
 Contributors: Cybr
-Tags: admin bar, generation, time, load, php, speed, performance
-Requires at least: 3.1.0
-Tested up to: 6.2
-Requires PHP: 5.6.0
-Stable tag: 1.1.0
+Tags: admin bar, generation, performance, time, php
+Requires at least: 5.3
+Tested up to: 6.9
+Requires PHP: 7.4
+Stable tag: 2.0.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-GenTime accurately shows the page generation time in the WordPress admin bar.
+GenTime accurately shows the page generation time in your WordPress admin bar.
 
 == Description ==
 
 = GenTime =
 
-This plugin shows site administrators the time in seconds of how fast the page loaded in the WordPress admin bar.
+This plugin shows site administrators the time in seconds of how fast the page is generated in the WordPress top admin bar.
+
+The generation time is calculated from when the server receives the page request to when the number is printed, which is close to the end of the request.
+
+So, just PHP and the database impact this calculation. The time it takes to send the page from the server to your device is not included in this timer.
 
 That's it, pretty simple!
 
@@ -24,30 +28,32 @@ That's it, pretty simple!
 1. Either Network Activate this plugin or activate it on a single site.
 1. That's it!
 
-= Filters =
+= Change the number of decimals =
 
-**Changes the minimum role for which the GenTime is shown:**
-
+Use this filter to change the number of decimals shown by the timer. The number defaults to 3, but this filter makes it 4.
 `
-add_filter( 'gentime_minimum_role', 'my_gentime_minimum_role' );
-function my_gentime_minimum_role( $default = 'install_plugins' ) {
-
-    // See http://codex.wordpress.org/Roles_and_Capabilities for a list of role names
-    $role = 'edit_pages';
-
-    return $role;
-}
+add_filter( 'gentime_decimals', fn( $default = 3 ) => 4 );
 `
 
-**Changes the number of decimals to output:**
+([Where can I place filters?](https://tsf.fyi/docs/filters#where))
+
+= Change the view capability requirement =
+
+Add this to `wp-config.php` to change the user capability required to view the timer:
 `
-add_filter( 'gentime_decimals', 'my_gentime_decimals' );
-function my_gentime_decimals( $default = 3 ) {
-    return 4;
-}
+define( 'GENTIME_VIEW_CAPABILITY', 'manage_options' );
 `
+
+([List of capabilities](https://wordpress.org/documentation/article/roles-and-capabilities/#capabilities))
 
 == Changelog ==
+
+= 2.0.0 =
+
+* Changed: The plugin has been rewritten to adhere to my latest coding standards — its old functions are no longer available.
+* Changed: This plugin now requires PHP 7.4, from PHP 5.2.
+* Changed: The default timer view capability now defaults to `'manage_options'` instead of `'install_plugins'`.
+* Removed: Filter `'gentime_minimum_role'` is gone. Use constant `GENTIME_VIEW_CAPABILITY` instead.
 
 = 1.1.0 =
 * Added: Now uses WordPress 5.8's more accurate function, when available, `timer_float()`.

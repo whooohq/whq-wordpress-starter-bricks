@@ -79,7 +79,7 @@ class Admin extends Instance {
 	 */
 	public function user_contactmethods( $contactmethods ) {
 		if ( ! array_key_exists( 'phone_number', $contactmethods ) ) {
-			$contactmethods[ 'phone_number' ] = __( 'Dologin Security Phone', 'dologin' );
+			$contactmethods[ 'phone_number' ] = __( 'Dologin Mobile Number', 'dologin' );
 		}
 		if ( ! array_key_exists( '2fa', $contactmethods ) ) {
 			$contactmethods[ '2fa' ] = __( 'Dologin 2FA Secret', 'dologin' );
@@ -89,7 +89,7 @@ class Admin extends Instance {
 
 	public function manage_users_columns( $column ) {
 		if ( ! array_key_exists( 'phone_number', $column ) ) {
-			$column[ 'phone_number' ] = __( 'Dologin Security Phone', 'dologin' );
+			$column[ 'phone_number' ] = __( 'Dologin Operations', 'dologin' );
 		}
 		if ( ! array_key_exists( '2fa', $column ) ) {
 			$column[ '2fa' ] = __( 'Dologin 2FA', 'dologin' );
@@ -105,7 +105,8 @@ class Admin extends Instance {
 			}
 
 			// Append gen link
-			$val .= '<a href="' . Util::build_url( Router::ACTION_PSWD, Pswdless::TYPE_GEN, false, null, array( 'uid' => $user_id ) ) . '" class="button button-primary">' . __( 'Generate Login Link', 'dologin' ) . '</a>';
+			$val .= '<div class="dologin"><a href="' . Util::build_url( Router::ACTION_SITE, Site::TYPE_GEN_TOKEN, false, null, array( 'uid' => $user_id ) ) . '" class="button dologin-btn-tiny dologin-btn-success dologin-mb10">' . __( 'Create Site Token', 'dologin' ) . '</a>';
+			$val .= ' <a href="' . Util::build_url( Router::ACTION_PSWD, Pswdless::TYPE_GEN, false, null, array( 'uid' => $user_id ) ) . '" class="button dologin-btn-primary dologin-btn-tiny">' . __( 'Generate Login Link', 'dologin' ) . '</a></div>';
 
 			return $val;
 		}
@@ -150,7 +151,7 @@ class Admin extends Instance {
 			$list = array() ;
 
 			foreach ( $this->cls( 'Conf' )->get_options() as $id => $v ) {
-				if ( $id == '_ver' ) {
+				if ( substr( $id, 0, 1 ) === '_' ) {
 					continue;
 				}
 
@@ -220,6 +221,39 @@ class Admin extends Instance {
 			$user_info = get_userdata( $v->user_id );
 			$list[ $k ]->username = $user_info->user_login;
 			$list[ $k ]->link = admin_url( '?dologin=' . $v->id . '.' . $v->hash );
+		}
+
+		return $list;
+	}
+
+	/**
+	 * Display child sites
+	 *
+	 * @since  4.0
+	 * @access public
+	 */
+	public function sites() {
+		global $wpdb;
+
+		$list = $wpdb->get_results( 'SELECT * FROM ' . $this->cls( 'Data' )->tb( 'site' ) . ' ORDER BY id DESC' );
+		foreach ( $list as $k => $v ) {
+			$user_info = get_userdata( $v->user_id );
+			$list[ $k ]->username = $user_info->user_login;
+			$roles = array();
+			$token = '';
+			$easy_login = '';
+			if ( $v->is_child ) {
+				$roles = $user_info->roles;
+				$token = base64_encode( admin_url( '?' . Site::QS_NAME_ROOT_AUTH . '=' . $v->id . '.' . $v->hash ) );
+			} else {
+				$easy_login = Util::build_url( Router::ACTION_SITE, Site::TYPE_EASY_LOGIN, false, null, array( 'dologin_id' => $v->id ) );
+			}
+			$list[ $k ]->roles = $roles;
+			$list[ $k ]->token = $token;
+			$list[ $k ]->easy_login = $easy_login;
+			$list[ $k ]->_lock_link = Util::build_url( Router::ACTION_SITE, Pswdless::TYPE_LOCK, false, null, array( 'dologin_id' => $v->id ) );
+			$list[ $k ]->_del_link = Util::build_url( Router::ACTION_SITE, Pswdless::TYPE_DEL, false, null, array( 'dologin_id' => $v->id ) );
+			$list[ $k ]->_valid = time() - $v->dateline <= 3600;
 		}
 
 		return $list;

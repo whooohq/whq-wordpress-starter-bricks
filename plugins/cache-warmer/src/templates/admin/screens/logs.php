@@ -42,8 +42,22 @@ use Cache_Warmer\Logging;
                 </div>
                 <div class="cache-warmer-row <?php echo ! Logging::get_log_content( 0 ) ? 'cache-warmer-hidden' : ''; ?>">
                     <input type="submit"
-                           class="button button-primary cache-warmer-delete-unscheduled-logs cache-warmer-button-red"
-                           value="<?php esc_html_e( 'Delete unscheduled logs.', 'cache-warmer' ); ?>">
+                        class="button button-primary cache-warmer-delete-unscheduled-logs cache-warmer-button-red"
+                        value="<?php esc_html_e( 'Delete unscheduled logs.', 'cache-warmer' ); ?>">
+                </div>
+            </div>
+
+            <div class="wp-plugins-core-tab-content" data-tab-name="external-warmer">
+                <h2 class="wp-plugins-core-tab-heading"><?php esc_html_e( 'External Warmer', 'cache-warmer' ); ?></h2>
+
+                <div class="cache-warmer-row cache-warmer-logs-row-container">
+                    <div class="cache-warmer-column cache-warmer-log-content-block" data-current-page="1" data-log-name="external-warmer"><?php // @codingStandardsIgnoreLine
+                        echo Logging::format_log_content_array_into_string( '2000-01-01', Logging::get_log_content( '2000-01-01' ) ); // @codingStandardsIgnoreLine ?></div>
+                </div>
+                <div class="cache-warmer-row <?php echo ! Logging::get_log_content( '2000-01-01' ) ? 'cache-warmer-hidden' : ''; ?>">
+                    <input type="submit"
+                        class="button button-primary cache-warmer-delete-external-warmer-logs cache-warmer-button-red"
+                        value="<?php esc_html_e( 'Delete external warmer logs.', 'cache-warmer' ); ?>">
                 </div>
             </div>
         </div>

@@ -2,17 +2,8 @@
 /**
  
  STOP SENDING NOTIFICATION MAILS TO THE USERS 
- version 1.5.4
- added: filters for new user notifications
- removed: pluggable function wp_new_user_notification. Not needed > WP 6.1
- fixed: Email automatic plugin update notification to admin option
- version 1.5.2
- added: Email automatic plugin update notification to admin option
- added: Email automatic theme update notification to admin option
- since 1.5.1
- updated: the core pluggable function wp_new_user_notification
- added: passing through the $deprecated and $notify
- fixed notice of $deprecated
+ version 1.6.1
+ added: Lowered the priority to 99 in the filters for new user notifications fixing some issues where plugins overwrite the disabling of sending the e-mails.
  */
 
 if (!defined('ABSPATH')) die();
@@ -21,7 +12,7 @@ $famne_options = FAMNE::get_option( 'famne_options' );
 
 FAMNE::AddModule('pluggable',array(
     'name' => 'Pluggable',
-    'version'=>'1.5.4'
+    'version'=>'1.6.1'
 ));
 
 if (!function_exists('dont_send_password_change_email') ) :
@@ -39,15 +30,19 @@ function dont_send_password_change_email( $send=false, $user='', $userdata='')
 
     if (!empty($famne_options['wp_password_change_notification']) ) :
 
-        // send a copy of password change notification to the admin
-        // but check to see if it's the admin whose password we're changing, and skip this
+        /*
+         * Send a copy of password change notification to the admin,
+         * but check to see if it's the admin whose password we're changing, and skip this.
+         */
         if ( 0 !== strcasecmp( $user->user_email, get_option( 'admin_email' ) ) ) {
             $message = sprintf(__('Password Lost and Changed for user: %s'), $user->user_login) . "\r\n";
-            // The blogname option is escaped with esc_html on the way into the database in sanitize_option
-            // we want to reverse this for the plain text arena of emails.
+            /*
+             * The blogname option is escaped with esc_html() on the way into the database in sanitize_option().
+             * We want to reverse this for the plain text arena of emails.
+             */
             $blogname = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
             wp_mail(get_option('admin_email'), sprintf(__('[%s] Password Lost/Changed'), $blogname), $message);
-        }    
+        }
     
     endif;
     
@@ -57,7 +52,7 @@ function dont_send_password_change_email( $send=false, $user='', $userdata='')
         return true;
     endif;
 }
-add_filter('send_password_change_email', 'dont_send_password_change_email',1,3);
+add_filter('send_password_change_email', 'dont_send_password_change_email',99,3);
 endif;
 
 
@@ -66,7 +61,7 @@ if (empty($famne_options['send_email_change_email']) ) :
  * Email users e-mail change notification to registered user.
  *
 */
-    add_filter('send_email_change_email', '__return_false',1,3);
+    add_filter('send_email_change_email', '__return_false',99,3);
 endif;
 
 
@@ -76,7 +71,7 @@ if (empty($famne_options['wp_new_user_notification_to_admin']))
  *  Notify admin of new user registration.
  *
 */
-    add_filter('wp_send_new_user_notification_to_admin', '__return_false', 1 ,1);
+    add_filter('wp_send_new_user_notification_to_admin', '__return_false', 99 ,1);
 }
 
 if (empty($famne_options['wp_new_user_notification_to_user'])) 
@@ -85,8 +80,8 @@ if (empty($famne_options['wp_new_user_notification_to_user']))
  *  Notify user of new user registration.
  *
 */
-    add_filter('wp_send_new_user_notification_to_user', '__return_false', 1, 1);
-    add_filter('wpmu_welcome_user_notification', '__return_false', 10, 2);
+    add_filter('wp_send_new_user_notification_to_user', '__return_false', 99, 1);
+    add_filter('wpmu_welcome_user_notification', '__return_false', 99, 2);
 }
 
 
@@ -142,7 +137,7 @@ function dont_send_password_forgotten_email( $send=true, $user_id=0 )
     // none of the above so give the default status back
     return $send;
 }
-add_filter('allow_password_reset', 'dont_send_password_forgotten_email',1,3);
+add_filter('allow_password_reset', 'dont_send_password_forgotten_email',99,3);
 endif;
 
 
@@ -161,7 +156,7 @@ if (empty($famne_options['auto_core_update_send_email']) && !function_exists('fa
         }
         return true;
     }
-    add_filter( 'auto_core_update_send_email', 'fa_dont_sent_auto_core_update_emails', 10, 4 );
+    add_filter( 'auto_core_update_send_email', 'fa_dont_sent_auto_core_update_emails', 99, 4 );
 endif;
 
 
@@ -194,7 +189,7 @@ if (empty($famne_options['auto_plugin_update_send_email']) ) :
         return $notifications_enabled;
     }
 
-    add_filter( 'auto_plugin_update_send_email', 'fa_auto_plugin_update_send_email',10,2 );
+    add_filter( 'auto_plugin_update_send_email', 'fa_auto_plugin_update_send_email',99,2 );
 endif;
 
 
@@ -215,5 +210,5 @@ if (empty($famne_options['auto_theme_update_send_email']) ) :
         return $notifications_enabled;
     }
 
-    add_filter( 'auto_theme_update_send_email', 'fa_auto_theme_update_send_email',10,2 );
+    add_filter( 'auto_theme_update_send_email', 'fa_auto_theme_update_send_email',99,2 );
 endif;

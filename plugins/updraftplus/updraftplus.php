@@ -1,12 +1,12 @@
 <?php
 // @codingStandardsIgnoreStart
+
 /*
 Plugin Name: UpdraftPlus - Backup/Restore
 Plugin URI: https://updraftplus.com
 Description: Backup and restore: take backups locally, or backup to Amazon S3, Dropbox, Google Drive, Rackspace, (S)FTP, WebDAV & email, on automatic schedules.
-Author: UpdraftPlus.Com, DavidAnderson
-Version: 1.23.4
-Update URI: https://wordpress.org/plugins/updraftplus/
+Author: TeamUpdraft, DavidAnderson
+Version: 1.26.3
 Donate link: https://david.dw-perspective.org.uk/donate
 License: GPLv3 or later
 Text Domain: updraftplus
@@ -16,7 +16,7 @@ Author URI: https://updraftplus.com
 // @codingStandardsIgnoreEnd
 
 /*
-Portions copyright 2011-23 David Anderson
+Portions copyright 2011-25 David Anderson
 Portions copyright 2010 Paul Kehrer
 Other portions copyright as indicated by authors in the relevant files
 
@@ -43,7 +43,7 @@ define('UPDRAFTPLUS_DIR', dirname(__FILE__));
 define('UPDRAFTPLUS_URL', plugins_url('', __FILE__));
 define('UPDRAFTPLUS_PLUGIN_SLUG', plugin_basename(__FILE__));
 define('UPDRAFT_DEFAULT_OTHERS_EXCLUDE', 'upgrade,cache,updraft,backup*,*backups,mysql.sql,debug.log');
-define('UPDRAFT_DEFAULT_UPLOADS_EXCLUDE', 'backup*,*backups,backwpup*,wp-clone,snapshots');
+define('UPDRAFT_DEFAULT_UPLOADS_EXCLUDE', 'backup*,*backups,backwpup*,wp-clone,snapshots,wp-staging');
 
 // The following can go in your wp-config.php
 // Tables whose data can be skipped without significant loss, if (and only if) the attempt to back them up fails (e.g. bwps_log, from WordPress Better Security, is log data; but individual entries can be huge and cause out-of-memory fatal errors on low-resource environments). Comma-separate the table names (without the WordPress table prefix).
@@ -95,7 +95,17 @@ function updraft_try_include_file($path, $method = 'include') {
 	$file_to_include = UPDRAFTPLUS_DIR.'/'.$path;
 
 	if (!file_exists($file_to_include)) {
-		trigger_error(sprintf(__('The expected file %s is missing from your UpdraftPlus installation.', 'updraftplus').' '.__('Most likely, WordPress did not correctly unpack the plugin when installing it. You should de-install and then re-install the plugin (your settings and data will be retained).'), $file_to_include), E_USER_WARNING);
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped,WordPress.PHP.DevelopmentFunctions.error_log_trigger_error -- Error message to be printed when it is caught.
+		trigger_error(
+			sprintf(
+				/* translators: %s: File along with full path. */
+				__('The expected file %s is missing from your UpdraftPlus installation.', 'updraftplus').' '.
+				__('Most likely, WordPress did not correctly unpack the plugin when installing it.', 'updraftplus').' '.__('You should de-install and then re-install the plugin (your settings and data will be retained).', 'updraftplus'),
+				$file_to_include
+			),
+			E_USER_WARNING
+		);
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped,WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 	}
 
 	if ('include' === $method) {
@@ -120,11 +130,21 @@ if (is_file(UPDRAFTPLUS_DIR.'/autoload.php')) updraft_try_include_file('autoload
  * @return Boolean The list of our own schedules
  */
 function updraftplus_list_cron_schedules() {
-	$every_particular_hour_label = __('Every %s hours', 'updraftplus');
+	global $wp_current_filter;
+	// To prevent "_load_textdomain_just_in_time was called incorrectly" warning
+	if (((function_exists('doing_action') && !doing_action('after_setup_theme')) || !in_array('after_setup_theme', $wp_current_filter, true)) && !did_action('after_setup_theme')) {
+		$every_particular_hour_label = 'Every %s hours';
+		$every_hour = 'Every hour';
+	} else {
+		/* translators: %s: Number of Hours. */
+		$every_particular_hour_label = __('Every %s hours', 'updraftplus');
+		$every_hour = __('Every hour', 'updraftplus');
+	}
+
 	return array(
 		'everyhour' => array(
 			'interval' => 3600,
-			'display' => apply_filters('updraftplus_cron_schedule_description', __('Every hour', 'updraftplus'), 'everyhour'),
+			'display' => apply_filters('updraftplus_cron_schedule_description', $every_hour, 'everyhour'),
 		),
 		'every2hours' => array(
 			'interval' => 7200,
@@ -142,6 +162,7 @@ function updraftplus_list_cron_schedules() {
 			'interval' => 43200,
 			'display'  => apply_filters('updraftplus_cron_schedule_description', sprintf($every_particular_hour_label, '12'), 'twicedaily'),
 		),
+		// phpcs:disable WordPress.WP.I18n.MissingArgDomain -- The string exists within the WordPress core.
 		'daily' => array(
 			'interval' => 86400,
 			'display'  => apply_filters('updraftplus_cron_schedule_description', __('Daily'), 'daily'),
@@ -158,6 +179,7 @@ function updraftplus_list_cron_schedules() {
 			'interval' => 2592000,
 			'display' => apply_filters('updraftplus_cron_schedule_description', __('Monthly'), 'monthly'),
 		),
+		// phpcs:enable
 	);
 }
 
@@ -176,10 +198,10 @@ endif;
 add_filter('cron_schedules', 'updraftplus_modify_cron_schedules', 30);
 
 // The checks here before loading are for performance only - unless one of those conditions is met, then none of the hooks will ever be used
-if (!is_admin() && (!defined('DOING_CRON') || !DOING_CRON) && (!defined('XMLRPC_REQUEST') || !XMLRPC_REQUEST) && empty($_SERVER['SHELL']) && empty($_POST['udrpc_message']) && empty($_GET['udcentral_action']) && (defined('UPDRAFTPLUS_THIS_IS_CLONE') && '1' != UPDRAFTPLUS_THIS_IS_CLONE) && empty($_GET['uc_auto_login']) && (empty($_SERVER['REQUEST_METHOD']) || 'OPTIONS' != $_SERVER['REQUEST_METHOD']) && (!defined('WP_CLI') || !WP_CLI)) {
+if (!is_admin() && (!defined('DOING_CRON') || !DOING_CRON) && (!defined('XMLRPC_REQUEST') || !XMLRPC_REQUEST) && empty($_SERVER['SHELL']) && empty($_POST['udrpc_message']) && empty($_GET['udcentral_action']) && (defined('UPDRAFTPLUS_THIS_IS_CLONE') && '1' != UPDRAFTPLUS_THIS_IS_CLONE) && empty($_GET['uc_auto_login']) && (empty($_SERVER['REQUEST_METHOD']) || 'OPTIONS' != $_SERVER['REQUEST_METHOD']) && (!defined('WP_CLI') || !WP_CLI)) { // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- False positive: nonce verification not required here.
 	// There is no good way to work out if the cron event is likely to be called under the ALTERNATE_WP_CRON system, other than re-running the calculation
 	// If ALTERNATE_WP_CRON is not active (and a few other things), then we are done
-	if (!defined('ALTERNATE_WP_CRON') || !ALTERNATE_WP_CRON || !empty($_POST) || defined('DOING_AJAX') || isset($_GET['doing_wp_cron'])) return;
+	if (!defined('ALTERNATE_WP_CRON') || !ALTERNATE_WP_CRON || !empty($_POST) || defined('DOING_AJAX') || isset($_GET['doing_wp_cron'])) return; // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- False positive: nonce verification not required here.
 
 	// The check below is the one used by spawn_cron() to decide whether cron events should be run
 	$gmt_time = microtime(true);
@@ -224,7 +246,7 @@ if (!file_exists(UPDRAFTPLUS_DIR.'/class-updraftplus.php') || !file_exists(UPDRA
 	 * Warn if they've not got the whole plugin - can happen if WP crashes (e.g. out of disk space) when upgrading the plugin
 	 */
 	function updraftplus_incomplete_install_warning() {
-		echo '<div class="updraftmessage error"><p><strong>'.__('Error', 'updraftplus').':</strong> '.__("You do not have UpdraftPlus completely installed - please de-install and install it again. Most likely, WordPress malfunctioned when copying the plugin files.", 'updraftplus').' <a href="https://updraftplus.com/faqs/wordpress-crashed-when-updating-updraftplus-what-can-i-do/">'.__('Go here for more information.', 'updraftplus').'</a></p></div>';
+		echo '<div class="updraftmessage error"><p><strong>'.esc_html(__('Error', 'updraftplus')).':</strong> '.esc_html(__('You do not have UpdraftPlus completely installed - please de-install and install it again.', 'updraftplus').' '.__('Most likely, WordPress malfunctioned when copying the plugin files.', 'updraftplus')).' <a href="https://updraftplus.com/faqs/wordpress-crashed-when-updating-updraftplus-what-can-i-do/">'.esc_html__('Go here for more information.', 'updraftplus').'</a></p></div>';
 	}
 	add_action('all_admin_notices', 'updraftplus_incomplete_install_warning');
 } else {
@@ -240,7 +262,7 @@ if (!file_exists(UPDRAFTPLUS_DIR.'/class-updraftplus.php') || !file_exists(UPDRA
 		if (!$updraftplus->memory_check($updraftplus->memory_check_current(WP_MAX_MEMORY_LIMIT))) {
 			$new = absint($updraftplus->memory_check_current(WP_MAX_MEMORY_LIMIT));
 			if ($new>32 && $new<100000) {
-				@ini_set('memory_limit', $new.'M');// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the function.
+				@ini_set('memory_limit', $new.'M');// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged,Squiz.PHP.DiscouragedFunctions.Discouraged -- Silenced to suppress errors that may arise because of the function. Safely using discouraged function ini_set().
 			}
 		}
 	}
@@ -265,7 +287,7 @@ function updraftplus_build_mysqldump_list() {
 		
 		if (!empty($_SERVER['DOCUMENT_ROOT'])) {
 			// Get the drive that this is running on
-			$current_drive = strtoupper(substr($_SERVER['DOCUMENT_ROOT'], 0, 1));
+			$current_drive = strtoupper(substr($_SERVER['DOCUMENT_ROOT'], 0, 1)); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitization not needed as we are extracting only first letter and using it.
 			if (!in_array($current_drive, $drives)) array_unshift($drives, $current_drive);
 		}
 		

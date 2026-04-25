@@ -1,5 +1,6 @@
 <?php
-
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct $wpdb query is required for this operation.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching -- some query operations need to always receive the most up-to-date or actual data directly from the database, reducing the risk of serving stale information.
 if (!defined('UPDRAFTCENTRAL_CLIENT_DIR')) die('No access.');
 
 /**
@@ -118,7 +119,6 @@ class UpdraftCentral_Media_Commands extends UpdraftCentral_Commands {
 
 		$response = array(
 			'items' => $media_items,
-			'has_image_editor' => $this->has_image_editor(isset($media_items[0]) ? $media_items[0] : null),
 			'info' => $info,
 			'options' => array(
 				'date' => $this->get_date_options(),
@@ -256,7 +256,7 @@ class UpdraftCentral_Media_Commands extends UpdraftCentral_Commands {
 				$image_edit_overwrite = (!defined('IMAGE_EDIT_OVERWRITE') || !IMAGE_EDIT_OVERWRITE) ? 0 : 1;
 				$media->misc = array(
 					'sizer' => $sizer,
-					'rand' => rand(1, 99999),
+					'rand' => wp_rand(1, 99999),
 					'constrained_dims' => $constrained_dims,
 					'rotate_supported' => (int) $rotate_supported,
 					'thumb' => $thumb,
@@ -265,6 +265,8 @@ class UpdraftCentral_Media_Commands extends UpdraftCentral_Commands {
 					'can_restore' => $can_restore,
 					'image_edit_overwrite' => $image_edit_overwrite
 				);
+
+				$media->has_image_editor = $this->has_image_editor($media);
 			}
 		}
 
@@ -321,7 +323,13 @@ class UpdraftCentral_Media_Commands extends UpdraftCentral_Commands {
 		$posts = array();
 		if (!empty($result)) {
 			foreach ($result as $post) {
-				array_push($posts, array('ID' => $post->ID, 'title' => $post->post_title));
+				array_push($posts, array(
+					'ID' => $post->ID,
+					'title' => $post->post_title,
+					'post_status' => $post->post_status,
+					'post_date_gmt' => $post->post_date_gmt,
+					'post_modified_gmt' => $post->post_modified_gmt,
+				));
 			}
 		}
 
@@ -569,7 +577,11 @@ class UpdraftCentral_Media_Commands extends UpdraftCentral_Commands {
 		}
 
 		$msg = (false !== $msg) ? json_encode($msg) : $msg;
-		return $this->_response(array('content' => $msg));
+
+		$full_image = wp_get_attachment_image_src($attachment_id, 'full');
+		$full_image_url = $full_image ? $full_image[0] : '';
+
+		return $this->_response(array('content' => $msg, 'url' => $full_image_url));
 	}
 
 	/**

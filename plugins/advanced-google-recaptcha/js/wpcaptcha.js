@@ -1,7 +1,7 @@
 /**
  * WP Captcha
  * Admin Functions
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 var WPCaptcha = {};
@@ -576,7 +576,8 @@ jQuery(document).ready(function ($) {
     $(this).parent().addClass("captcha-selected");
   });
 
-  $(".settings_page_wpcaptcha").on("blur change keyup", "#captcha,#captcha_site_key,#captcha_secret_key", function (e) {
+  $(".settings_page_wpcaptcha").on("change keyup", "#captcha,#captcha_site_key,#captcha_secret_key", function (e) {
+    $("#captcha_verified").val("0");
     if ($("#captcha").val() != "disabled" && $(this).val() != $(this).data("old")) {
       $(".captcha_verify_wrapper").show();
     } else {
@@ -588,7 +589,7 @@ jQuery(document).ready(function ($) {
 
   $(".settings_page_wpcaptcha").on("click", "#verify-captcha", function (e) {
     e.preventDefault();
-    var captcha_response;
+    var captcha_response, captcha_response_token;
 
     wpcaptcha_swal
       .fire({
@@ -611,8 +612,9 @@ jQuery(document).ready(function ($) {
 
             var captcha_html = "";
             captcha_html += '<p><label for="wpcaptcha_captcha">Are you human? Please solve:';
-            captcha_html += '<img class="wpcaptcha-captcha-img" style="vertical-align: text-top;" src="' + wpcaptcha_vars.plugin_url + "/libs/captcha.php?wpcaptcha-generate-image=true&color=#FFFFFF&noise=1&rnd=" + Math.floor(Math.random() * 1000) + '" alt="Captcha" />';
+            captcha_html += '<img class="wpcaptcha-captcha-img" style="vertical-align: text-top;" src="' + wpcaptcha_vars.captcha_admin_test + '" alt="Captcha" />';
             captcha_html += '<input class="input" type="text" size="3" name="wpcaptcha_captcha" id="wpcaptcha_builtin_captcha" />';
+            captcha_html += '<input type="hidden" name="wpcaptcha_captcha_token" id="wpcaptcha_captcha_token" value="' + wpcaptcha_vars.captcha_admin_test_token + '" />';
             captcha_html += "</label></p>";
 
             $("#wpcaptcha_captcha_box").html(captcha_html);
@@ -620,6 +622,8 @@ jQuery(document).ready(function ($) {
             $("#wpcaptcha_builtin_captcha").on("blur change keyup", function () {
               captcha_response = $(this).val();
             });
+
+            captcha_response_token = $("#wpcaptcha_captcha_token").val();
           }
 
           window.wpcaptcha_captcha_script.onerror = function () {
@@ -673,6 +677,7 @@ jQuery(document).ready(function ($) {
               captcha_site_key: $("#captcha_site_key").val(),
               captcha_secret_key: $("#captcha_secret_key").val(),
               captcha_response: captcha_response,
+              captcha_response_token: captcha_response_token,
             },
           })
             .always(function (response) {
@@ -689,10 +694,14 @@ jQuery(document).ready(function ($) {
                 $("#captcha_secret_key").data("old", $("#captcha_secret_key").val());
                 $(".captcha_verify_wrapper").hide();
                 $("#captcha_verified").val("1");
+                var message = "Captcha has been verified successfully";
+                if($("#captcha").val() == 'recaptchav3'){
+                    var message = "Captcha has been verified successfully with a score of " + response.data;
+                }
                 wpcaptcha_swal.fire({
                   type: "success",
                   heightAuto: false,
-                  title: "Captcha has been verified successfully",
+                  title: message,
                 });
               } else {
                 wpcaptcha_swal
@@ -908,15 +917,27 @@ jQuery(document).ready(function ($) {
 
   if ($("#captcha").val() != "disabled" && $("#captcha").val() != "builtin" && $("#captcha").val() != "icons") {
     $(".captcha_keys_wrapper").show();
+    if($("#captcha").val() == 'recaptchav3'){
+        $(".captcha_score_wrapper").show();
+    } else {
+        $(".captcha_score_wrapper").hide();
+    }
   } else {
     $(".captcha_keys_wrapper").hide();
+    $(".captcha_score_wrapper").hide();
   }
 
   $("#captcha").on("change", function () {
     if ($("#captcha").val() != "disabled" && $("#captcha").val() != "builtin" && $("#captcha").val() != "icons") {
       $(".captcha_keys_wrapper").show();
+      if($("#captcha").val() == 'recaptchav3'){
+         $(".captcha_score_wrapper").show();
+      } else {
+         $(".captcha_score_wrapper").hide();
+      }
     } else {
       $(".captcha_keys_wrapper").hide();
+      $(".captcha_score_wrapper").hide();
     }
   });
 
@@ -1021,6 +1042,14 @@ jQuery(document).ready(function ($) {
       });
     }
   }
+
+  $(".save-settings").on("click", function(e){
+    if ($("#captcha").val() != "disabled" && $("#captcha_verified").val() != "1") {
+        e.preventDefault();
+        $(".save-settings").blur();
+        alert('You did not verify the selected captcha method so it will not be saved to prevent you getting locked out of your website.');
+    }
+  });
 
   function create_fails_chart() {
     if (!wpcaptcha_vars.stats_fails || !wpcaptcha_vars.stats_fails.days.length) {
@@ -1470,11 +1499,12 @@ jQuery(document).ready(function ($) {
     });
   } // open_upsell
 
-  if (window.localStorage.getItem('wpcaptcha_upsell_shown') != 'true') {
-    open_upsell('welcome');
+  // show upsell popup every 4 months
+  if (window.localStorage.getItem('recaptcha_upsell_timestamp') === null ||
+      (new Date().getTime() / 1000 - window.localStorage.getItem('recaptcha_upsell_timestamp')) > (86400 * 120)) {
+    window.localStorage.setItem('recaptcha_upsell_timestamp', Math.round(new Date().getTime() / 1000));
 
-    window.localStorage.setItem('wpcaptcha_upsell_shown', 'true');
-    window.localStorage.setItem('wpcaptcha_upsell_shown_timestamp', new Date().getTime());
+    open_upsell('welcome');
   }
 
   if (window.location.hash == '#open-pro-dialog') {

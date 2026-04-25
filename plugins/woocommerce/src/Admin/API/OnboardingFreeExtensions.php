@@ -99,5 +99,4 @@ class OnboardingFreeExtensions extends WC_REST_Data_Controller {
 
 		return new WP_REST_Response( $extensions );
 	}
-
 }

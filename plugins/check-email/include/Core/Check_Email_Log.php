@@ -1,14 +1,11 @@
 <?php namespace CheckEmail\Core;
-
-use CheckEmail\Core\DB\Check_Email_Table_Manager;
-use CheckEmail\CheckEmailLogAutoloader;
-
+defined( 'ABSPATH' ) || exit; // Exit if accessed directly.
 /**
  * The main plugin class.
  */
 class Check_Email_Log {
 
-	const VERSION = '1.0.0';
+	const VERSION = '1.0.12';
 
 	private $loaded = false;
 
@@ -60,7 +57,7 @@ class Check_Email_Log {
 		}
 
 		$this->loaded = true;
-
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		do_action( 'check_email_loaded' );
 	}
 

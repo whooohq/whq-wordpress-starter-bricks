@@ -21,11 +21,11 @@ function bogo_language_switcher( $args = '' ) {
 			$class[] = 'current';
 		}
 
-		if ( 1 == $count ) {
+		if ( 1 === $count ) {
 			$class[] = 'first';
 		}
 
-		if ( $total == $count ) {
+		if ( $total === $count ) {
 			$class[] = 'last';
 		}
 
@@ -87,7 +87,7 @@ function bogo_language_switcher( $args = '' ) {
 	$output = apply_filters( 'bogo_language_switcher', $output, $args );
 
 	if ( $args['echo'] ) {
-		echo $output;
+		echo wp_kses_post( $output );
 	} else {
 		return $output;
 	}
@@ -116,7 +116,7 @@ function bogo_language_suggestion( $args = '' ) {
 	if ( $locale_to_suggest ) {
 		$translations = array_filter(
 			bogo_language_switcher_links( $args ),
-			function ( $link ) use ( $locale_to_suggest ) {
+			static function ( $link ) use ( $locale_to_suggest ) {
 				return $link['locale'] === $locale_to_suggest && '' !== $link['href'];
 			}
 		);
@@ -148,7 +148,7 @@ function bogo_language_suggestion( $args = '' ) {
 
 		$output = sprintf(
 			/* translators: %s: Language name */
-			esc_html( __( "This page is also available in %s.", 'bogo' ) ),
+			esc_html( __( 'This page is also available in %s.', 'bogo' ) ),
 			$link
 		);
 
@@ -163,7 +163,7 @@ function bogo_language_suggestion( $args = '' ) {
 	$output = apply_filters( 'bogo_language_suggestion', $output, $args );
 
 	if ( $args['echo'] ) {
-		echo $output;
+		echo wp_kses_post( $output );
 	} else {
 		return $output;
 	}
@@ -182,8 +182,7 @@ function bogo_language_switcher_links( $args = '' ) {
 	$translations = array();
 	$is_singular = false;
 
-	if ( is_singular()
-	or ! empty( $wp_query->is_posts_page ) ) {
+	if ( is_singular() or ! empty( $wp_query->is_posts_page ) ) {
 		$translations = bogo_get_post_translations( get_queried_object_id() );
 		$is_singular = true;
 	}
@@ -208,8 +207,10 @@ function bogo_language_switcher_links( $args = '' ) {
 		if ( $is_singular ) {
 			if ( $locale === $code ) {
 				$link['href'] = get_permalink( get_queried_object_id() );
-			} elseif ( ! empty( $translations[$code] )
-			and 'publish' == get_post_status( $translations[$code] ) ) {
+			} elseif (
+				! empty( $translations[$code] ) and
+				'publish' === get_post_status( $translations[$code] )
+			) {
 				$link['href'] = get_permalink( $translations[$code] );
 			}
 		} else {

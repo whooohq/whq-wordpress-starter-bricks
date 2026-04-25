@@ -1,10 +1,31 @@
 /*
+ * jquery-admin-page.js
+ *
  * Common library for admin pages.
  *
- * Update the wp_register_script() arguments for the 'sucom-admin-page' script when updating this version number.
+ * Version: 20240810
  *
- * Version: 20230704
+ * Update the wp_register_script() arguments for the 'sucom-admin-page' script when updating this version number.
  */
+function sucomEditorUnchanged( pluginId, adminPageL10n ) {
+
+	if ( 'undefined' === typeof wp.data ) return;	// Just in case.
+
+	var cfg = window[ adminPageL10n ];
+
+	if ( ! cfg[ '_ajax_actions' ][ 'metabox_postboxes' ] ) {
+
+		console.error( arguments.callee.name + ': missing _ajax_actions metabox_postboxes' );
+
+		return;
+	}
+
+	for ( var postbox_id in cfg[ '_ajax_actions' ][ 'metabox_postboxes' ] ) {
+
+		sucomDisableUnchanged( '#' + postbox_id );
+	}
+}
+
 function sucomEditorPostbox( pluginId, adminPageL10n, postId ) {
 
 	if ( 'undefined' === typeof wp.data ) return;	// Just in case.
@@ -19,21 +40,6 @@ function sucomEditorPostbox( pluginId, adminPageL10n, postId ) {
 
 		return;
 
-	} else if ( cfg[ '_metabox_postbox_ids' ] ) {	// Backwards compatibility.
-
-		if ( 'undefined' === typeof cfg[ '_ajax_actions' ] ) cfg[ '_ajax_actions' ] = {};
-
-		if ( 'undefined' === typeof cfg[ '_ajax_actions' ][ 'metabox_postboxes' ] ) cfg[ '_ajax_actions' ][ 'metabox_postboxes' ] = {};
-
-		for ( var postbox_key in cfg[ '_metabox_postbox_ids' ] ) {
-
-			var postbox_id = cfg[ '_metabox_postbox_ids' ][ postbox_key ];
-
-			var ajax_action_update_postbox = 'get_metabox_postbox_id_' + postbox_id + '_inside';
-
-			cfg[ '_ajax_actions' ][ 'metabox_postboxes' ][ postbox_id ] = ajax_action_update_postbox;
-		}
-
 	} else if ( ! cfg[ '_ajax_actions' ][ 'metabox_postboxes' ] ) {
 
 		console.error( arguments.callee.name + ': missing _ajax_actions metabox_postboxes' );
@@ -43,12 +49,10 @@ function sucomEditorPostbox( pluginId, adminPageL10n, postId ) {
 
 	for ( var postbox_id in cfg[ '_ajax_actions' ][ 'metabox_postboxes' ] ) {
 
-		var ajax_action_update_postbox = cfg[ '_ajax_actions' ][ 'metabox_postboxes' ][ postbox_id ];
-
 		/*
 		 * Sanitize the ajax action filter name.
 		 */
-		ajax_action_update_postbox = sucomSanitizeHookname( ajax_action_update_postbox );
+		var ajax_action_update_postbox = sucomSanitizeHookname( cfg[ '_ajax_actions' ][ 'metabox_postboxes' ][ postbox_id ] );
 
 		var ajaxData = {
 			action: ajax_action_update_postbox,
@@ -208,15 +212,15 @@ function sucomToolbarNotices( pluginId, adminPageL10n ) {
 	var menuId    = '#wp-admin-bar-' + pluginId + '-toolbar-notices';
 	var subMenuId = '#wp-admin-bar-' + pluginId + '-toolbar-notices-container';
 	var counterId = '#' + pluginId + '-toolbar-notices-count';
-
-	var menuItem = jQuery( menuId );
-
-	var ajaxData = {
+	var menuItem  = jQuery( menuId );
+	var ajaxData  = {
 		action: cfg[ '_ajax_actions' ][ 'get_notices_json' ],
 		context: 'toolbar_notices',
 		_ajax_nonce: cfg[ '_ajax_nonce' ],
 		_notice_types: cfg[ '_toolbar_notice_types' ],
 	}
+
+	jQuery( menuItem ).show();
 
 	jQuery.getJSON( ajaxurl, ajaxData, function( data ) {
 
@@ -226,6 +230,7 @@ function sucomToolbarNotices( pluginId, adminPageL10n ) {
 		var noticeStatus     = '';
 		var noticeTotalCount = 0;
 		var noticeTypeCount  = {};
+		var noticeTimeouts   = cfg[ '_toolbar_notice_timeout' ];
 		var noNoticesHtml    = cfg[ '_no_notices_html' ];
 		var copyNoticesHtml  = cfg[ '_copy_notices_html' ];
 		var countMsgsTransl  = cfg[ '_count_msgs_transl' ];
@@ -285,15 +290,10 @@ function sucomToolbarNotices( pluginId, adminPageL10n ) {
 			var noticeStatus = '';
 			var noticeTime   = -1;
 
-			if ( noticeTypeCount[ 'err' ] )		noticeStatus = 'error';
-			else if ( noticeTypeCount[ 'warn' ] )	noticeStatus = 'warning';
-			else if ( noticeTypeCount[ 'inf' ] )	noticeStatus = 'info';
-			else if ( noticeTypeCount[ 'upd' ] )	noticeStatus = 'success';
-
-			if ( noticeTypeCount[ 'upd' ] )		noticeTime = cfg[ '_toolbar_notice_timeout' ][ 'upd' ] || -1;
-			else if ( noticeTypeCount[ 'inf' ] )	noticeTime = cfg[ '_toolbar_notice_timeout' ][ 'inf' ] || -1;
-			else if ( noticeTypeCount[ 'warn' ] )	noticeTime = cfg[ '_toolbar_notice_timeout' ][ 'warn' ] || -1;
-			else if ( noticeTypeCount[ 'err' ] )	noticeTime = cfg[ '_toolbar_notice_timeout' ][ 'err' ] || -1;
+			if ( noticeTypeCount[ 'err' ] )       { noticeStatus = 'error';   noticeTime = noticeTimeouts[ 'err' ]; }
+			else if ( noticeTypeCount[ 'warn' ] ) { noticeStatus = 'warning'; noticeTime = noticeTimeouts[ 'warn' ]; }
+			else if ( noticeTypeCount[ 'inf' ] )  { noticeStatus = 'info';    noticeTime = noticeTimeouts[ 'inf' ]; }
+			else if ( noticeTypeCount[ 'upd' ] )  { noticeStatus = 'success'; noticeTime = noticeTimeouts[ 'upd' ]; }
 
 			menuItem.addClass( 'toolbar-notices-' + noticeStatus );
 
@@ -329,9 +329,9 @@ function sucomToolbarNotices( pluginId, adminPageL10n ) {
 
 				}, noticeTime );
 
-			} else {
+			} else {	/* noticeTime is 0. */
 
-				jQuery( menuId ).addClass( 'hover' );
+				menuItem.addClass( 'hover' );
 
 				jQuery( document ).on( 'click', function( event ) {
 
@@ -533,7 +533,7 @@ function sucomSanitizeCssId( string ) {
 function sucomSanitizeHookname( string ) {
 
 	string = string.replace( /[#:\/\-\. \[\]]+/g, '_' );
-	string = string.replace( /_+$/, '' );
+	string = string.replace( /_+$/, '' );	// Only trim right side underscores to allow for '__return_false'.
 
 	return sucomSanitizeKey( string );
 }
@@ -552,9 +552,6 @@ function sucomSanitizeKey( string, allow_upper ) {
 	return string;
 }
 
-/*
- * Hooked to .focus() and .keyup() by SucomForm->get_textlen_script().
- */
 function sucomTextLen( containerId, adminPageL10n ) {
 
 	var cfg = window[ adminPageL10n ];
@@ -686,9 +683,6 @@ function sucomTextLen( containerId, adminPageL10n ) {
 	jQuery( '#' + containerId + '-text-len-wrapper' ).html( container_html );
 }
 
-/*
- * Hooked to .blur() by SucomForm->get_textlen_script().
- */
 function sucomTextLenReset( containerId ) {
 
 	jQuery( '#' + containerId + '-text-len-wrapper' ).html( '' )
@@ -737,18 +731,3 @@ String.prototype.formatUnicorn = function() {
 	return str;
 }
 
-/*
- * Deprecated on 2023/07/04.
- */
-function sucomBlockPostbox( pluginId, adminPageL10n, postId ) {
-
-	sucomEditorPostbox( pluginId, adminPageL10n, postId );
-}
-
-/*
- * Deprecated on 2023/07/04.
- */
-function sucomBlockNotices( pluginId, adminPageL10n ) {
-
-	sucomBlockEditorNotices( pluginId, adminPageL10n );
-}

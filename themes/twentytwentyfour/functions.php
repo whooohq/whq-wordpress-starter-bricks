@@ -14,7 +14,7 @@
 
 if ( ! function_exists( 'twentytwentyfour_block_styles' ) ) :
 	/**
-	 * Register custom block styles
+	 * Registers custom block styles.
 	 *
 	 * @since Twenty Twenty-Four 1.0
 	 * @return void
@@ -152,7 +152,7 @@ add_action( 'init', 'twentytwentyfour_block_styles' );
 
 if ( ! function_exists( 'twentytwentyfour_block_stylesheets' ) ) :
 	/**
-	 * Enqueue custom block stylesheets
+	 * Enqueues custom block stylesheets.
 	 *
 	 * @since Twenty Twenty-Four 1.0
 	 * @return void
@@ -186,7 +186,7 @@ add_action( 'init', 'twentytwentyfour_block_stylesheets' );
 
 if ( ! function_exists( 'twentytwentyfour_pattern_categories' ) ) :
 	/**
-	 * Register pattern categories
+	 * Registers pattern categories.
 	 *
 	 * @since Twenty Twenty-Four 1.0
 	 * @return void
@@ -194,10 +194,10 @@ if ( ! function_exists( 'twentytwentyfour_pattern_categories' ) ) :
 	function twentytwentyfour_pattern_categories() {
 
 		register_block_pattern_category(
-			'page',
+			'twentytwentyfour_page',
 			array(
-				'label'       => _x( 'Pages', 'Block pattern category' ),
-				'description' => __( 'A collection of full page layouts.' ),
+				'label'       => _x( 'Pages', 'Block pattern category', 'twentytwentyfour' ),
+				'description' => __( 'A collection of full page layouts.', 'twentytwentyfour' ),
 			)
 		);
 	}

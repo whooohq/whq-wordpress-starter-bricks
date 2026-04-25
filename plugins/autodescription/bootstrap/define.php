@@ -9,7 +9,7 @@ namespace The_SEO_Framework;
 
 /**
  * The SEO Framework plugin
- * Copyright (C) 2018 - 2023 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
+ * Copyright (C) 2018 - 2025 Sybre Waaijer, CyberWire B.V. (https://cyberwire.nl/)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as published
@@ -32,109 +32,11 @@ namespace The_SEO_Framework;
 \define( 'THE_SEO_FRAMEWORK_PRESENT', true );
 
 /**
- * The plugin options database option_name key.
- *
- * Used for storing the SEO options array.
- *
- * @since 2.2.2
- * @param string THE_SEO_FRAMEWORK_SITE_OPTIONS
- */
-\define( 'THE_SEO_FRAMEWORK_SITE_OPTIONS', (string) \apply_filters( 'the_seo_framework_site_options', 'autodescription-site-settings' ) );
-
-/**
- * Plugin term options key.
- *
- * @since 2.7.0
- * @param string THE_SEO_FRAMEWORK_TERM_OPTIONS
- */
-\define( 'THE_SEO_FRAMEWORK_TERM_OPTIONS', (string) \apply_filters( 'the_seo_framework_term_options', 'autodescription-term-settings' ) );
-
-/**
- * Plugin user term options key.
- *
- * @since 2.7.0
- * @param string THE_SEO_FRAMEWORK_USER_OPTIONS
- */
-\define( 'THE_SEO_FRAMEWORK_USER_OPTIONS', (string) \apply_filters( 'the_seo_framework_user_options', 'autodescription-user-settings' ) );
-
-/**
- * Plugin updates cache key.
- *
- * @since 3.1.0
- * @param string THE_SEO_FRAMEWORK_SITE_CACHE
- */
-\define( 'THE_SEO_FRAMEWORK_SITE_CACHE', (string) \apply_filters( 'the_seo_framework_site_cache', 'autodescription-updates-cache' ) );
-
-/**
- * The plugin folder URL. Has a trailing slash.
- * Used for calling browser files.
- *
- * @since 2.2.2
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_URL', \plugin_dir_url( THE_SEO_FRAMEWORK_PLUGIN_BASE_FILE ) );
-
-/**
- * The plugin file relative to the plugins dir. Does not have a trailing slash.
- *
- * @since 2.2.8
- */
-\define( 'THE_SEO_FRAMEWORK_PLUGIN_BASENAME', \plugin_basename( THE_SEO_FRAMEWORK_PLUGIN_BASE_FILE ) );
-
-/**
- * The plugin folder absolute path. Used for calling php files.
- *
- * @since 2.2.2
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH', \dirname( THE_SEO_FRAMEWORK_PLUGIN_BASE_FILE ) . DIRECTORY_SEPARATOR );
-
-/**
- * The plugin views folder absolute path.
- *
- * @since 2.7.0
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH_VIEWS', THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR );
-
-/**
- * The plugin class folder absolute path.
- *
- * @since 2.2.9
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH_CLASS', THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR );
-
-/**
- * The plugin trait folder absolute path.
- *
- * @since 3.1.0
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH_TRAIT', THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . DIRECTORY_SEPARATOR . 'traits' . DIRECTORY_SEPARATOR );
-
-/**
- * The plugin interface folder absolute path.
- *
- * @since 2.8.0
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH_INTERFACE', THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . DIRECTORY_SEPARATOR . 'interfaces' . DIRECTORY_SEPARATOR );
-
-/**
- * The plugin function folder absolute path.
- *
- * @since 2.2.9
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH_FUNCT', THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . DIRECTORY_SEPARATOR . 'functions' . DIRECTORY_SEPARATOR );
-
-/**
- * The plugin compatibility folder absolute path.
- *
- * @since 2.8.0
- */
-\define( 'THE_SEO_FRAMEWORK_DIR_PATH_COMPAT', THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . DIRECTORY_SEPARATOR . 'compat' . DIRECTORY_SEPARATOR );
-
-/**
  * The user capability required to access the extension overview page.
  *
  * == WARNING ==
- * When this constant is used incorrectly, you can expose your site to
- * unforeseen security risks. We assume the role supplied here is lower than the webmaster's;
+ * When this constant is used incorrectly, you can expose your site to unforeseen
+ * security risks. We assume the role supplied here is lower than the webmaster's;
  * for example, in a WPMU environment. However, proceed with caution.
  *
  * @since 4.1.0
@@ -147,8 +49,8 @@ namespace The_SEO_Framework;
  * The user capability required to have SEO-fields on their profiles.
  *
  * == WARNING ==
- * When this constant is used incorrectly, you can expose your site to
- * unforeseen security risks. We assume the role supplied here is lower than the webmaster's;
+ * When this constant is used incorrectly, you can expose your site to unforeseen
+ * security risks. We assume the role supplied here is lower than the webmaster's;
  * for example, in a WPMU environment. However, proceed with caution.
  *
  * @since 4.1.0
@@ -156,6 +58,124 @@ namespace The_SEO_Framework;
  */
 \defined( 'THE_SEO_FRAMEWORK_AUTHOR_INFO_CAP' )
 	or \define( 'THE_SEO_FRAMEWORK_AUTHOR_INFO_CAP', 'edit_posts' );
+
+/**
+ * Enables the site-wide SEO debugging interface.
+ *
+ * @since 2.3.4
+ * @since 5.0.0 Is now registered during plugin load.
+ * @param bool
+ */
+\defined( 'THE_SEO_FRAMEWORK_DEBUG' )
+	or \define( 'THE_SEO_FRAMEWORK_DEBUG', false );
+
+/**
+ * The plugin's main settings page slug.
+ *
+ * @since 5.0.0
+ * @param bool
+ */
+\defined( 'THE_SEO_FRAMEWORK_SITE_OPTIONS_SLUG' )
+	or \define( 'THE_SEO_FRAMEWORK_SITE_OPTIONS_SLUG', 'theseoframework-settings' );
+
+/**
+ * The plugin options database option_name key.
+ *
+ * Used for storing the SEO options array.
+ *
+ * @since 2.2.2
+ * @since 5.0.0 Removed its filter.
+ */
+\define( 'THE_SEO_FRAMEWORK_SITE_OPTIONS', 'autodescription-site-settings' );
+
+/**
+ * Plugin term options key.
+ *
+ * @since 2.7.0
+ * @since 5.0.0 Removed its filter.
+ */
+\define( 'THE_SEO_FRAMEWORK_TERM_OPTIONS', 'autodescription-term-settings' );
+
+/**
+ * Plugin user term options key.
+ *
+ * @since 2.7.0
+ * @since 5.0.0 Removed its filter.
+ */
+\define( 'THE_SEO_FRAMEWORK_USER_OPTIONS', 'autodescription-user-settings' );
+
+/**
+ * Plugin updates cache key.
+ *
+ * @since 3.1.0
+ * @since 5.0.0 1. Removed its filter.
+ *              2. Changed the default value from 'autodescription-updates-cache'.
+ */
+\define( 'THE_SEO_FRAMEWORK_SITE_CACHE', 'autodescription-site-cache' );
+
+/**
+ * The plugin folder URL. Has a trailing slash.
+ * Used for calling browser files.
+ *
+ * @since 2.2.2
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_URL', \plugin_dir_url( \THE_SEO_FRAMEWORK_PLUGIN_BASE_FILE ) );
+
+/**
+ * The plugin file relative to the plugins dir. Does not have a trailing slash.
+ *
+ * @since 2.2.8
+ */
+\define( 'THE_SEO_FRAMEWORK_PLUGIN_BASENAME', \plugin_basename( \THE_SEO_FRAMEWORK_PLUGIN_BASE_FILE ) );
+
+/**
+ * The plugin folder absolute path. Used for calling php files.
+ *
+ * @since 2.2.2
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH', \dirname( \THE_SEO_FRAMEWORK_PLUGIN_BASE_FILE ) . \DIRECTORY_SEPARATOR );
+
+/**
+ * The plugin views folder absolute path.
+ *
+ * @since 2.7.0
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH_VIEWS', \THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . \DIRECTORY_SEPARATOR . 'views' . \DIRECTORY_SEPARATOR );
+
+/**
+ * The plugin class folder absolute path.
+ *
+ * @since 2.2.9
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH_CLASS', \THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . \DIRECTORY_SEPARATOR . 'classes' . \DIRECTORY_SEPARATOR );
+
+/**
+ * The plugin trait folder absolute path.
+ *
+ * @since 3.1.0
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH_TRAIT', \THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . \DIRECTORY_SEPARATOR . 'traits' . \DIRECTORY_SEPARATOR );
+
+/**
+ * The plugin interface folder absolute path.
+ *
+ * @since 2.8.0
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH_INTERFACE', \THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . \DIRECTORY_SEPARATOR . 'interfaces' . \DIRECTORY_SEPARATOR );
+
+/**
+ * The plugin function folder absolute path.
+ *
+ * @since 2.2.9
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH_FUNCT', \THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . \DIRECTORY_SEPARATOR . 'functions' . \DIRECTORY_SEPARATOR );
+
+/**
+ * The plugin compatibility folder absolute path.
+ *
+ * @since 2.8.0
+ */
+\define( 'THE_SEO_FRAMEWORK_DIR_PATH_COMPAT', \THE_SEO_FRAMEWORK_DIR_PATH . 'inc' . \DIRECTORY_SEPARATOR . 'compat' . \DIRECTORY_SEPARATOR );
 
 /**
  * Robots setting, ignore protection.

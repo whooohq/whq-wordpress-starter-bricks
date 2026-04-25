@@ -1,9 +1,10 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.file_system_operations_fgets, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.file_system_operations_fputs, WordPress.WP.AlternativeFunctions.file_system_operations_is_writeable, WordPress.WP.AlternativeFunctions.file_system_operations_chown, WordPress.WP.AlternativeFunctions.file_system_operations_chgrp, WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Native PHP fileystem function is used for direct control and performance because it can bypass additional layers of abstraction so that no overhead from the WordPress filesystem API's internal handling
 /**
  * https://www.dropbox.com/developers/apply?cont=/developers/apps
  */
 
-if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed.');
+if (!defined('ABSPATH')) die('No direct access allowed');
 
 // Converted to multi-options (Feb 2017-) and previous options conversion removed: Yes
 
@@ -213,6 +214,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 			$dropbox->setChunkSize($chunk_size);
 		} catch (Exception $e) {
 			$this->log('error when trying to gain access: '.$e->getMessage().' (line: '.$e->getLine().', file: '.$e->getFile().')');
+			/* translators: %s: Error message */
 			$this->log(sprintf(__('error: %s (see log file for more)', 'updraftplus'), $e->getMessage()), 'error');
 			return false;
 		}
@@ -310,6 +312,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 							$this->log('HTTP code 401 returned from Dropbox, refreshing access token');
 							$dropbox->refreshAccessToken();
 						}
+						/* translators: %s: Destination path */
 						$this->log(sprintf(__('error: failed to upload file to %s (see log file for more)', 'updraftplus'), $file), 'error');
 						$file_success = 0;
 					} else {
@@ -333,6 +336,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 							$this->log('returned an error, but apparently indicating previous success: '.$msg);
 						} else {
 							$this->log($msg.' (line: '.$e->getLine().', file: '.$e->getFile().')');
+							/* translators: %s: Destination path */
 							$this->log(sprintf(__('failed to upload file to %s (see log file for more)', 'updraftplus'), $ufile), 'error');
 							$file_success = 0;
 							if (strpos($msg, 'select/poll returned error') !== false && $this->upload_tick > 0 && time() - $this->upload_tick > 800) {
@@ -348,6 +352,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 					if (preg_match('/Upload with upload_id .* already completed/', $msg)) {
 						$this->log('returned an error, but apparently indicating previous success: '.$msg);
 					} else {
+						/* translators: %s: Destination path */
 						$this->log(sprintf(__('failed to upload file to %s (see log file for more)', 'updraftplus'), $ufile), 'error');
 						$file_success = 0;
 						if (strpos($msg, 'select/poll returned error') !== false && $this->upload_tick > 0 && time() - $this->upload_tick > 800) {
@@ -376,7 +381,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 	}
 
 	/**
-	 * This method gets a list of files from the remote stoage that match the string passed in and returns an array of backups
+	 * This method gets a list of files from the remote storage that match the string passed in and returns an array of backups
 	 *
 	 * @param  String $match a substring to require (tested via strpos() !== false)
 	 * @return Array
@@ -403,7 +408,8 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 
 			while (true) {
 				$search = $dropbox->search($match, $searchpath, 1000, $cursor);
-				if (empty($search['code']) || 200 != $search['code']) return new WP_Error('response_error', sprintf(__('%s returned an unexpected HTTP response: %s', 'updraftplus'), 'Dropbox', $search['code']), $search['body']);
+				/* translators: 1: Service name, 2: HTTP response code */
+				if (empty($search['code']) || 200 != $search['code']) return new WP_Error('response_error', sprintf(__('%1$s returned an unexpected HTTP response: %2$s', 'updraftplus'), 'Dropbox', $search['code']), $search['body']);
 
 				if (empty($search['body'])) return array();
 
@@ -479,6 +485,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 
 		if (empty($opts['tk_access_token'])) {
 			$this->log('You are not authenticated with Dropbox (3)');
+			/* translators: %s: Service name */
 			$this->log(sprintf(__('You are not authenticated with %s (whilst deleting)', 'updraftplus'), 'Dropbox'), 'warning');
 			return 'authentication_fail';
 		}
@@ -487,6 +494,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 			$dropbox = $this->bootstrap();
 		} catch (Exception $e) {
 			$this->log($e->getMessage().' (line: '.$e->getLine().', file: '.$e->getFile().')');
+			/* translators: %s: Service name */
 			$this->log(sprintf(__('Failed to access %s when deleting (see log file for more)', 'updraftplus'), 'Dropbox'), 'warning');
 			return 'service_unavailable';
 		}
@@ -525,6 +533,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 
 		if (empty($opts['tk_access_token'])) {
 			$this->log('You are not authenticated with Dropbox (4)');
+			/* translators: %s: Service name */
 			$this->log(sprintf(__('You are not authenticated with %s', 'updraftplus'), 'Dropbox'), 'error');
 			return false;
 		}
@@ -596,15 +605,30 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 		$partial_templates = $this->get_partial_templates();
 		$properties = array(
 			'storage_image_url' => UPDRAFTPLUS_URL.'/images/dropbox-logo.png',
-			'storage_image_description' => __(sprintf(__('%s logo', 'updraftplus'), 'Dropbox')),
+			/* translators: %s: Service name */
+			'storage_image_description' => sprintf(__('%s logo', 'updraftplus'), 'Dropbox'),
 			'curl_existence_label' => wp_kses($updraftplus_admin->curl_check($updraftplus->backup_methods[$this->get_id()], true, $this->get_id().' hidden-in-updraftcentral', false), $this->allowed_html_for_content_sanitisation()),
-			'app_authorisation_policy_label' => wp_kses(sprintf(__('Please read %s for use of our %s authorization app (none of your backup data is sent to us).', 'updraftplus'), '<a target="_blank" href="https://updraftplus.com/faqs/what-is-your-privacy-policy-for-the-use-of-your-dropbox-app/">'.__('this privacy policy', 'updraftplus').'</a>', 'Dropbox'), $this->allowed_html_for_content_sanitisation()),
+			'app_authorisation_policy_label' => wp_kses(sprintf(
+				/* translators: 1: Link to privacy policy, 2: Service name */
+				__('Please read %1$s for use of our %2$s authorization app (none of your backup data is sent to us).', 'updraftplus'),
+				'<a target="_blank" href="https://teamupdraft.com/documentation/updraftplus/topics/cloud-storage/dropbox/faqs/what-is-your-privacy-policy-for-the-use-of-your-dropbox-app?utm_source=udp-plugin&utm_medium=referral&utm_campaign=paac&utm_content=privacy-policy&utm_creative_format=text">'.
+				__('this privacy policy', 'updraftplus').'</a>',
+				'Dropbox'
+			), $this->allowed_html_for_content_sanitisation()),
 			'sub_folders_instruction_label1' => __('Need to use sub-folders?', 'updraftplus'),
+			/* translators: %s: Backup folder path */
 			'sub_folders_instruction_label2' => sprintf(__('Backups are saved in %s.', 'updraftplus'), 'apps/UpdraftPlus'),
-			'sub_folders_instruction_label3' => wp_kses(sprintf(__('If you backup several sites into the same Dropbox and want to organize with sub-folders, then %scheck out Premium%s', 'updraftplus'), '<a href="'.apply_filters("updraftplus_com_link", "https://updraftplus.com/shop/").'" target="_blank">', '</a>'), $this->allowed_html_for_content_sanitisation()),
-			'input_authenticate_with_label' => sprintf(__('Authenticate with %s', 'updraftplus'), __('Dropbox', 'updraftplus')),
+			/* translators: 1: Opening link tag, 2: Closing link tag */
+			'sub_folders_instruction_label3' => wp_kses(sprintf(__('If you backup several sites into the same Dropbox and want to organize with sub-folders, then %1$scheck out Premium%2$s', 'updraftplus'), '<a href="'.esc_url($updraftplus->get_url('premium_dropbox')).'" target="_blank">', '</a>'), $this->allowed_html_for_content_sanitisation()),
+			'input_authenticate_with_label' => sprintf(
+				/* translators: %s: Service name */
+				__('Authenticate with %s', 'updraftplus'),
+				__('Dropbox', 'updraftplus')
+			),
 			'already_authenticated_label' => __('(You are already authenticated).', 'updraftplus'),
+			/* translators: %s: Service name */
 			'authentication_link_text' => wp_kses(sprintf(__("<strong>After</strong> you have saved your settings (by clicking 'Save Changes' below), then come back here and follow this link to complete authentication with %s.", 'updraftplus'), $updraftplus->backup_methods[$this->get_id()]), $this->allowed_html_for_content_sanitisation()),
+			/* translators: %s: Service name */
 			'deauthentication_link_text' => sprintf(__("Follow this link to remove these settings for %s.", 'updraftplus'), $updraftplus->backup_methods[$this->get_id()]),
 			'authentication_label' => __('Ensure you are logged into the correct account before continuing.', 'updraftplus'),
 			'authorised_redirect_uri_label' => __('You must add the following as the authorised redirect URI in your Dropbox console (under "API Settings") when asked', 'updraftplus'),
@@ -648,8 +672,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 		ob_start();
 		?>
 			<tr class="{{get_template_css_classes true}}">
-				<td></td>
-				<td><strong>{{sub_folders_instruction_label1}}</strong> {{sub_folders_instruction_label2}} {{{sub_folders_instruction_label3}}}</td>
+				<td colspan="2"><strong>{{sub_folders_instruction_label1}}</strong> {{sub_folders_instruction_label2}} {{{sub_folders_instruction_label3}}}</td>
 			</tr>
 		<?php
 		$partial_templates['dropbox_additional_configuration_top'] = ob_get_clean();
@@ -709,6 +732,30 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 		<?php
 		return ob_get_clean();
 	}
+
+	/**
+	 * Generates ownername with email
+	 *
+	 * @param array $opts
+	 * @return String - Ownername with email
+	 */
+	private function generate_ownername_with_email($opts) {
+		$ownername_with_email = '';
+		
+		if (!empty($opts['ownername'])) {
+			$ownername_with_email = $opts['ownername'];
+		}
+		
+		if (!empty($opts['email'])) {
+			if (!empty($ownername_with_email)) {
+				$ownername_with_email = $ownername_with_email.' ('.$opts['email'].')';
+			} else {
+				$ownername_with_email = $opts['email'];
+			}
+		}
+
+	   return $ownername_with_email;
+	}
 	
 	/**
 	 * Modifies handerbar template options
@@ -719,8 +766,12 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 	public function transform_options_for_template($opts) {
 		if (!empty($opts['tk_access_token'])) {
 			$opts['ownername'] = empty($opts['ownername']) ? '' : $opts['ownername'];
-			if ($opts['ownername']) {
-				$opts['ownername_sentence']	= sprintf(__("Account holder's name: %s.", 'updraftplus'), $opts['ownername']).' ';
+			$opts['email'] = empty($opts['email']) ? '' : $opts['email'];
+			$ownername_with_email = $this->generate_ownername_with_email($opts);
+			
+			if ($ownername_with_email) {
+				/* translators: %s: Account holder's name with email */
+				$opts['ownername_sentence']	= sprintf(__("Account holder's name: %s.", 'updraftplus'), $ownername_with_email).' ';
 			}
 			$opts['is_authenticated'] = true;
 		}
@@ -763,30 +814,40 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 	 * @return null
 	 */
 	public function action_auth() {
-		if (isset($_GET['updraftplus_dropboxauth'])) {
-			if ('doit' == $_GET['updraftplus_dropboxauth']) {
+		$updraftplus_dropboxauth = UpdraftPlus_Manipulation_Functions::fetch_superglobal('get', 'updraftplus_dropboxauth');
+		$request_state = UpdraftPlus_Manipulation_Functions::fetch_superglobal('request', 'state');
+		if (isset($updraftplus_dropboxauth)) {
+			if ('doit' == $updraftplus_dropboxauth) {
 				$this->action_authenticate_storage();
 				return;
-			} elseif ('deauth' == $_GET['updraftplus_dropboxauth']) {
+			} elseif ('deauth' == $updraftplus_dropboxauth) {
 				$this->action_deauthenticate_storage();
 				return;
 			}
-		} elseif (isset($_REQUEST['state'])) {
-
-			if ('POST' == $_SERVER['REQUEST_METHOD']) {
-				$raw_state = urldecode($_POST['state']);
-				if (isset($_POST['code'])) $raw_code = urldecode($_POST['code']);
+		} elseif (isset($request_state)) {
+			if (isset($_SERVER['REQUEST_METHOD']) && 'POST' == $_SERVER['REQUEST_METHOD']) {
+				$auth_state = UpdraftPlus_Manipulation_Functions::fetch_superglobal('post', 'state', '');
+				$raw_state = urldecode($auth_state);
+				$raw_code = urldecode(UpdraftPlus_Manipulation_Functions::fetch_superglobal('post', 'code', ''));
 			} else {
-				$raw_state = $_GET['state'];
-				if (isset($_GET['code'])) $raw_code = $_GET['code'];
+				$raw_state = UpdraftPlus_Manipulation_Functions::fetch_superglobal('get', 'state', '');
+				$raw_code = UpdraftPlus_Manipulation_Functions::fetch_superglobal('get', 'code', '');
 			}
 
-			$this->do_complete_authentication($raw_state, $raw_code);
+			if (!empty($raw_code)) $this->do_complete_authentication($raw_state, $raw_code);
 		}
 		try {
 			$this->auth_request();
 		} catch (Exception $e) {
-			$this->log(sprintf(__("%s error: %s", 'updraftplus'), sprintf(__("%s authentication", 'updraftplus'), 'Dropbox'), $e->getMessage()), 'error');
+			$this->log(
+				sprintf(
+					/* translators: 1: Service name, 2: Error message */
+					__('%1$s error: %2$s', 'updraftplus'),
+					/* translators: %s: Service name */
+					sprintf(__('%s authentication', 'updraftplus'), 'Dropbox'),
+					$e->getMessage()
+				),
+			'error');
 		}
 	}
 
@@ -843,7 +904,16 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 			$this->set_instance_id($instance_id);
 			$this->bootstrap(false);
 		} catch (Exception $e) {
-			$this->log(sprintf(__("%s error: %s", 'updraftplus'), sprintf(__("%s authentication", 'updraftplus'), 'Dropbox'), $e->getMessage()), 'error');
+			$this->log(
+				sprintf(
+					/* translators: 1: Service name, 2: Error message */
+					__('%1$s error: %2$s', 'updraftplus'),
+					/* translators: %s: Service name */
+					sprintf(__('%s authentication', 'updraftplus'),
+					'Dropbox'),
+					$e->getMessage()
+				),
+			'error');
 		}
 	}
 	
@@ -857,7 +927,15 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 			$this->set_instance_id($instance_id);
 			$this->bootstrap(true);
 		} catch (Exception $e) {
-			$this->log(sprintf(__("%s error: %s", 'updraftplus'), sprintf(__("%s de-authentication", 'updraftplus'), 'Dropbox'), $e->getMessage()), 'error');
+			$this->log(
+				sprintf(
+					/* translators: 1: Service name, 2: Error message */
+					__('%1$s error: %2$s', 'updraftplus'),
+					/* translators: %s: Service name */
+					sprintf(__('%s de-authentication', 'updraftplus'), 'Dropbox'),
+					$e->getMessage()
+				),
+			'error');
 		}
 	}
 
@@ -877,12 +955,19 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 		try {
 			$account_info = $dropbox->accountInfo();
 		} catch (Exception $e) {
-			$accountinfo_err = sprintf(__("%s error: %s", 'updraftplus'), 'Dropbox', $e->getMessage()).' ('.$e->getCode().')';
+			/* translators: 1: Service name, 2: Error message */
+			$accountinfo_err = sprintf(__('%1$s error: %2$s', 'updraftplus'), 'Dropbox', $e->getMessage()).' ('.$e->getCode().')';
 		}
 
-		$message = "<strong>".__('Success:', 'updraftplus').'</strong> '.sprintf(__('you have authenticated your %s account', 'updraftplus'), 'Dropbox');
+		$message = "<strong>".__('Success:', 'updraftplus').'</strong> '.
+			/* translators: %s: Service name */
+			sprintf(__('you have authenticated your %s account', 'updraftplus'), 'Dropbox');
 		// We log, because otherwise people get confused by the most recent log message of 'Parameter not found: oauth_token' and raise support requests
-		$this->log(__('Success:', 'updraftplus').' '.sprintf(__('you have authenticated your %s account', 'updraftplus'), 'Dropbox'));
+		$this->log(
+			__('Success:', 'updraftplus').' '.
+			/* translators: %s: Service name */
+			sprintf(__('you have authenticated your %s account', 'updraftplus'), 'Dropbox')
+		);
 
 		if (empty($account_info['code']) || "200" != $account_info['code']) {
 			$message .= " (".__('though part of the returned information was not as expected - whether this indicates a real problem cannot be determined', 'updraftplus').") ". $account_info['code'];
@@ -890,14 +975,22 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 		} else {
 			$body = $account_info['body'];
 			$name = '';
+			$email = '';
 			if (isset($body->display_name)) {
 				$name = $body->display_name;
 			} else {
 				$name = $body->name->display_name;
 			}
-			$message .= ". <br>".sprintf(__('Your %s account name: %s', 'updraftplus'), 'Dropbox', htmlspecialchars($name));
+			if (isset($body->email)) {
+				$email = $body->email;
+			}
+
 			$opts = $this->get_options();
 			$opts['ownername'] = $name;
+			$opts['email'] = $email;
+			$ownername_with_email = $this->generate_ownername_with_email($opts);
+			/* translators: 1: Service name, 2: Account holder's name with email */
+			$message .= ". <br>".sprintf(__('Your %1$s account name: %2$s', 'updraftplus'), 'Dropbox', htmlspecialchars($ownername_with_email));
 			$this->set_options($opts, true);
 
 			try {
@@ -918,7 +1011,8 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 						$shared_quota = $quota_info->shared;
 						$available_quota =$total_quota - ($normal_quota + $shared_quota);
 						$used_perc = round(($normal_quota + $shared_quota)*100/$total_quota, 1);
-						$message .= ' <br>'.sprintf(__('Your %s quota usage: %s %% used, %s available', 'updraftplus'), 'Dropbox', $used_perc, round($available_quota/1048576, 1).' MB');
+						/* translators: 1: Service name, 2: Percentage used, 3: Available space */
+						$message .= ' <br>'.sprintf(__('Your %1$s quota usage: %2$s %% used, %3$s available', 'updraftplus'), 'Dropbox', $used_perc, round($available_quota/1048576, 1).' MB');
 					} else {
 						$total_quota = max($body->allocation->allocated, 1);
 						$used = $body->used;
@@ -927,7 +1021,8 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 						if (isset($body->allocation->used)) $used = $body->allocation->used;
 						$available_quota =$total_quota - $used;
 						$used_perc = round($used*100/$total_quota, 1);
-						$message .= ' <br>'.sprintf(__('Your %s quota usage: %s %% used, %s available', 'updraftplus'), 'Dropbox', $used_perc, round($available_quota/1048576, 1).' MB');
+						/* translators: 1: Service name, 2: Percentage of quota used, 3: Available quota in MB */
+						$message .= ' <br>'.sprintf(__('Your %1$s quota usage: %2$s%% used, %3$s available', 'updraftplus'), 'Dropbox', $used_perc, round($available_quota/1048576, 1).' MB');
 					}
 				}
 			} catch (Exception $e) {
@@ -1007,7 +1102,7 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 		if (defined('UPDRAFTPLUS_CUSTOM_DROPBOX_APP') && UPDRAFTPLUS_CUSTOM_DROPBOX_APP) $callback = $callbackhome;
 		
 		$instance_id = $this->get_instance_id();
-		// Instantiate the Encrypter and storage objects
+		// Instantiate the Encryptor and storage objects
 		$encrypter = new Dropbox_Encrypter('ThisOneDoesNotMatterBeyondLength');
 
 		// Instantiate the storage
@@ -1036,7 +1131,8 @@ class UpdraftPlus_BackupModule_dropbox extends UpdraftPlus_BackupModule {
 			$oauth = new Dropbox_Curl($sec, $oauth2_id, $key, $dropbox_storage, $callback, $callbackhome, $deauthenticate, $instance_id);
 		} catch (Exception $e) {
 			$this->log("Curl error: ".$e->getMessage());
-			$this->log(sprintf(__("%s error: %s", 'updraftplus'), "Dropbox/Curl", $e->getMessage().' ('.get_class($e).') (line: '.$e->getLine().', file: '.$e->getFile()).')', 'error');
+			/* translators: 1: Service name, 2: Error message with exception details */
+			$this->log(sprintf(__('%1$s error: %2$s', 'updraftplus'), "Dropbox/Curl", $e->getMessage().' ('.get_class($e).') (line: '.$e->getLine().', file: '.$e->getFile()).')', 'error');
 			return false;
 		}
 

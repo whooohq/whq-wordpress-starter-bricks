@@ -31,6 +31,9 @@ function wppb_blog_details_handler( $output, $form_location, $field, $user_id, $
     $heading = '<li class="wppb-form-field wppb-blog-details-heading"><h4>'.wppb_icl_t('plugin profile-builder-pro', 'default_field_'.$field['id'].'_title_translation', $field['field-title'], true).'</h4><span class="wppb-description-delimiter">'.$item_description.'</span></li>';
     $output .= apply_filters( 'wppb_blog_details_heading', $heading );
 
+    if( !wp_script_is('jquery', 'done') && !is_admin() ){
+        wp_print_scripts('jquery');
+    }
 
     ?><script type="text/javascript">
         jQuery(document).ready(function(){
@@ -60,20 +63,20 @@ function wppb_blog_details_handler( $output, $form_location, $field, $user_id, $
     }
     $create_new_site_checkbox = '
                     <li class=" wppb-form-field wppb-create-new-site " id="wppb-create-new-site">
-                    <label for="wppb_create_new_site_checkbox">
-                    <input id="wppb_create_new_site_checkbox" type="checkbox" name="wppb_create_new_site_checkbox" value="yes" '.$checked.' autocomplete="off">
-                    <strong>'. __('Yes, I\'d like to create a new site','profile-builder').'</strong> </label>
+                        <label for="wppb_create_new_site_checkbox">
+                        <input id="wppb_create_new_site_checkbox" type="checkbox" name="wppb_create_new_site_checkbox" value="yes" '.$checked.' autocomplete="off">
+                        <span>'. __('Yes, I\'d like to create a new site','profile-builder').'</span> </label>
                     </li>';
     $output .= apply_filters( 'wppb_blog_details_checkbox', $create_new_site_checkbox );
 
     $output .= '<ul class="wppb-blog-details-fields">';
 
     // Site URL
-    $item_description = __( 'Your site url will look like this:<br>', 'profile-builder' );
+    $item_description = __( 'Your site url will look like this: ', 'profile-builder' );
     if ( is_subdomain_install() ) {
         global $current_site;
         $subdomain_base = apply_filters( 'wppb_blogs_subdomain_base', preg_replace( '|^www\.|', '', $current_site->domain ) . $current_site->path );
-        $domain = '"http://'. esc_attr( '<your-slug>.' ) . $subdomain_base;
+        $domain = '"http://'. esc_attr( '<your-slug>.' ) . $subdomain_base . '"';
     } else {
         $domain = '"' . esc_url( home_url( '/' ) )  . esc_attr( '<your-slug>' ) . '"';
     }
@@ -90,10 +93,14 @@ function wppb_blog_details_handler( $output, $form_location, $field, $user_id, $
         $error_class = ' wppb-field-error';
     }
 
+    $blog_url_css_classes = apply_filters( 'wppb_blog_details_field_css_class', 'wppb-form-field wppb-blog-url ' . $error_class, $field );
+    $label = esc_html__( 'Site URL slug', 'profile-builder' );
+    $placeholder_attr = apply_filters( 'wppb_blog_details_field_placeholder', '', 'default_field_blog_url', $label );
+
     $output .= '
-        <li class=" wppb-form-field wppb-blog-url ' . $error_class . '">
-        <label for="blog-url">' .  __( 'Site URL slug', 'profile-builder' ) . $error_mark.'</label>
-        <input class="text-input default_field_blog_url" name="wppb_blog_url" maxlength="'. apply_filters( 'wppb_maximum_character_length', 70, $field ) .'" type="text" id="wppb_blog_url" value="'. esc_attr( wp_unslash( $blog_url_input_value ) ) .'" '. $extra_attr .' />';
+        <li class="' . $blog_url_css_classes . '">
+        <label for="blog-url">' . $label . $error_mark.'</label>
+        <input class="text-input default_field_blog_url" name="wppb_blog_url" maxlength="'. apply_filters( 'wppb_maximum_character_length', 70, $field ) .'" type="text" id="wppb_blog_url" value="'. esc_attr( wp_unslash( $blog_url_input_value ) ) .'" '. $placeholder_attr . $extra_attr .' />';
     $output .= '<span class="wppb-description-delimiter">'. $item_description . $domain . '</span>';
     $output .= $is_error .'</li>';
 
@@ -113,10 +120,14 @@ function wppb_blog_details_handler( $output, $form_location, $field, $user_id, $
         $error_class = ' wppb-field-error';
     }
 
+    $blog_title_css_classes = apply_filters( 'wppb_blog_details_field_css_class', 'wppb-form-field wppb-blog-url ' . $error_class, $field );
+    $label = esc_html__( 'Site Title', 'profile-builder' );
+    $placeholder_attr = apply_filters( 'wppb_blog_details_field_placeholder', '', 'default_field_blog_title', $label );
+
     $output .= '
-        <li class=" wppb-form-field wppb-blog-title ' . $error_class . '">
-        <label for="blog-title">' .  __( 'Site Title', 'profile-builder' ) . $error_mark.'</label>
-        <input class="text-input default_field_blog_title" name="wppb_blog_title" maxlength="'. apply_filters( 'wppb_maximum_character_length', 70, $field ) .'" type="text" id="wppb_blog_title" value="'. esc_attr( wp_unslash( $blog_title_input_value ) ) .'" '. $extra_attr .' />' .
+        <li class="' . $blog_title_css_classes . '">
+        <label for="blog-title">' .  $label . $error_mark.'</label>
+        <input class="text-input default_field_blog_title" name="wppb_blog_title" maxlength="'. apply_filters( 'wppb_maximum_character_length', 70, $field ) .'" type="text" id="wppb_blog_title" value="'. esc_attr( wp_unslash( $blog_title_input_value ) ) .'" '. $placeholder_attr . $extra_attr .' />' .
         $is_error . '</li>';
 
 

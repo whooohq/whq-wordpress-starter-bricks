@@ -217,7 +217,7 @@ class Google_Http_MediaFileUpload
       $postBody = $this->data;
     } else if (self::UPLOAD_MULTIPART_TYPE == $uploadType) {
       // This is a multipart/related upload.
-      $boundary = $this->boundary ? $this->boundary : mt_rand();
+      $boundary = $this->boundary ? $this->boundary : wp_rand();
       $boundary = str_replace('"', '', $boundary);
       $contentType = 'multipart/related; boundary=' . $boundary;
       $related = "--$boundary\r\n";
@@ -301,6 +301,6 @@ class Google_Http_MediaFileUpload
 
     $error = "Failed to start the resumable upload (HTTP {$message})";
     $this->client->getLogger()->error($error);
-    throw new Google_Exception($error);
+    throw new Google_Exception($error); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Error message to be escaped when caught and printed.
   }
 }

@@ -1,17 +1,17 @@
 <?php
 
-/**
- * Created by OnTheGo Systems
- */
 class WCML_Store_URLs_UI extends WCML_Templates_Factory {
-
+	/**
+	 * @var woocommerce_wpml
+	 */
 	private $woocommerce_wpml;
+	/**
+	 * @var SitePress
+	 */
 	private $sitepress;
 	private $active_languages;
 
 	/**
-	 * WCML_Store_URLs_UI constructor.
-	 *
 	 * @param woocommerce_wpml $woocommerce_wpml
 	 * @param SitePress        $sitepress
 	 */
@@ -66,11 +66,11 @@ class WCML_Store_URLs_UI extends WCML_Templates_Factory {
 					),
 					'<a href="' . admin_url( 'options-permalink.php' ) . '">',
 					'</a>',
-					'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=advanced' ) . '">',
+					'<a href="' . \WCML\Utilities\AdminUrl::getWooSettings( 'advanced' ) . '">',
 					'</a>'
 				),
 				'perm_settings'    => '<a href="' . admin_url( 'options-permalink.php' ) . '" >' . __( 'permalinks settings', 'woocommerce-multilingual' ) . '</a>',
-				'account_settings' => '<a href="admin.php?page=wc-settings&tab=account" >' . __( 'Account settings', 'woocommerce-multilingual' ) . '</a>',
+				'account_settings' => '<a href="' . \WCML\Utilities\AdminUrl::getWooSettings( 'account' ) . '" >' . __( 'Account settings', 'woocommerce-multilingual' ) . '</a>',
 				'slug_type'        => __( 'Slug type', 'woocommerce-multilingual' ),
 				'orig_slug'        => __( 'Original Slug', 'woocommerce-multilingual' ),
 				'shop'             => __( 'Shop page', 'woocommerce-multilingual' ),
@@ -84,8 +84,8 @@ class WCML_Store_URLs_UI extends WCML_Templates_Factory {
 				'attribute_slug'   => __( 'Attribute slug: %s', 'woocommerce-multilingual' ),
 			],
 			'nonces'          => [
-				'edit_base'   => wp_nonce_field( 'wcml_edit_base', 'wcml_edit_base_nonce' ),
-				'update_base' => wp_nonce_field( 'wcml_update_base_translation', 'wcml_update_base_nonce' ),
+				'edit_base'   => wp_nonce_field( 'wcml_edit_base', 'wcml_edit_base_nonce', true, false ),
+				'update_base' => wp_nonce_field( 'wcml_update_base_translation', 'wcml_update_base_nonce', true, false ),
 			],
 		];
 
@@ -93,23 +93,32 @@ class WCML_Store_URLs_UI extends WCML_Templates_Factory {
 	}
 
 	public function get_endpoint_info() {
-
-		$is_original_slug    = function( $endpoint ) {
-			return (bool) apply_filters( 'wpml_get_string_language', '', WCML_Endpoints::STRING_CONTEXT, $endpoint );
+		/**
+		 * Register WooCommerce endpoints that should appear in the WPML Store URLs settings page, as a key => endpoint value pair..
+		 *
+		 * The key should match the query var used to define the endpoint.
+		 * The value should match the current endpoint value.
+		 *
+		 * This is required because third parties might not register their endpoints as part of WC()->query->query_vars in the backend.
+		 *
+		 * @since 5.5.3
+		 *
+		 * @param array<string,string> $keysToOptions An array of key => value pairs.
+		 *
+		 * @return array<string,string>
+		 */
+		$query_vars          = apply_filters( 'wcml_register_endpoints_store_urls', WC()->query->query_vars );
+		$is_original_slug    = function( $endpoint, $endpointName ) {
+			return (bool) apply_filters( 'wpml_get_string_language', '', WCML_Endpoints::STRING_CONTEXT, $endpointName );
 		};
-		$filtered_query_vars = wpml_collect( WC()->query->query_vars )->filter( $is_original_slug )->toArray();
+		$filtered_query_vars = wpml_collect( $query_vars )->filter( $is_original_slug )->toArray();
 
 		$endpoints_info = [];
 		foreach ( $filtered_query_vars as $key => $endpoint ) {
-			if ( class_exists( 'WPML_Endpoints_Support' ) ) {
-				$key = $endpoint;
-			}
-
 			$endpoints_info[ $key ]['key']        = $key;
 			$endpoints_info[ $key ]['orig_value'] = $endpoint;
-			$endpoints_info[ $key ]['flag']       = $this->sitepress->get_flag_url( $this->woocommerce_wpml->url_translation->get_source_slug_language( $key ) );
+			$endpoints_info[ $key ]['flag']       = $this->sitepress->get_flag_url( $this->woocommerce_wpml->strings->get_string_language( $endpoint, WCML_Endpoints::STRING_CONTEXT, $key ) );
 			$endpoints_info[ $key ]['statuses']   = $this->get_base_translations_statuses( $key, $this->active_languages, $endpoint );
-
 		}
 
 		return $endpoints_info;

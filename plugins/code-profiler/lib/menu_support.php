@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -35,7 +35,7 @@ echo code_profiler_display_tabs( 6 );
 			require_once __DIR__ .'/class-troubleshooter.php';
 			new CP_Troubleshooter();
 			?></textarea>
-			<p><input type="button" onClick="cpjs_copy_textarea('cp-troubleshooter')" class="button-secondary" value="<?php esc_attr_e('Copy text', 'code-profiler') ?>" /></p>
+			<p><input type="button" onClick="cpjs_copy_textarea('cp-troubleshooter')" class="button button-secondary" value="<?php esc_attr_e('Copy text', 'code-profiler') ?>" /></p>
 		</td>
 	</tr>
 </table>

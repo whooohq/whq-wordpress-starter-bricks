@@ -1,34 +1,55 @@
 <div id="updraft-dashnotice" class="updated">
-	<div style="float:right;"><a href="#" onclick="jQuery('#updraft-dashnotice').slideUp(); jQuery.post(ajaxurl, {action: 'updraft_ajax', subaction: 'dismissdashnotice', nonce: '<?php echo wp_create_nonce('updraftplus-credentialtest-nonce');?>' });"><?php printf(__('Dismiss (for %s months)', 'updraftplus'), 12); ?></a></div>
+	<div style="float:right;"><a href="#" onclick="jQuery('#updraft-dashnotice').slideUp(); jQuery.post(ajaxurl, {action: 'updraft_ajax', subaction: 'dismissdashnotice', nonce: '<?php echo esc_js(wp_create_nonce('updraftplus-credentialtest-nonce'));?>' });">
+		<?php
+		/* translators: %d: Number of months */
+		printf(esc_html__('Dismiss (for %d months)', 'updraftplus'), 12);
+		?>
+	</a></div>
 
-	<h3><?php _e('Thank you for installing UpdraftPlus!', 'updraftplus');?></h3>
+	<h3><?php esc_html_e('Thank you for installing UpdraftPlus!', 'updraftplus');?></h3>
 	
-	<a href="<?php echo apply_filters('updraftplus_com_link', 'https://updraftplus.com/');?>"><img style="border: 0px; float: right; height: 150px; width: 150px; margin: 20px 15px 15px 35px;" alt="UpdraftPlus" src="<?php echo UPDRAFTPLUS_URL.'/images/ud-logo-150.png'; ?>"></a>
+	<a href="<?php echo esc_url(apply_filters('updraftplus_com_link', 'https://teamupdraft.com/updraftplus/'));?>"><img style="border: 0px; float: right; height: 150px; width: 150px; margin: 20px 15px 15px 35px;" alt="UpdraftPlus" src="<?php echo esc_url(UPDRAFTPLUS_URL.'/images/ud-logo-150.png'); ?>"></a>
 
 	<?php
-		echo '<p>'.__('Super-charge and secure your WordPress site with our other top plugins:', 'updraftplus').'</p>';
+	if (!file_exists(UPDRAFTPLUS_DIR.'/udaddons')) {
+		echo '<p>'.esc_html(__("If you like UpdraftPlus, you'll love UpdraftPlus Premium!", 'updraftplus').' '.__('Protect your WordPress investment with premium features, or check out our other 5* rated  plugins below:', 'updraftplus')).'</p>';
+	} else {
+		echo '<p>'.esc_html(__("If you like UpdraftPlus, you'll love our other plugins.", 'updraftplus').' '.__('All 5* rated and actively installed on millions of WordPress websites:', 'updraftplus')).'</p>';
+	}
+
+	if (!file_exists(UPDRAFTPLUS_DIR.'/udaddons')) {
 	?>
 	<p>
-		<?php echo '<strong><a href="'.$updraftplus->get_url('premium').'" target="_blank">'.__('UpdraftPlus Premium', 'updraftplus').'</a>: </strong>'.__("For personal support, the ability to copy sites, more storage destinations, encrypted backups for security, multiple backup destinations, better reporting, no adverts and plenty more, take a look at the premium version of UpdraftPlus - the world's most popular backup plugin.", 'updraftplus');
-		echo ' <a href="'.apply_filters('updraftplus_com_link', "https://updraftplus.com/comparison-updraftplus-free-updraftplus-premium/").'" target="_blank">'.__('Compare with the free version', 'updraftplus').'</a> / <a href="'.$updraftplus->get_url('premium').'" target="_blank">'.__('Go to the shop.', 'updraftplus').'</a>';
+		<?php echo '<strong><a href="'.esc_url($updraftplus->get_url('premium')).'" target="_blank">'.esc_html__('UpdraftPlus Premium', 'updraftplus').'</a>: </strong>'.esc_html__(" Upgrade for automatic backups before updates, incremental backups, more remote storage locations, premium support and", 'updraftplus');
+		echo ' <a href="'.esc_url($updraftplus->get_url('premium')).'" target="_blank">'.esc_html__('more', 'updraftplus').'</a>';
+	?>
+	</p>
+	<?php } ?>
+	<p>
+		<?php echo '<strong><a href="https://getwpo.com/buy/" target="_blank">WP-Optimize</a>: </strong>'.esc_html(__('Speed up and optimize your WordPress website.', 'updraftplus').' '.__('Cache your site, clean the database and compress images.', 'updraftplus')); ?>
+	</p>
+	<p>
+		<?php echo '<strong><a href="https://aiosplugin.com/" target="_blank">'.esc_html__('All-In-One Security (AIOS)', 'updraftplus').'</a>: </strong>'. esc_html__("Still on the fence?", 'updraftplus').' '.esc_html__("Secure your WordPress website with AIOS.", 'updraftplus').' '.esc_html__(" Comprehensive, cost-effective, 5* rated and easy to use.", 'updraftplus');
 	?>
 	</p>
 	<p>
-		<?php echo '<strong><a href="'.apply_filters('updraftplus_com_link', "https://updraftplus.com/updraftcentral/").'" target="_blank">'.__('UpdraftCentral', 'updraftplus').'</a> </strong>'.__('is a highly efficient way to manage, update and backup multiple websites from one place.', 'updraftplus'); ?>
+		<?php echo '<strong><a href="https://www.internallinkjuicer.com/" target="_blank">'.esc_html__('Internal Link Juicer', 'updraftplus').'</a>: </strong>'.esc_html__('Automate the building of internal links on your WordPress website.', 'updraftplus').' '.esc_html__('Save time and boost SEO!', 'updraftplus').' '.esc_html__('You don’t need to be an SEO expert to use this plugin.', 'updraftplus');
+	?>
 	</p>
 	<p>
-		<?php echo '<strong><a href="https://getwpo.com" target="_blank">WP-Optimize</a>: </strong>'.__('Makes your site fast and efficient. It cleans the database, compresses images and caches pages for ultimate speed.', 'updraftplus'); ?>
+		<?php echo '<strong><a href="https://wpovernight.com/" target="_blank">'.esc_html__('WP Overnight', 'updraftplus').'</a>: </strong>'.esc_html__("Quality add-ons for WooCommerce.", 'updraftplus').' '.esc_html__("Designed to optimize your store, enhance user experience  and increase revenue!", 'updraftplus');
+	?>
 	</p>
 	<p>
-		<?php echo '<strong><a href="https://subscribenplugin.com" target="_blank">Subscriben</a>: </strong>'.__('The WordPress subscription extension for WooCommerce store owners.', 'updraftplus'); ?>
+		<?php echo '<strong>'.esc_html__('More quality plugins', 'updraftplus').' :</strong>';?>
+		<a href="https://www.simbahosting.co.uk/s3/shop/" target="_blank"><?php echo esc_html__('Premium WooCommerce plugins', 'updraftplus').'</a> | <a href="https://wordpress.org/plugins/two-factor-authentication/" target="_blank">'.esc_html__('Free two-factor security plugin', 'updraftplus');?></a>
 	</p>
-	<p>
-		<?php echo '<strong><a href="'.apply_filters('updraftplus_com_link', "https://updraftplus.com/newsletter-signup").'" target="_blank">'.__('Free Newsletter', 'updraftplus').'</a>: </strong>'.__('UpdraftPlus news, high-quality training materials for WordPress developers and site-owners, and general WordPress news. You can de-subscribe at any time.', 'updraftplus'); ?>
-	</p>
-	<p>
-		<?php echo '<strong>'.__('More quality plugins', 'updraftplus').' :</strong>';?>
-		<a href="https://www.simbahosting.co.uk/s3/shop/" target="_blank"><?php echo __('Premium WooCommerce plugins', 'updraftplus').'</a> | <a href="https://wordpress.org/plugins/two-factor-authentication/" target="_blank">'.__('Free two-factor security plugin', 'updraftplus');?></a>
-	</p>
-	<div style="float:right;"><a href="#>" onclick="jQuery('#updraft-dashnotice').slideUp(); jQuery.post(ajaxurl, {action: 'updraft_ajax', subaction: 'dismissdashnotice', nonce: '<?php echo wp_create_nonce('updraftplus-credentialtest-nonce');?>' });"><?php printf(__('Dismiss (for %s months)', 'updraftplus'), 12); ?></a></div>
+	<p></p>
+	<div style="float:right;"><a href="#" onclick="jQuery('#updraft-dashnotice').slideUp(); jQuery.post(ajaxurl, {action: 'updraft_ajax', subaction: 'dismissdashnotice', nonce: '<?php echo esc_js(wp_create_nonce('updraftplus-credentialtest-nonce'));?>' });">
+		<?php
+		/* translators: %d: Number of months */
+		printf(esc_html__('Dismiss (for %d months)', 'updraftplus'), 12);
+		?>
+	</a></div>
 	<p>&nbsp;</p>
 </div>

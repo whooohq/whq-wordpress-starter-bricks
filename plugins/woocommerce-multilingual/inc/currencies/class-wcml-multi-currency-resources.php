@@ -3,7 +3,7 @@
 class WCML_Multi_Currency_Resources {
 
 	/**
-	 * @var WCML_Multi_Currency
+	 * @var WCML_Multi_Currency|null
 	 */
 	private static $multi_currency;
 
@@ -26,7 +26,7 @@ class WCML_Multi_Currency_Resources {
 
 	private static function load_inline_js() {
 
-		wp_register_script( 'wcml-mc-scripts', WCML_PLUGIN_URL . '/res/js/wcml-multi-currency' . WCML_JS_MIN . '.js', [ 'jquery' ], WCML_VERSION, true );
+		wcml_register_script( 'wcml-mc-scripts', 'res/js/wcml-multi-currency' . WCML_JS_MIN . '.js', [], [ 'strategy' => 'defer', 'in_footer' => true ] );
 
 		$script_vars['wcml_spinner']     = \WCML\functions\assetLink( '/res/img/ajax-loader.gif' );
 		$script_vars['current_currency'] = [
@@ -47,13 +47,12 @@ class WCML_Multi_Currency_Resources {
 
 		$script_vars['cache_enabled'] = false;
 
-		$w3tc_enabled  = ! empty( self::$multi_currency->W3TC );
+		$w3tc_enabled = isset( self::$multi_currency->W3TC ) && self::$multi_currency->W3TC instanceof WCML_W3TC_Multi_Currency;
 		$nginx_enabled = class_exists( 'NginxCache' );
 
 		$sg_cache_enabled =
 			( $sg_cachepress_environment && $sg_cachepress_environment->cache_is_enabled() ) ||
 			( $siteground_optimizer_helper && get_option( 'siteground_optimizer_enable_memcached', false ) );
-
 		if ( $w3tc_enabled || $nginx_enabled || $sg_cache_enabled ) {
 			$script_vars['cache_enabled'] = true;
 		}

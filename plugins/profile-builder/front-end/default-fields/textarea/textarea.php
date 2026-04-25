@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* handle field output */
 function wppb_textarea_handler( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){
 	if ( $field['field'] == 'Textarea' ){
@@ -14,7 +17,10 @@ function wppb_textarea_handler( $output, $form_location, $field, $user_id, $fiel
 
         $input_value = ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ? trim( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) : $input_value );
 
-		if ( $form_location != 'back_end' ){
+        $input_value = wppb_icl_t( 'plugin profile-builder-pro', 'custom_field_textarea_'.$field['id'].'_default_value_translation', $input_value, true );
+		$input_value = apply_filters( 'wppb_form_textarea_field_value', $input_value, $field, $form_location );
+
+        if ( $form_location != 'back_end' ){
 			$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );
 						
 			if ( array_key_exists( $field['id'], $field_check_errors ) )
@@ -55,8 +61,14 @@ add_filter( 'wppb_admin_output_form_field_textarea', 'wppb_textarea_handler', 10
 /* handle field save */
 function wppb_save_textarea_value( $field, $user_id, $request_data, $form_location ){
 	if( $field['field'] == 'Textarea' ){
-		if ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) )
-			update_user_meta( $user_id, $field['meta-name'], $request_data[wppb_handle_meta_name( $field['meta-name'] )] );
+		if ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ){
+			$meta_value = sanitize_textarea_field( wp_unslash( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) );
+
+			if( apply_filters( 'wppb_form_field_textarea_escape_on_save', false ) )
+				$meta_value = esc_textarea( $meta_value );
+
+			update_user_meta( $user_id, $field['meta-name'], $meta_value );
+		}
 	}
 }
 add_action( 'wppb_save_form_field', 'wppb_save_textarea_value', 10, 4 );

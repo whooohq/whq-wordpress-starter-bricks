@@ -8,8 +8,10 @@
  */
 class PB_Mustache_Generate_Template{
 	var $mustache_vars = array( );
+	var $mustache_vars_array = array( );
 	var $template = '';
 	var $extra_values = array( );
+	var $fields = array( );
 
 	/**
 	 * constructor for the class
@@ -111,6 +113,7 @@ class PB_Mustache_Generate_Admin_Box{
 	var $id; // string meta box id
 	var $title; // string title
 	var $page; // string|array post type to add meta box to
+	var $fields; // string|array post type to add meta box to
 	var $priority;
 	var $mustache_vars;
 	var $default_value;
@@ -164,6 +167,7 @@ class PB_Mustache_Generate_Admin_Box{
         if( defined( 'DOING_AJAX' ) && DOING_AJAX )
             return;
 
+		add_action( 'wck_add_meta_boxes', array( $this, 'add_box' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_box' ) );
 		add_action( 'save_post',  array( $this, 'save_box' ), 11, 2);
 		add_action( 'wp_insert_post',  array( $this, 'save_box' ), 11, 2);
@@ -281,7 +285,7 @@ class PB_Mustache_Generate_Admin_Box{
 
 			/* if it's not a post type add a side metabox with a save button */
 			if( isset( $_GET['page'] ) )
-				add_meta_box( 'page-save-metabox', __( 'Save', 'profile-builder' ), array( $this, 'page_save_meta_box' ), $page, 'side' );
+				add_meta_box( 'page-save-metabox', __( 'Update Settings', 'profile-builder' ), array( $this, 'page_save_meta_box' ), $page, 'side' );
 		}
 	}
 
@@ -322,7 +326,7 @@ class PB_Mustache_Generate_Admin_Box{
 			// get data for this field
 			extract( $field );
 			if ( !empty( $desc ) )
-				$desc = '<span class="description">' . $desc . '</span>';
+				$desc = '<p class="cozmoslabs-description cozmoslabs-description-space-left">' . $desc . '</p>';
 
 			// get value of this field if it exists for this post
 			if( isset( $_GET['page'] ) ){
@@ -340,9 +344,9 @@ class PB_Mustache_Generate_Admin_Box{
 
 			// begin a table row with
 			echo '<tr>
-					<td class="' . esc_attr( $id ) . ' ' . esc_attr( $type ) . '">';
-					if( $type != 'header' && !empty( $label ) ){
-					    echo '<label for="' . esc_attr( $id ) . '" class="wppb_mustache_label">' . esc_html( $label ) . '</label>';
+					<td class="cozmoslabs-form-field-wrapper ' . esc_attr( $id ) . ' ' . esc_attr( $type ) . '">';
+					if( $type != 'header' && $type != 'checkbox' && !empty( $label ) ){
+					    echo '<label for="' . esc_attr( $id ) . '" class="wppb_mustache_label cozmoslabs-form-field-label">' . esc_html( $label ) . '</label>';
                     }
 					switch( $type ) {
 						// text
@@ -358,8 +362,12 @@ class PB_Mustache_Generate_Admin_Box{
 						break;
 						// checkbox
 						case 'checkbox':
-							echo '<input type="checkbox" name="' . esc_attr( $id ) . '" id="' . esc_attr( $id ) . '"' . checked( esc_attr( $meta ), 'on', false ) . ' value="on" />
-									<label for="' . esc_attr( $id ) . '">' . esc_html( $desc ) . '</label>';
+
+                            echo '  <div class="cozmoslabs-toggle-container">
+                                        <input type="checkbox" name="' . esc_attr( $id ) . '" id="' . esc_attr( $id ) . '"' . checked( esc_attr( $meta ), 'on', false ) . ' value="on" />
+                                        <label class="cozmoslabs-toggle-track" for="' . esc_attr( $id ) . '">' . esc_html( $desc ) . '</label>
+                                    </div>
+                                    ';
 						break;
 						// select
 						case 'select':
@@ -384,7 +392,7 @@ class PB_Mustache_Generate_Admin_Box{
 						break;
 						// text
 						case 'header':
-							echo '<h4>'. esc_html( $default ) .'</h4>';
+							echo '<h4 class="cozmoslabs-description">'. esc_html( $default ) .'</h4>';
 						break;
 					} //end switch
 
@@ -441,6 +449,10 @@ class PB_Mustache_Generate_Admin_Box{
                 /* to avoid conflicts with other plugins we send an empty post object as the second parameter with a fake post type */
 				$post = new WP_Post( new stdClass() );
                 $post->post_type = 'wppb-mustache-settings-page';
+                remove_all_actions('save_post', -1 );// This is added for the LearnPress plugin
+                remove_all_actions('save_post', 9 );// This was added for Breeze cache compatibility
+                remove_all_actions('save_post', 1 );// This was added for the Porto Functionality plugin from Porto Theme
+                remove_all_actions('save_post', 2 );// This was added for the Events Tickets Plus plugin
                 remove_all_actions('save_post', 10 );//remove all actions that could run on the save_post hook on priority 10 than could expect a numeric post id instead of a string like $this->id. Ex: add_action( 'save_post', array( $this, 'refresh_post_word_count' ) ); in WPML translation management
 				remove_all_actions('save_post', PHP_INT_MAX );//same for PHP_INT_MAX priority: add_action( 'save_post', array( $this, 'queue_save_post_actions' ), PHP_INT_MAX, 2 );
 				do_action( 'save_post', $this->id, $post, false );

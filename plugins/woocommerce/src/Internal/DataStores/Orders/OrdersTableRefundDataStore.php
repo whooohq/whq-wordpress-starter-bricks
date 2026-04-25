@@ -6,6 +6,9 @@
 
 namespace Automattic\WooCommerce\Internal\DataStores\Orders;
 
+use \WC_Cache_Helper;
+use \WC_Meta_Data;
+
 /**
  * Class OrdersTableRefundDataStore.
  */
@@ -75,6 +78,9 @@ class OrdersTableRefundDataStore extends OrdersTableDataStore {
 			return;
 		}
 
+		$refund_cache_key = WC_Cache_Helper::get_cache_prefix( 'orders' ) . 'refunds' . $refund->get_parent_id();
+		wp_cache_delete( $refund_cache_key, 'orders' );
+
 		$this->delete_order_data_from_custom_order_tables( $refund_id );
 		$refund->set_id( 0 );
 
@@ -137,6 +143,14 @@ class OrdersTableRefundDataStore extends OrdersTableDataStore {
 	 */
 	public function update( &$refund ) {
 		$this->persist_updates( $refund );
+		$refund->apply_changes();
+
+		// phpcs:disable WooCommerce.Commenting.CommentHooks.MissingSinceComment
+		/**
+		 * This action is documented in woocommerce/includes/data-stores/class-wc-order-refund-data-store-cpt.php.
+		 */
+		do_action( 'woocommerce_update_order_refund', $refund->get_id(), $refund );
+		// phpcs:enable
 	}
 
 	/**
@@ -159,8 +173,17 @@ class OrdersTableRefundDataStore extends OrdersTableDataStore {
 
 		$props_to_update = $this->get_props_to_update( $refund, $meta_key_to_props );
 		foreach ( $props_to_update as $meta_key => $prop ) {
-			$value = $refund->{"get_$prop"}( 'edit' );
-			$refund->update_meta_data( $meta_key, $value );
+			$meta_object        = new WC_Meta_Data();
+			$meta_object->key   = $meta_key;
+			$meta_object->value = $refund->{"get_$prop"}( 'edit' );
+			$existing_meta      = $this->data_store_meta->get_metadata_by_key( $refund, $meta_key );
+			if ( $existing_meta ) {
+				$existing_meta   = $existing_meta[0];
+				$meta_object->id = $existing_meta->id;
+				$this->update_meta( $refund, $meta_object );
+			} else {
+				$this->add_meta( $refund, $meta_object );
+			}
 			$updated_props[] = $prop;
 		}
 

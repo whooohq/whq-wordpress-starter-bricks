@@ -3,18 +3,18 @@
  * Editor layout for PO and POT files
  */
 
+/* @var Loco_mvc_View $this */
 $this->extend('../layout');
-echo $header;
+$this->block('header');
 
 /* @var Loco_mvc_ViewParams $js */
 /* @var Loco_mvc_ViewParams $ui */
 /* @var Loco_mvc_ViewParams $params */
 /* @var Loco_mvc_ViewParams $locale */
 /* @var Loco_mvc_HiddenFields $dlFields */
-?> 
-    
-    <div id="loco-editor">
+?>
 
+    <div id="loco-editor">
         <nav class="wp-core-ui">
             <form action="#" id="loco-actions">
                 <fieldset>
@@ -30,6 +30,9 @@ echo $header;
                 </fieldset><?php
                 if( $locale ):?> 
                 <fieldset>
+                    <button class="button has-icon icon-ok" data-loco="lint" disabled>
+                        <span><?php $ui->e('lint')?></span>
+                    </button>
                     <button class="button has-icon icon-robot" data-loco="auto" disabled>
                         <span><?php $ui->e('auto')?></span>
                     </button>
@@ -55,18 +58,6 @@ echo $header;
                         <span><?php $ui->e('code')?></span>
                     </button>
                 </fieldset>
-            </form>
-            <form action="<?php $params->e('dlAction')?>" method="post" target="_blank" id="loco-download" class="aux">
-                <fieldset>
-                    <button class="button button-link has-icon icon-download" data-loco="source" disabled title="<?php $ui->e('download')?>">
-                        <span><?php $params->e('filetype')?></span>
-                    </button>
-                    <button class="button button-link has-icon icon-download" data-loco="binary" disabled title="<?php $ui->e('download')?> MO">
-                        <span>MO</span>
-                    </button>
-                </fieldset>
-                <?php
-                $dlFields->_e();?> 
             </form>
         </nav>
 

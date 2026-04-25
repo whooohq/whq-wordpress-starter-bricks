@@ -1,57 +1,5 @@
 jQuery(function ($) {
 
-    if (typeof TaxonomyTranslation != 'undefined') {
-
-        TaxonomyTranslation.views.TermView = TaxonomyTranslation.views.TermView.extend({
-            initialize: function () {
-                TaxonomyTranslation.views.TermView.__super__.initialize.apply(this, arguments);
-                this.listenTo(this.model, 'translationSaved', this.render_overlay);
-            },
-            render_overlay: function () {
-                var taxonomy = TaxonomyTranslation.classes.taxonomy.get("taxonomy");
-                $.ajax({
-                    type: "post",
-                    url: ajaxurl,
-                    dataType: 'json',
-                    data: {
-                        action: "wcml_update_term_translated_warnings",
-                        taxonomy: taxonomy,
-                        wcml_nonce: $('#wcml_update_term_translated_warnings_nonce').val()
-                    },
-                    success: function (response) {
-                        if (response.hide) {
-                            if (response.is_attribute) {
-                                $('.tax-product-attributes').removeAttr('title');
-                                $('.tax-product-attributes i.otgs-ico-warning').remove();
-                            } else {
-                                $('.js-tax-tab-' + taxonomy).removeAttr('title');
-                                $('.js-tax-tab-' + taxonomy + ' i.otgs-ico-warning').remove();
-                            }
-                        }
-                    }
-                })
-            }
-        });
-
-    }
-
-    function disable_tax_translation_toggling() {
-        $('.wcml-tax-translation-list .actions a')
-            .on('click', tax_translation_toggling_return_false)
-            .css({cursor: 'wait'});
-    }
-
-    function enable_tax_translation_toggling() {
-        $('.wcml-tax-translation-list .actions a')
-            .off('click')
-            .css({cursor: 'pointer'});
-    }
-
-    function tax_translation_toggling_return_false(event) {
-        event.preventDefault();
-        return false;
-    }
-
     $(document).on('submit', '#wcml_tt_sync_variations', function () {
 
         var this_form = $('#wcml_tt_sync_variations');
@@ -107,9 +55,9 @@ jQuery(function ($) {
                 this_form.find('input').prop('disabled', false);
 
                 if (ret.errors) {
-                    this_form.find('.errors').html(ret.errors);
+                    this_form.find('.errors').html(WCML.sanitize(ret.errors));
                 } else {
-                    jQuery('#wcml_tt_sync_preview').html(ret.html);
+                    jQuery('#wcml_tt_sync_preview').html(WCML.sanitize(ret.html));
                     jQuery('#wcml_tt_sync_assignment').fadeOut();
                     jQuery('#wcml_tt_sync_desc').fadeOut();
                 }

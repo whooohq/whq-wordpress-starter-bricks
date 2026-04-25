@@ -6,6 +6,10 @@ $vendorDir = dirname(__DIR__);
 $baseDir   = dirname($vendorDir);
 
 return array(
+	'Attribute' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php'
+	),
 	'Autoloader' => array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-autoloader.php'
@@ -38,353 +42,369 @@ return array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/ManifestGenerator.php'
 	),
+	'CLI_Alias_Command' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/commands/src/CLI_Alias_Command.php'
+	),
+	'CLI_Cache_Command' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/commands/src/CLI_Cache_Command.php'
+	),
+	'CLI_Command' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/commands/src/CLI_Command.php'
+	),
 	'Container' => array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-container.php'
 	),
 	'GuzzleHttp\\BodySummarizer' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/BodySummarizer.php'
 	),
 	'GuzzleHttp\\BodySummarizerInterface' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/BodySummarizerInterface.php'
 	),
 	'GuzzleHttp\\Client' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Client.php'
 	),
 	'GuzzleHttp\\ClientInterface' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/ClientInterface.php'
 	),
 	'GuzzleHttp\\ClientTrait' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/ClientTrait.php'
 	),
 	'GuzzleHttp\\Cookie\\CookieJar' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Cookie/CookieJar.php'
 	),
 	'GuzzleHttp\\Cookie\\CookieJarInterface' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Cookie/CookieJarInterface.php'
 	),
 	'GuzzleHttp\\Cookie\\FileCookieJar' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Cookie/FileCookieJar.php'
 	),
 	'GuzzleHttp\\Cookie\\SessionCookieJar' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Cookie/SessionCookieJar.php'
 	),
 	'GuzzleHttp\\Cookie\\SetCookie' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Cookie/SetCookie.php'
 	),
 	'GuzzleHttp\\Exception\\BadResponseException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/BadResponseException.php'
 	),
 	'GuzzleHttp\\Exception\\ClientException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/ClientException.php'
 	),
 	'GuzzleHttp\\Exception\\ConnectException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/ConnectException.php'
 	),
 	'GuzzleHttp\\Exception\\GuzzleException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/GuzzleException.php'
 	),
 	'GuzzleHttp\\Exception\\InvalidArgumentException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/InvalidArgumentException.php'
 	),
 	'GuzzleHttp\\Exception\\RequestException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/RequestException.php'
 	),
 	'GuzzleHttp\\Exception\\ServerException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/ServerException.php'
 	),
 	'GuzzleHttp\\Exception\\TooManyRedirectsException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/TooManyRedirectsException.php'
 	),
 	'GuzzleHttp\\Exception\\TransferException' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Exception/TransferException.php'
 	),
 	'GuzzleHttp\\HandlerStack' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/HandlerStack.php'
 	),
 	'GuzzleHttp\\Handler\\CurlFactory' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/CurlFactory.php'
 	),
 	'GuzzleHttp\\Handler\\CurlFactoryInterface' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/CurlFactoryInterface.php'
 	),
 	'GuzzleHttp\\Handler\\CurlHandler' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/CurlHandler.php'
 	),
 	'GuzzleHttp\\Handler\\CurlMultiHandler' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/CurlMultiHandler.php'
 	),
 	'GuzzleHttp\\Handler\\EasyHandle' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/EasyHandle.php'
 	),
 	'GuzzleHttp\\Handler\\HeaderProcessor' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/HeaderProcessor.php'
 	),
 	'GuzzleHttp\\Handler\\MockHandler' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/MockHandler.php'
 	),
 	'GuzzleHttp\\Handler\\Proxy' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/Proxy.php'
 	),
 	'GuzzleHttp\\Handler\\StreamHandler' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Handler/StreamHandler.php'
 	),
 	'GuzzleHttp\\MessageFormatter' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/MessageFormatter.php'
 	),
 	'GuzzleHttp\\MessageFormatterInterface' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/MessageFormatterInterface.php'
 	),
 	'GuzzleHttp\\Middleware' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Middleware.php'
 	),
 	'GuzzleHttp\\Pool' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Pool.php'
 	),
 	'GuzzleHttp\\PrepareBodyMiddleware' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/PrepareBodyMiddleware.php'
 	),
 	'GuzzleHttp\\Promise\\AggregateException' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/AggregateException.php'
 	),
 	'GuzzleHttp\\Promise\\CancellationException' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/CancellationException.php'
 	),
 	'GuzzleHttp\\Promise\\Coroutine' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/Coroutine.php'
 	),
 	'GuzzleHttp\\Promise\\Create' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/Create.php'
 	),
 	'GuzzleHttp\\Promise\\Each' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/Each.php'
 	),
 	'GuzzleHttp\\Promise\\EachPromise' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/EachPromise.php'
 	),
 	'GuzzleHttp\\Promise\\FulfilledPromise' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/FulfilledPromise.php'
 	),
 	'GuzzleHttp\\Promise\\Is' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/Is.php'
 	),
 	'GuzzleHttp\\Promise\\Promise' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/Promise.php'
 	),
 	'GuzzleHttp\\Promise\\PromiseInterface' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/PromiseInterface.php'
 	),
 	'GuzzleHttp\\Promise\\PromisorInterface' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/PromisorInterface.php'
 	),
 	'GuzzleHttp\\Promise\\RejectedPromise' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/RejectedPromise.php'
 	),
 	'GuzzleHttp\\Promise\\RejectionException' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/RejectionException.php'
 	),
 	'GuzzleHttp\\Promise\\TaskQueue' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/TaskQueue.php'
 	),
 	'GuzzleHttp\\Promise\\TaskQueueInterface' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/TaskQueueInterface.php'
 	),
 	'GuzzleHttp\\Promise\\Utils' => array(
-		'version' => '2.0.2.0',
+		'version' => '2.0.3.0',
 		'path'    => $vendorDir . '/guzzlehttp/promises/src/Utils.php'
 	),
 	'GuzzleHttp\\Psr7\\AppendStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/AppendStream.php'
 	),
 	'GuzzleHttp\\Psr7\\BufferStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/BufferStream.php'
 	),
 	'GuzzleHttp\\Psr7\\CachingStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/CachingStream.php'
 	),
 	'GuzzleHttp\\Psr7\\DroppingStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/DroppingStream.php'
 	),
 	'GuzzleHttp\\Psr7\\Exception\\MalformedUriException' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Exception/MalformedUriException.php'
 	),
 	'GuzzleHttp\\Psr7\\FnStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/FnStream.php'
 	),
 	'GuzzleHttp\\Psr7\\Header' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Header.php'
 	),
 	'GuzzleHttp\\Psr7\\HttpFactory' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/HttpFactory.php'
 	),
 	'GuzzleHttp\\Psr7\\InflateStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/InflateStream.php'
 	),
 	'GuzzleHttp\\Psr7\\LazyOpenStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/LazyOpenStream.php'
 	),
 	'GuzzleHttp\\Psr7\\LimitStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/LimitStream.php'
 	),
 	'GuzzleHttp\\Psr7\\Message' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Message.php'
 	),
 	'GuzzleHttp\\Psr7\\MessageTrait' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/MessageTrait.php'
 	),
 	'GuzzleHttp\\Psr7\\MimeType' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/MimeType.php'
 	),
 	'GuzzleHttp\\Psr7\\MultipartStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/MultipartStream.php'
 	),
 	'GuzzleHttp\\Psr7\\NoSeekStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/NoSeekStream.php'
 	),
 	'GuzzleHttp\\Psr7\\PumpStream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/PumpStream.php'
 	),
 	'GuzzleHttp\\Psr7\\Query' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Query.php'
 	),
 	'GuzzleHttp\\Psr7\\Request' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Request.php'
 	),
 	'GuzzleHttp\\Psr7\\Response' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Response.php'
 	),
 	'GuzzleHttp\\Psr7\\Rfc7230' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Rfc7230.php'
 	),
 	'GuzzleHttp\\Psr7\\ServerRequest' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/ServerRequest.php'
 	),
 	'GuzzleHttp\\Psr7\\Stream' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Stream.php'
 	),
 	'GuzzleHttp\\Psr7\\StreamDecoratorTrait' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/StreamDecoratorTrait.php'
 	),
 	'GuzzleHttp\\Psr7\\StreamWrapper' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/StreamWrapper.php'
 	),
 	'GuzzleHttp\\Psr7\\UploadedFile' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/UploadedFile.php'
 	),
 	'GuzzleHttp\\Psr7\\Uri' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Uri.php'
 	),
 	'GuzzleHttp\\Psr7\\UriComparator' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/UriComparator.php'
 	),
 	'GuzzleHttp\\Psr7\\UriNormalizer' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/UriNormalizer.php'
 	),
 	'GuzzleHttp\\Psr7\\UriResolver' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/UriResolver.php'
 	),
 	'GuzzleHttp\\Psr7\\Utils' => array(
-		'version' => '2.6.2.0',
+		'version' => '2.7.0.0',
 		'path'    => $vendorDir . '/guzzlehttp/psr7/src/Utils.php'
 	),
 	'GuzzleHttp\\RedirectMiddleware' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/RedirectMiddleware.php'
 	),
 	'GuzzleHttp\\RequestOptions' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/RequestOptions.php'
 	),
 	'GuzzleHttp\\RetryMiddleware' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/RetryMiddleware.php'
 	),
 	'GuzzleHttp\\TransferStats' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/TransferStats.php'
 	),
 	'GuzzleHttp\\Utils' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/Utils.php'
+	),
+	'Help_Command' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/commands/src/Help_Command.php'
 	),
 	'Hook_Manager' => array(
 		'version' => '2.12.0',
@@ -398,6 +418,146 @@ return array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-manifest-reader.php'
 	),
+	'Mustache_Autoloader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Autoloader.php'
+	),
+	'Mustache_Cache' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Cache.php'
+	),
+	'Mustache_Cache_AbstractCache' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Cache/AbstractCache.php'
+	),
+	'Mustache_Cache_FilesystemCache' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Cache/FilesystemCache.php'
+	),
+	'Mustache_Cache_NoopCache' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Cache/NoopCache.php'
+	),
+	'Mustache_Compiler' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Compiler.php'
+	),
+	'Mustache_Context' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Context.php'
+	),
+	'Mustache_Engine' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Engine.php'
+	),
+	'Mustache_Exception' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception.php'
+	),
+	'Mustache_Exception_InvalidArgumentException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/InvalidArgumentException.php'
+	),
+	'Mustache_Exception_LogicException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/LogicException.php'
+	),
+	'Mustache_Exception_RuntimeException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/RuntimeException.php'
+	),
+	'Mustache_Exception_SyntaxException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/SyntaxException.php'
+	),
+	'Mustache_Exception_UnknownFilterException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/UnknownFilterException.php'
+	),
+	'Mustache_Exception_UnknownHelperException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/UnknownHelperException.php'
+	),
+	'Mustache_Exception_UnknownTemplateException' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Exception/UnknownTemplateException.php'
+	),
+	'Mustache_HelperCollection' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/HelperCollection.php'
+	),
+	'Mustache_LambdaHelper' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/LambdaHelper.php'
+	),
+	'Mustache_Loader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader.php'
+	),
+	'Mustache_Loader_ArrayLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/ArrayLoader.php'
+	),
+	'Mustache_Loader_CascadingLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/CascadingLoader.php'
+	),
+	'Mustache_Loader_FilesystemLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/FilesystemLoader.php'
+	),
+	'Mustache_Loader_InlineLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/InlineLoader.php'
+	),
+	'Mustache_Loader_MutableLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/MutableLoader.php'
+	),
+	'Mustache_Loader_ProductionFilesystemLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/ProductionFilesystemLoader.php'
+	),
+	'Mustache_Loader_StringLoader' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Loader/StringLoader.php'
+	),
+	'Mustache_Logger' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Logger.php'
+	),
+	'Mustache_Logger_AbstractLogger' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Logger/AbstractLogger.php'
+	),
+	'Mustache_Logger_StreamLogger' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Logger/StreamLogger.php'
+	),
+	'Mustache_Parser' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Parser.php'
+	),
+	'Mustache_Source' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Source.php'
+	),
+	'Mustache_Source_FilesystemSource' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Source/FilesystemSource.php'
+	),
+	'Mustache_Template' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Template.php'
+	),
+	'Mustache_Tokenizer' => array(
+		'version' => '2.14.2.0',
+		'path'    => $vendorDir . '/mustache/mustache/src/Mustache/Tokenizer.php'
+	),
+	'Mustangostang\\Spyc' => array(
+		'version' => '0.6.3.0',
+		'path'    => $vendorDir . '/wp-cli/mustangostang-spyc/src/Spyc.php'
+	),
 	'PHP_Autoloader' => array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-php-autoloader.php'
@@ -409,6 +569,10 @@ return array(
 	'Path_Processor' => array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-path-processor.php'
+	),
+	'PhpToken' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php'
 	),
 	'Plugin_Locator' => array(
 		'version' => '2.12.0',
@@ -439,7 +603,7 @@ return array(
 		'path'    => $vendorDir . '/psr/http-message/src/MessageInterface.php'
 	),
 	'Psr\\Http\\Message\\RequestFactoryInterface' => array(
-		'version' => '1.0.2.0',
+		'version' => '1.1.0.0',
 		'path'    => $vendorDir . '/psr/http-factory/src/RequestFactoryInterface.php'
 	),
 	'Psr\\Http\\Message\\RequestInterface' => array(
@@ -447,7 +611,7 @@ return array(
 		'path'    => $vendorDir . '/psr/http-message/src/RequestInterface.php'
 	),
 	'Psr\\Http\\Message\\ResponseFactoryInterface' => array(
-		'version' => '1.0.2.0',
+		'version' => '1.1.0.0',
 		'path'    => $vendorDir . '/psr/http-factory/src/ResponseFactoryInterface.php'
 	),
 	'Psr\\Http\\Message\\ResponseInterface' => array(
@@ -455,7 +619,7 @@ return array(
 		'path'    => $vendorDir . '/psr/http-message/src/ResponseInterface.php'
 	),
 	'Psr\\Http\\Message\\ServerRequestFactoryInterface' => array(
-		'version' => '1.0.2.0',
+		'version' => '1.1.0.0',
 		'path'    => $vendorDir . '/psr/http-factory/src/ServerRequestFactoryInterface.php'
 	),
 	'Psr\\Http\\Message\\ServerRequestInterface' => array(
@@ -463,7 +627,7 @@ return array(
 		'path'    => $vendorDir . '/psr/http-message/src/ServerRequestInterface.php'
 	),
 	'Psr\\Http\\Message\\StreamFactoryInterface' => array(
-		'version' => '1.0.2.0',
+		'version' => '1.1.0.0',
 		'path'    => $vendorDir . '/psr/http-factory/src/StreamFactoryInterface.php'
 	),
 	'Psr\\Http\\Message\\StreamInterface' => array(
@@ -471,7 +635,7 @@ return array(
 		'path'    => $vendorDir . '/psr/http-message/src/StreamInterface.php'
 	),
 	'Psr\\Http\\Message\\UploadedFileFactoryInterface' => array(
-		'version' => '1.0.2.0',
+		'version' => '1.1.0.0',
 		'path'    => $vendorDir . '/psr/http-factory/src/UploadedFileFactoryInterface.php'
 	),
 	'Psr\\Http\\Message\\UploadedFileInterface' => array(
@@ -479,7 +643,7 @@ return array(
 		'path'    => $vendorDir . '/psr/http-message/src/UploadedFileInterface.php'
 	),
 	'Psr\\Http\\Message\\UriFactoryInterface' => array(
-		'version' => '1.0.2.0',
+		'version' => '1.1.0.0',
 		'path'    => $vendorDir . '/psr/http-factory/src/UriFactoryInterface.php'
 	),
 	'Psr\\Http\\Message\\UriInterface' => array(
@@ -490,9 +654,121 @@ return array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-shutdown-handler.php'
 	),
+	'Stringable' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Stringable.php'
+	),
+	'Symfony\\Component\\Finder\\Comparator\\Comparator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Comparator/Comparator.php'
+	),
+	'Symfony\\Component\\Finder\\Comparator\\DateComparator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Comparator/DateComparator.php'
+	),
+	'Symfony\\Component\\Finder\\Comparator\\NumberComparator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Comparator/NumberComparator.php'
+	),
+	'Symfony\\Component\\Finder\\Exception\\AccessDeniedException' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Exception/AccessDeniedException.php'
+	),
+	'Symfony\\Component\\Finder\\Exception\\DirectoryNotFoundException' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Exception/DirectoryNotFoundException.php'
+	),
+	'Symfony\\Component\\Finder\\Finder' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Finder.php'
+	),
+	'Symfony\\Component\\Finder\\Gitignore' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Gitignore.php'
+	),
+	'Symfony\\Component\\Finder\\Glob' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Glob.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\CustomFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/CustomFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\DateRangeFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/DateRangeFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\DepthRangeFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/DepthRangeFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\ExcludeDirectoryFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/ExcludeDirectoryFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\FileTypeFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/FileTypeFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\FilecontentFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/FilecontentFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\FilenameFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/FilenameFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\LazyIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/LazyIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\MultiplePcreFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/MultiplePcreFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\PathFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/PathFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\RecursiveDirectoryIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/RecursiveDirectoryIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\SizeRangeFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/SizeRangeFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\SortableIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/SortableIterator.php'
+	),
+	'Symfony\\Component\\Finder\\Iterator\\VcsIgnoredFilterIterator' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/Iterator/VcsIgnoredFilterIterator.php'
+	),
+	'Symfony\\Component\\Finder\\SplFileInfo' => array(
+		'version' => '5.4.43.0',
+		'path'    => $vendorDir . '/symfony/finder/SplFileInfo.php'
+	),
 	'Symfony\\Polyfill\\Mbstring\\Mbstring' => array(
-		'version' => '1.29.0.0',
+		'version' => '1.31.0.0',
 		'path'    => $vendorDir . '/symfony/polyfill-mbstring/Mbstring.php'
+	),
+	'Symfony\\Polyfill\\Php80\\Php80' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/Php80.php'
+	),
+	'Symfony\\Polyfill\\Php80\\PhpToken' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/PhpToken.php'
+	),
+	'UnhandledMatchError' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php'
+	),
+	'ValueError' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/ValueError.php'
 	),
 	'Version_Loader' => array(
 		'version' => '2.12.0',
@@ -501,6 +777,394 @@ return array(
 	'Version_Selector' => array(
 		'version' => '2.12.0',
 		'path'    => $vendorDir . '/automattic/jetpack-autoloader/src/class-version-selector.php'
+	),
+	'WP_CLI' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/class-wp-cli.php'
+	),
+	'WP_CLI\\Autoloader' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Autoloader.php'
+	),
+	'WP_CLI\\Bootstrap\\AutoloaderStep' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/AutoloaderStep.php'
+	),
+	'WP_CLI\\Bootstrap\\BootstrapState' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/BootstrapState.php'
+	),
+	'WP_CLI\\Bootstrap\\BootstrapStep' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/BootstrapStep.php'
+	),
+	'WP_CLI\\Bootstrap\\ConfigureRunner' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/ConfigureRunner.php'
+	),
+	'WP_CLI\\Bootstrap\\DeclareAbstractBaseCommand' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/DeclareAbstractBaseCommand.php'
+	),
+	'WP_CLI\\Bootstrap\\DeclareFallbackFunctions' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/DeclareFallbackFunctions.php'
+	),
+	'WP_CLI\\Bootstrap\\DeclareMainClass' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/DeclareMainClass.php'
+	),
+	'WP_CLI\\Bootstrap\\DefineProtectedCommands' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/DefineProtectedCommands.php'
+	),
+	'WP_CLI\\Bootstrap\\IncludeFallbackAutoloader' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/IncludeFallbackAutoloader.php'
+	),
+	'WP_CLI\\Bootstrap\\IncludeFrameworkAutoloader' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/IncludeFrameworkAutoloader.php'
+	),
+	'WP_CLI\\Bootstrap\\IncludePackageAutoloader' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/IncludePackageAutoloader.php'
+	),
+	'WP_CLI\\Bootstrap\\IncludeRequestsAutoloader' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/IncludeRequestsAutoloader.php'
+	),
+	'WP_CLI\\Bootstrap\\InitializeColorization' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/InitializeColorization.php'
+	),
+	'WP_CLI\\Bootstrap\\InitializeContexts' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/InitializeContexts.php'
+	),
+	'WP_CLI\\Bootstrap\\InitializeLogger' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/InitializeLogger.php'
+	),
+	'WP_CLI\\Bootstrap\\LaunchRunner' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/LaunchRunner.php'
+	),
+	'WP_CLI\\Bootstrap\\LoadDispatcher' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/LoadDispatcher.php'
+	),
+	'WP_CLI\\Bootstrap\\LoadExecCommand' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/LoadExecCommand.php'
+	),
+	'WP_CLI\\Bootstrap\\LoadRequiredCommand' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/LoadRequiredCommand.php'
+	),
+	'WP_CLI\\Bootstrap\\LoadUtilityFunctions' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/LoadUtilityFunctions.php'
+	),
+	'WP_CLI\\Bootstrap\\RegisterDeferredCommands' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/RegisterDeferredCommands.php'
+	),
+	'WP_CLI\\Bootstrap\\RegisterFrameworkCommands' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/RegisterFrameworkCommands.php'
+	),
+	'WP_CLI\\Bootstrap\\RunnerInstance' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Bootstrap/RunnerInstance.php'
+	),
+	'WP_CLI\\Completions' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Completions.php'
+	),
+	'WP_CLI\\ComposerIO' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/ComposerIO.php'
+	),
+	'WP_CLI\\Configurator' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Configurator.php'
+	),
+	'WP_CLI\\Context' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Context.php'
+	),
+	'WP_CLI\\ContextManager' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/ContextManager.php'
+	),
+	'WP_CLI\\Context\\Admin' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Context/Admin.php'
+	),
+	'WP_CLI\\Context\\Auto' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Context/Auto.php'
+	),
+	'WP_CLI\\Context\\Cli' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Context/Cli.php'
+	),
+	'WP_CLI\\Context\\Frontend' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Context/Frontend.php'
+	),
+	'WP_CLI\\Dispatcher\\CommandAddition' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Dispatcher/CommandAddition.php'
+	),
+	'WP_CLI\\Dispatcher\\CommandFactory' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Dispatcher/CommandFactory.php'
+	),
+	'WP_CLI\\Dispatcher\\CommandNamespace' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Dispatcher/CommandNamespace.php'
+	),
+	'WP_CLI\\Dispatcher\\CompositeCommand' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Dispatcher/CompositeCommand.php'
+	),
+	'WP_CLI\\Dispatcher\\RootCommand' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Dispatcher/RootCommand.php'
+	),
+	'WP_CLI\\Dispatcher\\Subcommand' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Dispatcher/Subcommand.php'
+	),
+	'WP_CLI\\DocParser' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/DocParser.php'
+	),
+	'WP_CLI\\Exception\\NonExistentKeyException' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Exception/NonExistentKeyException.php'
+	),
+	'WP_CLI\\ExitException' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/ExitException.php'
+	),
+	'WP_CLI\\Extractor' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Extractor.php'
+	),
+	'WP_CLI\\Fetchers\\Base' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Fetchers/Base.php'
+	),
+	'WP_CLI\\Fetchers\\Comment' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Fetchers/Comment.php'
+	),
+	'WP_CLI\\Fetchers\\Post' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Fetchers/Post.php'
+	),
+	'WP_CLI\\Fetchers\\Signup' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Fetchers/Signup.php'
+	),
+	'WP_CLI\\Fetchers\\Site' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Fetchers/Site.php'
+	),
+	'WP_CLI\\Fetchers\\User' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Fetchers/User.php'
+	),
+	'WP_CLI\\FileCache' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/FileCache.php'
+	),
+	'WP_CLI\\Formatter' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Formatter.php'
+	),
+	'WP_CLI\\Inflector' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Inflector.php'
+	),
+	'WP_CLI\\Iterators\\CSV' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Iterators/CSV.php'
+	),
+	'WP_CLI\\Iterators\\Exception' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Iterators/Exception.php'
+	),
+	'WP_CLI\\Iterators\\Query' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Iterators/Query.php'
+	),
+	'WP_CLI\\Iterators\\Table' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Iterators/Table.php'
+	),
+	'WP_CLI\\Iterators\\Transform' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Iterators/Transform.php'
+	),
+	'WP_CLI\\Loggers\\Base' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Loggers/Base.php'
+	),
+	'WP_CLI\\Loggers\\Execution' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Loggers/Execution.php'
+	),
+	'WP_CLI\\Loggers\\Quiet' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Loggers/Quiet.php'
+	),
+	'WP_CLI\\Loggers\\Regular' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Loggers/Regular.php'
+	),
+	'WP_CLI\\NoOp' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/NoOp.php'
+	),
+	'WP_CLI\\PackageManagerEventSubscriber' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/PackageManagerEventSubscriber.php'
+	),
+	'WP_CLI\\Process' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Process.php'
+	),
+	'WP_CLI\\ProcessRun' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/ProcessRun.php'
+	),
+	'WP_CLI\\RequestsLibrary' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/RequestsLibrary.php'
+	),
+	'WP_CLI\\Runner' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Runner.php'
+	),
+	'WP_CLI\\SynopsisParser' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/SynopsisParser.php'
+	),
+	'WP_CLI\\SynopsisValidator' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/SynopsisValidator.php'
+	),
+	'WP_CLI\\Traverser\\RecursiveDataStructureTraverser' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/Traverser/RecursiveDataStructureTraverser.php'
+	),
+	'WP_CLI\\UpgraderSkin' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/UpgraderSkin.php'
+	),
+	'WP_CLI\\WpHttpCacheManager' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/WpHttpCacheManager.php'
+	),
+	'WP_CLI\\WpOrgApi' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/WP_CLI/WpOrgApi.php'
+	),
+	'WP_CLI_Command' => array(
+		'version' => '2.11.0.0',
+		'path'    => $vendorDir . '/wp-cli/wp-cli/php/class-wp-cli-command.php'
+	),
+	'cli\\Arguments' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Arguments.php'
+	),
+	'cli\\Colors' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Colors.php'
+	),
+	'cli\\Memoize' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Memoize.php'
+	),
+	'cli\\Notify' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Notify.php'
+	),
+	'cli\\Progress' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Progress.php'
+	),
+	'cli\\Shell' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Shell.php'
+	),
+	'cli\\Streams' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Streams.php'
+	),
+	'cli\\Table' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Table.php'
+	),
+	'cli\\Tree' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/Tree.php'
+	),
+	'cli\\arguments\\Argument' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/arguments/Argument.php'
+	),
+	'cli\\arguments\\HelpScreen' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/arguments/HelpScreen.php'
+	),
+	'cli\\arguments\\InvalidArguments' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/arguments/InvalidArguments.php'
+	),
+	'cli\\arguments\\Lexer' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/arguments/Lexer.php'
+	),
+	'cli\\notify\\Dots' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/notify/Dots.php'
+	),
+	'cli\\notify\\Spinner' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/notify/Spinner.php'
+	),
+	'cli\\progress\\Bar' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/progress/Bar.php'
+	),
+	'cli\\table\\Ascii' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/table/Ascii.php'
+	),
+	'cli\\table\\Renderer' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/table/Renderer.php'
+	),
+	'cli\\table\\Tabular' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/table/Tabular.php'
+	),
+	'cli\\tree\\Ascii' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/tree/Ascii.php'
+	),
+	'cli\\tree\\Markdown' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/tree/Markdown.php'
+	),
+	'cli\\tree\\Renderer' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/tree/Renderer.php'
 	),
 	'vipnytt\\SitemapParser' => array(
 		'version' => '1.3.0.0',

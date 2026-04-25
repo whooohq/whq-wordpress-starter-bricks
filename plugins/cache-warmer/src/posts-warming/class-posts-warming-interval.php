@@ -18,8 +18,6 @@ final class Posts_Warming_Interval {
      * Constructor.
      */
     public function __construct() {
-        // Schedule the interval.
-        add_action( 'init', [ __CLASS__, 'schedule' ] );
 
         // Unschedule interval action on plugin deactivation.
         register_deactivation_hook( CACHE_WARMER_FILE, [ __CLASS__, 'unschedule' ] );
@@ -35,10 +33,12 @@ final class Posts_Warming_Interval {
     public static function schedule( $value = false ) {
         $interval = ( $value ? $value : (int) Cache_Warmer::$options->get( 'cache-warmer-setting-posts-warming-enqueue-interval' ) ) * 60;
 
-        Utils::schedule_the_undrifting_interval(
-            $interval,
-            Posts_Enqueue::INTERVAL_HOOK_NAME
-        );
+        if ( $interval ) {
+            Utils::schedule_the_undrifting_interval(
+                $interval,
+                Posts_Enqueue::INTERVAL_HOOK_NAME
+            );
+        }
     }
 
     /**

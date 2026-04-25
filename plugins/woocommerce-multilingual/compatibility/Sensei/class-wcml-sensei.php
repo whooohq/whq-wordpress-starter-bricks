@@ -4,21 +4,15 @@ class WCML_Sensei implements \IWPML_Action {
 
 	/** @var SitePress */
 	private $sitepress;
-	/** @var wpdb */
-	private $wpdb;
 	/** WPML_Custom_Columns $wpml_custom_columns */
 	private $custom_columns;
 
 	/**
-	 * WCML_Sensei constructor.
-	 *
 	 * @param SitePress           $sitepress
-	 * @param wpdb                $wpdb
 	 * @param WPML_Custom_Columns $custom_columns
 	 */
-	public function __construct( SitePress $sitepress, wpdb $wpdb, WPML_Custom_Columns $custom_columns ) {
+	public function __construct( SitePress $sitepress, WPML_Custom_Columns $custom_columns ) {
 		$this->sitepress      = $sitepress;
-		$this->wpdb           = $wpdb;
 		$this->custom_columns = $custom_columns;
 	}
 
@@ -105,7 +99,7 @@ class WCML_Sensei implements \IWPML_Action {
 			$lesson_id = get_post_meta( $original_post_id, '_quiz_lesson', true );
 
 			if ( $lesson_id ) {
-				$tr_lesson_id = apply_filters( 'translate_object_id', $lesson_id, 'lesson', false, $language );
+				$tr_lesson_id = apply_filters( 'wpml_object_id', $lesson_id, 'lesson', false, $language );
 
 				if ( ! is_null( $tr_lesson_id ) ) {
 					update_post_meta( $post_id, '_quiz_lesson', $tr_lesson_id );
@@ -118,7 +112,7 @@ class WCML_Sensei implements \IWPML_Action {
 			$course_id = get_post_meta( $original_post_id, '_lesson_course', true );
 
 			if ( $course_id ) {
-				$tr_course_id = apply_filters( 'translate_object_id', $course_id, 'course', false, $language );
+				$tr_course_id = apply_filters( 'wpml_object_id', $course_id, 'course', false, $language );
 
 				if ( ! is_null( $tr_course_id ) ) {
 					update_post_meta( $post_id, '_lesson_course', $tr_course_id );
@@ -131,7 +125,7 @@ class WCML_Sensei implements \IWPML_Action {
 			$lesson_id = get_post_meta( $original_post_id, '_lesson_prerequisite', true );
 
 			if ( $lesson_id ) {
-				$tr_lesson_id = apply_filters( 'translate_object_id', $lesson_id, 'lesson', false, $language );
+				$tr_lesson_id = apply_filters( 'wpml_object_id', $lesson_id, 'lesson', false, $language );
 
 				if ( ! is_null( $tr_lesson_id ) ) {
 					update_post_meta( $post_id, '_lesson_prerequisite', $tr_lesson_id );
@@ -145,7 +139,7 @@ class WCML_Sensei implements \IWPML_Action {
 			$product_id = get_post_meta( $original_post_id, '_course_woocommerce_product', true );
 
 			if ( $product_id ) {
-				$tr_product_id = apply_filters( 'translate_object_id', $product_id, get_post_type( $product_id ), false, $language );
+				$tr_product_id = apply_filters( 'wpml_object_id', $product_id, get_post_type( $product_id ), false, $language );
 
 				if ( ! is_null( $tr_product_id ) ) {
 					update_post_meta( $post_id, '_course_woocommerce_product', $tr_product_id );
@@ -158,7 +152,7 @@ class WCML_Sensei implements \IWPML_Action {
 			$course_id = get_post_meta( $original_post_id, '_course_prerequisite', true );
 
 			if ( $course_id ) {
-				$tr_course_id = apply_filters( 'translate_object_id', $course_id, 'course', false, $language );
+				$tr_course_id = apply_filters( 'wpml_object_id', $course_id, 'course', false, $language );
 
 				if ( ! is_null( $tr_course_id ) ) {
 					update_post_meta( $post_id, '_course_prerequisite', $tr_course_id );
@@ -188,7 +182,7 @@ class WCML_Sensei implements \IWPML_Action {
 
 				$trid = $sitepress->get_element_trid( $comment_id, 'comment' );
 
-				$tr_comment_id = apply_filters( 'translate_object_id', $comment_id, 'comment', false, $translation->language_code );
+				$tr_comment_id = apply_filters( 'wpml_object_id', $comment_id, 'comment', false, $translation->language_code );
 				if ( isset( $args['action'] ) && 'update' == $args['action'] && ! is_null( $tr_comment_id ) && get_comment( $tr_comment_id ) ) {
 					$data['comment_ID'] = $tr_comment_id;
 					$tr_comment_id      = wp_update_comment( $data );
@@ -204,9 +198,9 @@ class WCML_Sensei implements \IWPML_Action {
 	public function filter_bought_product_id( $product_id, $order ) {
 
 		$order_id       = method_exists( 'WC_Order', 'get_id' ) ? $order->get_id() : $order->id;
-		$order_language = get_post_meta( $order_id, 'wpml_language', true );
+		$order_language = WCML_Orders::getLanguage( $order_id );
 
-		$tr_product_id = apply_filters( 'translate_object_id', $product_id, get_post_type( $product_id ), false, $order_language );
+		$tr_product_id = apply_filters( 'wpml_object_id', $product_id, get_post_type( $product_id ), false, $order_language );
 
 		if ( ! is_null( $tr_product_id ) ) {
 			return $tr_product_id;

@@ -116,19 +116,21 @@ function wppb_login_form( $args = array() ) {
 		// Default 'redirect' value takes the user back to the request URI.
 		'redirect'                  => $default_redirect,
 		'form_id'                   => 'wppb-loginform',
+        'form_classes'              => array(),
 		'label_username'            => __( 'Username or Email Address', 'profile-builder' ),
         'login_username_input_type' => 'text',
 		'label_password'            => __( 'Password', 'profile-builder' ),
 		'label_remember'            => __( 'Remember Me', 'profile-builder' ),
 		'label_log_in'              => __( 'Log In', 'profile-builder' ),
-		'id_username'               => 'user_login',
-		'id_password'               => 'user_pass',
+		'id_username'               => 'wppb_user_login',
+		'id_password'               => 'wppb_user_pass',
 		'id_remember'               => 'rememberme',
 		'id_submit'                 => 'wp-submit',
 		'remember'                  => true,
 		'value_username'            => '',
 		// Set 'value_remember' to true to default the "Remember me" checkbox to checked.
 		'value_remember'            => false,
+		'is_ajax_form'              => false,
 	);
 
 	/**
@@ -151,6 +153,12 @@ function wppb_login_form( $args = array() ) {
 	 */
 	$login_form_bottom = apply_filters( 'login_form_bottom', '', $args );
 
+    if( !empty( $args['is_ajax_form'] ) ){
+        $args['form_classes'][] = 'wppb-ajax-form';
+    }
+
+    $args['form_classes'] = implode( ' ', $args['form_classes'] );
+
 	if( in_the_loop() )
 		$form_location = 'page';
 	else
@@ -164,7 +172,7 @@ function wppb_login_form( $args = array() ) {
     }
 
 	$form = '
-		<form name="' . $args['form_id'] . '" id="' . $args['form_id'] . '" action="'. esc_url( wppb_curpageurl() ) .'" method="post">
+		<form name="' . esc_attr( $args['form_id'] ) . '" id="' . esc_attr( $args['form_id'] ) . '" class="' . esc_attr( $args['form_classes'] ) . '" action="'. esc_url( wppb_curpageurl() ) .'" method="post">
 			' . $login_form_top . '
 			<p class="wppb-form-field login-username'. apply_filters( 'wppb_login_field_extra_css_class', '', $args['id_username']) .'">
 				<label for="' . esc_attr( $args['id_username'] ) . '">' . esc_html( $args['label_username'] ) . '</label>
@@ -172,17 +180,18 @@ function wppb_login_form( $args = array() ) {
 			</p>
 			<p class="wppb-form-field login-password'. apply_filters( 'wppb_login_field_extra_css_class', '', $args['id_password']) .'">
 				<label for="' . esc_attr( $args['id_password'] ) . '">' . esc_html( $args['label_password'] ) . '</label>
-				<input type="password" name="pwd" id="' . esc_attr( $args['id_password'] ) . '" class="input" value="" size="20" '. apply_filters( 'wppb_login_password_extra_attributes', '' ) .'/>';
-
-    /* add the HTML for the visibility toggle */
-    $form .= wppb_password_visibility_toggle_html();
+				<span class="wppb-password-field-container">
+				    <input type="password" name="pwd" id="' . esc_attr( $args['id_password'] ) . '" class="input" value="" size="20" '. apply_filters( 'wppb_login_password_extra_attributes', '' ) .'/>
+				    '. wppb_password_visibility_toggle_html() .' <!-- add the HTML for the visibility toggle -->
+				</span>
+            </p>';
 
     $form .='
-			</p>
+			
 			' . $login_form_middle . '
 			' . ( $args['remember'] ? '<p class="wppb-form-field login-remember"><input name="rememberme" type="checkbox" id="' . esc_attr( $args['id_remember'] ) . '" value="forever"' . ( $args['value_remember'] ? ' checked="checked"' : '' ) . ' /><label for="' . esc_attr( $args['id_remember'] ) . '">' . esc_html( $args['label_remember'] ) . '</label></p>' : '' ) . '
-			<p class="login-submit">
-				<input type="submit" name="wp-submit" id="' . esc_attr( $args['id_submit'] ) . '" class="'. esc_attr( apply_filters( 'wppb_login_submit_class', "button button-primary" ) ) . '" value="' . esc_attr( $args['label_log_in'] ) . '" />
+			<p class="login-submit form-submit">
+				<input type="submit" name="wp-submit" id="' . esc_attr( $args['id_submit'] ) . '" class="'. esc_attr( apply_filters( 'wppb_login_submit_class', "button button-primary" ) ) . '" value="' . esc_attr( $args['label_log_in'] ) . '"' . apply_filters( 'wppb_login_submit_button_extra_attributes', '' ) . '" />
 				<input type="hidden" name="redirect_to" value="' . esc_url( $args['redirect'] ) . '" />
 			</p>
 			<input type="hidden" name="wppb_login" value="true"/>
@@ -195,6 +204,11 @@ function wppb_login_form( $args = array() ) {
 			<input type="hidden" name="wppb_redirect_check" value="true"/>
 			' . $login_form_bottom . '
 		</form>';
+
+	// Remove whitespace if login_username_input_type is set to email
+	if ( $args['login_username_input_type'] == 'email' ) {
+		$form .= '<script>window.onload = function() { jQuery(document).ready(function($) { $("input[name=\"log\"]").on("keyup", function() { $(this).val( $.trim($(this).val()) ); }); }); }</script>';
+	}
 
 	if ( $args['echo'] )
 		echo $form; /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */  /* escaped above */
@@ -238,14 +252,19 @@ function wppb_change_login_with_email(){
 			// if this setting is active, the posted username is, in fact the user's email or username
 			if( isset( $wppb_generalSettings['loginWith'] ) && ( $wppb_generalSettings['loginWith'] == 'usernameemail' ) ) {
 				if( is_email( $_POST['log'] ) ) {
+
 					$username = $wpdb->get_var( $wpdb->prepare( "SELECT user_login FROM $wpdb->users WHERE user_email= %s LIMIT 1", sanitize_email( $_POST['log'] ) ) );
+
+					// the username can have the format of an email address, so if we can't find a user that has an account with the detected email, we set the username as that email				
+					if( empty( $username ) )
+						$username = sanitize_user( $_POST['log'] );
+
 				} else {
 					$username = sanitize_user( $_POST['log'] );
 				}
 
 				if( !empty( $username ) )
 					$_POST['log'] = $username;
-
 				else {
 					// if we don't have a username for the email entered we can't have an empty username because we will receive a field empty error
 					$_POST['log'] = 'this_is_an_invalid_email'.time();
@@ -283,7 +302,7 @@ function wppb_resend_confirmation_email() {
             wppb_signup_user_notification( sanitize_text_field( $sql_result['user_login'] ), sanitize_email( $sql_result['user_email'] ), $sql_result['activation_key'], $sql_result['meta'] );
             $transient_key = Wordpress_Creation_Kit_PB::wck_generate_slug( $user_email );
             set_transient('wppb_confirmation_email_already_sent_' . $transient_key, true, 900 );
-            $error_string = '<strong>' . __('SUCCESS: ', 'profile-builder') . '</strong>' . sprintf( __( 'Activation email sent to %s', 'profile-builder' ), sanitize_email( $_GET['email'] ));
+            $error_string = '<strong>' . __( 'SUCCESS: ', 'profile-builder') . '</strong>' . sprintf( __( 'Activation email sent to %s', 'profile-builder' ), $user_email );
             $wppb_success_message_nonce = wp_create_nonce( 'wppb_login_error_'.$error_string);
             $current_url = wppb_curpageurl();
             $arr_params = array('loginerror' => urlencode(base64_encode($error_string)), '_wpnonce' => $wppb_success_message_nonce, 'request_form_location' => 'page', 'wppb_message_type' => 'success');
@@ -415,16 +434,11 @@ function wppb_login_redirect( $redirect_to, $requested_redirect_to, $user ){
 				if( in_array( $user->get_error_code(), array( 'empty_username', 'empty_password', 'invalid_username', 'incorrect_password' ) ) )
 					$error_string = '<strong>' . __('ERROR: ', 'profile-builder') . '</strong>';
 
-
 				if ( $user->get_error_code() == 'empty_password' ) {
 					$error_string .= __( 'The password field is empty.', 'profile-builder' ) . ' ';
 				}
 
-                if ($user->get_error_code() == 'incorrect_password') {
-                    $error_string .= __('The password you entered is incorrect.', 'profile-builder') . ' ';
-                }
-
-				if ( $user->get_error_code() == 'empty_username' ) {
+                if ( $user->get_error_code() == 'empty_username' ) {
 					if ($wppb_generalSettings['loginWith'] == 'email')// if login with email is enabled change the word username with email
 						$error_string .= __('The email field is empty.', 'profile-builder') . ' ';
 					else if( $wppb_generalSettings['loginWith'] == 'usernameemail' )// if login with username and email is enabled change the word username with username or email
@@ -433,19 +447,29 @@ function wppb_login_redirect( $redirect_to, $requested_redirect_to, $user ){
 						$error_string .= __('The username field is empty', 'profile-builder') . ' ';
 				}
 
-                if ($user->get_error_code() == 'invalid_username') {
-                    if ($wppb_generalSettings['loginWith'] == 'email')// if login with email is enabled change the word username with email
-                        $error_string .= __('Invalid email.', 'profile-builder') . ' ';
-                    else if( $wppb_generalSettings['loginWith'] == 'usernameemail' )// if login with username and email is enabled change the word username with username or email
-                        $error_string .= __('Invalid username or email.', 'profile-builder') . ' ';
-                    else
-                        $error_string .= __('Invalid username.', 'profile-builder') . ' ';
+                if( apply_filters( 'wppb_login_use_old_error_messages', false ) ) {
+                    
+                    if ( $user->get_error_code() == 'incorrect_password' ) {
+                        $error_string .= __('The password you entered is incorrect.', 'profile-builder') . ' ';
+                    }
 
-                    $error_string = apply_filters('wppb_login_invalid_username_error_message', $error_string);
+                    if ( $user->get_error_code() == 'invalid_username' ) {
+                        if ($wppb_generalSettings['loginWith'] == 'email')// if login with email is enabled change the word username with email
+                            $error_string .= __('Invalid email.', 'profile-builder') . ' ';
+                        else if( $wppb_generalSettings['loginWith'] == 'usernameemail' )// if login with username and email is enabled change the word username with username or email
+                            $error_string .= __('Invalid username or email.', 'profile-builder') . ' ';
+                        else
+                            $error_string .= __('Invalid username.', 'profile-builder') . ' ';
+
+                        $error_string = apply_filters('wppb_login_invalid_username_error_message', $error_string);
+                    }
+
+                } else if( in_array( $user->get_error_code(), array( 'incorrect_password', 'invalid_username' ) ) ) {
+                    $error_string .= __( 'The credentials you entered are incorrect.', 'profile-builder' ) . ' ';
                 }
 
-				if( $user->get_error_code() == 'incorrect_password' || $user->get_error_code() == 'invalid_username' && empty( $message_check = apply_filters('wppb_login_invalid_username_error_message', '' )))
-					$error_string .= '<a href="' . esc_url( $lost_pass_url ) . '" title="' . __('Password Lost and Found.', 'profile-builder') . '">' . __('Lost your password?', 'profile-builder') . '</a>';
+                if( $user->get_error_code() == 'incorrect_password' || $user->get_error_code() == 'invalid_username' && empty( $message_check = apply_filters('wppb_login_invalid_username_error_message', '' )))
+                    $error_string .= '<a href="' . esc_url( $lost_pass_url ) . '" title="' . __('Password Lost and Found.', 'profile-builder') . '">' . __('Lost your password?', 'profile-builder') . '</a>';
 
             }
 
@@ -506,19 +530,52 @@ function wppb_front_end_login( $atts ){
 	global $wppb_login_shortcode;
 	$wppb_login_shortcode = true;
 
-    extract( shortcode_atts( array( 'display' => true, 'redirect' => '', 'redirect_url' => '', 'logout_redirect_url' => wppb_curpageurl(), 'register_url' => '', 'lostpassword_url' => '', 'redirect_priority' => 'normal', 'show_2fa_field' => '', 'block' => false ), $atts ) );
+	$atts = shortcode_atts( array(
+		'display'             => true,
+		'redirect'            => '',
+		'redirect_url'        => '',
+		'logout_redirect_url' => wppb_curpageurl(),
+		'redirect_priority'   => 'normal',
+		'register_url'        => '',
+		'lostpassword_url'    => '',
+		'show_2fa_field'      => '',
+		'block'               => false,
+		'ajax'                => false,
+	), $atts, 'wppb-login' );
+
+	$display             = $atts['display'];
+	$redirect            = $atts['redirect'];
+	$redirect_url        = $atts['redirect_url'];
+	$logout_redirect_url = $atts['logout_redirect_url'];
+	$redirect_priority   = $atts['redirect_priority'];
+	$register_url        = $atts['register_url'];
+	$lostpassword_url    = $atts['lostpassword_url'];
+	$show_2fa_field      = $atts['show_2fa_field'];
+	$block               = $atts['block'];
+	$ajax                = $atts['ajax'];
+
+    $is_ajax_form = false;
+    if( defined( 'WPPB_PAID_PLUGIN_DIR' ) && $ajax === 'true' && file_exists( WPPB_PAID_PLUGIN_DIR . '/features/ajax/assets/forms-ajax-validation.js' ) ) {
+        wp_enqueue_script( 'wppb-forms-ajax-validation-script', WPPB_PAID_PLUGIN_URL . 'features/ajax/assets/forms-ajax-validation.js', array( 'jquery' ), PROFILE_BUILDER_VERSION, true );
+        wp_localize_script( 'wppb-forms-ajax-validation-script', 'submitButtonData', array( 'processingText' => __('Processing...', 'profile-builder') ) );
+        $is_ajax_form = true;
+    }
 
 	$wppb_generalSettings = get_option('wppb_general_settings');
 
     // check if the form is being displayed in the Elementor editor
-	$is_elementor_edit_mode = false;
+	$is_elementor_edit_mode_or_divi_ajax = false;
     if( class_exists ( '\Elementor\Plugin' ) ){
-        $is_elementor_edit_mode = \Elementor\Plugin::$instance->editor->is_edit_mode();
+        $is_elementor_edit_mode_or_divi_ajax = \Elementor\Plugin::$instance->editor->is_edit_mode();
     }
 
-	if( !is_user_logged_in() || $is_elementor_edit_mode || $block === 'true' ){
+    if ( is_array( $_POST ) && array_key_exists( 'action', $_POST ) && $_POST['action'] === 'wppb_divi_extension_ajax' ) {
+        $is_elementor_edit_mode_or_divi_ajax = true;
+    }
+
+	if( !is_user_logged_in() || $is_elementor_edit_mode_or_divi_ajax || $block === 'true' ){
 		// set up the form arguments
-		$form_args = array( 'echo' => false, 'id_submit' => 'wppb-submit' );
+		$form_args = array( 'echo' => false, 'id_submit' => 'wppb-submit', 'is_ajax_form' => $is_ajax_form );
 
 		// maybe set up the redirect argument
 		if( ! empty( $redirect ) ) {
@@ -561,8 +618,8 @@ function wppb_front_end_login( $atts ){
 			}
 		}
 
-		// initialize our form variable
-		$login_form = '';
+        // initialize our form variable
+        $login_form = '';
 
 		// display our login errors
 		if( ( isset( $_GET['loginerror'] ) || isset( $_POST['loginerror'] ) ) && isset( $_GET['_wpnonce'] ) ){
@@ -581,8 +638,8 @@ function wppb_front_end_login( $atts ){
                 }
             }
 		}
-		// build our form
-		$login_form .= '<div id="wppb-login-wrap" class="wppb-user-forms">';
+        // build our form
+        $login_form .= '<div id="wppb-login-wrap" class="wppb-user-forms">';
 
         if ( empty( $lostpassword_url ) )
             $lostpassword_url = ( !empty( $wppb_generalSettings['lost_password_page'] ) ) ? $wppb_generalSettings['lost_password_page'] : '';
@@ -615,24 +672,19 @@ function wppb_front_end_login( $atts ){
 		$user_ID = get_current_user_id();
 		$wppb_user = get_userdata( $user_ID );
 
-		if( isset( $wppb_generalSettings['loginWith'] ) && ( $wppb_generalSettings['loginWith'] == 'email' ) )
+		$login_with = isset( $wppb_generalSettings['loginWith'] ) ? $wppb_generalSettings['loginWith'] : '';
+
+		// Email login: always show the email. Username+email: show email when the login is the auto-generated slug from that email.
+		if ( $login_with === 'email' ) {
 			$display_name = $wppb_user->user_email;
-
-		elseif($wppb_user->display_name !== '')
-			$display_name = $wppb_user->user_login;
-
-		else
-			$display_name = $wppb_user->display_name;
-
-		if( isset( $wppb_generalSettings['loginWith'] ) && ( $wppb_generalSettings['loginWith'] == 'usernameemail' ) )
-			if( $wppb_user->user_login == Wordpress_Creation_Kit_PB::wck_generate_slug( trim( $wppb_user->user_email ) ) )
+		} elseif ( $login_with === 'usernameemail'
+			&& $wppb_user->user_login === Wordpress_Creation_Kit_PB::wck_generate_slug( trim( $wppb_user->user_email ) ) ) {
 			$display_name = $wppb_user->user_email;
-
-		elseif($wppb_user->display_name !== '')
-			$display_name = $wppb_user->user_login;
-
-		else
+		} elseif ( $wppb_user->display_name !== '' ) {
 			$display_name = $wppb_user->display_name;
+		} else {
+			$display_name = $wppb_user->user_login;
+		}
 
 		$logged_in_message = '<p class="wppb-alert">';
 
@@ -662,3 +714,11 @@ function wppb_login_security_check( $user, $password ) {
     return $user;
 }
 add_filter( 'wp_authenticate_user', 'wppb_login_security_check', 10, 2 );
+
+
+// include missing scripts needed on Elementor Pages (Form inside an Elementor Popup)
+function wppb_login_scripts_and_styles() {
+    if ( is_plugin_active('elementor-pro/elementor-pro.php') && defined( 'WPPB_PAID_PLUGIN_URL' )  )
+        wp_enqueue_script( 'wppb_elementor_popup_script', WPPB_PAID_PLUGIN_URL . 'features/elementor-pro/assets/js/elementor-popup.js', array('jquery') );
+}
+add_action( 'elementor/frontend/after_enqueue_scripts', 'wppb_login_scripts_and_styles' );

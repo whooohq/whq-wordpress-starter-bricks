@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* handle field output */
 function wppb_gdprcp_handler( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){
     if ( $field['field'] == 'GDPR Communication Preferences' ){
@@ -66,8 +69,6 @@ function wppb_gdprcp_handler( $output, $form_location, $field, $user_id, $field_
                 $output .= ' /><label for="'.Wordpress_Creation_Kit_PB::wck_generate_slug( trim( $value ) ).'_'.$field['id'].'" class="wppb-rc-value">'.( ( !isset( $checkbox_labels[ trim( $value )] ) || !$checkbox_labels[ trim( $value )] ) ? trim( $checkbox_values[$key] ) : trim( $checkbox_labels[ trim( $value )] ) ).'</label></li>';
             }
 
-
-
             $output .= '<span class="wppb-description-delimiter">'.$item_description.'</span>';
 
                 //display the history of the changes to the filed in  the admin area
@@ -76,7 +77,7 @@ function wppb_gdprcp_handler( $output, $form_location, $field, $user_id, $field_
                     $output .= '<table class="form-table" style="max-width:700px;"><tbody>';
                     $output .= '<tr><th>'. __( 'Date', 'profile-builder' ) .'</th><th>'. __( 'Preference', 'profile-builder' ) .'</th></tr>';
                         foreach( $gdpr_communication_preferences_history as $date => $preff ){
-                            $output .= '<tr><td style="padding: 5px 10px;">'. $date .'</td><td style="padding: 5px 10px;">'. $preff .'</td></tr>';
+                            $output .= '<tr><td style="padding: 5px 10px;">'. esc_html( $date ) .'</td><td style="padding: 5px 10px;">'. esc_html( $preff ) .'</td></tr>';
                         }
                     $output .= '</tbody></table>';
                 }
@@ -84,9 +85,6 @@ function wppb_gdprcp_handler( $output, $form_location, $field, $user_id, $field_
             $output .=  '</td>
 					</tr>
 				</table>';
-
-
-
 
         }
 
@@ -111,9 +109,20 @@ add_action( 'wppb_backend_save_form_field', 'wppb_save_gdprcp_value', 10, 4 );
 
 function wppb_process_gdprcp_value( $field, $request_data ){
     $checkbox_values = '';
+    $allowed_values = array( 'email', 'sms', 'phone', 'post' );
 
-    if( isset( $request_data[ wppb_handle_meta_name( $field['meta-name'] ) ] ) )
-        $checkbox_values = implode( ',', $request_data[ wppb_handle_meta_name( $field['meta-name'] ) ] );
+    if( isset( $request_data[ wppb_handle_meta_name( $field['meta-name'] ) ] ) ){
+
+        $checkbox_values = $request_data[ wppb_handle_meta_name( $field['meta-name'] ) ];
+
+        foreach( $checkbox_values as $key => $value ){
+            if( !in_array( $value, $allowed_values ) ){
+                unset( $checkbox_values[$key] );
+            }
+        }
+
+        $checkbox_values = implode( ',', $checkbox_values );
+    }
 
     return trim( $checkbox_values, ',' );
 }
@@ -153,11 +162,26 @@ add_filter( 'update_user_metadata', 'wppb_gdprcp_save_gdpr_communication_prefere
 function wppb_gdprcp_save_gdpr_communication_preferences( $null, $object_id, $meta_key, $meta_value, $prev_value ){
     if ( 'gdpr_communication_preferences' == $meta_key && ( $meta_value != $prev_value ) ) {
         $existing_values = get_user_meta( $object_id, 'gdpr_communication_preferences_history', true );
+        $allowed_values  = array( 'email', 'sms', 'phone', 'post' );
+
         if( empty( $existing_values ) )
             $existing_values = array();
 
-        $existing_values[date('Y-m-d H:i:s')] = $meta_value;
-        update_user_meta( $object_id, 'gdpr_communication_preferences_history', $existing_values );
+        if( !is_array( $meta_value ) )
+            $meta_value_array = explode( ',', $meta_value );
+
+        if( !empty( $meta_value_array ) ){
+            foreach( $meta_value_array as $key => $value ){
+                if( !in_array( $value, $allowed_values ) ){
+                    unset( $meta_value_array[$key] );
+                }
+            }
+        }
+
+        if( !empty( $meta_value_array ) ){
+            $existing_values[date('Y-m-d H:i:s')] = implode( ',', $meta_value_array );
+            update_user_meta( $object_id, 'gdpr_communication_preferences_history', $existing_values );
+        }
     }
 
     return null; // this means: go on with the normal execution in meta.php

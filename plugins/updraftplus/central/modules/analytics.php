@@ -33,8 +33,8 @@ class UpdraftCentral_Analytics_Commands extends UpdraftCentral_Commands {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->auth_endpoint = defined('UPDRAFTPLUS_GOOGLECLOUD_CALLBACK_URL') ? UPDRAFTPLUS_GOOGLECLOUD_CALLBACK_URL : 'https://auth.updraftplus.com/auth/googleanalytics';
-		$this->client_id = defined('UPDRAFTPLUS_GOOGLECLOUD_CLIENT_ID') ? UPDRAFTPLUS_GOOGLECLOUD_CLIENT_ID : '306245874349-6s896c3tjpra26ns3dpplhqcl6rv6qlb.apps.googleusercontent.com';
+		$this->auth_endpoint = defined('UPDRAFTPLUS_GOOGLE_ANALYTICS_CALLBACK_URL') ? UPDRAFTPLUS_GOOGLE_ANALYTICS_CALLBACK_URL : 'https://auth.updraftplus.com/auth/googleanalytics';
+		$this->client_id = defined('UPDRAFTPLUS_GOOGLE_ANALYTICS_CLIENT_ID') ? UPDRAFTPLUS_GOOGLE_ANALYTICS_CLIENT_ID : '306245874349-6s896c3tjpra26ns3dpplhqcl6rv6qlb.apps.googleusercontent.com';
 
 		// Set transient expiration - default for 24 hours
 		$this->expiration = 86400;
@@ -256,7 +256,7 @@ class UpdraftCentral_Analytics_Commands extends UpdraftCentral_Commands {
 					
 					$response = wp_remote_get($this->auth_endpoint.'?user_id='.$user_id.'&code=ud_googleanalytics_code', $args);
 					if (is_wp_error($response)) {
-						throw new Exception($response->get_error_message());
+						throw new Exception($response->get_error_message()); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
 					} else {
 						if (is_array($response)) {
 							
@@ -299,7 +299,7 @@ class UpdraftCentral_Analytics_Commands extends UpdraftCentral_Commands {
 		
 		$response = wp_remote_get($this->token_info_endpoint.'?access_token='.$token);
 		if (is_wp_error($response)) {
-			throw new Exception($response->get_error_message());
+			throw new Exception($response->get_error_message()); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- The escaping should be happening when the exception is printed
 		} else {
 			if (is_array($response)) {
 				$response = json_decode($response['body'], true);

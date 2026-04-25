@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /*
 Description: Extends the functionality of Profile Builder by allowing you to set a maximum character length for the custom input and textarea fields.
 */

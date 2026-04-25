@@ -1,8 +1,9 @@
 <?php namespace CheckEmail\Core\UI\Page;
 
-use CheckEmail\Core\DB\Check_Email_Table_Manager;
 use CheckEmail\Core\UI\list_table\Check_Email_Log_List_Table;
-
+// Exit if accessed directly
+if( !defined( 'ABSPATH' ) )
+    exit;
 /**
  * Log List Page.
  */
@@ -25,35 +26,47 @@ class Check_Email_Log_List_Page extends Check_Email_BasePage {
 	}
         
 	public function register_page() {
-                $option = get_option( 'check-email-log-core' );
-                
-                if ( is_array( $option ) && array_key_exists( 'enable_logs', $option ) && 'true' === strtolower( $option['enable_logs'] ) ) {             
-                    $this->page = add_submenu_page(
-                            Check_Email_Status_Page::PAGE_SLUG,
-                            esc_html__( 'View Logs', 'check-email'),
-                            esc_html__( 'View Logs', 'check-email'),
-                            'manage_check_email',
-                            self::PAGE_SLUG,
-                            array( $this, 'render_page' )
-                    );
-                    
-                    add_action( "load-{$this->page}", array( $this, 'load_page' ) );
-                    do_action( 'check_email_load_log_list_page', $this->page );
-                } 
+		$this->page = add_submenu_page(
+				Check_Email_Status_Page::PAGE_SLUG,
+				esc_html__( 'Email Logs', 'check-email'),
+				esc_html__( 'Email Logs', 'check-email'),
+				'manage_check_email',
+				self::PAGE_SLUG,
+				array( $this, 'render_page' ),
+				-10
+		);
+		
+		add_action( "load-{$this->page}", array( $this, 'load_page' ) );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+		do_action( 'check_email_load_log_list_page', $this->page );
 
 	}
 
 	public function render_page() {
 		$check_email    = wpchill_check_email();
 		$plugin_dir_url = plugin_dir_url( $check_email->get_plugin_file() );
-		wp_enqueue_style( 'check-email-view-logs-css', $plugin_dir_url . 'assets/css/admin/view-logs.css', array( 'jquery-ui-css' ), $check_email->get_version() );
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+		wp_enqueue_style( 'check-email-view-logs-css', $plugin_dir_url . 'assets/css/admin/view-logs'. $suffix .'.css', array( 'jquery-ui-css' ), $check_email->get_version() );
+		wp_enqueue_style( 'check-email-export-logs-css', $plugin_dir_url . 'assets/css/admin/export-logs'. $suffix .'.css', array( 'jquery-ui-css' ), $check_email->get_version() );
                 $option = get_option( 'check-email-log-core' );
-                if ( is_array( $option ) && array_key_exists( 'enable_logs', $option ) && 'true' === strtolower( $option['enable_logs'] ) ) {
                     add_thickbox();
 
                     $this->log_list_table->prepare_items();
                     ?>
                     <div class="wrap">
+						<div style="display:flex; align-items:center; justify-content:space-between;">
+							<h1 style="margin-left:5px;"><?php esc_html_e('Check & Log Email', 'check-email'); ?></h1>
+							<div>
+								<?php 
+								// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+			                    $banner = apply_filters('check_mail_pro_upgrade_banner', '', []);
+
+			                    if ( ! empty( $banner ) ) {
+			                        echo wp_kses_post( $banner );
+			                    }
+			                    ?>
+							</div>
+						</div>
                             <h2><?php esc_html_e( 'Email Logs', 'check-email' ); ?></h2>
                             <?php settings_errors(); ?>
 
@@ -69,7 +82,6 @@ class Check_Email_Log_List_Page extends Check_Email_BasePage {
                             </form>
                     </div>
 		<?php
-                }
 	}
 
 	public function load_page() {
@@ -121,14 +133,22 @@ class Check_Email_Log_List_Page extends Check_Email_BasePage {
 	}
 
 	public function load_view_logs_assets( $hook ) {
+		if ('check-log-email_page_check-email-logs' != $hook) {
+			return;
+		}
 
 		$check_email      = wpchill_check_email();
 		$plugin_dir_url = plugin_dir_url( $check_email->get_plugin_file() );
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
 		wp_register_style( 'jquery-ui-css', $plugin_dir_url . 'assets/vendor/jquery-ui/themes/base/jquery-ui.min.css', array(), '1.12.1' );
 
 		wp_register_script( 'insertionQ', $plugin_dir_url . 'assets/vendor/insertion-query/insQ.min.js', array( 'jquery' ), '1.0.6', true );
+		wp_enqueue_script( 'check-email-jsPdf', $plugin_dir_url .'assets/js/admin/check-mail-jsPdf.js', array(), $check_email->get_version(), true );
 
-		wp_enqueue_script( 'check-email-view-logs', $plugin_dir_url . 'assets/js/admin/view-logs.js', array( 'insertionQ', 'jquery-ui-core', 'jquery-ui-datepicker', 'jquery-ui-tooltip', 'jquery-ui-tabs' ), $check_email->get_version(), true );
+		wp_enqueue_script( 'check-email-view-logs', $plugin_dir_url . 'assets/js/admin/view-logs'. $suffix .'.js', array( 'insertionQ', 'jquery-ui-core', 'jquery-ui-datepicker', 'jquery-ui-tooltip', 'jquery-ui-tabs' ), $check_email->get_version(), true );
+		
+		wp_enqueue_script( 'check-email-export-logs', $plugin_dir_url . 'assets/js/admin/export-logs'. $suffix .'.js', array( 'insertionQ', 'jquery-ui-core', 'jquery-ui-datepicker', 'jquery-ui-tooltip', 'jquery-ui-tabs' ), $check_email->get_version(), true );
+		
 	}
 }

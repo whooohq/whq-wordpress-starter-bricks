@@ -3,6 +3,7 @@
 namespace WCML\Multicurrency\Shipping;
 
 use WCML\StandAlone\IStandAloneAction;
+use WCML\Utilities\AdminUrl;
 
 class ShippingHooksFactory implements \IWPML_Deferred_Action_Loader, \IWPML_Backend_Action_Loader, \IWPML_Frontend_Action_Loader, IStandAloneAction {
 
@@ -43,7 +44,7 @@ class ShippingHooksFactory implements \IWPML_Deferred_Action_Loader, \IWPML_Back
 	}
 
 	private function isShippingPageRequest() {
-		return isset( $_GET['page'], $_GET['tab'] ) && 'wc-settings' === $_GET['page'] && 'shipping' === $_GET['tab']
+		return isset( $_GET['page'], $_GET['tab'] ) && AdminUrl::PAGE_WOO_SETTINGS === $_GET['page'] && 'shipping' === $_GET['tab']
 		       || isset( $_GET['action'] ) && 'woocommerce_shipping_zone_methods_save_settings' === $_GET['action'];
 	}
 

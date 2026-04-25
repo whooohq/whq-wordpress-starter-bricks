@@ -1,8 +1,8 @@
 === Cache Warmer ===
 Contributors: tmmtechnology
 Tags: cache, warming, cloudflare, redis, object cache
-Tested up to: 6.5.3
-Stable tag: 1.2.2
+Tested up to: 6.7.0
+Stable tag: 1.3.8
 Requires PHP: 7.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -38,6 +38,16 @@ Visits website pages to warm (create) the cache if you have any caching solution
 
 - Connect to paid service for warming from external global servers.
 
+== Run from code ==
+
+* Start: `\Cache_Warmer\AJAX::start_warm_up( false );`
+* Stop: `\Cache_Warmer\AJAX::stop_warm_up( false );`
+
+== Run from WP CLI ==
+
+* Start: `wp cache-warmer start`
+* Stop: `wp cache-warmer stop`
+
 == Required PHP extensions ==
 
 - json
@@ -48,6 +58,91 @@ Visits website pages to warm (create) the cache if you have any caching solution
 [wp@tmm.ventures](mailto:wp@tmm.ventures)
 
 == Changelog ==
+
+= 1.3.8 2024-11-18 =
+
+#### Bugfixes
+
+* Fix UI rendering bugs.
+
+= 1.3.7 2024-11-02 =
+
+#### Bugfixes
+
+* Fix interval scheduling issue.
+
+= 1.3.6 2024-10-21 =
+
+#### Enhancements
+
+* Add WP-CLI support.
+
+= 1.3.5 2024-10-20 =
+
+#### Bugfixes
+
+* Fix fatal error on plugin update.
+
+= 1.3.4 2024-10-19 =
+
+#### Enhancements
+
+* Add support for WP CLI.
+
+#### Bugfixes
+
+* Fix scheduled intervals.
+
+= 1.3.3 2024-10-05 =
+
+#### Enhancements
+
+* Instead for checking for intervals in constructors on every page load, check for them only once on plugin activation. Add a button and other interval (which is scheduled in constructor) to fix any missing intervals.
+
+= 1.3.2 2024-09-29 =
+
+#### Bugfixes
+
+* Warming start bug fix.
+
+= 1.3.1 2024-09-29 =
+
+#### Enhancements
+
+* Add support for external warmer - simply for each page visit, and with the intervals.
+* Added functionality to start / stop the warming from code (or with WP CLI with "wp eval").
+
+#### Bugfixes
+
+* Fix the warming interval stuck bug.
+
+= 1.3.0 2024-06-24 =
+
+#### Enhancements
+
+* Speed up warmings (optimization).
+
+#### Bugfixes
+
+* Fix stuck object cache bug.
+
+= 1.2.5 2024-06-23 =
+
+#### Bugfixes
+
+* Fix stuck object cache bug.
+
+= 1.2.4 2024-06-23 =
+
+#### Changes
+
+* Do not schedule notifications fetch action.
+
+= 1.2.3 2024-06-05 =
+
+#### Bugfixes
+
+* Fix Action Scheduler bug.
 
 = 1.2.2 2024-05-26 =
 

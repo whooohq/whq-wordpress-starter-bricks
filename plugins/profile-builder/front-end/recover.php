@@ -47,9 +47,9 @@ function wppb_retrieve_activation_key( $requested_user_login ){
  * @param array $post_data $_POST
  *
  */
-function wppb_create_recover_password_form( $user, $post_data ){
+function wppb_create_recover_password_form( $user, $post_data, $is_ajax_form = false ){
 	?>
-	<form enctype="multipart/form-data" method="post" id="wppb-recover-password" class="wppb-user-forms" action="<?php echo esc_url( wppb_curpageurl() ); ?>">
+	<form enctype="multipart/form-data" method="post" id="wppb-recover-password" class="wppb-user-forms<?php echo ($is_ajax_form ? ' wppb-ajax-form' : ''); ?>" action="<?php echo esc_url( wppb_curpageurl() ); ?>">
 		<ul>
 	<?php
 
@@ -69,7 +69,10 @@ function wppb_create_recover_password_form( $user, $post_data ){
 		$recover_inputPassword = '
 			<li class="wppb-form-field passw1'. apply_filters( 'wppb_recover_field_extra_css_class', '', 'passw1') .'">
 				<label for="passw1">'. esc_html( $password_label ) .'</label>
-				<input class="password" name="passw1" type="password" id="passw1" value="" autocomplete="off" title="'. esc_attr( wppb_password_length_text() ).'" '. apply_filters( 'wppb_recover_password_extra_attr', '', esc_html( $password_label ), 'password' ) .' />
+				<span class="wppb-password-field-container">
+                    <input class="password" name="passw1" type="password" id="passw1" value="" autocomplete="off" title="'. esc_attr( wppb_password_length_text() ).'" '. apply_filters( 'wppb_recover_password_extra_attr', '', esc_html( $password_label ), 'password' ) .' />
+                    '. wppb_password_visibility_toggle_html() .'
+				</span>
 				<span class="wppb-description-delimiter">'. wppb_password_length_text() .' '. wppb_password_strength_description() .'</span>'.
             /* if we have active the password strength checker */
             wppb_password_strength_checker_html().'
@@ -77,7 +80,10 @@ function wppb_create_recover_password_form( $user, $post_data ){
 			<input type="hidden" name="userData" value="'. esc_attr( $user->ID ).'"/>
 			<li class="wppb-form-field passw2'. apply_filters( 'wppb_recover_field_extra_css_class', '', 'passw2') .'">
 				<label for="passw2">'. esc_html( $repeat_password_label ) .'</label>
-				<input class="password" name="passw2" type="password" id="passw2" value="" autocomplete="off" '. apply_filters( 'wppb_recover_password_extra_attr', '', esc_html( $repeat_password_label ), 'repeat_password' ) .' />
+				<span class="wppb-password-field-container">
+                    <input class="password" name="passw2" type="password" id="passw2" value="" autocomplete="off" '. apply_filters( 'wppb_recover_password_extra_attr', '', esc_html( $repeat_password_label ), 'repeat_password' ) .' />
+                    '. wppb_password_visibility_toggle_html() .'
+			    </span>
 			</li><!-- .passw2 -->';
 			
 		echo apply_filters( 'wppb_recover_password_form_input', $recover_inputPassword, $passw_one, $passw_two, $user->ID ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -102,9 +108,9 @@ function wppb_create_recover_password_form( $user, $post_data ){
  * @param array $post_data $_POST
  *
  */
- function wppb_create_generate_password_form( $post_data ){
+ function wppb_create_generate_password_form( $post_data, $is_ajax_form = false ){
 	?>
-	<form enctype="multipart/form-data" method="post" id="wppb-recover-password" class="wppb-user-forms" action="<?php echo esc_url( wppb_curpageurl() ); ?>">
+	<form enctype="multipart/form-data" method="post" id="wppb-recover-password" class="wppb-user-forms<?php echo ($is_ajax_form ? ' wppb-ajax-form' : ''); ?>" action="<?php echo esc_url( wppb_curpageurl() ); ?>">
 	<?php
 	$wppb_generalSettings = get_option( 'wppb_general_settings' );
 
@@ -130,7 +136,7 @@ function wppb_create_recover_password_form( $user, $post_data ){
 	echo apply_filters( 'wppb_recover_password_generate_password_input', $recover_input, trim( $username_email ) ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 	<p class="form-submit">
-		<?php $button_name = __('Get New Password', 'profile-builder'); ?>
+		<?php $button_name = __('Get Reset Link', 'profile-builder'); ?>
 		<input name="recover_password" type="submit" id="wppb-recover-password-button" class="<?php echo esc_attr( apply_filters( 'wppb_recover_submit_class', "submit button" ) );?>" value="<?php echo esc_attr( apply_filters('wppb_recover_password_button_name3', $button_name) ); ?>" />
 		<input name="action" type="hidden" id="action" value="recover_password" />
 	</p>
@@ -163,7 +169,7 @@ function wppb_get_email_display_username($user){
  */
 function wppb_send_recovery_email( $user, $success ){
 
-    if ( $success == 'wppb_recaptcha_error')
+    if ( $success == 'wppb_recaptcha_error' || $success == 'wppb_turnstile_error' || $success == 'wppb_captcha_error' )
         return false;
 
     $user_object = new WP_User( $user->ID );
@@ -181,7 +187,7 @@ function wppb_send_recovery_email( $user, $success ){
     $display_username_email = wppb_get_email_display_username($user);
 
     //send primary email message
-    $recovery_email_message  = sprintf( __('Someone requested that the password be reset for the following account: <b>%1$s</b><br/>If this was a mistake, just ignore this email and nothing will happen.<br/>To reset your password, visit the following link:%2$s', 'profile-builder'), $display_username_email, '<a href="'.esc_url( add_query_arg( array( 'key' => $key, 'login' => $requested_user_login ), wppb_curpageurl() ) ).'">'.esc_url( add_query_arg( array( 'key' => $key, 'login' => $requested_user_login ), wppb_curpageurl() ) ).'</a>' );
+    $recovery_email_message  = sprintf( __('Someone requested that the password be reset for the following account: <b>%1$s</b><br/>If this was a mistake, just ignore this email and nothing will happen.<br/>To reset your password, visit the following link:%2$s', 'profile-builder'), $display_username_email, '<a href="'.esc_url( add_query_arg( array( 'key' => $key, 'login' => urlencode( $requested_user_login ) ), wppb_curpageurl() ) ).'">'.esc_url( add_query_arg( array( 'key' => $key, 'login' => urlencode( $requested_user_login ) ), wppb_curpageurl() ) ).'</a>' );
     $recovery_email_message  = apply_filters( 'wppb_recover_password_message_content_sent_to_user1', $recovery_email_message, $requested_user_id, $requested_user_login, $requested_user_email );
 
     $recovery_email_message_title = sprintf(__('Password Reset from %1$s', 'profile-builder'), $blogname = get_option('blogname') );
@@ -255,19 +261,33 @@ function wppb_front_end_password_recovery( $atts ){
     $password_email_sent = false;
     $password_changed_success = false;
 
-    extract( shortcode_atts( array( 'block' => false ), $atts ) );
+    $atts = shortcode_atts( array(
+        'block' => false,
+        'ajax' => false,
+    ), $atts, 'wppb-recover-password' );
+
+    $is_ajax_form = false;
+    if( defined( 'WPPB_PAID_PLUGIN_DIR' ) && $atts['ajax'] === 'true'  && file_exists( WPPB_PAID_PLUGIN_DIR . '/features/ajax/assets/forms-ajax-validation.js' ) ) {
+        wp_enqueue_script( 'wppb-forms-ajax-validation-script', WPPB_PAID_PLUGIN_URL . 'features/ajax/assets/forms-ajax-validation.js', array( 'jquery' ), PROFILE_BUILDER_VERSION, true );
+        wp_localize_script( 'wppb-forms-ajax-validation-script', 'submitButtonData', array( 'processingText' => __('Processing...', 'profile-builder') ) );
+        $is_ajax_form = true;
+    }
 
     $output = '<div class="wppb_holder" id="wppb-recover-password-container">';
 
     global $wpdb;
 
     // check if the form is being displayed in the Elementor editor
-    $is_elementor_edit_mode = false;
+    $is_elementor_edit_mode_or_divi_ajax = false;
     if( class_exists ( '\Elementor\Plugin' ) ){
-        $is_elementor_edit_mode = \Elementor\Plugin::$instance->editor->is_edit_mode();
+        $is_elementor_edit_mode_or_divi_ajax = \Elementor\Plugin::$instance->editor->is_edit_mode();
     }
 
-    if( is_user_logged_in() && !( $is_elementor_edit_mode || $block ) ) {
+    if ( is_array( $_POST ) && array_key_exists( 'action', $_POST ) && $_POST['action'] === 'wppb_divi_extension_ajax' ) {
+        $is_elementor_edit_mode_or_divi_ajax = true;
+    }
+
+    if( is_user_logged_in() && !( $is_elementor_edit_mode_or_divi_ajax || $atts['block'] ) ) {
         return apply_filters('wppb_recover_password_already_logged_in', __('You are already logged in. You can change your password on the edit profile form.', 'profile-builder'));
     }
 
@@ -287,18 +307,45 @@ function wppb_front_end_password_recovery( $atts ){
 
         // if we do not have an email in the posted date we try to get the email for that user
         if( !is_email( $username_email ) ){
-            /* make sure it is a username */
-            $username = sanitize_user( $username_email );
-            if ( username_exists($username) ){
-                $query = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE user_login= %s", $username ) );
-                if( !empty( $query[0] ) ){
-                    $username_email = $query[0]->user_email;
-                }
-            }
-            else{
-                $warning = __( 'The username entered wasn\'t found in the database!', 'profile-builder').'<br/>'.__('Please check that you entered the correct username.', 'profile-builder' );
-                $warning = apply_filters( 'wppb_recover_password_sent_message4', $warning );
+            // When filter is enabled and login is set to email only, do not allow username for password reset
+            if ( apply_filters( 'wppb_recover_password_require_email_when_login_with_email', false ) && !empty( $wppb_generalSettings['loginWith'] ) && $wppb_generalSettings['loginWith'] == 'email' ) {
+                $warning = __( 'Please enter your email address to request a password reset.', 'profile-builder' );
+                $warning = apply_filters( 'wppb_recover_password_sent_message_username_not_allowed', $warning );
                 $output .= wppb_password_recovery_warning( $warning, 'wppb_recover_password_displayed_message1' );
+            } else {
+                /* make sure it is a username */
+                $username = sanitize_user( $username_email );
+                if ( username_exists($username) ){
+                    $query = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE user_login= %s", $username ) );
+                    if( !empty( $query[0] ) ){
+                        $username_email = $query[0]->user_email;
+                    }
+                } else {
+                    if( apply_filters( 'wppb_recover_password_use_old_error_messages', false ) ) {
+
+                        if( !empty( $wppb_generalSettings['loginWith'] ) ){
+                            if( $wppb_generalSettings['loginWith'] == 'email' ){
+                                $warning = __( 'The email entered wasn\'t found in the database!', 'profile-builder').'<br/>'.__('Please check that you entered the correct email.', 'profile-builder' );
+
+                            }
+                            else if( $wppb_generalSettings['loginWith'] == 'username' ) {
+                                $warning = __( 'The username entered wasn\'t found in the database!', 'profile-builder').'<br/>'.__('Please check that you entered the correct username.', 'profile-builder' );
+                            }
+                            else{
+                                $warning = __( 'The email/username entered wasn\'t found in the database!', 'profile-builder').'<br/>'.__('Please check that you entered the correct email/username.', 'profile-builder' );
+                            }
+                        }
+                        $warning = apply_filters( 'wppb_recover_password_sent_message4', $warning );
+                    
+                        $output .= wppb_password_recovery_warning( $warning, 'wppb_recover_password_displayed_message1' );
+
+                    } else {
+                        $warning = __( 'If your information matches an account, a confirmation link will be sent to your email address.', 'profile-builder' );
+                        $warning = apply_filters( 'wppb_recover_password_sent_message4', $warning );
+                        $output .= wppb_password_recovery_success( $warning, 'wppb_recover_password_displayed_message1' );
+                        $password_email_sent = true;
+                    }
+                }
             }
         }
 
@@ -306,14 +353,23 @@ function wppb_front_end_password_recovery( $atts ){
         if ( is_email( $username_email ) ){
             if ( email_exists( $username_email ) ){
                 $warning = wppb_check_for_unapproved_user($username_email, 'user_email');
-                if ($warning != ''){
+                if ( $warning != '' ){
                     $output .= wppb_password_recovery_warning( $warning, 'wppb_recover_password_displayed_message1' );
-                }else{
-                    $success = sprintf( __( 'Check your email for the confirmation link.', 'profile-builder'), $username_email );
+                } else {
+
+                    if( apply_filters( 'wppb_recover_password_use_old_error_messages', false ) ) {
+                        $success = __( 'Check your email for the confirmation link.', 'profile-builder' );
+                    } else {
+                        $success = __( 'If your information matches an account, a confirmation link will be sent to your email address.', 'profile-builder' );
+                    }
+
                     $success = apply_filters( 'wppb_recover_password_sent_message1', $success, $username_email );
 
-                    if ( $success != 'wppb_recaptcha_error')
+                    if ( $success != 'wppb_recaptcha_error' && $success != 'wppb_turnstile_error' && $success != 'wppb_captcha_error' ) {
                         $output .= wppb_password_recovery_success( $success, 'wppb_recover_password_displayed_message2' );
+                    } else {
+                        $output .= wppb_password_recovery_warning( $success, 'wppb_recover_password_displayed_message1' );
+                    }
 
                     //verify e-mail validity
                     $query = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE user_email= %s", sanitize_email( $username_email ) ) );
@@ -322,18 +378,27 @@ function wppb_front_end_password_recovery( $atts ){
 
                         //send mail to the user notifying him of the reset request
                         $sent = wppb_send_recovery_email( $user, $success );
-                        if ($sent === false){
-                            $warning = '<strong>'. __( 'ERROR:', 'profile-builder' ) .'</strong>' . sprintf( __( 'There was an error while trying to send the activation link to %1$s!', 'profile-builder' ), $username_email );
+
+                        if ( $sent === false ){
+                            $warning = '<strong>'. __( 'ERROR:', 'profile-builder' ) .'</strong>' . __( 'There was an error while trying to send the activation link!', 'profile-builder' );
                             $warning = apply_filters( 'wppb_recover_password_sent_message_error_sending', $warning );
                             $output .= wppb_password_recovery_warning( $warning, 'wppb_recover_password_displayed_message1' );
-                        }
-                        else
+                        } else {
                             $password_email_sent = true;
+                        }
 
+                        if( !apply_filters( 'wppb_recover_password_use_old_error_messages', false ) ) {
+                            // We want to set this to true regardless of the email result, so we can hide the form (to prevent user enumeration).
+                            // But ONLY if the captcha was solved successfully.
+                            if ( $success != 'wppb_recaptcha_error' && $success != 'wppb_turnstile_error' && $success != 'wppb_captcha_error' ) {
+                                $password_email_sent = true;
+                            }
+                        }
+                        
                     }
 
                 }
-            }elseif ( !email_exists( $username_email ) ){
+            } elseif ( !email_exists( $username_email ) ){
                 // check reCAPTCHA
                 $warning = wppb_password_recovery_warning( '', 'wppb_recover_password_displayed_message1' );
 
@@ -397,6 +462,12 @@ function wppb_front_end_password_recovery( $atts ){
                     $password_change_message = sprintf( __( "The password must have a minimum strength of %s", "profile-builder" ), wppb_check_password_strength() );
                     $output .= wppb_password_recovery_error( $password_change_message, 'wppb_recover_password_password_changed_message2' );
                 }
+            }
+
+            $password_change_message = apply_filters( 'wppb_recover_password_extra_validation', $password_change_message, $user );
+
+            if( !empty( $password_change_message ) ){
+                $output .= wppb_password_recovery_error( $password_change_message, 'wppb_custom_recover_password_validation_message' );
             }
 
             if( empty($password_change_message) ){
@@ -474,7 +545,7 @@ function wppb_front_end_password_recovery( $atts ){
             if( !is_wp_error( $user ) ){
 
                 ob_start();
-                    wppb_create_recover_password_form( $user, $_POST );
+                    wppb_create_recover_password_form( $user, $_POST, $is_ajax_form );
                     $output .= ob_get_contents();
                 ob_end_clean();
             }
@@ -484,7 +555,7 @@ function wppb_front_end_password_recovery( $atts ){
 
         } elseif ( !$password_changed_success && !$password_email_sent ) {
 			ob_start();
-			wppb_create_generate_password_form($_POST);
+			wppb_create_generate_password_form($_POST, $is_ajax_form);
 			$output .= ob_get_contents();
 			ob_end_clean();
 		}
@@ -492,7 +563,7 @@ function wppb_front_end_password_recovery( $atts ){
     } else {
         if( !$password_email_sent ) {
             ob_start();
-            wppb_create_generate_password_form($_POST);
+            wppb_create_generate_password_form($_POST, $is_ajax_form);
             $output .= ob_get_contents();
             ob_end_clean();
         }
@@ -523,3 +594,11 @@ function wppb_password_recovery_warning( $message, $filter ){
 function wppb_password_recovery_error( $message, $filter ){
     return apply_filters( $filter, '<p class="wppb-error">'.$message.'</p>', $message );
 }
+
+
+// include missing scripts needed on Elementor Pages (Form inside an Elementor Popup)
+function wppb_recover_password_scripts_and_styles() {
+    if ( is_plugin_active('elementor-pro/elementor-pro.php') && defined( 'WPPB_PAID_PLUGIN_URL' )  )
+        wp_enqueue_script( 'wppb_elementor_popup_script', WPPB_PAID_PLUGIN_URL . 'features/elementor-pro/assets/js/elementor-popup.js', array('jquery') );
+}
+add_action( 'elementor/frontend/after_enqueue_scripts', 'wppb_recover_password_scripts_and_styles' );

@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /* handle field output */
 function wppb_radio_handler( $output, $form_location, $field, $user_id, $field_check_errors, $request_data ){
 	if ( $field['field'] == 'Radio' ){
@@ -15,8 +18,9 @@ function wppb_radio_handler( $output, $form_location, $field, $user_id, $field_c
             $input_value = ( isset( $field['default-option'] ) ? trim( $field['default-option'] ) : '' );
 
         $input_value = ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) ? trim( stripslashes( $request_data[wppb_handle_meta_name( $field['meta-name'] )] )) : $input_value );
+		$input_value = apply_filters( 'wppb_form_radio_field_value', $input_value, $field, $form_location );
 
-		$extra_attr = apply_filters( 'wppb_extra_attribute', '', $field, $form_location );
+	$extra_attr = apply_filters( 'wppb_extra_attribute', '', $field, $form_location );
 
 		if ( $form_location != 'back_end' ){
 			$error_mark = ( ( $field['required'] == 'Yes' ) ? '<span class="wppb-required" title="'.wppb_required_field_error($field["field-title"]).'">*</span>' : '' );
@@ -75,7 +79,7 @@ add_filter( 'wppb_admin_output_form_field_radio', 'wppb_radio_handler', 10, 6 );
 function wppb_save_radio_select_value( $field, $user_id, $request_data, $form_location ){
 	if( $field['field'] == 'Radio' ){
 		if ( isset( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) )
-			update_user_meta( $user_id, $field['meta-name'], $request_data[wppb_handle_meta_name( $field['meta-name'] )] );
+			update_user_meta( $user_id, $field['meta-name'], sanitize_text_field( $request_data[wppb_handle_meta_name( $field['meta-name'] )] ) );
 	}
 }
 add_action( 'wppb_save_form_field', 'wppb_save_radio_select_value', 10, 4 );

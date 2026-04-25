@@ -7,14 +7,16 @@
 
 namespace Automattic\WooCommerce\Internal\Admin\WCPayPromotion;
 
+use Automattic\WooCommerce\Enums\PaymentGatewayFeature;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * A Psuedo WCPay gateway class.
+ * A pseudo WCPay gateway class.
  *
- * @extends WC_Payment_Gateway
+ * @extends \WC_Payment_Gateway
  */
 class WCPaymentGatewayPreInstallWCPayPromotion extends \WC_Payment_Gateway {
 
@@ -35,6 +37,34 @@ class WCPaymentGatewayPreInstallWCPayPromotion extends \WC_Payment_Gateway {
 		}
 		$this->method_description = $wc_pay_spec->content;
 		$this->has_fields         = false;
+
+		// Set the promotion pseudo-gateway support features.
+		// If the promotion spec provides the supports property, use it.
+		if ( property_exists( $wc_pay_spec, 'supports' ) ) {
+			$this->supports = $wc_pay_spec->supports;
+		} else {
+			// Otherwise, use the default supported features in line with WooPayments ones.
+			// We include all features here, even if some of them are behind settings, since this is for info only.
+			$this->supports = array(
+				// Regular features.
+				PaymentGatewayFeature::PRODUCTS,
+				PaymentGatewayFeature::REFUNDS,
+				// Subscriptions features.
+				PaymentGatewayFeature::SUBSCRIPTIONS,
+				PaymentGatewayFeature::MULTIPLE_SUBSCRIPTIONS,
+				PaymentGatewayFeature::SUBSCRIPTION_CANCELLATION,
+				PaymentGatewayFeature::SUBSCRIPTION_REACTIVATION,
+				PaymentGatewayFeature::SUBSCRIPTION_SUSPENSION,
+				PaymentGatewayFeature::SUBSCRIPTION_AMOUNT_CHANGES,
+				PaymentGatewayFeature::SUBSCRIPTION_DATE_CHANGES,
+				PaymentGatewayFeature::SUBSCRIPTION_PAYMENT_METHOD_CHANGE_ADMIN,
+				PaymentGatewayFeature::SUBSCRIPTION_PAYMENT_METHOD_CHANGE_CUSTOMER,
+				PaymentGatewayFeature::SUBSCRIPTION_PAYMENT_METHOD_CHANGE,
+				// Saved cards features.
+				PaymentGatewayFeature::TOKENIZATION,
+				PaymentGatewayFeature::ADD_PAYMENT_METHOD,
+			);
+		}
 
 		// Get setting values.
 		$this->enabled = false;
@@ -59,7 +89,7 @@ class WCPaymentGatewayPreInstallWCPayPromotion extends \WC_Payment_Gateway {
 	}
 
 	/**
-	 * Check if the promotional gateaway has been dismissed.
+	 * Check if the promotional gateway has been dismissed.
 	 *
 	 * @return bool
 	 */

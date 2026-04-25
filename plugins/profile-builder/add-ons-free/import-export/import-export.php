@@ -1,4 +1,7 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /*
 Description: Adds a PB subpage where you can Import and Export settings of Profile Builder.
 */
@@ -29,12 +32,12 @@ function wppb_pbie_tabs( $current = 'import' ) {
 		'export' => __( 'Export', 'profile-builder' )
 	);
 
-	echo '<h2 class="nav-tab-wrapper">';
+	echo '<nav class="nav-tab-wrapper cozmoslabs-nav-tab-wrapper">';
 	foreach( $tabs as $tab => $name ) {
 		$class = ( $tab == $current ) ? ' nav-tab-active' : '';
 		echo "<a class='nav-tab". esc_attr( $class )."' href='?page=pbie-import-export&tab=". esc_attr( $tab ) ."'>". esc_html( $name ) ."</a>";
 	}
-	echo '</h2>';
+	echo '</nav>';
 }
 
 /* PB Import and Export subpage content function */
@@ -42,13 +45,23 @@ function wppb_pbie_page() {
 	global $pagenow;
 
 	?>
-	<div class="wrap">
-		<?php
-		echo '<h2>';
-			esc_html_e( 'Import and Export', 'profile-builder' );
-            echo '<a href="https://www.cozmoslabs.com/docs/profile-builder-2/add-ons/import-export-pb-settings/?utm_source=wpbackend&utm_medium=pb-documentation&utm_campaign=PBDocs" target="_blank" data-code="f223" class="wppb-docs-link dashicons dashicons-editor-help" style="margin-left: 5px;"></a>';
-		echo '</h2>';
+	<div class="wrap cozmoslabs-wrap">
 
+        <h1></h1>
+        <!-- WordPress Notices are added after the h1 tag -->
+
+        <div class="cozmoslabs-page-header">
+            <div class="cozmoslabs-section-title">
+
+                <h2 class="cozmoslabs-page-title">
+                    <?php esc_html_e( 'Import and Export', 'profile-builder' ); ?>
+                    <a href="https://www.cozmoslabs.com/docs/profile-builder/add-ons/import-export-pb-settings/?utm_source=wpbackend&utm_medium=pb-documentation&utm_campaign=PBDocs" target="_blank" data-code="f223" class="wppb-docs-link dashicons dashicons-editor-help" style="margin-left: 5px;"></a>
+                </h2>
+
+            </div>
+        </div>
+
+		<?php
 		if( isset ( $_GET['tab'] ) ) wppb_pbie_tabs( sanitize_text_field( $_GET['tab'] ) );
 		else wppb_pbie_tabs( 'import' );
 		?>

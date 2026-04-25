@@ -14,16 +14,16 @@
 }
 
 .tsf-count-bad {
-	color: #dd3811;
+	color: #d63638;
 }
 .tsf-count-okay {
-	color: #ffa700;
+	color: #ffae00;
 }
 .tsf-count-good {
-	color: #0cc34b;
+	color: #00a32a;
 }
 .tsf-count-unknown {
-	color: #007bd2;
+	color: #2271b1;
 }
 
 .tsf-counter-one {
@@ -36,30 +36,24 @@
 	vertical-align: baseline;
 }
 .tsf-counter-one.tsf-count-bad {
-	background-color: #dd3811;
+	background-color: #d63638;
 }
 .tsf-counter-one.tsf-count-okay {
-	background-color: #ffa700;
+	background-color: #ffae00;
 }
 .tsf-counter-one.tsf-count-good {
-	background-color: #0cc34b;
+	background-color: #00a32a;
 }
 .tsf-counter-one.tsf-count-unknown {
-	background-color: #007bd2;
+	background-color: #4f94d4;
 }
-
-/* END Character Counters */
 
 /* START Pixel Counters */
 
-/* Temporarily fix for SEO settings page. Remove me TSF 5.0 */
+/* Temporarily fix for SEO settings page. Remove me TSF 6.0 */
 .tsf-nav-tab-content .tsf-pixel-counter-wrap {
-	margin-left: 1px;
+	margin-inline-start: 1px;
 	max-width: 99%;
-}
-body.rtl .tsf-nav-tab-content .tsf-pixel-counter-wrap {
-	margin-left: 0;
-	margin-right: 1px;
 }
 
 .tsf-pixel-shadow-wrap {
@@ -69,7 +63,7 @@ body.rtl .tsf-nav-tab-content .tsf-pixel-counter-wrap {
 	height: 0;
 }
 
-/* 8 + 4 = 12. The 4px margins account for line height. */
+/* 8 + 4 = 12. The 4px margins account for line height. TODO use unit lh instead? */
 .tsf-pixel-counter-wrap {
 	border-bottom: 1px solid #ccc;
 	margin-top: 12px;
@@ -87,27 +81,27 @@ body.rtl .tsf-nav-tab-content .tsf-pixel-counter-wrap {
 	height: 3px;
 	width: 0%;
 	max-width: 100%;
-	background: #007bd2;
+	background: #4f94d4;
 	box-shadow: 0px 1px 3px 0px #ccc;
-	transition: width .15s cubic-bezier(0, 0, .75, 1);
+	transition: width .15s cubic-bezier( 0, 0, .75, 1 );
 }
 
 .tsf-pixel-counter-bad .tsf-pixel-counter-fluid {
-	background-color: #dd3811;
+	background-color: #d63638;
 }
 
 .tsf-pixel-counter-okay .tsf-pixel-counter-fluid {
-	background-color: #ffa700;
+	background-color: #ffae00;
 }
 
 .tsf-pixel-counter-good .tsf-pixel-counter-fluid {
-	background-color: #0cc34b;
+	background-color: #00a32a;
 }
 
 .tsf-description-pixel-counter-shadow,
 .tsf-title-pixel-counter-shadow {
 	position: absolute;
-	left: 0;
+	inset-inline-start: 0;
 	top: 0;
 	z-index: -100;
 	overflow: visible;
@@ -127,14 +121,6 @@ body.rtl .tsf-nav-tab-content .tsf-pixel-counter-wrap {
 	font-weight: 400;
 }
 
-body.rtl .tsf-description-pixel-counter-shadow,
-body.rtl .tsf-title-pixel-counter-shadow {
-	left: initial;
-	right: 0;
-}
-
 .tsf-description-pixel-counter-shadow {
 	font-size: 13px;
 }
-
-/* END Pixel Counters */

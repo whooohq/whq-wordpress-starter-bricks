@@ -14,7 +14,7 @@
             <p class="explanation-text">{{ currency_switcher.order_tip }}</p>
             <ul id="wcml_currencies_order" class="wcml-cs-currencies-order">
                 {% for code in currency_switcher.order %}
-                    <li class="wcml_currencies_order_{{ code }}" cur="{{ code }}">{{ attribute( wc_currencies, code) }} ({{ get_currency_symbol(code)|raw }})</li>
+                    <li class="wcml_currencies_order_{{ code }}" cur="{{ code }}">{{ attribute(wc_currencies, code)|raw }} ({{ get_currency_symbol(code)|raw }})</li>
                 {% endfor %}
             </ul>
             <input type="hidden" id="wcml_currencies_order_order_nonce" value="{{ currency_switcher.order_nonce }}"/>

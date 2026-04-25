@@ -217,7 +217,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 			return $status;
 
 		} else {
-			// An unhandled error occured
+			// An unhandled error occurred
 			$status['error'] = 'update_failed';
 			return $status;
 		}
@@ -312,7 +312,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 			return $status;
 			
 		} else {
-			// An unhandled error occured
+			// An unhandled error occurred
 			$status['error'] = 'update_failed';
 			return $status;
 		}
@@ -408,7 +408,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 			return $status;
 
 		} else {
-			// An unhandled error occured
+			// An unhandled error occurred
 			$status['error'] = 'update_failed';
 			return $status;
 		}
@@ -448,7 +448,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 		} elseif (is_bool($result) && $result) {
 			$status['error'] = 'up_to_date';
 		} else {
-			// An unhandled error occured
+			// An unhandled error occurred
 			$status['error'] = 'update_failed';
 		}
 
@@ -468,7 +468,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 			}
 			
 		} else {
-			$theme_data = get_theme_data(WP_CONTENT_DIR . '/themes/'.$theme.'/style.css');
+			$theme_data = get_theme_data(WP_CONTENT_DIR . '/themes/'.$theme.'/style.css');// phpcs:ignore WordPress.WP.DeprecatedFunctions.get_theme_dataFound -- This function was only intended for backward compatibility with versions below 3.4.0.
 			
 			if (isset($theme_data['Version'])) {
 				return $theme_data['Version'];
@@ -527,7 +527,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 						}
 					}
 				} else {
-					$all_items = get_themes();
+					$all_items = get_themes();// phpcs:ignore WordPress.WP.DeprecatedFunctions.get_themesFound -- This function was only intended for backward compatibility with versions below 3.4.0.
 				}
 				break;
 			default:
@@ -594,7 +594,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 				return $theme;
 			}
 		} else {
-			$theme_data = get_theme_data(WP_CONTENT_DIR.'/themes/'.$theme.'/style.css');
+			$theme_data = get_theme_data(WP_CONTENT_DIR.'/themes/'.$theme.'/style.css');// phpcs:ignore WordPress.WP.DeprecatedFunctions.get_theme_dataFound -- This function was only intended for backward compatibility with versions below 3.4.0.
 			if (isset($theme_data['Version'])) {
 				if (!isset($theme_data['ThemeURI'])) $theme_data['ThemeURI'] = $theme_data['URI'];
 				return (object) $theme_data;
@@ -663,6 +663,145 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 		return false;
 	}
 
+	/**
+	 * Checks basic WP and PHP compatibility for plugins and themes
+	 *
+	 * @param  string $type The type of the entity to check (e.g. 'plugin' or 'theme')
+	 * @param  array  $info Data or information to check
+	 * @return array
+	 */
+	private function is_compatible($type, $info) {
+		global $updraftcentral_main;
+		$wp_version = $updraftcentral_main->get_wordpress_version();
+
+		$is_compatible = null;
+		$message = '';
+
+		if (isset($info['update'])) {
+
+			// Check for WP Compatibility based from the update information
+			if (!empty($info['update']['requires'])) {
+				if (version_compare($wp_version, $info['update']['requires'], '<')) {
+					$is_compatible = false;
+
+					$message1 = sprintf(
+						/* translators: %s: Plugin/theme type */
+						__('The latest update for this %s is not compatible with the WordPress version installed on the remote site.', 'updraftplus'),
+						$type
+					);
+
+					$message2 = sprintf(
+						/* translators: 1: Plugin/theme type, 2: Required WordPress version */
+						__('The minimum WordPress version supported by this %1$s is %2$s.', 'updraftplus'),
+						$type,
+						$info['update']['requires']
+					);
+
+					$message = esc_attr($message1 . ' ' . $message2);
+				} else {
+					$is_compatible = true;
+				}
+			}
+
+			// Check for PHP Compatibility based from the update information
+			if (!empty($info['update']['requires_php'])) {
+				if (version_compare(PHP_VERSION, $info['update']['requires_php'], '<')) {
+					$is_compatible = false;
+
+					$message1 = sprintf(
+						/* translators: %s: Plugin/theme type */
+						__('The latest update for this %s is not compatible with the PHP version installed on the remote site.', 'updraftplus'),
+						$type
+					);
+
+					$message2 = sprintf(
+						/* translators: 1: Plugin/theme type, 2: Required PHP version */
+						__('The minimum PHP version supported by this %1$s is %2$s.', 'updraftplus'),
+						$type,
+						$info['update']['requires_php']
+					);
+
+					$message = esc_attr($message1 . ' ' . $message2);
+				} else {
+					$is_compatible = true;
+				}
+			}
+
+			// Check whether Plugin/Theme has been tested based from the update information
+			if (!empty($info['update']['tested'])) {
+				if (version_compare($wp_version, $info['update']['tested'], '>')) {
+					$is_compatible = false;
+					// translators: %s: Plugin/theme type
+					$message = esc_attr(sprintf(__('The latest update for this %s has not been tested with the WordPress version installed on the remote site and may have compatibility issues when used.', 'updraftplus'), $type));
+				} else {
+					$is_compatible = true;
+				}
+			}
+		}
+
+		if (is_null($is_compatible)) {
+			$is_compatible = false;
+			$message = esc_attr(sprintf(__('This % does not provide information to allow determining whether the latest version is compatible with your WordPress or PHP installation.', 'updraftplus'), $type).' '.__('If installing, then proceed with caution by first doing a backup.', 'updraftplus'));
+		}
+
+		return array(
+			'compatible' => $is_compatible,
+			'compatible_message' => $message,
+		);
+	}
+
+	/**
+	 * Retrieve icons for plugin and screenshot for theme
+	 *
+	 * @param  string $type The type of the entity to process (e.g. 'plugin' or 'theme')
+	 * @param  string $slug The entity slug
+	 * @return string
+	 */
+	private function get_icons_screenshot($type, $slug) {
+		if (!in_array($type, array('plugin', 'theme'))) return '';
+
+		if ('plugin' == $type) {
+			if (!function_exists('plugins_api') && file_exists(ABSPATH.'wp-admin/includes/plugin-install.php')) {
+				include_once(ABSPATH.'wp-admin/includes/plugin-install.php');
+			}
+
+			// We make sure that the function now exists before we use it because
+			// the definition of this function maybe located in other places given
+			// the varying versions and changes to the WordPress platform.
+			if (function_exists('plugins_api')) {
+				$api = plugins_api('plugin_information', array(
+					'slug' => $slug,
+					'fields' => array('icons' => true),
+				));
+
+				if (!is_wp_error($api) && property_exists($api, 'icons')) {
+					return $api->icons;
+				}
+			}
+
+		} elseif ('theme' == $type) {
+			if (!function_exists('themes_api') && file_exists(ABSPATH.'wp-admin/includes/theme.php')) {
+				include_once(ABSPATH.'wp-admin/includes/theme.php');
+			}
+
+			// We make sure that the function now exists before we use it because
+			// the definition of this function maybe located in other places given
+			// the varying versions and changes to the WordPress platform.
+			if (function_exists('themes_api')) {
+				$api = themes_api('theme_information', array(
+					'slug' => $slug,
+					'fields' => array('screenshot_url' => true),
+				));
+
+				if (!is_wp_error($api) && property_exists($api, 'screenshot_url')) {
+					return $api->screenshot_url;
+				}
+			}
+		}
+
+		return '';
+	}
+
 	public function get_updates($options) {
 
 		// Forcing Elegant Themes (Divi) updates component to load if it exist.
@@ -695,7 +834,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 					// only return those items for update that has new versions greater than the currently installed version.
 					if (version_compare($update->Version, $update->update->new_version, '>=')) continue;
 					
-					$plugin_updates[] = array(
+					$info = array(
 						'name' => $update->Name,
 						'plugin_uri' => $update->PluginURI,
 						'version' => $update->Version,
@@ -713,8 +852,15 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 							'tested' => isset($update->update->tested) ? $update->update->tested : null,
 							'compatibility' => isset($update->update->compatibility) ? (array) $update->update->compatibility : null,
 							'sections' => isset($update->update->sections) ? (array) $update->update->sections : null,
+							'requires' => isset($update->update->requires) ? $update->update->requires : null,
+							'requires_php' => isset($update->update->requires_php) ? $update->update->requires_php : null,
+							'icons' => isset($update->update->icons) ? $update->update->icons : $this->get_icons_screenshot('plugin', $update->update->slug),
 						),
 					);
+
+					// Check for compatibility and merge result into info
+					$result = $this->is_compatible('plugin', $info);
+					$plugin_updates[] = array_merge($info, $result);
 				}
 			}
 		}
@@ -739,7 +885,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 					$name = $update->Name;
 					$theme_name = !empty($name) ? $name : $update->update['theme'];
 
-					$theme_updates[] = array(
+					$info = array(
 						'name' => $theme_name,
 						'theme_uri' => $update->ThemeURI,
 						'version' => $update->Version,
@@ -751,9 +897,16 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 							'new_version' => $update->update['new_version'],
 							'package' => $update->update['package'],
 							'url' => $update->update['url'],
+							'tested' => isset($update->update['tested']) ? $update->update['tested'] : null,
+							'requires' => $update->update['requires'],
+							'requires_php' => $update->update['requires_php'],
+							'screenshot_url' => isset($update->update['screenshot_url']) ? $update->update['screenshot_url'] : $this->get_icons_screenshot('theme', $update->update['theme']),
 						),
 					);
 
+					// Check for compatibility and merge result into info
+					$result = $this->is_compatible('theme', $info);
+					$theme_updates[] = array_merge($info, $result);
 				}
 			}
 		}
@@ -858,7 +1011,7 @@ class UpdraftCentral_Updates_Commands extends UpdraftCentral_Commands {
 			$request_filesystem_credentials[$entity] = ('direct' != $filesystem_method && !$filesystem_credentials_are_stored);
 		}
 		
-		$automatic_backups = (class_exists('UpdraftPlus_Options') && class_exists('UpdraftPlus_Addon_Autobackup') && UpdraftPlus_Options::get_updraft_option('updraft_autobackup_default', true)) ? true : false;
+		$automatic_backups = (class_exists('UpdraftPlus_Options') && class_exists('UpdraftPlus_Addon_Autobackup') && UpdraftPlus_Options::get_updraft_option('updraft_autobackup_default')) ? true : false;
 		
 		return $this->_response(array(
 			'plugins' => $plugin_updates,

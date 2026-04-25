@@ -17,7 +17,7 @@ function wppb_gdpr_delete_handler( $output, $form_location, $field, $user_id, $f
 
             $output = '
 			<label for="wppb-delete-account">'. wp_kses_post( $item_title ) .'</label>
-			<input class="wppb-delete-account" type="submit" value="'. __( 'Delete', 'profile-builder' ) .'" />';
+			<input class="wppb-delete-account" type="button" value="'. __( 'Delete', 'profile-builder' ) .'" />';
             $output .= '<span class="wppb-description-delimiter">'.trim( html_entity_decode ( $item_description ) ).'</span>';
 
 

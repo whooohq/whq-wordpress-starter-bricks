@@ -1,25 +1,20 @@
 <?php
 
-use WPML\Core\ISitePress;
-
 class WCML_Coupons {
 
-	/** @var woocommerce_wpml */
-	private $woocommerce_wpml;
 	/** @var SitePress */
 	private $sitepress;
 
-	public function __construct( woocommerce_wpml $woocommerce_wpml, SitePress $sitepress ) {
-		$this->woocommerce_wpml = $woocommerce_wpml;
-		$this->sitepress        = $sitepress;
+	public function __construct( SitePress $sitepress ) {
+		$this->sitepress = $sitepress;
 	}
 
 	public function add_hooks() {
 
-		add_action( 'woocommerce_coupon_loaded', array( $this, 'wcml_coupon_loaded' ) );
-		add_action( 'admin_init', array( $this, 'icl_adjust_terms_filtering' ) );
+		add_action( 'woocommerce_coupon_loaded', [ $this, 'wcml_coupon_loaded' ] );
+		add_action( 'admin_init', [ $this, 'icl_adjust_terms_filtering' ] );
 
-		add_filter( 'woocommerce_coupon_is_valid_for_product', array( $this, 'is_valid_for_product' ), 10, 4 );
+		add_filter( 'woocommerce_coupon_is_valid_for_product', [ $this, 'is_valid_for_product' ], 10, 4 );
 	}
 
 	private function apply_translated_product_ids( array $product_ids, WC_Coupon $coupon, $coupon_setter_method ) {
@@ -84,15 +79,15 @@ class WCML_Coupons {
 	public function is_valid_for_product( $valid, $product, $object, $values ) {
 
 		$product_id = $product->is_type( 'variation' ) ? $product->get_parent_id() : $product->get_id();
-		$translated_product_id = apply_filters( 'translate_object_id', $product_id, 'product', false, $this->sitepress->get_current_language() );
+		$translated_product_id = apply_filters( 'wpml_object_id', $product_id, 'product', false, $this->sitepress->get_current_language() );
 
 		if ( $translated_product_id && $product_id !== $translated_product_id ) {
 
-			remove_filter( 'woocommerce_coupon_is_valid_for_product', array( $this, 'is_valid_for_product' ), 10 );
+			remove_filter( 'woocommerce_coupon_is_valid_for_product', [ $this, 'is_valid_for_product' ], 10 );
 
 			$valid = $object->is_valid_for_product( wc_get_product( $translated_product_id ), $values );
 
-			add_filter( 'woocommerce_coupon_is_valid_for_product', array( $this, 'is_valid_for_product' ), 10, 4 );
+			add_filter( 'woocommerce_coupon_is_valid_for_product', [ $this, 'is_valid_for_product' ], 10, 4 );
 
 		}
 

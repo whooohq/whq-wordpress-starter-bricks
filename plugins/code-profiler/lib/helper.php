@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  +=====================================================================+
  |    ____          _        ____             __ _ _                   |
  |   / ___|___   __| | ___  |  _ \ _ __ ___  / _(_) | ___ _ __         |
@@ -7,64 +7,110 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
-if (! defined('ABSPATH') ) { die('Forbidden'); }
+if (! defined('ABSPATH') ) {
+	die('Forbidden');
+}
 
 // =====================================================================
 // Various constants
 
-$upload_dir = wp_upload_dir();
-define('CODE_PROFILER_UPLOAD_DIR', $upload_dir['basedir'] .'/code-profiler');
+// The profiles directory can be defined in the wp-config.php script
+if (! defined('CODE_PROFILER_UPLOAD_DIR') ) {
+	// When running Code Profiler via WP CLI on a child site of a multisite installation,
+	// we need to get the main site upload folder otherwise wp_upload_dir will return
+	// the child site's
+	if ( is_multisite() && ! ( is_main_network() && is_main_site() && defined('MULTISITE') ) ) {
+		$upload_dir = code_profiler_upload_dir();
+	} else {
+		$upload_dir = wp_upload_dir();
+	}
+	define('CODE_PROFILER_UPLOAD_DIR', $upload_dir['basedir'] .'/code-profiler');
+}
 define('CODE_PROFILER_LOG', CODE_PROFILER_UPLOAD_DIR .'/log.php');
 define('CODE_PROFILER_TMP_IOSTATS_LOG', 'iostats.tmp');
 define('CODE_PROFILER_TMP_SUMMARY_LOG', 'summary.tmp');
-define('CODE_PROFILER_TMP_TICKS_LOG', 'ticks.tmp');
+define('CODE_PROFILER_TMP_RERUN_LOG', 'rerun.tmp');
+define('CODE_PROFILER_TMP_CALLS_LOG', 'calls.tmp');
 define('CODE_PROFILER_TMP_DISKIO_LOG', 'diskio.tmp');
 define('CODE_PROFILER_TMP_CONNECTIONS_LOG', 'connections.tmp');
 define('CODE_PROFILER_UPDATE_NOTICE', '<div class="updated notice is-dismissible"><p>%s</p></div>');
 define('CODE_PROFILER_ERROR_NOTICE', '<div class="error notice is-dismissible"><p>%s</p></div>');
-global $wp_version;
-if (! defined('CODE_PROFILER_UA') ) { // UA signatures can be user-defined in the wp-config.php
-	define ('CODE_PROFILER_UA', [
-		esc_html__('Desktop', 'code-profiler') => [
-			'Firefox'			=> 'Mozilla/5.0 (Linux x86_64; rv:110.0) Gecko/20100101 Firefox/110.0',
-			'Chrome'				=> 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)'.
-										' Chrome/111.0.0.0 Safari/537.36',
-			'Edge'				=> 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,'.
-										' like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/110.0.1587.63'
-		],
-		esc_html__('Mobile', 'code-profiler') => [
-			'Android Phone'	=> 'Mozilla/5.0 (Android 13; Mobile; rv:68.0) Gecko/68.0 Firefox/110.0',
-			'Android Tablet'	=> 'Mozilla/5.0 (Linux; Android 13.0; SAMSUNG-SM-T377A Build/NMF26X)'.
-									' AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36',
-			'iPhone'				=> 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_3_1 like Mac OS X) AppleWebKit/605.1.15'.
-									' (KHTML, like Gecko) Version/16.3 Mobile/15E148 Safari/604.1',
-			'iPad'				=> 'Mozilla/5.0 (iPad; CPU OS 16_3_1 like Mac OS X) AppleWebKit/605.1.15'.
-									' (KHTML, like Gecko) GSA/213.0.449417121 Mobile/15E148 Safari/605.1.15'
-		],
-		esc_html__('Bot', 'code-profiler')    => [
-			'Google Bot'		=> 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-			'WordPress'			=> 'Mozilla/5.0 (compatible; CodeProfiler for WordPress/'. $wp_version .
-										'; https://code-profiler.com/)'
-		]
-
-	] );
-}
-
+define('CODE_PROFILER_WARNING_NOTICE', '<div class="notice notice-warning"><p>%s</p></div>');
 if (! defined('CODE_PROFILER_MUPLUGIN') ) {
 	// MU plugin's name can be defined in the wp-config.php
 	define('CODE_PROFILER_MUPLUGIN', '0----code-profiler.php');
 }
-define('CODE_PROFILER_ACCURACY', [
-	1		=> __('Highest (default)', 'code-profiler'),
-	5		=> __('High', 'code-profiler'),
-	10		=> __('Moderate', 'code-profiler'),
-	15		=> __('Low', 'code-profiler'),
-	20		=> __('Lowest', 'code-profiler')
-]);
+
+/**
+ * Since WP 6.7, translation loading must not be triggered too early.
+ */
+add_action('init', 'code_profiler_i18n_constants');
+function code_profiler_i18n_constants() {
+
+	global $wp_version;
+	if (! defined('CODE_PROFILER_UA') ) { // UA signatures can be user-defined in the wp-config.php
+		define ('CODE_PROFILER_UA', [
+			esc_html__('Desktop', 'code-profiler') => [
+				'Firefox'			=> 'Mozilla/5.0 (Linux x86_64; rv:149.0) Gecko/20100101 Firefox/149.0',
+				'Chrome'				=> 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML,'.
+											' like Gecko) Chrome/147.0.0.0 Safari/537.36',
+				'Edge'				=> 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,'.
+											' like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/Chrome/147.0.7727.50'
+			],
+			esc_html__('Mobile', 'code-profiler') => [
+				'Android Phone'	=> 'Mozilla/5.0 (Android 16; Mobile; rv:68.0) Gecko/68.0 Firefox/149.0',
+				'Android Tablet'	=> 'Mozilla/5.0 (Linux; Android 16.0; SAMSUNG-SM-T377A Build/NMF26X)'.
+										' AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.7727.50 Mobile Safari/537.36',
+				'iPhone'				=> 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7_7 like Mac OS X) AppleWebKit/605.1.15'.
+											' (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+				'iPad'				=> 'Mozilla/5.0 (iPad; CPU OS 18_7_7 like Mac OS X) AppleWebKit/605.1.15'.
+										' (KHTML, like Gecko) GSA/213.0.449417121 Mobile/15E148 Safari/605.1.15'
+			],
+			esc_html__('Bot', 'code-profiler')    => [
+				'Google Bot'		=> 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+				'WordPress'			=> 'Mozilla/5.0 (compatible; CodeProfiler for WordPress/'. $wp_version .
+											'; https://nintechnet.com/codeprofiler/)'
+			]
+
+		] );
+	}
+	define('CODE_PROFILER_ACCURACY', [
+		1		=> __('Highest', 'code-profiler'),
+		5		=> __('High', 'code-profiler'),
+		10		=> __('Moderate', 'code-profiler'),
+		15		=> __('Low', 'code-profiler'),
+		20		=> __('Lowest', 'code-profiler')
+	]);
+}
+
+// =====================================================================
+// Find the main site upload dir on a multisite installation.
+// Used when running the profiler via WP CLI.
+// This code is based on the WP private _wp_upload_dir function.
+
+function code_profiler_upload_dir() {
+
+	$upload_path = trim( get_option('upload_path') );
+	if ( empty( $upload_path ) || 'wp-content/uploads' === $upload_path ) {
+		$basedir = WP_CONTENT_DIR . '/uploads';
+	} elseif ( strpos( $upload_path, ABSPATH ) !== 0 ) {
+		// $basedir is absolute, $upload_path is (maybe) relative to ABSPATH.
+		$basedir = path_join( ABSPATH, $upload_path );
+	} else {
+		$basedir = $upload_path;
+	}
+
+	if ( defined('UPLOADS') && ! ( is_multisite() && get_site_option('ms_files_rewriting') ) ) {
+		$basedir = ABSPATH . UPLOADS;
+	}
+
+	return ['basedir' => $basedir];
+}
+
 // =====================================================================
 // Prevent cURL timeout if a plugin changes its timeout options.
 
@@ -84,31 +130,120 @@ add_action('http_api_curl', 'code_profiler_curl_timeout', 1000, 3 );
 
 function code_profiler_init_update() {
 
-	$cp_options = get_option('code-profiler');
-	if ( empty( $cp_options['version'] ) ||
-		version_compare( $cp_options['version'], CODE_PROFILER_VERSION, '<') ) {
+	if ( ( $cp_options = get_option('code-profiler') ) == false ) {
+		/**
+		 * "Automatic conversion of false to array is deprecated" since PHP 8.1
+		 */
+		$cp_options = [];
+	}
 
+	if ( empty( $cp_options['version'] ) ) {
 		$cp_options['version'] = CODE_PROFILER_VERSION;
+		update_option('code-profiler', $cp_options );
+
+	} elseif ( version_compare( $cp_options['version'], CODE_PROFILER_VERSION, '<') ) {
 
 		// Version 1.1
-		if (! isset( $cp_options['enable_wpcli'] ) ) {
-			$cp_options['enable_wpcli'] = 1;
+		if ( version_compare( $cp_options['version'], '1.1', '<' ) ) {
+			if (! isset( $cp_options['enable_wpcli'] ) ) {
+				$cp_options['enable_wpcli'] = 1;
+			}
 		}
 
 		// Version 1.2
-		if (! isset( $cp_options['disable_wpcron'] ) ) {
-			$cp_options['disable_wpcron'] = 1;
+		if ( version_compare( $cp_options['version'], '1.2', '<' ) ) {
+			if (! isset( $cp_options['disable_wpcron'] ) ) {
+				$cp_options['disable_wpcron'] = 1;
+			}
 		}
 
 		// Version 1.3.1
-		if (! isset( $cp_options['http_response'] ) ) {
-			$cp_options['http_response'] = '^(?:3|4|5)\d{2}$';
+		if ( version_compare( $cp_options['version'], '1.3.1', '<' ) ) {
+			if (! isset( $cp_options['http_response'] ) ) {
+				$cp_options['http_response'] = '^(?:3|4|5)\d{2}$';
+			}
 		}
 
 		// Version 1.5
-		if (! isset( $cp_options['accuracy'] ) ) {
-			$cp_options['accuracy'] = 1;
+		if ( version_compare( $cp_options['version'], '1.5', '<' ) ) {
+			if (! isset( $cp_options['accuracy'] ) ) {
+				$cp_options['accuracy'] = 1;
+			}
 		}
+
+		// Version 1.7.5
+		if ( version_compare( $cp_options['version'], '1.7.5', '<' ) ) {
+			if (! isset( $cp_options['php_error'] ) ) {
+				$cp_options['php_error'] = 1;
+			}
+		}
+
+		// Version 1.8
+		if ( version_compare( $cp_options['version'], '1.8', '<' ) ) {
+			if ( isset( $cp_options['mem_where'] ) ) {
+				$cp_options['mem']['x_end'] = $cp_options['mem_where'];
+				unset( $cp_options['mem_where'] );
+			}
+			if ( isset( $cp_options['mem_post'] ) ) {
+				$cp_options['mem']['post'] = $cp_options['mem_post'];
+				unset( $cp_options['mem_post'] );
+			}
+			if ( isset( $cp_options['mem_user'] ) ) {
+				$cp_options['mem']['x_auth'] = $cp_options['mem_user'];
+				unset( $cp_options['mem_user'] );
+			}
+			if ( isset( $cp_options['mem_username'] ) ) {
+				$cp_options['mem']['username'] = $cp_options['mem_username'];
+				unset( $cp_options['mem_username'] );
+			}
+			if ( isset( $cp_options['mem_method'] ) ) {
+				$cp_options['mem']['method'] = $cp_options['mem_method'];
+				unset( $cp_options['mem_method'] );
+			}
+			if ( isset( $cp_options['mem_theme'] ) ) {
+				$cp_options['mem']['theme'] = $cp_options['mem_theme'];
+				unset( $cp_options['mem_theme'] );
+			}
+			if ( isset( $cp_options['ua'] ) ) {
+				$cp_options['mem']['user_agent'] = $cp_options['ua'];
+				unset( $cp_options['ua'] );
+			}
+			if ( isset( $cp_options['cookies'] ) ) {
+				$cp_options['mem']['cookies'] = $cp_options['cookies'];
+				unset( $cp_options['cookies'] );
+			}
+			if ( isset( $cp_options['mem_content_type'] ) ) {
+				$cp_options['mem']['content_type'] = $cp_options['mem_content_type'];
+				unset( $cp_options['mem_content_type'] );
+			}
+			if ( isset( $cp_options['payload'] ) ) {
+				$cp_options['mem']['payload'] = $cp_options['payload'];
+				unset( $cp_options['payload'] );
+			}
+			if ( isset( $cp_options['custom_headers'] ) ) {
+				$cp_options['mem']['custom_headers'] = $cp_options['custom_headers'];
+				unset( $cp_options['custom_headers'] );
+			}
+			if ( isset( $cp_options['exclusions'] ) ) {
+				$cp_options['mem']['exclusions'] = $cp_options['exclusions'];
+				unset( $cp_options['exclusions'] );
+			}
+		}
+
+		// Version 1.8.1
+		if ( version_compare( $cp_options['version'], '1.8.1', '<' ) ) {
+			CodeProfiler_WPCron::install();
+		}
+
+		/**
+		 * Version 1.9.2
+		 */
+		if ( version_compare( $cp_options['version'], '1.9.2', '<' ) ) {
+			unset( $cp_options['warn_composer'] );
+		}
+
+		// Adjust current version
+		$cp_options['version'] = CODE_PROFILER_VERSION;
 
 		// Update version in the DB
 		update_option('code-profiler', $cp_options );
@@ -245,7 +380,6 @@ function code_profiler_default_options() {
 		'chart_max_plugins'	=> 25,
 		'hide_empty_value'	=> 1,
 		'table_max_rows'		=> 30,
-		'warn_composer'		=> 1,
 		'enable_wpcli'			=> 1,
 		'disable_wpcron'		=> 1,
 		'http_response'		=> '^(?:3|4|5)\d{2}$',
@@ -280,49 +414,61 @@ function code_profiler_hide_errors() {
 function code_profiler_disable_opcode() {
 
 	try {
-		if (extension_loaded('Zend OPcache')) {
+		if ( extension_loaded('Zend OPcache') ) {
 			ini_set('opcache.enable', 0);
 		} elseif ( extension_loaded('wincache') ) {
 			ini_set('wincache.fcenabled', 0);
 		}
 		set_time_limit(0);
+		ini_set('memory_limit', -1);
 
 	} catch ( Exception $e ) { }
 
 	$cp_options = get_option('code-profiler');
+	/**
+	 * Disable WP-CRON.
+	 */
 	if (! empty( $cp_options['disable_wpcron'] ) ) {
 		if (! defined('DISABLE_WP_CRON') ) {
 			define('DISABLE_WP_CRON', true );
 		}
 	}
-
+	/**
+	 * Enable PHP error logging.
+	 */
+	if (! empty( $cp_options['php_error'] ) ) {
+		ini_set('log_errors', 1 );
+		$phplog = ini_get('error_log');
+		if ( empty( $phplog ) || $phplog === false ) {
+			ini_set('error_log', WP_CONTENT_DIR .'/debug.log');
+		} else {
+			ini_set('error_log', $phplog );
+		}
+	}
 }
+
 // =====================================================================
-// Verify the security key when running the profile.
+// Verify the security key when running the profiler.
 
 function code_profiler_verify_key() {
 
 	$response = [
 		'status'		=> 'error',
-		'message'	=> __('Security keys do not match. Reload the page and try again (%s)', 'code-profiler')
+		// We cannot load translation here.
+		'message'	=> 'Security keys do not match. Reload the page and try again (%s)'
 	];
 
-	$cp_options = get_option('code-profiler');
-
-	if ( empty( $cp_options['hash'] ) ) {
-		$response['message'] = sprintf( $response['message'], '#1');
+	if ( empty( $_REQUEST['profiler_key'] ) ) {
+		$response['message'] = sprintf( $response['message'], '001');
 
 	} else {
-		if ( empty( $_REQUEST['profiler_key'] ) ) {
-			$response['message'] = sprintf( $response['message'], '#2');
-
-		} else {
-			if ( $cp_options['hash'] == sha1( $_REQUEST['profiler_key'] ) ) {
-				return;
-			} else {
-				$response['message'] = sprintf( $response['message'], '#3');
-			}
+		$file = CODE_PROFILER_UPLOAD_DIR .'/key_'. sha1( $_REQUEST['profiler_key'] ) .'.tmp';
+		if ( file_exists( $file ) ) {
+			// Delete it and accept the request
+			unlink( $file );
+			return;
 		}
+		$response['message'] = sprintf( $response['message'], '002');
 	}
 	wp_send_json( $response );
 
@@ -363,16 +509,35 @@ function code_profiler_log_debug( $string, $create = 0 ) {
 }
 
 // =====================================================================
+// Retrieve and return matching files from a directory.
+
+function code_profiler_glob( $directory, $regex, $pathname = false ) {
+
+	$list = [];
+
+	foreach ( new DirectoryIterator( $directory ) as $finfo ) {
+		if (! $finfo->isDot() && preg_match("`$regex`", $finfo->getFilename() ) ) {
+			if ( $pathname ) {
+				$list[] = $finfo->getPathname();
+			} else {
+				$list[] = $finfo->getFilename();
+			}
+		}
+	}
+	return $list;
+}
+
+// =====================================================================
 // Verify if a profile exists and return its full path.
 
 function code_profiler_get_profile_path( $id, $type = 'slugs') {
 
-	$return = false;
-
 	if (! empty( $id ) && preg_match('/^\d{10}\.\d+$/', $id ) ) {
-		$glob = glob( CODE_PROFILER_UPLOAD_DIR ."/$id.*.$type.profile" );
+
+		$glob = code_profiler_glob(CODE_PROFILER_UPLOAD_DIR, "$id\..+\.$type\.profile$", true);
+
 		if ( is_array( $glob ) && ! empty( $glob[0] ) ) {
-			if ( preg_match( "`/$id\.(.+?).$type.profile$`", $glob[0], $match ) ) {
+			if ( preg_match( "`$id\.(.+?).$type.profile$`", $glob[0], $match ) ) {
 
 				return CODE_PROFILER_UPLOAD_DIR. "/$id.{$match[1]}";
 			}
@@ -402,8 +567,15 @@ function code_profiler_get_profile_data( $file, $type = 'slugs') {
 		return $buffer;
 	}
 
+	/**
+	 * We don't use fgetcsv() as it requires the $escape parameter since PHP 8.4
+	 */
 	while (! feof( $fh ) ) {
-		$buffer[] = fgetcsv( $fh, 1000, "\t" );
+		$tmp = trim( fgets( $fh, 1000 ) );
+		if (! $tmp ) {
+			continue;
+		}
+		$buffer[] = explode( "\t", $tmp );
 	}
 
 	fclose( $fh );
@@ -460,7 +632,7 @@ function code_profiler_getsummarystats( $profile_path, $type = 'html') {
 	$string	= $open;
 
 	if ( empty( $decode->items ) ) {
-		$tmp = 'N/A';
+		$tmp = __('N/A', 'code-profiler');
 	} else {
 		$tmp = (int) --$decode->items;
 	}
@@ -472,7 +644,7 @@ function code_profiler_getsummarystats( $profile_path, $type = 'html') {
 	$string .= $div;
 
 	if ( empty( $decode->time ) ) {
-		$tmp = 'N/A';
+		$tmp = __('N/A', 'code-profiler');
 	} else {
 		$tmp = number_format( $decode->time, 4 );
 	}
@@ -484,7 +656,7 @@ function code_profiler_getsummarystats( $profile_path, $type = 'html') {
 	$string .= $div;
 
 	if ( empty( $decode->memory ) ) {
-		$tmp = 'N/A';
+		$tmp = __('N/A', 'code-profiler');
 	} else {
 		$tmp = number_format( $decode->memory, 2);
 	}
@@ -496,9 +668,9 @@ function code_profiler_getsummarystats( $profile_path, $type = 'html') {
 	$string .= $div;
 
 	if ( empty( $decode->io ) ) {
-		$tmp = 'N/A';
+		$tmp = __('N/A', 'code-profiler');
 	} else {
-		$tmp = number_format( $decode->io );
+		$tmp = number_format( (int) $decode->io );
 	}
 	$string .= sprintf(
 		__('File I/O operations: %s', 'code-profiler'),
@@ -508,12 +680,24 @@ function code_profiler_getsummarystats( $profile_path, $type = 'html') {
 	$string .= $div;
 
 	if ( empty( $decode->queries ) ) {
-		$tmp = 'N/A';
+		$tmp = __('N/A', 'code-profiler');
 	} else {
-		$tmp = number_format( $decode->queries );
+		$tmp = number_format( (int) $decode->queries );
 	}
 	$string .= sprintf(
 		__('SQL queries: %s', 'code-profiler'),
+		$tmp
+	);
+
+	$string .= $div;
+
+	if ( empty( CODE_PROFILER_ACCURACY[ $decode->precision ] ) ) {
+		$tmp = __('N/A', 'code-profiler');
+	} else {
+		$tmp = CODE_PROFILER_ACCURACY[ $decode->precision ];
+	}
+	$string .= sprintf(
+		__('Accuracy: %s', 'code-profiler'),
 		$tmp
 	);
 
@@ -523,24 +707,25 @@ function code_profiler_getsummarystats( $profile_path, $type = 'html') {
 }
 
 // =====================================================================
-// Remove *tmp files left after an HTTP error (4xx or 5xx).
+// Remove *tmp files left in the profiles folder.
 
 function code_profiler_cleantmpfiles() {
 
-	$glob = glob( CODE_PROFILER_UPLOAD_DIR .'/*.tmp');
+	$glob = code_profiler_glob( CODE_PROFILER_UPLOAD_DIR, '\.tmp$', true );
+
 	if ( is_array( $glob ) ) {
-		$count = 0;
 		foreach( $glob as $file ) {
-			$count++;
 			unlink( $file );
 		}
-		if ( $count ) {
-			code_profiler_log_info( sprintf(
-				__('Deleting %s temporary files found in the profiles folder', 'code-profiler'),
-				(int) $count
-			) );
-		}
 	}
+}
+
+// =====================================================================
+// Remove non-ASCII characters from a string.
+
+function code_profiler_ASCII_filter( $string ) {
+
+	return preg_replace('/[\x00-\x1f\x7f-\xff]/', '', $string );
 }
 
 // =====================================================================
@@ -574,10 +759,108 @@ function code_profiler_admin_footer () {
 				'Thank you for using %sCode Profiler%s.',
 				'code-profiler'
 			),
-			'<a href="https://code-profiler.com" target="_blank">',
+			'<a href="https://nintechnet.com/codeprofiler/" target="_blank">',
 			'</a>'
 		).
 		'</span>';
+}
+
+
+// =====================================================================
+// Hide/display an element depending on some value.
+
+function code_profiler_showhide( $var, $val ) {
+
+	if ( $var == $val ) {
+		echo " style='display:block'";
+	} else {
+		echo " style='display:none'";
+	}
+}
+
+// =====================================================================
+// Retrieve all themes.
+
+function code_profiler_get_themes() {
+
+	$list = [];
+
+	// Make sure the function is loaded
+	if (! function_exists('wp_get_themes') ) {
+		require_once ABSPATH . 'wp-includes/theme.php';
+	}
+	$themes = wp_get_themes();
+	foreach( $themes as $k => $v ) {
+		if ( $v->Name ) {
+			$list[ $k ] = [
+				'n' => $v->Name,
+
+				't' => $v->Template
+			];
+		} else {
+			$list[ $k ] = [
+				'n' => $k,
+				't' => $v->Template
+			];
+		}
+	}
+	return $list;
+}
+
+// =====================================================================
+// Retrieve all available cron events.
+
+function code_profiler_get_crons() {
+
+	$list = [];
+
+	$wp_crons = _get_cron_array();
+
+	if ( empty( $wp_crons ) ) {
+		return $list;
+	}
+
+	foreach ( $wp_crons as $timestamp => $cronhooks ) {
+		foreach ( $cronhooks as $hook => $keys ) {
+			$list[] = $hook;
+		}
+	}
+	sort( $list );
+	return $list;
+}
+
+// =====================================================================
+// Create a file with the ABSPATH.
+
+function code_profiler_create_tmpfile() {
+
+	$tmp_folder = dirname( __DIR__ ) .'/tmp';
+	$tmp_file   = "$tmp_folder/profiler.inc.php";
+
+	if (! is_dir( $tmp_folder ) ) {
+		$res = @ mkdir( $tmp_folder );
+		if ( false === $res ) {
+			return sprintf(
+				__('Cannot create temporary folder: [%s]. Any attempt to profile a cron event will likely fail.', 'code-profiler'),
+				$tmp_folder
+			);
+		}
+	}
+
+	if (! is_file( "$tmp_folder/index.html" ) ) {
+		touch( "$tmp_folder/index.html" );
+	}
+
+	$res = @ file_put_contents(
+		$tmp_file,
+		"<?php\nconst ABSPATH = '". ABSPATH ."';\n"
+	);
+	if ( false === $res ) {
+		return sprintf(
+			__('Cannot create temporary file: [%s]. Any attempt to profile a cron event will likely fail.', 'code-profiler'),
+			$tmp_file
+		);
+	}
 }
 
 // =====================================================================

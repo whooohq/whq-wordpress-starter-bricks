@@ -19,6 +19,13 @@ class Red_Permalinks {
 	private $current_permalink = null;
 
 	/**
+	 * Query variables for permalink matching
+	 *
+	 * @var array<string, mixed>
+	 */
+	private $query_vars = [];
+
+	/**
 	 * Constructor
 	 *
 	 * @param string[] $permalinks List of migrated permalinks.
@@ -34,7 +41,7 @@ class Red_Permalinks {
 	 * @return void
 	 */
 	public function migrate( WP_Query $query ) {
-		global $wp;
+		global $wp, $wp_query;
 
 		if ( count( $this->permalinks ) === 0 ) {
 			return;
@@ -45,6 +52,8 @@ class Red_Permalinks {
 		}
 
 		$this->intercept_permalinks();
+
+		$query_copy = clone $query;
 
 		foreach ( $this->permalinks as $old ) {
 			// Set the current permalink
@@ -60,18 +69,21 @@ class Red_Permalinks {
 				$wp->query_posts();
 
 				// A single post?
-				if ( is_single() && count( $query->posts ) > 0 ) {
+				if ( is_single() && count( $query->posts ) > 0 && $query->posts[0] instanceof WP_Post ) {
 					// Restore permalinks
 					$this->release_permalinks();
 
 					// Get real URL from the post ID
 					$url = get_permalink( $query->posts[0]->ID );
-					if ( $url ) {
+					if ( $url !== false ) {
 						wp_safe_redirect( $url, 301, 'redirection' );
 						die();
 					}
 				}
 
+				// Reset the query back to the original
+				// phpcs:ignore
+				$wp_query = $query_copy;
 				break;
 			}
 		}
@@ -97,6 +109,7 @@ class Red_Permalinks {
 			return false;
 		}
 
+		// TODO: query_vars doesnt appear to be used
 		if ( $wp_query->posts && ! $wp_query->is_posts_page && empty( $this->query_vars['page'] ) ) {
 			return false;
 		}
@@ -105,9 +118,10 @@ class Red_Permalinks {
 			$author = get_query_var( 'author' );
 
 			// Don't 404 for authors without posts as long as they matched an author on this site.
-			if ( is_author() && is_numeric( $author ) && $author > 0 && is_user_member_of_blog( $author )
+			if (
+				( is_author() && is_numeric( $author ) && $author > 0 && is_user_member_of_blog( (int) $author ) )
 				// Don't 404 for these queries if they matched an object.
-				|| ( is_tag() || is_category() || is_tax() || is_post_type_archive() ) && get_queried_object()
+				|| ( ( is_tag() || is_category() || is_tax() || is_post_type_archive() ) && get_queried_object() !== null )
 				// Don't 404 for these queries either.
 				|| is_home() || is_search() || is_feed()
 			) {
@@ -142,13 +156,13 @@ class Red_Permalinks {
 	/**
 	 * Returns rewrite rules for the current migrated permalink
 	 *
-	 * @param array $rules Current rules.
-	 * @return array
+	 * @param array<string, string> $rules Current rules.
+	 * @return array<string, string>
 	 */
 	public function get_old_rewrite_rules( $rules ) {
 		global $wp_rewrite;
 
-		if ( $this->current_permalink ) {
+		if ( $this->current_permalink !== null ) {
 			$wp_rewrite->init();
 			$wp_rewrite->matches = 'matches';
 			return $wp_rewrite->rewrite_rules();
@@ -164,7 +178,7 @@ class Red_Permalinks {
 	 * @return string
 	 */
 	public function get_old_permalink( $result ) {
-		if ( $this->current_permalink ) {
+		if ( $this->current_permalink !== null ) {
 			return $this->current_permalink;
 		}
 

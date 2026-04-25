@@ -7,11 +7,13 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
-if (! defined('ABSPATH') ) { die('Forbidden'); }
+if (! defined('ABSPATH') ) {
+   die('Forbidden');
+}
 
 // =====================================================================
 // Display Summary tab.
@@ -21,15 +23,23 @@ echo code_profiler_display_tabs( 3 );
 // Save settings?
 if (! empty( $_POST['save-settings'] ) ) {
 	// Make sure we have security nonce
-	if ( empty( $_POST['cp-save-settings'] ) || ! wp_verify_nonce($_POST['cp-save-settings'], 'cp_settings') ) {
+	if ( empty( $_POST['cp-save-settings'] ) ||
+		! wp_verify_nonce($_POST['cp-save-settings'], 'cp_settings') ) {
+
 		wp_nonce_ays('cp_settings');
 	}
 	$res = code_profiler_save_settings();
 	if ( $res === true ) {
-		printf( CODE_PROFILER_UPDATE_NOTICE, esc_html__('Your changes have been saved.', 'code-profiler') );
+		printf(
+			CODE_PROFILER_UPDATE_NOTICE,
+			esc_html__('Your changes have been saved.', 'code-profiler')
+		);
 	}
 	else {
-		printf( CODE_PROFILER_ERROR_NOTICE, esc_html__('No changes were detected.', 'code-profiler') );
+		printf(
+			CODE_PROFILER_ERROR_NOTICE,
+			esc_html__('No changes were detected.', 'code-profiler')
+		);
 	}
 }
 
@@ -43,7 +53,9 @@ $cp_options = get_option('code-profiler');
 		<?php
 
 		// Paths
-		if ( empty( $cp_options['show_paths'] ) || ! in_array( $cp_options['show_paths'], ['absolute', 'relative' ] ) ) {
+		if ( empty( $cp_options['show_paths'] ) ||
+			! in_array( $cp_options['show_paths'], ['absolute', 'relative' ] ) ) {
+
 			$cp_options['show_paths'] = 'relative';
 		}
 		?>
@@ -57,11 +69,15 @@ $cp_options = get_option('code-profiler');
 
 		<?php
 		// Name vs slug
-		if ( empty( $cp_options['display_name'] ) || ! in_array( $cp_options['display_name'], ['full', 'slug' ] ) ) {
+		if ( empty( $cp_options['display_name'] ) ||
+			! in_array( $cp_options['display_name'], ['full', 'slug' ] ) ) {
+
 			$cp_options['display_name'] = 'full';
 		}
 		// Truncate names
-		if ( empty( $cp_options['truncate_name'] ) || ! preg_match('/^\d+$/', ( $cp_options['truncate_name'] ) ) ) {
+		if ( empty( $cp_options['truncate_name'] ) ||
+			! preg_match('/^\d+$/', ( $cp_options['truncate_name'] ) ) ) {
+
 			$cp_options['truncate_name'] = 30;
 		}
 		?>
@@ -83,11 +99,15 @@ $cp_options = get_option('code-profiler');
 
 		<?php
 		// chart type
-		if ( empty( $cp_options['chart_type'] ) || ! in_array( $cp_options['chart_type'], ['x', 'y' ] ) ) {
+		if ( empty( $cp_options['chart_type'] ) ||
+			! in_array( $cp_options['chart_type'], ['x', 'y' ] ) ) {
+
 			$cp_options['chart_type'] = 'x';
 		}
 		// Max plugins to display
-		if ( empty( $cp_options['chart_max_plugins'] ) || ! preg_match('/^\d+$/', ( $cp_options['chart_max_plugins'] ) ) ) {
+		if ( empty( $cp_options['chart_max_plugins'] ) ||
+			! preg_match('/^\d+$/', ( $cp_options['chart_max_plugins'] ) ) ) {
+
 			$cp_options['chart_max_plugins'] = 25;
 		}
 		// Empty values
@@ -124,12 +144,6 @@ $cp_options = get_option('code-profiler');
 		</tr>
 
 		<?php
-		// Composer warning
-		if (! empty( $cp_options['warn_composer'] ) ) {
-			$cp_options['warn_composer'] = 1;
-		} else {
-			$cp_options['warn_composer'] = 0;
-		}
 		// WP-CLI integration
 		if (! empty( $cp_options['enable_wpcli'] ) ) {
 			$cp_options['enable_wpcli'] = 1;
@@ -169,12 +183,6 @@ $cp_options = get_option('code-profiler');
 		<tr>
 			<th scope="row"><?php esc_html_e('General Options', 'code-profiler') ?></th>
 			<td>
-				<p><label><input type="checkbox" name="cp_options[warn_composer]"<?php checked( $cp_options['warn_composer'], '1') ?> /><?php esc_html_e('Show a notice when several plugins are using Composer dependency manager.','code-profiler') ?></label></p>
-
-				<p class="description"><?php esc_html_e('Consult the FAQ tab for more details about this option.', 'code-profiler') ?></p>
-
-				<br />
-
 				<p><label><input type="checkbox" name="cp_options[enable_wpcli]"<?php checked( $cp_options['enable_wpcli'], '1') ?> /><?php esc_html_e('Enable WP-CLI integration.','code-profiler') ?></label></p>
 				<p class="description"><?php printf( esc_html__('Enter %s to display the available command line options.', 'code-profiler'), '<code>wp code-profiler help</code>') ?></p>
 
@@ -192,18 +200,21 @@ $cp_options = get_option('code-profiler');
 				<p><label><input type="checkbox" name="cp_options[http_response_500]" value="1"<?php checked( $http_response_500, '1') ?> /><?php esc_html_e('5xx server errors (500 Internal Server Error, 503 Service Unavailable etc)','code-profiler') ?></label></p>
 			</td>
 		</tr>
+	</table>
+
+	<h3><?php esc_html_e('Profiler','code-profiler') ?></h3>
+	<table class="form-table">
 		<?php
 		// Accuracy
-		if ( empty( $cp_options['accuracy'] ) || ! preg_match('/^(?:1|5|10|15|20)$/D', $cp_options['accuracy'] ) ) {
+		if ( empty( $cp_options['accuracy'] ) ||
+			! preg_match('/^(?:1|5|10|15|20)$/D', $cp_options['accuracy'] ) ) {
+
 			$cp_options['accuracy'] = 1;
 		}
 		?>
 		<tr>
 			<th scope="row"><?php esc_html_e('Accuracy & Precision', 'code-profiler') ?> <span class="code-profiler-tip" data-tip="<?php
-				printf(
-					esc_attr__('When accuracy is set to the highest level, Code Profiler runs as a %s Tracing profiler %s, and when accuracy is set to a lower level, it runs as a %s Sampling profiler %s.', 'code-profiler'),
-					'<em>', '</em>','<em>', '</em>'
-				);
+				esc_attr_e('When accuracy is set to the highest level, Code Profiler runs as a "tracing profiler", and when accuracy is set to a lower level, it runs as a "sampling profiler".', 'code-profiler');
 				echo '<br />';
 				esc_attr_e('Selecting a high accuracy level is preferred and will work on most sites, but the profiling process will take longer to execute as opposed to choosing a lower accuracy level. If you have a slow WordPress site with a lot of plugins installed and your server or reverse proxy is timing out when Code Profiler is running (e.g., "503 Service Unavailable" or "504 Gateway Timeout" error), try to lower the accuracy level in order to speed up the profiling process and avoid the server timeout.', 'code-profiler');
 				?>"></span></th>
@@ -227,7 +238,7 @@ $cp_options = get_option('code-profiler');
 		?>
 		<tr>
 			<th scope="row"><?php esc_html_e('Buffer size', 'code-profiler') ?> <span class="code-profiler-tip" data-tip="<?php
-				esc_attr_e('When running, the profiler collects data and saves it to a memory buffer. When the buffer is full, the data is written to disk. If your site uses too much memory and throws a PHP memory error, you can try to lower that value.', 'code-profiler');
+				esc_attr_e('When running, the profiler collects data and saves it to a memory buffer. When the buffer is full, the data is written to disk. If your site uses too much memory and PHP throws a memory error, you can try to lower that value.', 'code-profiler');
 				?>"></span></th>
 			<td>
 				<p>
@@ -257,9 +268,25 @@ $cp_options = get_option('code-profiler');
 				?></p>
 			</td>
 		</tr>
+		<?php
+		if ( empty( $cp_options['php_error'] ) ) {
+			$cp_options['php_error'] = 0;
+		} else {
+			$cp_options['php_error'] = 1;
+		}
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e('PHP Error Logging', 'code-profiler') ?> <span class="code-profiler-tip" data-tip="<?php
+				esc_attr_e('This option will enable PHP error logging when the profiler is running. The log will be saved by default to "/wp-content/debug.log", unless you configured PHP or WordPress to use a different path.', 'code-profiler');
+				?>"></span>
+			</th>
+			<td>
+				<p><label><input type="checkbox" name="cp_options[php_error]"<?php checked( $cp_options['php_error'], '1') ?> /><?php esc_html_e('Enable PHP error logging.','code-profiler') ?></label></p>
+			</td>
+		</tr>
 	</table>
 
-	<p><input type="submit" name="save-settings" class="button-primary" value="<?php esc_attr_e('Save Settings', 'code-profiler') ?>" /></p>
+	<p><input type="submit" name="save-settings" class="button button-primary" value="<?php esc_attr_e('Save Settings', 'code-profiler') ?>" /></p>
 
 </form>
 <?php
@@ -323,13 +350,6 @@ function code_profiler_save_settings() {
 		$cp_options['hide_empty_value'] = 0;
 	}
 
-	// Composer warning
-	if (! empty( $_POST['cp_options']['warn_composer'] ) ) {
-		$cp_options['warn_composer'] = 1;
-	} else {
-		$cp_options['warn_composer'] = 0;
-	}
-
 	// WP-CLI integration
 	if (! empty( $_POST['cp_options']['enable_wpcli'] ) ) {
 		$cp_options['enable_wpcli'] = 1;
@@ -377,6 +397,15 @@ function code_profiler_save_settings() {
 		$cp_options['buffer'] = 10;
 	} else {
 		$cp_options['buffer'] = (int) $_POST['cp_options']['buffer'];
+	}
+
+	/**
+	 * PHP error logging.
+	 */
+	if (! empty( $_POST['cp_options']['php_error'] ) ) {
+		$cp_options['php_error'] = 1;
+	} else {
+		$cp_options['php_error'] = 0;
 	}
 
 	return update_option('code-profiler', $cp_options );

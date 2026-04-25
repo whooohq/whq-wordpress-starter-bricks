@@ -227,7 +227,7 @@ class UpdraftCentral_Users_Commands extends UpdraftCentral_Commands {
 			$network_sites = get_sites();
 		} else {
 			if (function_exists('wp_get_sites')) {
-				$network_sites = wp_get_sites();
+				$network_sites = wp_get_sites();// phpcs:ignore WordPress.WP.DeprecatedFunctions.wp_get_sitesFound -- This function was only intended for backward compatibility with versions below 4.6.
 			}
 		}
 		
@@ -356,7 +356,10 @@ class UpdraftCentral_Users_Commands extends UpdraftCentral_Commands {
 			));
 			
 			if (empty($user_query->results)) {
-				$result = array("message" => 'users_not_found');
+				$result = array(
+					"users" => array(),
+					"paging" => $this->_calculate_pages($query, 0),
+				);
 				return $this->_response($result);
 			}
 			
@@ -475,7 +478,7 @@ class UpdraftCentral_Users_Commands extends UpdraftCentral_Commands {
 	 * This function is used to check to make sure the user_id is valid and that it has has user delete permissions.
 	 * If there are no issues, the user is deleted.
 	 *
-	 * current_user_can: 	This check the user permissons from UCP
+	 * current_user_can: 	This check the user permissions from UCP
 	 * get_userdata:		This get the user data on the data from user_id in the $user_id array
 	 * wp_delete_user:		Deleting users on the User ID (user_id) and, IF Specified, the Assigner ID (assign_user_id).
 	 *

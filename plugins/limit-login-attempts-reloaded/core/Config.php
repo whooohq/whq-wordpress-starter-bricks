@@ -9,72 +9,96 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Config {
 
 	private static $default_options = array(
-		'gdpr'               => 0,
-		'gdpr_message'       => '',
+		'gdpr'                          => 0,
+		'gdpr_message'                  => '',
 
 		/* Are we behind a proxy? */
-		'client_type'        => LLA_DIRECT_ADDR,
+		'client_type'                   => LLA_DIRECT_ADDR,
 
 		/* Lock out after this many tries */
-		'allowed_retries'    => 4,
+		'allowed_retries'               => 4,
 
 		/* Lock out for this many seconds */
-		'lockout_duration'   => 1200, // 20 minutes
+		'lockout_duration'              => 1200, // 20 minutes
 
 		/* Long lock out after this many lockouts */
-		'allowed_lockouts'   => 4,
+		'allowed_lockouts'              => 4,
 
 		/* Long lock out for this many seconds */
-		'long_duration'      => 86400, // 24 hours,
+		'long_duration'                 => 86400, // 24 hours,
 
 		/* Reset failed attempts after this many seconds */
-		'valid_duration'     => 86400, // 12 hours
+		'valid_duration'                => 86400, // 12 hours
 
 		/* Also limit malformed/forged cookies? */
-		'cookies'            => true,
+		'cookies'                       => true,
 
 		/* Notify on lockout. Values: '', 'log', 'email', 'log,email' */
-		'lockout_notify'     => 'email',
+		'lockout_notify'                => 'email',
+
+        /* strong account policies */
+        'checklist'                     => false,
 
 		/* If notify by email, do so after this number of lockouts */
 		'notify_email_after' => 3,
 
-		'review_notice_shown'        => false,
-		'enable_notify_notice_shown' => false,
+		'review_notice_shown'           => false,
+		'enable_notify_notice_shown'    => false,
 
-		'whitelist'           => array(),
-		'whitelist_usernames' => array(),
-		'blacklist'           => array(),
-		'blacklist_usernames' => array(),
+		'whitelist'                     => array(),
+		'whitelist_usernames'           => array(),
+		'blacklist'                     => array(),
+		'blacklist_usernames'           => array(),
 
-		'active_app'               => 'local',
-		'app_config'               => '',
-		'show_top_level_menu_item' => true,
-		'hide_dashboard_widget'    => false,
-		'show_warning_badge'       => true,
-		'onboarding_popup_shown'   => false,
+		'active_app'                    => 'local',
+		'app_config'                    => '',
+		'show_top_level_menu_item'      => true,
+		'show_top_bar_menu_item'        => true,
+		'hide_dashboard_widget'         => false,
+		'show_warning_badge'            => true,
+		'onboarding_popup_shown'        => false,
+		'custom_error_message'          => '',
 
-		'logged'                => array(),
-		'retries_valid'         => array(),
-		'retries'               => array(),
-		'lockouts'              => array(),
-		'auto_update_choice'    => null,
+		'logged'                        => array(),
+		'retries_valid'                 => array(),
+		'retries'                       => array(),
+		'lockouts'                      => array(),
+		'auto_update_choice'            => null,
+
+		/* MFA Rescue Codes */
+		'mfa_rescue_codes'              => array(),
+		'mfa_rescue_download_token'     => '',
+
+		/* MFA Flow (after failed login: handshake, verify, email code) */
+		'mfa_enabled'                   => 0,
+		'mfa_provider'                  => 'llar',
+		'mfa_provider_config'           => array(),
+		'mfa_roles'                     => array(),
+	);
+
+	private static $disable_autoload_options = array(
+		'lockouts',
+		'logged',
+		'retries',
+		'retries_valid',
+		'retries_stats'
 	);
 
 	private static $prefix = 'limit_login_';
 
 	private static $use_local_options = true;
 
-	public static function get_default_options() {
+	public static function get_default_options()
+	{
 		return self::$default_options || array();
 	}
 
-	public static function use_local_options( $value ) {
+	public static function use_local_options( $value )
+	{
 		self::$use_local_options = $value;
 	}
 
 	public static function init() {
-		self::init_defaults();
 		self::$use_local_options = Helpers::use_local_options();
 	}
 
@@ -122,7 +146,7 @@ class Config {
 	public static function update( $option_name, $value ) {
 		$func = self::$use_local_options ? 'update_option' : 'update_site_option';
 
-		return $func( self::format_option_name( $option_name ), $value );
+		return $func( self::format_option_name( $option_name ), $value, self::is_autoload( $option_name ) );
 	}
 
 	/**
@@ -134,7 +158,7 @@ class Config {
 	public static function add( $option_name, $value ) {
 		$func = self::$use_local_options ? 'add_option' : 'add_site_option';
 
-		return $func( self::format_option_name( $option_name ), $value, '', 'no' );
+		return $func( self::format_option_name( $option_name ), $value, '', self::is_autoload( $option_name ) );
 	}
 
 	/**
@@ -183,5 +207,14 @@ class Config {
 		if ( $client_type != LLA_DIRECT_ADDR && $client_type != LLA_PROXY_ADDR ) {
 			self::update( 'client_type', LLA_DIRECT_ADDR );
 		}
+	}
+
+	/**
+	 * @param $option_name
+	 *
+	 * @return string
+	 */
+	private static function is_autoload( $option_name ) {
+		return in_array( trim( $option_name ), self::$disable_autoload_options ) ? 'no' : 'yes';
 	}
 }

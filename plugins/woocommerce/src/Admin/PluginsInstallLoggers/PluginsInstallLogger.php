@@ -39,13 +39,14 @@ interface PluginsInstallLogger {
 	 * @param string|null $error_message error message.
 	 * @return mixed
 	 */
-	public function add_error( string $plugin_name, string $error_message = null);
+	public function add_error( string $plugin_name, ?string $error_message = null);
 
 	/**
 	 * Called when all plugins are processed.
 	 *
+	 * @param array $data return data from install_plugins().
 	 * @return mixed
 	 */
-	public function complete();
+	public function complete( $data = array() );
 }
 

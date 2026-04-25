@@ -34,7 +34,7 @@ if( !empty( $details['options'] ) ){
 
         $i++;
 
-        if( !empty( $value ) && ( $option === $value || strpos( $option, '%'.$value, -(strlen($value) + 1) ) !== false ) )//it is not a custom value because it is present in the options
+        if( !empty( $value ) && ( $option === $value || strpos( $option, '%'.$value ) !== false ) )//it is not a custom value because it is present in the options
             $new_nonexisting_value = false;
     }
 

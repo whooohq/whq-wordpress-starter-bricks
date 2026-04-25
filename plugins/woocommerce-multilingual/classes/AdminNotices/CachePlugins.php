@@ -30,9 +30,9 @@ class CachePlugins implements \IWPML_Backend_Action, \IWPML_DIC_Action {
 	}
 
 	public function addNotice() {
-		$text  = '<h2>' . __( 'WooCommerce Multilingual & Multicurrency detected an active cache plugin on your site.', 'woocommerce-multilingual' ) . '</h2>';
-		$text .= '<p>' . __( 'Caching may cause currency display issues for your customers if you are using the multicurrency feature.', 'woocommerce-multilingual' ) . '</p>';
-		$text .= '<p>' . __( 'To avoid this, set your cache plugin to not cache pages for visitors that have a cookie set in their browser.', 'woocommerce-multilingual' ) . '</p>';
+		$text  = '<h2>' . esc_html__( 'WPML Multilingual & Multicurrency for WooCommerce detected an active cache plugin on your site.', 'woocommerce-multilingual' ) . '</h2>';
+		$text .= '<p>' . esc_html__( 'Caching may cause currency display issues for your customers if you are using the multicurrency feature.', 'woocommerce-multilingual' ) . '</p>';
+		$text .= '<p>' . esc_html__( 'To avoid this, set your cache plugin to not cache pages for visitors that have a cookie set in their browser.', 'woocommerce-multilingual' ) . '</p>';
 
 		$notice = $this->notices->create_notice( self::NOTICE_ID, $text );
 		$notice->set_css_class_types( 'notice-warning' );

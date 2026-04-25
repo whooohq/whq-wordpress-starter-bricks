@@ -34,8 +34,11 @@ abstract class scbAdminPage {
 	// l10n
 	protected $textdomain;
 
+	protected $nonce;
+	protected $file;
 
-//  ____________REGISTRATION COMPONENT____________
+
+	//  ____________REGISTRATION COMPONENT____________
 
 
 	private static $registered = array();
@@ -315,6 +318,7 @@ abstract class scbAdminPage {
 		} else if ( false !== strpos( $submit_button, '<button' ) ) {
 			$content .= $submit_button;
 		} else if ( false !== $submit_button ) {
+			//phpcs:ignore -- $submit_button isn't actually modified, so func_get_args() is fine here.
 			$button_args = array_slice( func_get_args(), 1 );
 			$content    .= call_user_func_array( array( $this, 'submit_button' ), $button_args );
 		}
@@ -534,6 +538,7 @@ abstract class scbAdminPage {
 	 * @param string        $help
 	 * @param string|object $screen
 	 *
+	 * @deprecated WSH: The relevant hook was removed and this method is no longer called.
 	 * @return string
 	 */
 	public function _contextual_help( $help, $screen ) {

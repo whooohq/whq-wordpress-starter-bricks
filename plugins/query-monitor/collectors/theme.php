@@ -103,6 +103,11 @@ class QM_Collector_Theme extends QM_DataCollector {
 	 */
 	public function action_get_position( $name ) {
 		$filter = current_filter();
+
+		if ( ! $filter ) {
+			return;
+		}
+
 		$trace = new QM_Backtrace( array(
 			'ignore_hook' => array(
 				$filter => true,
@@ -132,7 +137,19 @@ class QM_Collector_Theme extends QM_DataCollector {
 	 */
 	public function get_concerned_actions() {
 		return array(
+			'after_setup_theme',
+			'after_switch_theme',
+			'get_footer',
+			'get_header',
+			'get_sidebar',
+			'get_template_part',
+			'setup_theme',
+			'switch_theme',
 			'template_redirect',
+			'wp_after_load_template',
+			'wp_before_include_template',
+			'wp_before_load_template',
+			'wp_template_enhancement_output_buffer_started',
 		);
 	}
 
@@ -141,11 +158,16 @@ class QM_Collector_Theme extends QM_DataCollector {
 	 */
 	public function get_concerned_filters() {
 		$filters = array(
+			'body_class',
 			'stylesheet',
 			'stylesheet_directory',
+			'stylesheet_directory_uri',
 			'template',
 			'template_directory',
+			'template_directory_uri',
 			'template_include',
+			'wp_should_output_buffer_template_for_enhancement',
+			'wp_template_enhancement_output_buffer',
 		);
 
 		foreach ( self::get_query_filter_names() as $filter ) {
@@ -336,8 +358,8 @@ class QM_Collector_Theme extends QM_DataCollector {
 			}
 		}
 
-		if ( self::wp_is_block_theme() ) {
-			$block_theme_folders = self::wp_get_block_theme_folders();
+		if ( wp_is_block_theme() ) {
+			$block_theme_folders = get_block_theme_folders();
 			foreach ( $templates as $template ) {
 				if ( str_ends_with( $template, '.php' ) ) {
 					// Standard PHP template, inject the HTML version:
@@ -417,7 +439,7 @@ class QM_Collector_Theme extends QM_DataCollector {
 		$theme_directory = QM_Util::standard_dir( get_theme_root() );
 
 		if ( isset( $this->data->template_hierarchy ) ) {
-			$this->data->template_hierarchy = array_unique( $this->data->template_hierarchy );
+			$this->data->template_hierarchy = array_values( array_unique( $this->data->template_hierarchy ) );
 		}
 
 		if ( ! empty( $this->requested_template_parts ) ) {
@@ -471,7 +493,7 @@ class QM_Collector_Theme extends QM_DataCollector {
 			$all = array_merge( $posts, $files, $nopes );
 
 			foreach ( $all as $part ) {
-				$file = $part['path'] ?? $part['post'];
+				$file = isset( $part['path'] ) ? QM_Util::standard_dir( $part['path'] ) : $part['post'];
 
 				if ( isset( $this->data->count_template_parts[ $file ] ) ) {
 					$this->data->count_template_parts[ $file ]++;
@@ -484,8 +506,6 @@ class QM_Collector_Theme extends QM_DataCollector {
 					$display = $part['id'];
 					$theme_display = $display;
 				} else {
-					$file = QM_Util::standard_dir( $file );
-
 					$filename = str_replace( array(
 						$stylesheet_directory,
 						$template_directory,
@@ -520,7 +540,7 @@ class QM_Collector_Theme extends QM_DataCollector {
 			$this->data->template => $template_directory,
 		);
 
-		$this->data->theme_folders = self::wp_get_block_theme_folders();
+		$this->data->theme_folders = get_block_theme_folders();
 
 		$stylesheet_theme_json = $stylesheet_directory . '/theme.json';
 		$template_theme_json = $template_directory . '/theme.json';
@@ -534,30 +554,9 @@ class QM_Collector_Theme extends QM_DataCollector {
 		}
 
 		if ( isset( $this->data->body_class ) ) {
-			asort( $this->data->body_class );
+			sort( $this->data->body_class );
 		}
 
-	}
-
-	/**
-	 * @return bool
-	 */
-	protected static function wp_is_block_theme() {
-		return function_exists( 'wp_is_block_theme' ) && wp_is_block_theme();
-	}
-
-	/**
-	 * @return array<string, string>
-	 */
-	protected static function wp_get_block_theme_folders() {
-		if ( ! function_exists( 'get_block_theme_folders' ) ) {
-			return array(
-				'wp_template'      => 'templates',
-				'wp_template_part' => 'parts',
-			);
-		}
-
-		return get_block_theme_folders();
 	}
 
 	/**
@@ -567,10 +566,6 @@ class QM_Collector_Theme extends QM_DataCollector {
 	 * @return WP_Block_Template|null template A template object, or null if none could be found.
 	 */
 	protected static function wp_resolve_block_template( $template_type, $template_hierarchy, $fallback_template ) {
-		if ( ! function_exists( 'resolve_block_template' ) ) {
-			return null;
-		}
-
 		if ( ! current_theme_supports( 'block-templates' ) ) {
 			return null;
 		}

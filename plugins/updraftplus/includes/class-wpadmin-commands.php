@@ -1,5 +1,9 @@
 <?php
-
+//phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- we try to reduce overhead by bypassing WP APIs and other extra layers; Some custom complex queries tailored specifically to our needs, giving us full control over the SQL commands and data manipulation
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_print_r -- print_r is intentionally used to convert an array into a readable string or for controlled logging purposes.
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching -- some query operations need to always receive the most up-to-date or actual data directly from the database, reducing the risk of serving stale information.
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- we use the set_error_handler() function to provide a flexible way of handling PHP errors according to our needs; we centralises error handling in one place and customises certain errors based on their severity and context.
+// phpcs:disable Squiz.PHP.DiscouragedFunctions.Discouraged -- some functions, like set_time_limit() and ini_set(), are used to temporarily change PHP configuration values based on the script's needs (e.g., processing large datasets or performing long operations).
 if (!defined('UPDRAFTPLUS_DIR')) die('No access.');
 
 /*
@@ -116,7 +120,8 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 
 		if (isset($res['updraft_restore'])) {
 
-			set_error_handler(array($this->_updraftplus_admin, 'get_php_errors'), E_ALL & ~E_STRICT);
+			$error_levels = version_compare(PHP_VERSION, '8.4.0', '>=') ? E_ALL : E_ALL & ~E_STRICT;
+			set_error_handler(array($this->_updraftplus_admin, 'get_php_errors'), $error_levels);
 
 			$elements = array_flip($res['updraft_restore']);
 
@@ -127,7 +132,9 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 			$max_execution_time = (int) @ini_get('max_execution_time');// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the function.
 
 			if ($max_execution_time>0 && $max_execution_time<61) {
-				$warn[] = sprintf(__('The PHP setup on this webserver allows only %s seconds for PHP to run, and does not allow this limit to be raised. If you have a lot of data to import, and if the restore operation times out, then you will need to ask your web hosting company for ways to raise this limit (or attempt the restoration piece-by-piece).', 'updraftplus'), $max_execution_time);
+				/* translators: %s: Maximum execution time in seconds */
+				$warn[] = sprintf(__('The PHP setup on this webserver allows only %s seconds for PHP to run, and does not allow this limit to be raised.', 'updraftplus'), $max_execution_time).' '.
+				__('If you have a lot of data to import, and if the restore operation times out, then you will need to ask your web hosting company for ways to raise this limit (or attempt the restoration piece-by-piece).', 'updraftplus');
 			}
 
 			if (isset($backups[$timestamp]['native']) && false == $backups[$timestamp]['native']) {
@@ -156,6 +163,7 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 			if (!empty($backups[$timestamp]['meta_foreign'])) {
 				$foreign_known = apply_filters('updraftplus_accept_archivename', array());
 				if (!is_array($foreign_known) || empty($foreign_known[$backups[$timestamp]['meta_foreign']])) {
+					/* translators: %s: Backup source information */
 					$err[] = sprintf(__('Backup created by unknown source (%s) - cannot be restored.', 'updraftplus'), $backups[$timestamp]['meta_foreign']);
 				} else {
 					// For some reason, on PHP 5.5 passing by reference in a single array stopped working with apply_filters_ref_array (though not with do_action_ref_array).
@@ -180,14 +188,17 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 						$expected_index++;
 					}
 					if (!file_exists($updraft_dir.'/'.$file)) {
+						/* translators: %s: File path */
 						$err[] = sprintf(__('File not found (you need to upload it): %s', 'updraftplus'), $updraft_dir.'/'.$file);
 					} elseif (filesize($updraft_dir.'/'.$file) == 0) {
+						/* translators: %s: File name */
 						$err[] = sprintf(__('File was found, but is zero-sized (you need to re-upload it): %s', 'updraftplus'), $file);
 					} else {
 						$itext = (0 == $index) ? '' : $index;
 						if (!empty($backups[$timestamp][$type.$itext.'-size']) && filesize($updraft_dir.'/'.$file) != $backups[$timestamp][$type.$itext.'-size']) {
 							if (empty($warn['doublecompressfixed'])) {
-								$warn[] = sprintf(__('File (%s) was found, but has a different size (%s) from what was expected (%s) - it may be corrupt.', 'updraftplus'), $file, filesize($updraft_dir.'/'.$file), $backups[$timestamp][$type.$itext.'-size']);
+								/* translators: 1: File name, 2: Actual file size, 3: Expected file size */
+								$warn[] = sprintf(__('File (%1$s) was found, but has a different size (%2$s) from what was expected (%3$s) - it may be corrupt.', 'updraftplus'), $file, filesize($updraft_dir.'/'.$file), $backups[$timestamp][$type.$itext.'-size']);
 							}
 						}
 						do_action_ref_array("updraftplus_checkzip_$type", array($updraft_dir.'/'.$file, &$mess, &$warn, &$err));
@@ -202,38 +213,43 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 					}
 				}
 				if ('' != $missing) {
+					/* translators: %s: List of missing archives with description */
 					$warn[] = sprintf(__("This multi-archive backup set appears to have the following archives missing: %s", 'updraftplus'), $missing.' ('.$entity_info['description'].')');
 				}
 			}
 
 			// Check this backup set has a incremental_sets array e.g may have been created before this array was introduced
 			if (isset($backups[$timestamp]['incremental_sets'])) {
-				$incremental_sets = array_keys($backups[$timestamp]['incremental_sets']);
-				// Check if there are more than one timestamp in the incremental set
-				if (1 < count($incremental_sets)) {
-					$incremental_select_html = '<div class="notice updraft-restore-option"><label>'.__('This backup set contains incremental backups of your files; please select the time you wish to restore your files to', 'updraftplus').': </label>';
-					$incremental_select_html .= '<select name="updraft_incremental_restore_point" id="updraft_incremental_restore_point">';
-					$incremental_sets = array_reverse($incremental_sets);
-					$first_timestamp = $incremental_sets[0];
-					
-					foreach ($incremental_sets as $set_timestamp) {
-						$pretty_date = get_date_from_gmt(gmdate('Y-m-d H:i:s', (int) $set_timestamp), 'M d, Y G:i');
-						$esc_pretty_date = esc_attr($pretty_date);
-						$incremental_select_html .= '<option value="'.$set_timestamp.'" '.selected($set_timestamp, $first_timestamp, false).'>'.$esc_pretty_date.'</option>';
-					}
+				if (isset($elements['db']) && 1 === count($elements)) {
+					// Don't show the incremental dropdown if the user only selects 'database'
+				} else {
+					$incremental_sets = array_keys($backups[$timestamp]['incremental_sets']);
+					// Check if there are more than one timestamp in the incremental set
+					if (1 < count($incremental_sets)) {
+						$incremental_select_html = '<div class="udp-notice updraft-restore-option"><label>'.__('This backup set contains incremental backups of your files; please select the time you wish to restore your files to', 'updraftplus').': </label>';
+						$incremental_select_html .= '<select name="updraft_incremental_restore_point" id="updraft_incremental_restore_point">';
+						$incremental_sets = array_reverse($incremental_sets);
+						$first_timestamp = $incremental_sets[0];
+						
+						foreach ($incremental_sets as $set_timestamp) {
+							$pretty_date = get_date_from_gmt(gmdate('Y-m-d H:i:s', (int) $set_timestamp), 'M d, Y G:i');
+							$esc_pretty_date = esc_attr($pretty_date);
+							$incremental_select_html .= '<option value="'.$set_timestamp.'" '.selected($set_timestamp, $first_timestamp, false).'>'.$esc_pretty_date.'</option>';
+						}
 
-					$incremental_select_html .= '</select>';
-					$incremental_select_html .= '</div>';
-					$info['addui'] = empty($info['addui']) ? $incremental_select_html : $info['addui'].'<br>'.$incremental_select_html;
+						$incremental_select_html .= '</select>';
+						$incremental_select_html .= '</div>';
+						$info['addui'] = empty($info['addui']) ? $incremental_select_html : $info['addui'].'<br>'.$incremental_select_html;
+					}
 				}
 			}
 
 			if (0 == count($err) && 0 == count($warn)) {
-				$mess_first = __('The backup archive files have been successfully processed. Now press Restore to proceed.', 'updraftplus');
+				$mess_first = __('The backup archive files have been successfully processed.', 'updraftplus').' '.__('Now press Restore to proceed.', 'updraftplus');
 			} elseif (0 == count($err)) {
-				$mess_first = __('The backup archive files have been processed, but with some warnings. If all is well, then press Restore to proceed. Otherwise, cancel and correct any problems first.', 'updraftplus');
+				$mess_first = __('The backup archive files have been processed, but with some warnings.', 'updraftplus').' '.__('If all is well, then press Restore to proceed.', 'updraftplus').' '.__('Otherwise, cancel and correct any problems first.', 'updraftplus');
 			} else {
-				$mess_first = __('The backup archive files have been processed, but with some errors. You will need to cancel and correct any problems before retrying.', 'updraftplus');
+				$mess_first = __('The backup archive files have been processed, but with some errors.', 'updraftplus').' '.__('You will need to cancel and correct any problems before retrying.', 'updraftplus');
 			}
 
 			if (count($this->_updraftplus_admin->logged) >0) {
@@ -254,11 +270,11 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 			do_action_ref_array('updraftplus_restore_all_downloaded_postscan', array($backups, $timestamp, $elements, &$info, &$mess, &$warn, &$err));
 
 			if (0 == count($err) && 0 == count($warn)) {
-				$mess_first = __('The backup archive files have been successfully processed. Now press Restore again to proceed.', 'updraftplus');
+				$mess_first = __('The backup archive files have been successfully processed.', 'updraftplus').' '.__('Now press Restore again to proceed.', 'updraftplus');
 			} elseif (0 == count($err)) {
-				$mess_first = __('The backup archive files have been processed, but with some warnings. If all is well, then now press Restore again to proceed. Otherwise, cancel and correct any problems first.', 'updraftplus');
+				$mess_first = __('The backup archive files have been processed, but with some warnings.', 'updraftplus').' '.__('If all is well, then now press Restore again to proceed.', 'updraftplus').' '.__('Otherwise, cancel and correct any problems first.', 'updraftplus');
 			} else {
-				$mess_first = __('The backup archive files have been processed, but with some errors. You will need to cancel and correct any problems before retrying.', 'updraftplus');
+				$mess_first = __('The backup archive files have been processed, but with some errors.', 'updraftplus').' '.__('You will need to cancel and correct any problems before retrying.', 'updraftplus');
 			}
 
 			$warn_result = '';
@@ -390,16 +406,16 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 	
 		ob_start();
 	
-		if (function_exists('phpinfo')) phpinfo(INFO_ALL ^ (INFO_CREDITS | INFO_LICENSE));
+		if (function_exists('phpinfo')) phpinfo(INFO_ALL ^ (INFO_CREDITS | INFO_LICENSE)); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_phpinfo -- we call the phpinfo() function to display PHP information in the advanced tools.
 
-		echo '<h3 id="ud-debuginfo-constants">'.__('Constants', 'updraftplus').'</h3>';
+		echo '<h3 id="ud-debuginfo-constants">'.esc_html__('Constants', 'updraftplus').'</h3>';
 		$opts = @get_defined_constants();// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Silenced to suppress errors that may arise because of the function.
 		ksort($opts);
 		echo '<table><thead></thead><tbody>';
 		foreach ($opts as $key => $opt) {
 			// Administrators can already read these in other ways, but we err on the side of caution
 			if (is_string($opt) && false !== stripos($opt, 'api_key')) $opt = '***';
-			echo '<tr><td>'.htmlspecialchars($key).'</td><td>'.htmlspecialchars(print_r($opt, true)).'</td>';
+			echo '<tr><td>'.esc_html($key).'</td><td>'.esc_html(print_r($opt, true)).'</td>';
 		}
 		echo '</tbody></table>';
 		
@@ -510,6 +526,8 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 			$node_array = $this->_updraft_jstree_directory($params);
 		} elseif ('zipbrowser' == $params['entity']) {
 			$node_array = $this->_updraft_jstree_zip($params);
+		} else {
+			$node_array = apply_filters('updraftplus_jstree_'.$params['entity'], array(), $params);
 		}
 		return empty($node_array['error']) ? array('nodes' => $node_array) : $node_array;
 	}
@@ -577,7 +595,9 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 				}
 			}
 		} else {
-			$node_array['error'] = sprintf(__('Failed to open directory: %s. This is normally caused by file permissions.', 'updraftplus'), $path);
+			/* translators: %s: Directory path */
+			$node_array['error'] = sprintf(__('Failed to open directory: %s.', 'updraftplus'), $path).' '.
+			__('This is normally caused by file permissions.', 'updraftplus');
 		}
 
 		return $node_array;
@@ -742,7 +762,7 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 	 * When character set and collate both are unsupported at restoration time and if user change anyone substitution dropdown from both, Other substitution select box value should be change respectively. To achieve this functionality, Ajax calls comes here.
 	 *
 	 * @param  Array $params this is an array of parameters sent via ajax it can include the following:
-	 * collate_change_on_charset_selection_data - It is data in serialize form which is need for choose other dropdown option value. It contains below elemts data:
+	 * collate_change_on_charset_selection_data - It is data in serialize form which is need for choose other dropdown option value. It contains below elements data:
 	 * 	db_supported_collations - All collations supported by current database. This is result of 'SHOW COLLATION' query
 	 * 	db_unsupported_collate_unique - Unsupported collates unique array
 	 * 	db_collates_found - All collates found in database backup file
@@ -775,7 +795,7 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 		if (empty($similar_type_collate)) {
 			$similar_type_collate = $this->_updraftplus->get_similar_collate_based_on_ocuurence_count($db_collates_found, $db_supported_collations, $updraft_restorer_collate);
 		}
-		// Default collation for changed charcter set
+		// Default collation for changed character set
 		if (empty($similar_type_collate)) {
 			$charset_row = $GLOBALS['wpdb']->get_row($GLOBALS['wpdb']->prepare("SHOW CHARACTER SET LIKE '%s'", $updraft_restorer_charset));
 			if (null !== $charset_row && !empty($charset_row->{'Default collation'})) {
@@ -819,14 +839,15 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 	/**
 	 * Return the database information
 	 *
-	 * @return array
+	 * @param bool $raw_data_only If true, returns array of data; if false, returns HTML
+	 * @return array If $raw_data_only is true, returns array with 'tables' and 'size'. If false, returns array with 'size' and 'html'
 	 */
-	public function db_size() {
+	public function db_size($raw_data_only = false) {
 		global $wpdb;
 		
 		$db_table_res = $wpdb->get_results('SHOW TABLE STATUS', ARRAY_A);
 		$db_table_size = 0;
-		$db_table_html = '';
+		$db_size_info = array();
 
 		if ($wpdb->num_rows > 0) {
 			$key_field_name = UpdraftPlus_Manipulation_Functions::backquote('Key');
@@ -837,32 +858,121 @@ class UpdraftPlus_WPAdmin_Commands extends UpdraftPlus_Commands {
 				if (false === $rows_count) {
 					// If not found, try search primary key first
 					$table_name = UpdraftPlus_Manipulation_Functions::backquote($row['Name']);
-					$primary_key = $wpdb->get_row("SHOW COLUMNS FROM $table_name WHERE $key_field_name = 'PRI'", ARRAY_A);
-
+					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table_name and $key_field_name are SQL identifiers; identifiers cannot be parameterized with $wpdb->prepare(), $table_name and $key_field_name are safe.
+					$primary_key = $wpdb->get_row($wpdb->prepare("SHOW COLUMNS FROM $table_name WHERE $key_field_name = %s", 'PRI'), ARRAY_A);
 					if ($primary_key) {
 						// Count rows by primary key
 						$primary_key_field = UpdraftPlus_Manipulation_Functions::backquote($primary_key['Field']);
+						// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table_name and $primary_key_field are SQL identifiers; identifiers cannot be parameterized with $wpdb->prepare(), $table_name and $primary_key_field are safe.
 						$rows_count = $wpdb->get_var("SELECT COUNT($primary_key_field) FROM ".$table_name);
 					}
 
+					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table_name is SQL identifiers; identifiers cannot be parameterized with $wpdb->prepare(), $table_name is are safe.
 					if (is_null($rows_count) || false === $rows_count) $rows_count = $wpdb->get_var("SELECT COUNT(*) FROM ".$table_name);
 				}
 
-				$db_table_html .= '<tr>';
-				$db_table_html .= sprintf('<td>%s</td>', esc_html($row['Name']));
-				$db_table_html .= sprintf('<td>%s</td>', esc_html($rows_count));
-				$db_table_html .= sprintf('<td>%s</td>', esc_html(size_format($row['Data_length'], 2)));
-				$db_table_html .= sprintf('<td>%s</td>', esc_html(size_format($row['Index_length'], 2)));
-				$db_table_html .= sprintf('<td>%s</td>', esc_html($row['Engine']));
-				$db_table_html .= '</tr>';
+				$data_length = isset($row['Data_length']) ? (int) $row['Data_length'] : 0;
+				$index_length = isset($row['Index_length']) ? (int) $row['Index_length'] : 0;
 
-				$db_table_size += $row['Data_length'] + $row['Index_length'];
+				$db_size_info[] = array(
+					'name' => $row['Name'],
+					'records' => $rows_count,
+					'data_length' => $data_length,
+					'index_length' => $index_length,
+					'type' => $row['Engine']
+				);
+
+				$db_table_size += $data_length + $index_length;
 			}
 		}
 
+		$total_size_formatted = size_format((int) $db_table_size, 2);
+
+		// Return raw data if requested
+		if ($raw_data_only) {
+			return array(
+				'tables' => $db_size_info,
+				'size' => $total_size_formatted
+			);
+		}
+
+		// Otherwise, construct HTML from the collected data
+		$db_table_html = '';
+		foreach ($db_size_info as $table_info) {
+			$db_table_html .= '<tr>';
+			$db_table_html .= sprintf('<td>%s</td>', esc_html($table_info['name']));
+			$db_table_html .= sprintf('<td>%s</td>', esc_html($table_info['records']));
+			$db_table_html .= sprintf('<td>%s</td>', esc_html($table_info['data_size']));
+			$db_table_html .= sprintf('<td>%s</td>', esc_html($table_info['index_size']));
+			$db_table_html .= sprintf('<td>%s</td>', esc_html($table_info['type']));
+			$db_table_html .= '</tr>';
+		}
+
 		return array(
-			'size' => size_format((int) $db_table_size, 2),
+			'size' => $total_size_formatted,
 			'html' => $db_table_html
 		);
+	}
+
+	/**
+	 * Retrieves the scheduled UpdraftPlus cron events.
+	 *
+	 * This function fetches all cron events and filters those related to UpdraftPlus.
+	 * It then formats the schedule information, calculates the time difference,
+	 * and returns a structured array of cron details.
+	 *
+	 * @return array[] An array of cron event details, where each event contains:
+	 *                - `overdue` (int): Whether the event is overdue (1) or not (0).
+	 *                - `hook` (string): The name of the cron hook.
+	 *                - `name` (string): The display name of the schedule.
+	 *                - `time` (string): The formatted execution time.
+	 *                - `interval` (string): The time remaining or overdue duration.
+	 */
+	public function get_cron_events() {
+		$data = array();
+
+		$schedules = wp_get_schedules();
+		$cron = _get_cron_array();
+
+		$date_format = get_option('date_format');
+		$time_format = get_option('time_format');
+
+		// Loop through the cron schedules
+		foreach ($cron as $timestamp => $cron_hooks) {
+			foreach ($cron_hooks as $hook => $events) {
+				if (!preg_match('/^updraft(_backup(_database|_resume|_increments)?|plus_clean_temporary_files)$/', $hook)) continue;
+
+				sort($events);
+
+				$schedule_name = $schedules[$events[0]['schedule']];
+				// wp_date() is available on WP 5.3+, it performs locale translation.
+				$formatted_date = function_exists('wp_date') ? wp_date($date_format. ' ' .$time_format, $timestamp) : get_date_from_gmt(gmdate('Y-m-d H:i:s', $timestamp), $date_format. ' ' .$time_format);
+
+				$difference = $timestamp - current_time('timestamp', true);
+				$difference_in_seconds = abs($difference);
+				$overdue = $difference < 0 ? 1 : 0;
+
+				$hours = floor($difference_in_seconds / 3600);
+				$minutes = floor(($difference_in_seconds % 3600) / 60);
+
+				if ($overdue) {
+					/* translators: 1: Number of hours, 2: Number of minutes */
+					$interval = sprintf(__('%1$d hours and %2$d minutes ago', 'updraftplus'), $hours, $minutes);
+				} else {
+					/* translators: 1: Number of hours, 2: Number of minutes */
+					$interval = sprintf(__('%1$d hours and %2$d minutes', 'updraftplus'), $hours, $minutes);
+				}
+
+				$data[] = array(
+					'overdue' => $overdue,
+					'hook' => $hook,
+					'name' => $schedule_name['display'],
+					'time' => $formatted_date,
+					'interval' => $interval
+				);
+			}
+		}
+
+		return $data;
 	}
 }

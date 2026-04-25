@@ -1,4 +1,6 @@
 <?php
+
+if (!defined('ABSPATH')) die('No direct access allowed');
 /*
  * Copyright 2014 Google Inc.
  *

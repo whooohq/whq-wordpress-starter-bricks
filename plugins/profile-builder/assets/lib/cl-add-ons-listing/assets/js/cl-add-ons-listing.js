@@ -45,7 +45,12 @@ jQuery( function(){
 
         //add a tooltip
         pointer_content = '<h3>'+ cl_add_ons_pointer.tooltip_header +'</h3>';
-        pointer_content += '<p>'+ cl_add_ons_pointer.tooltip_content +'</p>';
+        
+        if( cl_add_ons_pointer.paid_version && cl_add_ons_pointer.license_status && cl_add_ons_pointer.license_status == 'missing' ) {
+            pointer_content += '<p>'+ cl_add_ons_pointer.tooltip_content_license_inactive +'</p>';
+        } else {
+            pointer_content += '<p>'+ cl_add_ons_pointer.tooltip_content +'</p>';
+        }
 
         jQuery( this ).pointer({
             content: pointer_content,

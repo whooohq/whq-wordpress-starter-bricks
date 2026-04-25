@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 class WPPB_Review_Request {
 
@@ -63,32 +65,47 @@ class WPPB_Review_Request {
 
             $user_id = $current_user->ID;
 
-            if ( current_user_can( 'manage_options' ) ) {
+            if ( current_user_can( 'manage_options' ) && apply_filters( 'wppb_enable_review_request_notice', true ) ) {
                 // Check that the user hasn't already dismissed the message
                 if ( !get_user_meta( $user_id, $this->notificationId . '_dismiss_notification' ) ) {
                     do_action( $this->notificationId . '_before_notification_displayed', $current_user, $pagenow );
+                    $ul_icon_url = ( file_exists( WPPB_PLUGIN_DIR . 'assets/images/pb-logo.svg' )) ? WPPB_PLUGIN_URL . 'assets/images/pb-logo.svg' : '';
                     ?>
                     <div class="wppb-review-notice wppb-notice notice is-dismissible">
-                        <p style="margin-top: 16px; font-size: 15px;">
-                            <?php esc_html_e("Hello! Seems like you've been using Profile Builder to create front-end user forms. That's awesome!", 'profile-builder'); ?>
-                            <br/>
-                            <?php esc_html_e("If you can spare a few moments to rate it on WordPress.org, it would help us a lot (and boost my motivation).", 'profile-builder'); ?>
-                        </p>
-                        <p>
-                            <?php esc_html_e("~ Paul, developer of Profile Builder", 'profile-builder'); ?>
-                        </p>
-                        <p></p>
-                        <p>
-                            <a href="https://wordpress.org/support/plugin/profile-builder/reviews/?filter=5#new-post"
-                               target="_blank" rel="noopener" class="button-primary" style="margin-right: 20px">
-                                <?php esc_html_e('Ok, I will gladly help!', 'profile-builder'); ?>
-                            </a>
-                            <a href="<?php echo esc_url( add_query_arg(array($this->query_arg => $this->notificationId)) ) ?>"
-                               class="button-secondary">
-                                <?php esc_html_e('No, thanks.', 'profile-builder'); ?>
-                            </a>
-                        </p>
-                        <a href="<?php echo esc_url( add_query_arg(array($this->query_arg => $this->notificationId)) ) ?>"
+                        <div style="display: flex;">
+                            <div>
+                                <img style="width: 80px; height: 80px; margin-right: 20px; margin-top: 20px;" src="<?php echo esc_url($ul_icon_url); ?>" >
+                            </div>
+                            <div>
+                                <p style="margin-top: 16px; font-size: 15px;">
+		                            <?php esc_html_e("Hello! Seems like you've been using Profile Builder to create front-end user forms. That's awesome!", 'profile-builder'); ?>
+                                    <br/>
+		                            <?php esc_html_e("If you can spare a few moments to rate it on WordPress.org, it would help us a lot (and boost my motivation).", 'profile-builder'); ?>
+                                </p>
+                                <p>
+		                            <?php esc_html_e("~ Paul, developer of Profile Builder", 'profile-builder'); ?>
+                                </p>
+                                <p></p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; margin-bottom: 24px; padding-left: 95px;">
+                            <div>
+                                <a href="https://wordpress.org/support/plugin/profile-builder/reviews/?filter=5#new-post"
+                                   target="_blank" rel="noopener" class="button-primary" style="margin-right: 20px">
+		                            <?php esc_html_e('Ok, I will gladly help!', 'profile-builder'); ?>
+                                </a>
+                            </div>
+
+                            <div>
+                                <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( $this->query_arg => $this->notificationId ) ), 'wppb_review_notice_dismiss' ) ) ?>"
+                                   class="button-secondary">
+		                            <?php esc_html_e('No, thanks.', 'profile-builder'); ?>
+                                </a>
+                            </div>
+                        </div>
+
+                        <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( $this->query_arg => $this->notificationId ) ), 'wppb_review_notice_dismiss' ) ) ?>"
                            type="button" class="notice-dismiss" style="text-decoration: none;">
                             <span class="screen-reader-text">
                                 <?php esc_html_e('Dismiss this notice.', 'profile-builder'); ?>
@@ -104,6 +121,10 @@ class WPPB_Review_Request {
 
     // Function that saves the notification dismissal to the user meta
     public function dismiss_notification() {
+
+        if( empty( $_GET['_wpnonce'] ) || !wp_verify_nonce( sanitize_text_field( $_GET['_wpnonce'] ), 'wppb_review_notice_dismiss' ) )
+            return;
+
         global $current_user;
 
         $user_id = $current_user->ID;

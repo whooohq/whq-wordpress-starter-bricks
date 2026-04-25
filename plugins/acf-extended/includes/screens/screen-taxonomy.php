@@ -50,7 +50,7 @@ class acfe_screen_taxonomy{
         
         // vars
         $taxonomy = $taxnow;
-        $term_id = (int) acfe_get_post_id(false);
+        $term_id = acfe_get_post_id('id');
     
         // set vars
         $this->taxonomy = $taxonomy;
@@ -101,9 +101,11 @@ class acfe_screen_taxonomy{
     
         // enhanced ui
         if(acf_get_setting('acfe/modules/ui')){
-    
+
+            // get screen
             $screen = get_current_screen();
-            
+
+            // do metaboxes
             do_meta_boxes($screen, 'normal', $term);
             do_meta_boxes($screen, 'side', $term);
             
@@ -253,6 +255,6 @@ class acfe_screen_taxonomy{
     
 }
 
-new acfe_screen_taxonomy();
+acf_new_instance('acfe_screen_taxonomy');
 
 endif;

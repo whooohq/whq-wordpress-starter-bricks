@@ -6,20 +6,32 @@ $vendorDir = dirname(__DIR__);
 $baseDir   = dirname($vendorDir);
 
 return array(
+	'6e3fae29631ef280660b3cdad06f25a8' => array(
+		'version' => '2.5.3.0',
+		'path'    => $vendorDir . '/symfony/deprecation-contracts/function.php'
+	),
 	'7b11c4dc42b3b3023073cb14e519683c' => array(
 		'version' => '3.0.3.0',
 		'path'    => $vendorDir . '/ralouphie/getallheaders/src/getallheaders.php'
 	),
-	'6e3fae29631ef280660b3cdad06f25a8' => array(
-		'version' => '3.4.0.0',
-		'path'    => $vendorDir . '/symfony/deprecation-contracts/function.php'
+	'a4a119a56e50fbb293281d9a48007e0e' => array(
+		'version' => '1.31.0.0',
+		'path'    => $vendorDir . '/symfony/polyfill-php80/bootstrap.php'
 	),
 	'37a3dc5111fe8f707ab4c132ef1dbc62' => array(
-		'version' => '7.8.1.0',
+		'version' => '7.9.2.0',
 		'path'    => $vendorDir . '/guzzlehttp/guzzle/src/functions_include.php'
 	),
 	'0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => array(
-		'version' => '1.29.0.0',
+		'version' => '1.31.0.0',
 		'path'    => $vendorDir . '/symfony/polyfill-mbstring/bootstrap.php'
+	),
+	'3937806105cc8e221b8fa8db5b70d2f2' => array(
+		'version' => '0.6.3.0',
+		'path'    => $vendorDir . '/wp-cli/mustangostang-spyc/includes/functions.php'
+	),
+	'be01b9b16925dcb22165c40b46681ac6' => array(
+		'version' => '0.11.22.0',
+		'path'    => $vendorDir . '/wp-cli/php-cli-tools/lib/cli/cli.php'
 	),
 );

@@ -7,7 +7,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -62,10 +62,33 @@ class CodeProfiler_Stream {
 			$this->resource = fopen( $path, $mode, $options );
 		}
 		self::start();
-		if ( in_array( $mode, ['rb', 'rt', 'r']) && "{$path[-4]}{$path[-3]}{$path[-2]}{$path[-1]}" == '.php') {
-			$this->script = 1;
+
+		if ( version_compare( PHP_VERSION, '8.0', '<') ) {
+			if ( in_array( $mode, ['rb', 'rt', 'r']) &&
+				"{$path[-4]}{$path[-3]}{$path[-2]}{$path[-1]}" == '.php') {
+
+				$this->script = $this->check_exclusions( $path );
+			}
+		} else {
+			if ( str_ends_with( $path, '.php') && in_array( $mode, ['rb', 'rt', 'r']) ) {
+				$this->script = $this->check_exclusions( $path );
+			}
 		}
+
 		return $this->resource !== false;
+	}
+
+	/**
+	 * Check file and folder exclusions.
+	 */
+	private function check_exclusions( $path ) {
+
+		foreach( CodeProfiler_Profiler::$exclusions as $item ) {
+			if ( $item && strpos( $path, $item ) !== false ) {
+				return;
+			}
+		}
+		return 1;
 	}
 
 	/**
@@ -317,12 +340,16 @@ class CodeProfiler_Stream {
 				self::start();
 				$read = fread( $this->resource, $count - CODE_PROFILER_LENGTH );
 				self::$io_read += strlen( $read );
-				return preg_replace(
-					'/<\?php/i',
-					'<?php declare(ticks='. CODE_PROFILER_TICKS .');',
-					$read,
-					1
-				);
+				$pos = stripos( $read, '<?php' );
+				if ( $pos !== false ) {
+					return substr_replace(
+						$read,
+						'<?php declare(ticks='. CODE_PROFILER_TICKS .');',
+						$pos,
+						5
+					);
+				}
+				return $read;
 			}
 			self::start();
 		}

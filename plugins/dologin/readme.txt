@@ -1,13 +1,13 @@
 === DoLogin Security ===
 Contributors: WPDO
-Tags: Login security, 2FA login, GeoLocation login limit, limit login attempts, passwordless login
+Tags: Login security, 2FA login, Easy login, Cloudflare Turnstile reCAPTCHA, GeoLocation login limit, limit login attempts, passwordless login
 Requires at least: 4.0
-Tested up to: 6.3.1
-Stable tag: 3.7.1
+Tested up to: 6.8.1
+Stable tag: 4.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
-2FA login. Passwordless login. SMS passcode as 2nd step verification. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce.
+Easy Login. 2FA login. Passwordless login. Cloudflare Turnstile reCAPTCHA. GeoLocation (Continent/Country/City)/IP range to limit login attempts. Support Whitelist and Blacklist. Support WooCommerce.
 
 == Description ==
 
@@ -19,7 +19,7 @@ Limit the number of login attempts through both the login and the auth cookies.
 
 * Text SMS message passcode for 2nd step verification support.
 
-* Google reCAPTCHA.
+* Cloudflare Turnstile (better than Google reCAPTCHA).
 
 * GeoLocation (Continent/Country/City) or IP range to limit login attempts.
 
@@ -63,16 +63,39 @@ Based on the original code from Limit Login Attemps plugin and Limit Login Attem
 
 == Screenshots ==
 
-1. Plugin Settings
-2. Plugin Passwordless Login
-3. Plugin Login Attempts Log
-4. Login Page (After sent dynamic code to mobile text message)
-5. Login Page (2 times left)
-6. Login Page (Too many failure)
-7. Login Page (Blacklist blocked)
-8. WooCommerce login protection
+1. Plugin Site Connections
+2. Plugin Settings
+3. Plugin Passwordless Login
+4. Plugin Login Attempts Log
+5. Login Page (After sent dynamic code to mobile text message)
+6. Login Page (2 times left)
+7. Login Page (Too many failure)
+8. Login Page (Blacklist blocked)
+9. WooCommerce login protection
 
 == Changelog ==
+
+= 4.3 - Jun 11 2025 =
+* Generating passwordless link will redirect to the corresponding tab now.
+
+= 4.2 - May 31 2025 =
+* 🍀 Cloudflare Turnstile reCAPTCHA.
+* 🐞 Fixed 2FA conflict w/ reCAPTCHA.
+
+= 4.1.1 - May 27 2025 =
+* Resolved WooCommerce HPOS feature warning.
+
+= 4.1 - May 27 2025 =
+* Showed the easy login confirmation landing page.
+* Disallowed reuse of login link to prevent possible replay attack.
+* Fixed root site pk/sk clear issue in easy login when saving conf.
+* Restored reCAPTCHA to previous version.
+
+= 4.0 - May 26 2025 =
+* 🍀 `Easy Login` feature! Allow one root WordPress to easy login to multi child WordPress sites.
+
+= 3.8 =
+* Security patch per patchstack report.
 
 = 3.7.1 =
 * IP vulnerability patch for dashboard widget. (Bob@Jetpack)

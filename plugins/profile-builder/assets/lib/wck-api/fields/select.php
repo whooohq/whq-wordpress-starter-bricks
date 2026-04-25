@@ -24,7 +24,6 @@ $options = '';
 if( !empty( $details['options'] ) && !Wordpress_Creation_Kit_PB::wck_is_multi( $details['options'] ) ){
     $i = 0;
     foreach( $details['options'] as $option ){
-
         $optionOutput = Wordpress_Creation_Kit_PB::wck_generate_select_option($option, $details['value'], $i, $value);
         $options .= apply_filters( "wck_select_{$meta}_{$field_name}_option_{$i}", $optionOutput, $i);
 
@@ -48,8 +47,4 @@ if( !empty( $details['options'] ) && !Wordpress_Creation_Kit_PB::wck_is_multi( $
 
 $element .= apply_filters( "wck_select_{$meta}_{$field_name}_options", $options );
 $element .= '</select>';
-
-
-
-
 

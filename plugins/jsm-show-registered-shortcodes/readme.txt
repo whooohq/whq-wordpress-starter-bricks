@@ -8,10 +8,10 @@ License URI: https://www.gnu.org/licenses/gpl.txt
 Assets URI: https://jsmoriss.github.io/jsm-show-registered-shortcodes/assets/
 Tags: inspector, shortcodes, debug, tools
 Contributors: jsmoriss
-Requires PHP: 7.2.34
-Requires At Least: 5.5
-Tested Up To: 6.2.2
-Stable Tag: 2.0.0
+Requires PHP: 7.4.33
+Requires At Least: 6.0
+Tested Up To: 6.9.4
+Stable Tag: 4.0.0
 
 Simple and lightweight plugin to show all registered shortcodes under a "Registered Shortcodes" toolbar menu item.
 
@@ -24,9 +24,11 @@ There are no plugin settings - simply install and activate the plugin.
 = Related Plugins =
 
 * [JSM Show Comment Metadata](https://wordpress.org/plugins/jsm-show-comment-meta/)
+* [JSM Show Order Metadata for WooCommerce HPOS](https://wordpress.org/plugins/jsm-show-order-meta/)
 * [JSM Show Post Metadata](https://wordpress.org/plugins/jsm-show-post-meta/)
 * [JSM Show Term Metadata](https://wordpress.org/plugins/jsm-show-term-meta/)
 * [JSM Show User Metadata](https://wordpress.org/plugins/jsm-show-user-meta/)
+* [JSM Show Registered Shortcodes](https://wordpress.org/plugins/jsm-show-registered-shortcodes/)
 
 == Installation ==
 
@@ -54,7 +56,9 @@ Version components: `{major}.{minor}.{bugfix}[-{stage}.{level}]`
 
 <h3>Changelog / Release Notes</h3>
 
-**Version 2.0.0 (2021/11/26)**
+**Version 4.0.0 (2024/01/20)**
+
+Maintenance release.
 
 * **New Features**
 	* None.
@@ -63,14 +67,14 @@ Version components: `{major}.{minor}.{bugfix}[-{stage}.{level}]`
 * **Bugfixes**
 	* None.
 * **Developer Notes**
-	* Partial rewrite of the plugin - the plugin class name has changed.
+	* None.
 * **Requires At Least**
-	* PHP v7.2.34.
-	* WordPress v5.5.
+	* PHP v7.4.33.
+	* WordPress v6.0.
 
 == Upgrade Notice ==
 
-= 2.0.0 =
+= 4.0.0 =
 
-(2021/11/26) Partial rewrite of the plugin - the plugin class name has changed.
+(2024/01/20) Maintenance release.
 

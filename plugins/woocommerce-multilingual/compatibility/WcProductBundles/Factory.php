@@ -24,6 +24,8 @@ class Factory extends ComponentFactory implements IStandAloneAction {
 
 		if ( ! isStandAlone() ) {
 			$hooks[] = new WCML_Product_Bundles( getSitePress(), getWooCommerceWpml(), new WCML_WC_Product_Bundles_Items(), self::getWpdb() );
+			$hooks[] = new TranslationEditor\GroupsAndLabels();
+			$hooks[] = new BundledItemHooks();
 		}
 
 		return $hooks;

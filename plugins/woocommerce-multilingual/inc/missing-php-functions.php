@@ -9,20 +9,22 @@ function wcml_check_wpml_functions() {
 		return;
 	}
 
-	if ( ! has_filter( 'translate_object_id' ) ) {
-		add_filter( 'translate_object_id', 'icl_object_id', 10, 4 );
+	if ( ! has_filter( 'wpml_object_id' ) ) {
+		add_filter( 'wpml_object_id', 'icl_object_id', 10, 4 );
 	}
 
 	if ( ! has_action( 'wpml_register_single_string' ) ) {
 		if ( function_exists( 'wpml_register_single_string_action' ) ) {
 			add_action( 'wpml_register_single_string', 'wpml_register_single_string_action', 10, 4 );
 		} elseif ( function_exists( 'icl_register_string' ) ) {
+			/* @phpstan-ignore-next-line */
 			add_action( 'wpml_register_single_string', 'icl_register_string', 10, 4 );
 		}
 	}
 
+	/* @phpstan-ignore booleanAnd.rightAlwaysFalse */
 	if ( ! function_exists( 'wpml_is_rest_request' ) && defined( 'ICL_SITEPRESS_VERSION' ) && version_compare( ICL_SITEPRESS_VERSION, '4.2.0', '<' ) ) {
-		// @phpstan-ignore-next-line
+		/* @phpstan-ignore  function.inner */
 		function wpml_is_rest_request() {
 			return array_key_exists( 'rest_route', $_REQUEST ) || false !== strpos( $_SERVER['REQUEST_URI'], 'wp-json' );
 		}
@@ -48,7 +50,7 @@ if ( version_compare( $GLOBALS['wp_version'], '4.4.0', '<' ) ) {
 		function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon = false ) {
 			$image = wp_get_attachment_image_src( $attachment_id, $size, $icon );
 
-			return isset( $image['0'] ) ? $image['0'] : false;
+			return $image['0'] ?? false;
 		}
 	}
 

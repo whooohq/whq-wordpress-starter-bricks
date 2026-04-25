@@ -706,7 +706,7 @@ class UDP_Google_Client
    */
   public function isAppEngine()
   {
-    return (isset($_SERVER['SERVER_SOFTWARE']) &&
-        strpos($_SERVER['SERVER_SOFTWARE'], 'Google App Engine') !== false);
+    $server_software = UpdraftPlus_Manipulation_Functions::fetch_superglobal('server', 'SERVER_SOFTWARE', '');
+    return (isset($server_software) && strpos($server_software, 'Google App Engine') !== false);
   }
 }

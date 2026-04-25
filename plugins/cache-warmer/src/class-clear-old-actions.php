@@ -15,27 +15,27 @@ namespace Cache_Warmer;
 use DateTime;
 use DateTimeZone;
 use Exception;
-use WP_Plugins_Core\Action_Scheduler;
 
 /**
  * Manages clearing of old Action Scheduler actions.
  */
 final class Clear_Old_Actions {
 
+    /**
+     * Interval hook name.
+     */
     const INTERVAL_HOOK_NAME = 'cache_warmer_clear_old_actions';
 
     /**
      * Constructor.
      */
     public function __construct() {
-        // Schedule the action.
-        add_action( 'init', [ $this, 'schedule' ] );
-
-        // Clear old actions.
-        add_action( self::INTERVAL_HOOK_NAME, [ $this, 'clear' ] );
 
         // Unschedule interval action on plugin deactivation.
         register_deactivation_hook( CACHE_WARMER_FILE, [ $this, 'unschedule' ] );
+
+        // Clear old actions.
+        add_action( self::INTERVAL_HOOK_NAME, [ $this, 'clear' ] );
     }
 
     /**

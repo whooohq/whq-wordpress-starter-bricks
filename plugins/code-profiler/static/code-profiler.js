@@ -6,7 +6,7 @@
  |  | |__| (_) | (_| |  __/ |  __/| | | (_) |  _| | |  __/ |           |
  |   \____\___/ \__,_|\___| |_|   |_|  \___/|_| |_|_|\___|_|           |
  |                                                                     |
- |  (c) Jerome Bruandet ~ https://code-profiler.com/                   |
+ |  (c) Jerome Bruandet ~ https://nintechnet.com/codeprofiler/         |
  +=====================================================================+
 */
 
@@ -69,25 +69,38 @@ function cpjs_front_or_backend( item ) {
 	'use strict';
 	// Enable/disable frontend/backend select box
 	// depending on user's choice
-	if ( item == 1 ) {
+	if ( item == 'frontend') {
 		jQuery('#p-frontend').show();
 		jQuery('#p-backend').hide();
 		jQuery('#p-custom').hide();
+		jQuery('#p-wpcron').hide();
 		jQuery('#id-frontend').focus();
 		jQuery('#user-unauthenticated').prop('disabled', false);
-	} else if ( item == 2 ) {
+		jQuery('#user-authenticated').prop('disabled', false);
+	} else if ( item == 'backend') {
 		jQuery('#p-backend').show();
 		jQuery('#p-frontend').hide();
 		jQuery('#p-custom').hide();
+		jQuery('#p-wpcron').hide();
 		jQuery('#id-backend').focus();
 		jQuery('#user-unauthenticated').prop('disabled', true);
+		jQuery('#user-authenticated').prop('disabled', false);
 		jQuery('#user-authenticated').prop('checked', true);
 		jQuery('#user-name').prop('disabled', false);
-	} else {
+	} else if ( item == 'custom') {
 		jQuery('#p-custom').show();
 		jQuery('#p-frontend').hide();
 		jQuery('#p-backend').hide();
+		jQuery('#p-wpcron').hide();
 		jQuery('#id-custom').focus();
+		jQuery('#user-unauthenticated').prop('disabled', false);
+		jQuery('#user-authenticated').prop('disabled', false);
+	} else {
+		jQuery('#p-wpcron').show();
+		jQuery('#p-custom').hide();
+		jQuery('#p-frontend').hide();
+		jQuery('#p-backend').hide();
+		jQuery('#id-wpcron').focus();
 		jQuery('#user-unauthenticated').prop('disabled', false);
 	}
 }
@@ -109,10 +122,49 @@ function cpjs_show_adv_settings() {
 function cpjs_get_post( id ) {
 	if ( id == 1 ) {
 		jQuery('#post-value').prop('disabled', false);
+		jQuery('#id-content-type').prop('disabled', false);
 		jQuery('#post-value').focus();
 	} else {
 		jQuery('#post-value').prop('disabled', true);
+		jQuery('#id-content-type').prop('disabled', true);
 	}
+}
+
+function cpjs_content_type( value ) {
+	if ( value == 1 ) {
+		jQuery('#ct-1').slideDown();
+		jQuery('#ct-3').slideUp();
+		jQuery('#ct-2').slideUp();
+	} else if ( value == 2 ) {
+		jQuery('#ct-2').slideDown();
+		jQuery('#ct-3').slideUp();
+		jQuery('#ct-1').slideUp();
+	} else {
+		jQuery('#ct-3').slideDown();
+		jQuery('#ct-1').slideUp();
+		jQuery('#ct-2').slideUp();
+	}
+}
+
+function cpjs_isJSON( data ) {
+
+	if ( jQuery('#id-content-type').val() == 1 || jQuery('#get-method').prop('checked') == true ) {
+		// Ignore
+		return 1;
+	}
+	try {
+		return JSON.parse( data );
+	} catch (e) {
+		// Not a JSON-encoded string
+		return null;
+	}
+}
+
+function cpjs_ismultiline( data ) {
+	if ( data.match( /[\n\r]/) ) {
+		return true;
+	}
+	return false;
 }
 
 // =====================================================================
@@ -157,7 +209,13 @@ function cpjs_delete_log() {
 // AJAX call to start the profiler.
 
 function cpjs_start_profiler() {
+
 	'use strict';
+
+	jQuery('html, body').animate( {
+		scrollTop: jQuery('#button-adv-settings').offset().top
+	}, 1000 );
+
 	// Get the nonce
 	var cp_nonce = jQuery('#cp_nonce').val();
 	if ( cp_nonce == '') {
@@ -167,15 +225,22 @@ function cpjs_start_profiler() {
 
 	// Get the scan type (frontend/backend)
 	var post;
-	var where = jQuery('input[name="where"]:checked').val();
-	if ( where == 'frontend') {
+	var x_end = jQuery('input[name="x_end"]:checked').val();
+	if ( x_end == 'frontend') {
 		post = jQuery('#id-frontend').val();
 
-	} else if ( where == 'backend') {
+	} else if ( x_end == 'backend') {
 		post = jQuery('#id-backend').val();
 
-	} else if ( where == 'custom') {
+	} else if ( x_end == 'custom') {
 		post = jQuery('#id-custom').val().trim(); // Trim user input
+
+	} else if ( x_end == 'wpcron') {
+		post = jQuery('#id-wpcron').val();
+		if ( post == 0 ) {
+			alert( cpi18n.missing_wpcron );
+			return;
+		}
 
 	} else {
 		alert( cpi18n.missing_frontbackend );
@@ -194,14 +259,14 @@ function cpjs_start_profiler() {
 		return;
 	}
 
-	var user = jQuery('input[name="user"]:checked').val();
-	if ( user == '') {
+	var x_auth = jQuery('input[name="x_auth"]:checked').val();
+	if ( x_auth == '') {
 		alert( cpi18n.missing_userauth );
 		return;
 	}
 
 	var username = jQuery('#user-name').val().trim(); // Trim user input
-	if ( user == 'authenticated') {
+	if ( x_auth == 'authenticated') {
 		if ( username == '') {
 			alert( cpi18n.missing_username );
 			jQuery('#user-name').focus();
@@ -209,10 +274,12 @@ function cpjs_start_profiler() {
 		}
 	}
 
-	var ua = jQuery('#ua-id').val();
-	if ( ua == 'undefined') {
-		ua = 'FireFox';
+	var user_agent = jQuery('#ua-id').val();
+	if ( user_agent == 'undefined') {
+		user_agent = 'FireFox';
 	}
+
+	var theme = jQuery('#id-theme').val();
 
 	// GET or POST
 	var method = jQuery('input[name="method"]:checked').val();
@@ -224,8 +291,27 @@ function cpjs_start_profiler() {
 		method = 'get';
 	}
 
-	var cookies = jQuery('#cp-cookies').val();
-	var headers = jQuery('#custom-headers').val();
+	//Content type
+	var ct = jQuery('#id-content-type').val();
+	if ( ct == 2 ) {
+		// application/json
+		if ( cpjs_isJSON( payload ) == null ) {
+			alert( cpi18n.missing_ajax );
+			jQuery('#user-name').focus();
+			return;
+		}
+	} else if ( ct == 3 ) {
+		// Raw format must be on one single line
+		if ( cpjs_ismultiline( payload.trim() ) == true ) {
+			alert( cpi18n.multiline_raw );
+			jQuery('#post-value').focus();
+			return;
+		}
+	}
+
+	var cookies    = jQuery('#cp-cookies').val();
+	var headers    = jQuery('#custom-headers').val();
+	var exclusions = jQuery('#exclusions').val();
 
 	// Change buttons status and add animated image with status message
 	jQuery('#start-profile').prop('disabled', true);
@@ -238,16 +324,19 @@ function cpjs_start_profiler() {
 	var data = {
 		'action': 'codeprofiler_start_profiler',
 		'cp_nonce': cp_nonce,
-		'where': where,
+		'x_end': x_end,
 		'post': post,
+		'content_type': ct,
 		'profile': profile,
-		'user': user,
+		'x_auth': x_auth,
 		'username': username,
 		'cookies': cookies,
 		'custom_headers': headers,
+		'exclusions': exclusions,
 		'method': method,
 		'payload': payload,
-		'ua': ua
+		'user_agent': user_agent,
+		'theme': theme
 	};
 	// Send the request via AJAX
 	jQuery.ajax( {
@@ -510,9 +599,6 @@ function cpjs_plugins_chart( caxis, clabel, cdata, ctotal_time ) {
 			options: {
 				animation: {
 					duration: 1000,
-					onComplete: function() {
-						document.getElementById('download-png-img').href = myChart.toBase64Image();
-					}
 				},
 				indexAxis: _indexAxis,
 				plugins: chartPlugins
@@ -520,6 +606,9 @@ function cpjs_plugins_chart( caxis, clabel, cdata, ctotal_time ) {
 			plugins:[ plugin],
 			data: chartData
 		});
+		/** Since Chartjs v4.5.1 **/
+//		document.getElementById('download-png-img').href = myChart.toBase64Image();
+
 	};
 
 	var ctx = document.getElementById('myChart').getContext('2d');
@@ -595,7 +684,6 @@ function cpjs_plugins_chart( caxis, clabel, cdata, ctotal_time ) {
 				duration: 700,
 				onComplete: function() {
 					jQuery('#cp-footer-buttons').slideDown(200);
-					document.getElementById('download-png-img').href = myChart.toBase64Image();
 				}
 			},
 			indexAxis: _indexAxis,
@@ -603,6 +691,9 @@ function cpjs_plugins_chart( caxis, clabel, cdata, ctotal_time ) {
 		},
 		plugins:[plugin]
 	});
+	/** Since Chartjs v4.5.1 **/
+	document.getElementById('download-png-img').href = myChart.toBase64Image();
+
 }
 
 // =====================================================================
@@ -624,9 +715,6 @@ function cpjs_iostats_chart( caxis, clabel, cdata, ctotal_calls ) {
 			options: {
 				animation: {
 					duration: 1000,
-					onComplete: function() {
-						document.getElementById('download-png-img').href = myChart.toBase64Image();
-					}
 				},
 				indexAxis: _indexAxis,
 				plugins: chartPlugins
@@ -634,6 +722,8 @@ function cpjs_iostats_chart( caxis, clabel, cdata, ctotal_calls ) {
 			plugins:[ plugin],
 			data: chartData
 		});
+		/** Since Chartjs v4.5.1 **/
+//		document.getElementById('download-png-img').href = myChart.toBase64Image();
 	};
 
 	var ctx = document.getElementById('myChart').getContext('2d');
@@ -696,7 +786,6 @@ function cpjs_iostats_chart( caxis, clabel, cdata, ctotal_calls ) {
 				duration: 700,
 				onComplete: function() {
 					jQuery('#cp-footer-buttons').slideDown(200);
-					document.getElementById('download-png-img').href = myChart.toBase64Image();
 				}
 			},
 			indexAxis: _indexAxis,
@@ -704,6 +793,8 @@ function cpjs_iostats_chart( caxis, clabel, cdata, ctotal_calls ) {
 		},
 		plugins:[plugin]
 	});
+	/** Since Chartjs v4.5.1 **/
+	document.getElementById('download-png-img').href = myChart.toBase64Image();
 
 }
 // =====================================================================
@@ -725,9 +816,6 @@ function cpjs_diskio_chart( caxis, clabel, cdata ) {
 			options: {
 				animation: {
 					duration: 1000,
-					onComplete: function() {
-						document.getElementById('download-png-img').href = myChart.toBase64Image();
-					}
 				},
 				indexAxis: _indexAxis,
 				plugins: chartPlugins
@@ -735,6 +823,8 @@ function cpjs_diskio_chart( caxis, clabel, cdata ) {
 			plugins:[ plugin],
 			data: chartData
 		});
+		/** Since Chartjs v4.5.1 **/
+//		document.getElementById('download-png-img').href = myChart.toBase64Image();
 	};
 	var ctx = document.getElementById('myChart').getContext('2d');
 
@@ -796,7 +886,6 @@ function cpjs_diskio_chart( caxis, clabel, cdata ) {
 				duration: 700,
 				onComplete: function() {
 					jQuery('#cp-footer-buttons').slideDown(200);
-					document.getElementById('download-png-img').href = myChart.toBase64Image();
 				}
 			},
 			indexAxis: _indexAxis,
@@ -804,6 +893,8 @@ function cpjs_diskio_chart( caxis, clabel, cdata ) {
 		},
 		plugins:[plugin]
 	});
+	/** Since Chartjs v4.5.1 **/
+	document.getElementById('download-png-img').href = myChart.toBase64Image();
 }
 
 // =====================================================================

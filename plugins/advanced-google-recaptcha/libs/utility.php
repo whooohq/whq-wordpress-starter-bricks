@@ -3,7 +3,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 use WFMaxMind\Db\Reader;
@@ -143,7 +143,7 @@ class WPCaptcha_Utility extends WPCaptcha
         $ip = '';
 
         if (!empty($_SERVER['REMOTE_ADDR'])) {
-            $ip = $_SERVER['REMOTE_ADDR'];
+            $ip = sanitize_url(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
         if ($options['anonymous_logging'] == '1' && !$force_clear) {

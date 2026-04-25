@@ -26,10 +26,9 @@ class Factory {
 		 * @var \WPML_Post_Translation $wpml_post_translations
 		 * @var \WPML_Term_Translation $wpml_term_translations
 		 * @var \SitePress             $sitepress
-		 * @var \WPML_Query_Filter     $wpml_query_filter
 		 * @var \wpdb                  $wpdb
 		 */
-		global $woocommerce_wpml, $wpml_post_translations, $wpml_term_translations, $sitepress, $wpml_query_filter, $wpdb;
+		global $woocommerce_wpml, $wpml_post_translations, $wpml_term_translations, $sitepress, $wpdb;
 
 		$isMultiCurrencyOn = wcml_is_multi_currency_on();
 
@@ -37,7 +36,7 @@ class Factory {
 			case 'shop_order':
 				$objects[] = new OrdersLanguages();
 				if ( $isMultiCurrencyOn ) {
-					$objects[] = new OrdersPrices( $woocommerce_wpml->multi_currency->orders );
+					$objects[] = new OrdersPrices();
 				}
 
 				return new Composite( $objects );
@@ -47,9 +46,14 @@ class Factory {
 					return new Products(
 						$sitepress,
 						$wpml_post_translations,
-						$wpml_query_filter,
-						new ProductSaveActions( $sitepress->get_settings(), $wpdb, $sitepress, $woocommerce_wpml->sync_product_data )
+						new ProductSaveActions( $sitepress->get_settings(), $wpdb, $sitepress, $woocommerce_wpml ),
+						$woocommerce_wpml->strings
 					);
+				}
+				break;
+			case 'product_attribute':
+				if ( ! isStandAlone() ) {
+					return new ProductAttributes( $woocommerce_wpml->strings );
 				}
 				break;
 			case 'term':

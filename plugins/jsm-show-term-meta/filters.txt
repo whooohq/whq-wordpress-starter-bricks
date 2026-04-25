@@ -1,21 +1,13 @@
 
-Filter the term meta shown in the metabox:
+'jsmstm_metabox_table_metadata' ( array $metadata, $term_obj )		// Filter the term meta shown in the metabox.
 
-'jsmstm_metabox_table_metadata' ( $metadata, $term_obj )
+'jsmstm_metabox_table_exclude_keys' ( array $exclude_keys, $term_obj )	// Array of regular expressions to exclude meta keys.
 
-An array of regular expressions to exclude meta keys:
+'jsmstm_show_metabox_capability' ( 'manage_options', $term_obj )	// Capability required to show term meta.
 
-'jsmstm_metabox_table_skip_keys' ( $skip_keys, $term_obj )
+'jsmstm_show_metabox_taxonomy' ( true, $taxonomy )			// Show term meta for a taxonomy (defaults to true).
 
-current_user_can() capability required to show term meta:
+'jsmstm_delete_meta_capability' ( 'manage_options', $term_obj )		// Capability required to delete term meta.
 
-'jsmstm_show_metabox_capability' ( 'manage_options', $term_obj )
-
-Show term meta for this taxonomy (defaults to true):
-
-'jsmstm_show_metabox_taxonomy' ( true, $taxonomy )
-
-current_user_can() capability required to delete term meta:
-
-'jsmstm_delete_meta_capability' ( 'manage_options', $term_obj )
+'jsmstm_delete_meta_icon_class' ( 'dashicons dashicons-table-row-delete' )	// Icon for the delete term meta button.
 

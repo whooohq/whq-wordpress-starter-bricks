@@ -44,8 +44,10 @@ jQuery(function($){
         'add_new_attribute',
         'product_attributes .remove_row',
         'add_attribute',
+        'add_custom_attribute',
         'select_all_attributes',
         'select_no_attributes',
+        'wc-attribute-search',
         'edit-visibility'
     ];
     buttons = buttons.concat( non_standard_fields.classes );
@@ -75,6 +77,7 @@ jQuery(function($){
         '_width',
         '_height',
         '_sku',
+        '_global_unique_id',
         '_length',
         '_weight',
         'product_length',
@@ -162,6 +165,7 @@ var wcml_lock_variation_fields = function( file_path_sync ){
         '_width',
         '_height',
         '_sku',
+        '_global_unique_id',
         '_length',
         '_weight',
         'product_length',

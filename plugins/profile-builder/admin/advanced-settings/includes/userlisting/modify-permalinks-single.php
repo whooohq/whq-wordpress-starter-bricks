@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 function wppb_toolbox_flush_rewrite_rules() {
     $base = wppb_toolbox_get_settings( 'userlisting', 'modify-permalinks-single' );

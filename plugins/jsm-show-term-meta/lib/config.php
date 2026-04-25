@@ -2,7 +2,7 @@
 /*
  * License: GPLv3
  * License URI: https://www.gnu.org/licenses/gpl.txt
- * Copyright 2012-2023 Jean-Sebastien Morisset (https://surniaulula.com/)
+ * Copyright 2012-2026 Jean-Sebastien Morisset (https://surniaulula.com/)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ if ( ! class_exists( 'JsmStmConfig' ) ) {
 		public static $cf = array(
 			'plugin' => array(
 				'jsmstm' => array(			// Plugin acronym.
-					'version'     => '3.1.1',	// Plugin version.
+					'version'     => '4.8.0',	// Plugin version.
 					'slug'        => 'jsm-show-term-meta',
 					'base'        => 'jsm-show-term-meta/jsm-show-term-meta.php',
 					'text_domain' => 'jsm-show-term-meta',

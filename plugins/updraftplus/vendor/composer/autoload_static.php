@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658
+class ComposerStaticInit69069f8af833ccf301f3bf91c680dbbb
 {
     public static $files = array (
         '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
@@ -17,11 +17,14 @@ class ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
-        '3919eeb97e98d4648304477f8ef734ba' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/Crypt/Random.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        'p' => 
+        array (
+            'phpseclib\\' => 10,
+        ),
         'm' => 
         array (
             'mikemccabe\\JsonPatch\\' => 21,
@@ -46,9 +49,17 @@ class ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
         ),
+        'B' => 
+        array (
+            'Brumann\\Polyfill\\' => 17,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'phpseclib\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
+        ),
         'mikemccabe\\JsonPatch\\' => 
         array (
             0 => __DIR__ . '/..' . '/mikemccabe/json-patch-php/src',
@@ -97,35 +108,18 @@ class ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
         ),
+        'Brumann\\Polyfill\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/brumann/polyfill-unserialize/src',
+        ),
     );
 
     public static $prefixesPsr0 = array (
-        'S' => 
-        array (
-            'System' => 
-            array (
-                0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
-            ),
-        ),
         'O' => 
         array (
             'OpenCloud' => 
             array (
                 0 => __DIR__ . '/..' . '/rackspace/php-opencloud/lib',
-            ),
-        ),
-        'N' => 
-        array (
-            'Net' => 
-            array (
-                0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
-            ),
-        ),
-        'M' => 
-        array (
-            'Math' => 
-            array (
-                0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
             ),
         ),
         'G' => 
@@ -139,25 +133,11 @@ class ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658
                 0 => __DIR__ . '/..' . '/guzzle/guzzle/src',
             ),
         ),
-        'F' => 
-        array (
-            'File' => 
-            array (
-                0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
-            ),
-        ),
         'E' => 
         array (
             'Eher\\OAuth' => 
             array (
                 0 => __DIR__ . '/..' . '/eher/oauth/src',
-            ),
-        ),
-        'C' => 
-        array (
-            'Crypt' => 
-            array (
-                0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
             ),
         ),
     );
@@ -199,10 +179,10 @@ class ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit03f58c64bbf0b573d3ab64449e33e658::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit69069f8af833ccf301f3bf91c680dbbb::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit69069f8af833ccf301f3bf91c680dbbb::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit69069f8af833ccf301f3bf91c680dbbb::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit69069f8af833ccf301f3bf91c680dbbb::$classMap;
 
         }, null, ClassLoader::class);
     }

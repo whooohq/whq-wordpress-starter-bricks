@@ -140,14 +140,15 @@ var fields 	=	{
 																					}
 																},
 
-						'Default - Password':					{	'show_rows'	:	[
-																						'.row-field-title',
-																						'.row-description',
-																						'.row-required'
-																					],
-                                                                    'properties':	{
-                                                                        'meta_name_value'	: ''
-                                                                    },
+							'Default - Password':					{	'show_rows'	:	[
+																							'.row-field-title',
+																							'.row-description',
+																							'.row-required',
+																							'.row-ask-current-password'
+																						],
+	                                                                    'properties':	{
+	                                                                        'meta_name_value'	: ''
+	                                                                    },
                                                                     'required'	:	[
 																						true
 																					]
@@ -296,6 +297,20 @@ var fields 	=	{
 																						'.row-overwrite-existing'
 																					]
 																},
+						'International Telephone Input':		{	'show_rows'	:	[
+																						'.row-field-title',
+																						'.row-meta-name',
+																						'.row-description',
+																						'.row-default-value',
+																						'.row-initial-country',
+																						'.row-preferred-countries',
+																						'.row-excluded-countries',
+																						'.row-national-mode',
+																						'.row-hide-flags',
+																						'.row-overwrite-existing',
+																						'.row-required'
+																					]
+																},
 						'Language':								{	'show_rows'	:	[
 																						'.row-field-title',
 																						'.row-meta-name',
@@ -396,6 +411,16 @@ var fields 	=	{
 																					'.row-overwrite-existing'
 																					]
 																},
+						'Select (Taxonomy)':							{	'show_rows'	:	[
+																					'.row-field-title',
+																					'.row-meta-name',
+																					'.row-description',
+																					'.row-default-option',
+																					'.row-taxonomy',
+																					'.row-required',
+																					'.row-overwrite-existing'
+																					]
+																},
 						"Select2": 								{	'show_rows'	:	[
 																					'.row-field-title',
 																					'.row-meta-name',
@@ -478,7 +503,8 @@ var fields 	=	{
 																						'.row-allowed-extensions',
 																						'.row-required',
 																						'.row-overwrite-existing',
-																						'.row-allowed-upload-extensions'
+																						'.row-allowed-upload-extensions',
+																						'.row-max-file-size'
 																					]
 																},
 
@@ -489,6 +515,7 @@ var fields 	=	{
 																						'.row-simple-upload',
 																						'.row-allowed-image-extensions',
 																						'.row-avatar-size',
+																						'.row-max-file-size',
 																						'.row-required',
 																						'.row-overwrite-existing'
 																					]
@@ -557,6 +584,24 @@ var fields 	=	{
                                                                     }
 																},
 
+						'Turnstile':							{	'show_rows'	:	[
+																						'.row-field-title',
+																						'.row-description',
+																						'.row-theme',
+																						'.row-turnstile-site-key',
+																						'.row-turnstile-secret-key',
+                                                                                        '.row-turnstile-pb-forms',
+                                                                                        '.row-turnstile-wp-forms',
+																						'.row-required'
+																					],
+																	'required'	:	[
+																						true
+																					],
+                                                                    'properties':	{
+                                                                       'meta_name_value'	: ''
+                                                                    }
+																},
+
                         'Select (User Role)':					{	'show_rows'	:	[
                                                                                         '.row-field-title',
                                                                                         '.row-description',
@@ -588,6 +633,20 @@ var fields 	=	{
 																		'meta_name_value'	: 'map'
 																	}
                                                                 },
+
+						'Additional Map':              	    	{	'show_rows'	:	[
+																						'.row-field-title',
+																						'.row-meta-name',
+																						'.row-description',
+																						'.row-map-default-lat',
+																						'.row-map-default-lng',
+																						'.row-map-default-zoom',
+																						'.row-map-height',
+																						'.row-required',
+																						'.row-overwrite-existing'
+																					]
+																},
+
 						'HTML':              					{	'show_rows'	:	[
 																						'.row-field-title',
 																						'.row-description',
@@ -637,7 +696,7 @@ function wppb_hide_properties_for_already_added_fields( container_name ){
 
 function wppb_hide_all ( container_name ){
 	jQuery( container_name + ' ' + '.mb-list-entry-fields > li' ).each(function() {
-		if ( !( ( jQuery(this).hasClass('row-field') ) || ( jQuery(this).children().hasClass('button-primary') ) ) ){
+		if ( !( ( jQuery(this).hasClass('row-field') ) || ( jQuery(this).children().hasClass('button-primary') ) ) || jQuery(this).hasClass('row-rpf-button') ){
 			jQuery(this).hide();
 		}
 	});
@@ -645,7 +704,7 @@ function wppb_hide_all ( container_name ){
 	jQuery( container_name + ' ' + '.mb-list-entry-fields .button-primary' ).attr( 'disabled', true );
 
 	jQuery( container_name + ' ' + '.element_type_default-e-mail .mbdelete,' + ' ' + container_name + ' ' + '.element_type_default-password .mbdelete,' + ' ' + container_name + ' ' + '.element_type_default-username .mbdelete'  ).hide();	// PB specific line
-	jQuery( container_name + ' ' + '.element_type_default-e-mail #field' + ', ' + container_name + ' ' + '.element_type_default-password #field' + ',  ' + container_name + ' ' + '.element_type_default-username #field' + ', ' + container_name + ' ' + '.element_type_default-e-mail #required' + ', ' + container_name + ' ' + '.element_type_default-password #required,'  + container_name + ' ' + '.element_type_default-username #required,'  + container_name + ' ' + '.element_type_checkbox-terms-and-conditions #required,'  + container_name + ' ' + '.element_type_recaptcha #required,' + container_name + ' ' + '.element_type_woocommerce-customer-billing-address #field, ' + container_name + ' ' + '.element_type_woocommerce-customer-shipping-address #field').attr( 'disabled', true );		// PB specific line
+	jQuery( container_name + ' ' + '.element_type_default-e-mail #field' + ', ' + container_name + ' ' + '.element_type_default-password #field' + ',  ' + container_name + ' ' + '.element_type_default-username #field' + ', ' + container_name + ' ' + '.element_type_default-e-mail #required' + ', ' + container_name + ' ' + '.element_type_default-password #required,'  + container_name + ' ' + '.element_type_default-username #required,'  + container_name + ' ' + '.element_type_checkbox-terms-and-conditions #required,'  + container_name + ' ' + '.element_type_recaptcha #required,' + container_name + ' ' + '.element_type_turnstile #required,' + container_name + ' ' + '.element_type_woocommerce-customer-billing-address #field, ' + container_name + ' ' + '.element_type_woocommerce-customer-shipping-address #field').attr( 'disabled', true );		// PB specific line
 
 }
 
@@ -703,6 +762,7 @@ function wppb_edit_form_properties( container_name, element_id ){
 
 
 function wppb_display_needed_fields( index, container_name, current_field_select ){
+
 	var show_rows = fields[index.trim()]['show_rows'];
 	for (var key in show_rows) {
 		jQuery(  show_rows[key], jQuery( current_field_select ).parents( '.mb-list-entry-fields' ) ).show();
@@ -850,6 +910,15 @@ function wppb_initialize_live_select( container_name ){
 			wppb_hide_all( container_name );
 		}
 	});
+
+	// Show the score threshold field only when reCAPTCHA v3 is selected
+	jQuery( document ).on( 'change', container_name + ' ' + '.mb-list-entry-fields #recaptcha-type', function () {
+		if ( jQuery( this ).val() === 'v3' ){
+			jQuery( container_name + ' ' + '.row-score-threshold' ).show()
+		} else {
+			jQuery( container_name + ' ' + '.row-score-threshold' ).hide()
+		}
+	} );
 }
 
 
@@ -883,6 +952,16 @@ jQuery(function(){
 
     wppb_enable_select2('#wppb_manage_fields');
 
+	// Show the score threshold field only when reCAPTCHA v3 is selected
+	jQuery('html').on('wpbFormMetaLoaded', function(e, elem) {
+		jQuery('.row-score-threshold input').each(function() {
+			if ( jQuery(this).closest('.mb-list-entry-fields').find(".row-recaptcha-type :selected").val() === 'v3' ){
+				jQuery(this).closest('.row-score-threshold').show();
+			} else {
+				jQuery(this).closest('.row-score-threshold').hide();
+			}
+		});
+	});
 });
 
 // Custom functionality for sorting options (see the Map POIs attributes).
@@ -916,7 +995,7 @@ jQuery(function(){
 		remake: function ($field) {
 			var $rows = $field.children('.wck-checkboxes');
 			if (!$rows.length) {
-				$field.prepend('<div class="wck-checkboxes"> </div>');
+				$field.prepend('<div class="wck-checkboxes cozmoslabs-checkbox-list"> </div>');
 				var $rows = $field.children('.wck-checkboxes');
 			}
 			if ($rows.length) {
@@ -932,7 +1011,7 @@ jQuery(function(){
 				$ddwn.on('change', function() {
 					var val = $(this).val();
 					if ('' !== val) {
-						$rows.append('<div><label><input type="checkbox" name="' + $(this).data('list') + '" id="' + $(this).data('list') + '_' + val + '" value="' + val + '" checked="checked" class="mb-checkbox mb-field">' + $(this).children('option').filter(':selected').text() + '</label></div>');
+						$rows.append('<div class="cozmoslabs-chckbox-container"><input type="checkbox" name="' + $(this).data('list') + '" id="' + $(this).data('list') + '_' + val + '" value="' + val + '" checked="checked" class="mb-checkbox mb-field"><label for="' + $(this).data('list') + '_' + val + '">' + $(this).children('option').filter(':selected').text() + '</label></div>');
 						$(this).children('option').filter(':selected').remove();
 						SortSelCheck.sortable($rows);
 					}

@@ -1,3 +1,13 @@
+var WCML = {
+    sanitize: function(s) {
+        if (typeof s === 'string' || s instanceof String) {
+            return s.replace(/<script[^>]*?>.*?<\/script>/gi, '');
+        }
+
+        return s;
+    }
+};
+
 jQuery(function ($) {
     var discard = false;
 
@@ -10,29 +20,6 @@ jQuery(function ($) {
     $('.wcml-section input[type="submit"]').click(function () {
         discard = false;
     });
-
-    $('.wcml_search').click(function () {
-        window.location = $('.wcml_products_admin_url').val() + '&cat=' + $('.wcml_product_category').val() + '&trst=' + $('.wcml_translation_status').val() + '&st=' + $('.wcml_product_status').val() + '&slang=' + $('.wcml_translation_status_lang').val();
-    });
-
-    $('.wcml_search_by_title').click(function () {
-        window.location = $('.wcml_products_admin_url').val() + '&s=' + $('.wcml_product_name').val();
-    });
-
-    $('.wcml_reset_search').click(function () {
-        window.location = $('.wcml_products_admin_url').val();
-    });
-
-    var wcml_product_rows_data = new Array();
-    var wcml_get_product_fields_string = function (row) {
-        var string = '';
-        row.find('input[type=text], textarea').each(function () {
-            string += $(this).val();
-        });
-
-        return string;
-    }
-
 
     $('#wcml_custom_exchange_rates').submit(function () {
 
@@ -57,28 +44,6 @@ jQuery(function ($) {
         return false;
     })
 
-    function wcml_remove_custom_rates(post_id) {
-
-        var thisa = $(this);
-
-        $.ajax({
-
-            type: 'post',
-            dataType: 'json',
-            url: ajaxurl,
-            data: {action: 'wcml_remove_custom_rates', 'post_id': post_id},
-            success: function () {
-                thisa.parent().parent().parent().fadeOut(function () {
-                    $(this).remove()
-                });
-            }
-
-        })
-
-        return false;
-
-    }
-
     $(document).on('click', '.wcml_save_base', function (e) {
         e.preventDefault();
 
@@ -102,36 +67,9 @@ jQuery(function ($) {
                 $(dialog_container).remove();
                 $(link).find('i').remove();
                 $(link).append('<i class="otgs-ico-edit" >');
-                $(link).parent().prepend(response);
+                $(link).parent().prepend(WCML.sanitize(response));
             }
         })
-    });
-
-    $(document).on('click', '.hide-rate-block', function () {
-
-        var wrap = $(this).closest('.wcml-wrap');
-
-        $(this).prop('disabled', true);
-        var ajaxLoader = $('<span class="spinner" style="visibility: visible;">');
-        var setting = jQuery(this).data('setting');
-        $(this).parent().prepend(ajaxLoader);
-        $(this).remove();
-
-        $.ajax({
-            type: 'post',
-            url: ajaxurl,
-            dataType: 'json',
-            data: {
-                action: 'wcml_update_setting_ajx',
-                setting: setting,
-                value: 0,
-                nonce: $('#wcml_settings_nonce').val()
-            },
-            success: function (response) {
-                wrap.hide();
-            }
-        });
-        return false;
     });
 
     /**
@@ -152,6 +90,23 @@ jQuery(function ($) {
         });
     });
 
+	/*
+		 * Collapse functionality helper. Markup should resemble something like this
+		 * <container#containerID>
+		 * 		<button#buttonID aria-expanded="false" aria-controls="wrapperID">
+		 * 			<span>button text</span>
+		 * 		</button>
+		 * 		<wrapper#wrapperID role="region" aria-labelledby="buttonID">content</wrapper>
+		 * </container>
+		 */
+	function expandContainer(buttonID, containerID) {
+		$(`#${buttonID}`).on('click', function() {
+			const ariaExpanded = $(this).attr('aria-expanded') === 'true';
+			$(this).attr('aria-expanded', !ariaExpanded);
+			$(`#${containerID}`).toggleClass('expanded');
+		});
+	}
+	expandContainer('translate_manually_toggle', 'translate_manually');
 
 });
 

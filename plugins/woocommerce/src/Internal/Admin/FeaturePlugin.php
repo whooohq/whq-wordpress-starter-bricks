@@ -14,10 +14,9 @@ use Automattic\WooCommerce\Internal\Admin\Notes\WooSubscriptionsNotes;
 use Automattic\WooCommerce\Internal\Admin\Notes\TrackingOptIn;
 use Automattic\WooCommerce\Internal\Admin\Notes\WooCommercePayments;
 use Automattic\WooCommerce\Internal\Admin\Notes\InstallJPAndWCSPlugins;
-use Automattic\WooCommerce\Internal\Admin\Notes\TestCheckout;
 use Automattic\WooCommerce\Internal\Admin\Notes\SellingOnlineCourses;
-use Automattic\WooCommerce\Internal\Admin\Notes\MerchantEmailNotifications;
 use Automattic\WooCommerce\Internal\Admin\Notes\MagentoMigration;
+use Automattic\WooCommerce\Internal\Admin\Notes\ScheduledUpdatesPromotion;
 use Automattic\WooCommerce\Admin\Features\Features;
 use Automattic\WooCommerce\Admin\PluginsHelper;
 use Automattic\WooCommerce\Admin\PluginsInstaller;
@@ -40,6 +39,13 @@ class FeaturePlugin {
 	 * @var object
 	 */
 	protected static $instance = null;
+
+	/**
+	 * Indicates if init has been invoked already.
+	 *
+	 * @var bool
+	 */
+	private bool $initialized = false;
 
 	/**
 	 * Constructor
@@ -68,6 +74,11 @@ class FeaturePlugin {
 		if ( ! defined( 'WC_ABSPATH' ) ) {
 			return;
 		}
+
+		if ( $this->initialized ) {
+			return;
+		}
+		$this->initialized = true;
 
 		// Load the page controller functions file first to prevent fatal errors when disabling WooCommerce Admin.
 		$this->define_constants();
@@ -101,6 +112,9 @@ class FeaturePlugin {
 
 	/**
 	 * Define Constants.
+	 *
+	 * IMPORTANT: When adding new constants here, also add them to
+	 * php-stubs/wc-constants.php for PHPStan static analysis.
 	 */
 	protected function define_constants() {
 		$this->define( 'WC_ADMIN_APP', 'wc-admin-app' );
@@ -133,11 +147,11 @@ class FeaturePlugin {
 		 */
 		if ( ! defined( 'WC_ADMIN_VERSION_NUMBER' ) ) {
 			/**
-			  * Define the current WC Admin version.
-			  *
-			  * @deprecated 6.4.0
-			  * @var string
-			  */
+			 * Define the current WC Admin version.
+			 *
+			 * @deprecated 6.4.0
+			 * @var string
+			 */
 			define( 'WC_ADMIN_VERSION_NUMBER', '3.3.0' );
 		}
 	}
@@ -177,12 +191,9 @@ class FeaturePlugin {
 		new TrackingOptIn();
 		new WooCommercePayments();
 		new InstallJPAndWCSPlugins();
-		new TestCheckout();
 		new SellingOnlineCourses();
 		new MagentoMigration();
-
-		// Initialize MerchantEmailNotifications.
-		MerchantEmailNotifications::init();
+		new ScheduledUpdatesPromotion();
 	}
 
 	/**

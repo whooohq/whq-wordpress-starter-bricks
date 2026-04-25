@@ -76,8 +76,9 @@ class ReviewsListTable extends WP_List_Table {
 		$this->set_review_product();
 
 		$args = [
-			'number'    => $this->get_per_page(),
-			'post_type' => 'product',
+			'number'                    => $this->get_per_page(),
+			'post_type'                 => 'product',
+			'update_comment_post_cache' => true,
 		];
 
 		// Include the order & orderby arguments.
@@ -103,11 +104,10 @@ class ReviewsListTable extends WP_List_Table {
 		 *
 		 * @param array $args Comment query args.
 		 */
-		$args     = (array) apply_filters( 'woocommerce_product_reviews_list_table_prepare_items_args', $args );
-		$comments = get_comments( $args );
+		$args = (array) apply_filters( 'woocommerce_product_reviews_list_table_prepare_items_args', $args );
 
-		update_comment_cache( $comments );
-
+		/** @var \WP_Comment[] $comments */ // phpcs:ignore Generic.Commenting.DocComment.MissingShort
+		$comments    = get_comments( $args );
 		$this->items = $comments;
 
 		$this->set_pagination_args(
@@ -569,6 +569,17 @@ class ReviewsListTable extends WP_List_Table {
 			);
 		}
 
+		/**
+		 * Filters the action links displayed for each review in the Reviews list table.
+		 *
+		 * @since 9.8.0
+		 * @param string[]   $actions An array of comment actions. Default actions include:
+		 *                            'Approve', 'Unapprove', 'Edit', 'Reply', 'Spam',
+		 *                            'Delete', and 'Trash'.
+		 * @param WP_Comment $item The comment object.
+		 * */
+		$actions = apply_filters( 'comment_row_actions', array_filter( $actions ), $item );
+
 		$always_visible = 'excerpt' === get_user_setting( 'posts_list_mode', 'list' );
 
 		$output = '<div class="' . ( $always_visible ? 'row-actions visible' : 'row-actions' ) . '">';
@@ -632,7 +643,7 @@ class ReviewsListTable extends WP_List_Table {
 	/**
 	 * Gets the name of the default primary column.
 	 *
-	 * @return string Name of the primary colum.
+	 * @return string Name of the primary column.
 	 */
 	protected function get_primary_column_name() : string {
 		return 'comment';
@@ -957,12 +968,9 @@ class ReviewsListTable extends WP_List_Table {
 			echo $in_reply_to . '<br><br>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 
-		printf(
-			'%1$s%2$s%3$s',
-			'<div class="comment-text">',
-			get_comment_text( $item->comment_ID ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			'</div>'
-		);
+		echo '<div class="comment-text">';
+		comment_text( $item->comment_ID );
+		echo '</div>';
 
 		if ( $this->current_user_can_edit_review ) {
 			?>

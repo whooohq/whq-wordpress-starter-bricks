@@ -7,18 +7,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Allows plugins to use their own update API.
  *
  * @author Easy Digital Downloads
- * @version 1.6.13
+ * @version 1.9.4
  */
 if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
     class WPPB_EDD_SL_Plugin_Updater {
 
         private $api_url = '';
         private $api_data = array();
+        private $plugin_file = '';
         private $name = '';
         private $slug = '';
         private $version = '';
         private $wp_override = false;
-        private $cache_key = '';
+        private $beta = false;
+        private $failed_request_cache_key;
 
         /**
          * Class constructor.
@@ -35,14 +37,15 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
 
             global $edd_plugin_data;
 
-            $this->api_url = trailingslashit($_api_url);
-            $this->api_data = $_api_data;
-            $this->name = plugin_basename($_plugin_file);
-            $this->slug = basename($_plugin_file, '.php');
+            $this->api_url                  = trailingslashit($_api_url);
+            $this->api_data                 = $_api_data;
+            $this->plugin_file              = $_plugin_file;
+            $this->name                     = plugin_basename($_plugin_file);
+            $this->slug                     = basename(dirname($_plugin_file));
 
             /**
              * Necessary in order for the View Details button to work properly when multiple products using 
-             * this class aare active
+             * this class are active
              * 
              * The original takes the base file name as the slug, but our file names are just `index.php` so we
              * use the folder name instead
@@ -52,12 +55,21 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
             }
             // end modification
 
-            $this->version = $_api_data['version'];
-            $this->wp_override = isset($_api_data['wp_override']) ? (bool)$_api_data['wp_override'] : false;
-            $this->beta = !empty($this->api_data['beta']) ? true : false;
-            $this->cache_key = md5(serialize($this->slug . $this->api_data['license'] . $this->beta));
+            $this->version                  = $_api_data['version'];
+            $this->wp_override              = isset($_api_data['wp_override']) ? (bool)$_api_data['wp_override'] : false;
+            $this->beta                     = !empty($this->api_data['beta']) ? true : false;
+            $this->failed_request_cache_key = 'edd_sl_failed_http_' . md5($this->api_url);
 
             $edd_plugin_data[$this->slug] = $this->api_data;
+
+            /**
+             * Fires after the $edd_plugin_data is setup.
+             *
+             * @since x.x.x
+             *
+             * @param array $edd_plugin_data Array of EDD SL plugin data.
+             */
+            do_action( 'post_edd_sl_plugin_updater_setup', $edd_plugin_data );
 
             // Set up hooks.
             $this->init();
@@ -76,8 +88,7 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
 
             add_filter('pre_set_site_transient_update_plugins', array($this, 'check_update'));
             add_filter('plugins_api', array($this, 'plugins_api_filter'), 10, 3);
-            remove_action('after_plugin_row_' . $this->name, 'wp_plugin_update_row', 10);
-            add_action('after_plugin_row_' . $this->name, array($this, 'show_update_notification'), 10, 2);
+            add_action('after_plugin_row', array($this, 'show_update_notification'), 10, 2);
             add_action('admin_init', array($this, 'show_changelog'));
 
         }
@@ -112,132 +123,241 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
                 return $_transient_data;
             }
 
-            $version_info = $this->get_cached_version_info();
-
-            if (false === $version_info) {
-                $version_info = $this->api_request('plugin_latest_version', array('slug' => $this->slug, 'beta' => $this->beta));
-
-                $this->set_version_info_cache($version_info);
-
-            }
-
-            if (false !== $version_info && is_object($version_info) && isset($version_info->new_version)) {
-
-                if (version_compare($this->version, $version_info->new_version, '<')) {
-
-                    $_transient_data->response[$this->name] = $version_info;
-
+            $current = $this->get_update_transient_data();
+            if (false !== $current && is_object($current) && isset($current->new_version)) {
+                if (version_compare($this->version, $current->new_version, '<')) {
+                    $_transient_data->response[$this->name] = $current;
+                } else {
+                    // Populating the no_update information is required to support auto-updates in WordPress 5.5.
+                    $_transient_data->no_update[$this->name] = $current;
                 }
-
-                $_transient_data->last_checked = current_time('timestamp');
-                $_transient_data->checked[$this->name] = $this->version;
-
             }
+            $_transient_data->last_checked           = current_time('timestamp');
+            $_transient_data->checked[$this->name] = $this->version;
 
             return $_transient_data;
         }
 
         /**
-         * show update nofication row -- needed for multisite subsites, because WP won't tell you otherwise!
+         * Get repo API data from store.
+         * Save to cache.
          *
-         * @param string $file
-         * @param array $plugin
+         * @return \stdClass
          */
-        public function show_update_notification($file, $plugin)
-        {
+        public function get_repo_api_data() {
+            $version_info = $this->get_cached_version_info();
 
-            if (is_network_admin()) {
-                return;
-            }
-
-            if (!current_user_can('update_plugins')) {
-                return;
-            }
-
-            if (!is_multisite()) {
-                return;
-            }
-
-            if ($this->name != $file) {
-                return;
-            }
-
-            // Remove our filter on the site transient
-            remove_filter('pre_set_site_transient_update_plugins', array($this, 'check_update'), 10);
-
-            $update_cache = get_site_transient('update_plugins');
-
-            $update_cache = is_object($update_cache) ? $update_cache : new stdClass();
-
-            if (empty($update_cache->response) || empty($update_cache->response[$this->name])) {
-
-                $version_info = $this->get_cached_version_info();
-
-                if (false === $version_info) {
-                    $version_info = $this->api_request('plugin_latest_version', array('slug' => $this->slug, 'beta' => $this->beta));
-
-                    $this->set_version_info_cache($version_info);
+            if ( false === $version_info ) {
+                $version_info = $this->api_request(
+                    'plugin_latest_version',
+                    array(
+                        'slug' => $this->slug,
+                        'beta' => $this->beta,
+                    )
+                );
+                if ( ! $version_info ) {
+                    return false;
                 }
 
-                if (!is_object($version_info)) {
-                    return;
+                // This is required for your plugin to support auto-updates in WordPress 5.5.
+                $version_info->plugin = $this->name;
+                $version_info->id     = $this->name;
+                $version_info->tested = $this->get_tested_version( $version_info );
+                if ( ! isset( $version_info->requires ) ) {
+                    $version_info->requires = '';
+                }
+                if ( ! isset( $version_info->requires_php ) ) {
+                    $version_info->requires_php = '';
                 }
 
-                if (version_compare($this->version, $version_info->new_version, '<')) {
+                $this->set_version_info_cache( $version_info );
+            }
 
-                    $update_cache->response[$this->name] = $version_info;
+            return $version_info;
+        }
 
+        /**
+         * Gets a limited set of data from the API response.
+         * This is used for the update_plugins transient.
+         *
+         * @since 3.8.12
+         * @return \stdClass|false
+         */
+        private function get_update_transient_data() {
+            $version_info = $this->get_repo_api_data();
+
+            if ( ! $version_info ) {
+                return false;
+            }
+
+            $limited_data               = new \stdClass();
+            $limited_data->slug         = $this->slug;
+            $limited_data->plugin       = $this->name;
+            $limited_data->url          = $version_info->url;
+            $limited_data->package      = $version_info->package;
+            $limited_data->icons        = $this->convert_object_to_array( $version_info->icons );
+            $limited_data->banners      = $this->convert_object_to_array( $version_info->banners );
+            $limited_data->new_version  = $version_info->new_version;
+            $limited_data->tested       = $version_info->tested;
+            $limited_data->requires     = $version_info->requires;
+            $limited_data->requires_php = $version_info->requires_php;
+
+            return $limited_data;
+        }
+
+        /**
+         * Gets the plugin's tested version.
+         *
+         * @since 1.9.2
+         * @param object $version_info
+         * @return null|string
+         */
+        private function get_tested_version( $version_info ) {
+
+            // There is no tested version.
+            if ( empty( $version_info->tested ) ) {
+                return null;
+            }
+
+            // Strip off extra version data so the result is x.y or x.y.z.
+            list( $current_wp_version ) = explode( '-', get_bloginfo( 'version' ) );
+
+            // The tested version is greater than or equal to the current WP version, no need to do anything.
+            if ( version_compare( $version_info->tested, $current_wp_version, '>=' ) ) {
+                return $version_info->tested;
+            }
+            $current_version_parts = explode( '.', $current_wp_version );
+            $tested_parts          = explode( '.', $version_info->tested );
+
+            // The current WordPress version is x.y.z, so update the tested version to match it.
+            if ( isset( $current_version_parts[2] ) && $current_version_parts[0] === $tested_parts[0] && $current_version_parts[1] === $tested_parts[1] ) {
+                $tested_parts[2] = $current_version_parts[2];
+            }
+
+            return implode( '.', $tested_parts );
+        }
+
+        /**
+         * Show the update notification on multisite subsites.
+         *
+         * @param string  $file
+         * @param array   $plugin
+         */
+        public function show_update_notification( $file, $plugin ) {
+
+            // Return early if in the network admin, or if this is not a multisite install.
+            if ( is_network_admin() || ! is_multisite() ) {
+                return;
+            }
+
+            // Allow single site admins to see that an update is available.
+            if ( ! current_user_can( 'activate_plugins' ) ) {
+                return;
+            }
+
+            if ( $this->name !== $file ) {
+                return;
+            }
+
+            // Do not print any message if update does not exist.
+            $update_cache = get_site_transient( 'update_plugins' );
+
+            if ( ! isset( $update_cache->response[ $this->name ] ) ) {
+                if ( ! is_object( $update_cache ) ) {
+                    $update_cache = new stdClass();
                 }
+                $update_cache->response[ $this->name ] = $this->get_repo_api_data();
+            }
 
-                $update_cache->last_checked = current_time('timestamp');
-                $update_cache->checked[$this->name] = $this->version;
+            // Return early if this plugin isn't in the transient->response or if the site is running the current or newer version of the plugin.
+            if ( empty( $update_cache->response[ $this->name ] ) || version_compare( $this->version, $update_cache->response[ $this->name ]->new_version, '>=' ) ) {
+                return;
+            }
 
-                set_site_transient('update_plugins', $update_cache);
+            printf(
+                '<tr class="plugin-update-tr %3$s" id="%1$s-update" data-slug="%1$s" data-plugin="%2$s">',
+                esc_html( $this->slug ),
+                esc_html( $file ),
+                in_array( $this->name, $this->get_active_plugins(), true ) ? 'active' : 'inactive'
+            );
 
+            echo '<td colspan="3" class="plugin-update colspanchange">';
+            echo '<div class="update-message notice inline notice-warning notice-alt"><p>';
+
+            $changelog_link = '';
+            if ( ! empty( $update_cache->response[ $this->name ]->sections->changelog ) ) {
+                $changelog_link = add_query_arg(
+                    array(
+                        'edd_sl_action' => 'view_plugin_changelog',
+                        'plugin'        => urlencode( $this->name ),
+                        'slug'          => urlencode( $this->slug ),
+                        'TB_iframe'     => 'true',
+                        'width'         => 77,
+                        'height'        => 911,
+                    ),
+                    self_admin_url( 'index.php' )
+                );
+            }
+            $update_link = add_query_arg(
+                array(
+                    'action' => 'upgrade-plugin',
+                    'plugin' => urlencode( $this->name ),
+                ),
+                self_admin_url( 'update.php' )
+            );
+
+            printf(
+                /* translators: the plugin name. */
+                esc_html__( 'There is a new version of %1$s available.', 'profile-builder' ),
+                esc_html( $plugin['Name'] )
+            );
+
+            if ( ! current_user_can( 'update_plugins' ) ) {
+                echo ' ';
+                esc_html_e( 'Contact your network administrator to install the update.', 'profile-builder' );
+            } elseif ( empty( $update_cache->response[ $this->name ]->package ) && ! empty( $changelog_link ) ) {
+                echo ' ';
+                printf(
+                    /* translators: 1. opening anchor tag, do not translate 2. the new plugin version 3. closing anchor tag, do not translate. */
+                    esc_html__( '%1$sView version %2$s details%3$s.', 'profile-builder' ),
+                    '<a target="_blank" class="thickbox open-plugin-details-modal" href="' . esc_url( $changelog_link ) . '">',
+                    esc_html( $update_cache->response[ $this->name ]->new_version ),
+                    '</a>'
+                );
+            } elseif ( ! empty( $changelog_link ) ) {
+                echo ' ';
+                printf(
+                    esc_html__( '%1$sView version %2$s details%3$s or %4$supdate now%5$s.', 'profile-builder' ),
+                    '<a target="_blank" class="thickbox open-plugin-details-modal" href="' . esc_url( $changelog_link ) . '">',
+                    esc_html( $update_cache->response[ $this->name ]->new_version ),
+                    '</a>',
+                    '<a target="_blank" class="update-link" href="' . esc_url( wp_nonce_url( $update_link, 'upgrade-plugin_' . $file ) ) . '">',
+                    '</a>'
+                );
             } else {
-
-                $version_info = $update_cache->response[$this->name];
-
+                printf(
+                    ' %1$s%2$s%3$s',
+                    '<a target="_blank" class="update-link" href="' . esc_url( wp_nonce_url( $update_link, 'upgrade-plugin_' . $file ) ) . '">',
+                    esc_html__( 'Update now.', 'profile-builder' ),
+                    '</a>'
+                );
             }
 
-            // Restore our filter
-            add_filter('pre_set_site_transient_update_plugins', array($this, 'check_update'));
+            do_action( "in_plugin_update_message-{$file}", $plugin, $plugin );
 
-            if (!empty($update_cache->response[$this->name]) && version_compare($this->version, $version_info->new_version, '<')) {
+            echo '</p></div></td></tr>';
+        }
 
-                // build a plugin list row, with update notification
-                $wp_list_table = _get_list_table('WP_Plugins_List_Table');
-                # <tr class="plugin-update-tr"><td colspan="' . $wp_list_table->get_column_count() . '" class="plugin-update colspanchange">
-                echo '<tr class="plugin-update-tr" id="' . esc_attr( $this->slug ) . '-update" data-slug="' . esc_attr( $this->slug ) . '" data-plugin="' . esc_attr( $this->slug ) . '/' . esc_attr( $file ) . '">';
-                echo '<td colspan="3" class="plugin-update colspanchange">';
-                echo '<div class="update-message notice inline notice-warning notice-alt">';
+        /**
+         * Gets the plugins active in a multisite network.
+         *
+         * @return array
+         */
+        private function get_active_plugins() {
+            $active_plugins         = (array) get_option( 'active_plugins' );
+            $active_network_plugins = (array) get_site_option( 'active_sitewide_plugins' );
 
-                $changelog_link = self_admin_url('index.php?edd_sl_action=view_plugin_changelog&plugin=' . $this->name . '&slug=' . $this->slug . '&TB_iframe=true&width=772&height=911');
-
-                if (empty($version_info->download_link)) {
-                    printf(
-                        __('There is a new version of %1$s available. %2$sView version %3$s details%4$s.', 'profile-builder'), //phpcs:ignore
-                        esc_html($version_info->name),
-                        '<a target="_blank" class="thickbox" href="' . esc_url($changelog_link) . '">',
-                        esc_html($version_info->new_version),
-                        '</a>'
-                    );
-                } else {
-                    printf(
-                        __('There is a new version of %1$s available. %2$sView version %3$s details%4$s or %5$supdate now%6$s.', 'profile-builder'), //phpcs:ignore
-                        esc_html($version_info->name),
-                        '<a target="_blank" class="thickbox" href="' . esc_url($changelog_link) . '">',
-                        esc_html($version_info->new_version),
-                        '</a>',
-                        '<a href="' . esc_url(wp_nonce_url(self_admin_url('update.php?action=upgrade-plugin&plugin=') . $this->name, 'upgrade-plugin_' . $this->name)) . '">',
-                        '</a>'
-                    );
-                }
-
-                do_action("in_plugin_update_message-{$file}", $plugin, $version_info);
-
-                echo '</div></td></tr>';
-            }
+            return array_merge( $active_plugins, array_keys( $active_network_plugins ) );
         }
 
         /**
@@ -245,95 +365,121 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
          *
          * @uses api_request()
          *
-         * @param mixed $_data
-         * @param string $_action
-         * @param object $_args
+         * @param mixed   $_data
+         * @param string  $_action
+         * @param object  $_args
          * @return object $_data
          */
-        public function plugins_api_filter($_data, $_action = '', $_args = null)
-        {
+        public function plugins_api_filter( $_data, $_action = '', $_args = null ) {
 
-            if ($_action != 'plugin_information') {
+            if ( 'plugin_information' !== $_action ) {
 
                 return $_data;
 
             }
 
-            if (!isset($_args->slug) || ($_args->slug != $this->slug)) {
+            if ( ! isset( $_args->slug ) || ( $_args->slug !== $this->slug ) ) {
 
                 return $_data;
 
             }
 
             $to_send = array(
-                'slug' => $this->slug,
+                'slug'   => $this->slug,
                 'is_ssl' => is_ssl(),
                 'fields' => array(
                     'banners' => array(),
-                    'reviews' => false
-                )
+                    'reviews' => false,
+                    'icons'   => array(),
+                ),
             );
 
-            $cache_key = 'edd_api_request_' . md5(serialize($this->slug . $this->api_data['license'] . $this->beta));
-
             // Get the transient where we store the api request for this plugin for 24 hours
-            $edd_api_request_transient = $this->get_cached_version_info($cache_key);
+            $edd_api_request_transient = $this->get_cached_version_info();
 
             //If we have no transient-saved value, run the API, set a fresh transient with the API value, and return that value too right now.
-            if (empty($edd_api_request_transient)) {
+            if ( empty( $edd_api_request_transient ) ) {
 
-                $api_response = $this->api_request('plugin_information', $to_send);
+                $api_response = $this->api_request( 'plugin_information', $to_send );
 
                 // Expires in 3 hours
-                $this->set_version_info_cache($api_response, $cache_key);
+                $this->set_version_info_cache( $api_response );
 
-                if (false !== $api_response) {
+                if ( false !== $api_response ) {
                     $_data = $api_response;
                 }
-
             } else {
                 $_data = $edd_api_request_transient;
             }
 
             // Convert sections into an associative array, since we're getting an object, but Core expects an array.
-            if (isset($_data->sections) && !is_array($_data->sections)) {
-                $new_sections = array();
-                foreach ($_data->sections as $key => $value) {
-                    $new_sections[$key] = $value;
-                }
-
-                $_data->sections = $new_sections;
+            if ( isset( $_data->sections ) && ! is_array( $_data->sections ) ) {
+                $_data->sections = $this->convert_object_to_array( $_data->sections );
             }
 
             // Convert banners into an associative array, since we're getting an object, but Core expects an array.
-            if (isset($_data->banners) && !is_array($_data->banners)) {
-                $new_banners = array();
-                foreach ($_data->banners as $key => $value) {
-                    $new_banners[$key] = $value;
-                }
+            if ( isset( $_data->banners ) && ! is_array( $_data->banners ) ) {
+                $_data->banners = $this->convert_object_to_array( $_data->banners );
+            }
 
-                $_data->banners = $new_banners;
+            // Convert icons into an associative array, since we're getting an object, but Core expects an array.
+            if ( isset( $_data->icons ) && ! is_array( $_data->icons ) ) {
+                $_data->icons = $this->convert_object_to_array( $_data->icons );
+            }
+
+            // Convert contributors into an associative array, since we're getting an object, but Core expects an array.
+            if ( isset( $_data->contributors ) && ! is_array( $_data->contributors ) ) {
+                $_data->contributors = $this->convert_object_to_array( $_data->contributors );
+            }
+
+            if ( ! isset( $_data->plugin ) ) {
+                $_data->plugin = $this->name;
+            }
+
+            if ( ! isset( $_data->version ) && ! empty( $_data->new_version ) ) {
+                $_data->version = $_data->new_version;
             }
 
             return $_data;
         }
 
         /**
+         * Convert some objects to arrays when injecting data into the update API
+         *
+         * Some data like sections, banners, and icons are expected to be an associative array, however due to the JSON
+         * decoding, they are objects. This method allows us to pass in the object and return an associative array.
+         *
+         * @since 3.6.5
+         *
+         * @param stdClass $data
+         *
+         * @return array
+         */
+        private function convert_object_to_array( $data ) {
+            if ( ! is_array( $data ) && ! is_object( $data ) ) {
+                return array();
+            }
+            $new_data = array();
+            foreach ( $data as $key => $value ) {
+                $new_data[ $key ] = is_object( $value ) ? $this->convert_object_to_array( $value ) : $value;
+            }
+
+            return $new_data;
+        }
+
+        /**
          * Disable SSL verification in order to prevent download update failures
          *
-         * @param array $args
-         * @param string $url
+         * @param array   $args
+         * @param string  $url
          * @return object $array
          */
-        public function http_request_args($args, $url)
-        {
+        public function http_request_args( $args, $url ) {
 
-            $verify_ssl = $this->verify_ssl();
-            if (strpos($url, 'https://') !== false && strpos($url, 'edd_action=package_download')) {
-                $args['sslverify'] = $verify_ssl;
+            if ( strpos( $url, 'https://' ) !== false && strpos( $url, 'edd_action=package_download' ) ) {
+                $args['sslverify'] = $this->verify_ssl();
             }
             return $args;
-
         }
 
         /**
@@ -343,163 +489,222 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
          * @uses wp_remote_post()
          * @uses is_wp_error()
          *
-         * @param string $_action The requested action.
-         * @param array $_data Parameters for the API action.
-         * @return false|object
+         * @param string  $_action The requested action.
+         * @param array   $_data   Parameters for the API action.
+         * @return false|object|void
          */
-        private function api_request($_action, $_data)
-        {
+        private function api_request( $_action, $_data ) {
+            $data = array_merge( $this->api_data, $_data );
 
-            global $wp_version;
-
-            $data = array_merge($this->api_data, $_data);
-
-            if ($data['slug'] != $this->slug) {
+            if ( $data['slug'] !== $this->slug ) {
                 return;
             }
 
-            if ($this->api_url == trailingslashit(home_url())) {
-                return false; // Don't allow a plugin to ping itself
+            // Don't allow a plugin to ping itself
+            if ( trailingslashit( home_url() ) === $this->api_url ) {
+                return false;
             }
 
+            if ( $this->request_recently_failed() ) {
+                return false;
+            }
+
+            return $this->get_version_from_remote();
+        }
+
+        /**
+         * Determines if a request has recently failed.
+         *
+         * @since 1.9.1
+         *
+         * @return bool
+         */
+        private function request_recently_failed() {
+            $failed_request_details = get_option( $this->failed_request_cache_key );
+
+            // Request has never failed.
+            if ( empty( $failed_request_details ) || ! is_numeric( $failed_request_details ) ) {
+                return false;
+            }
+
+            /*
+             * Request previously failed, but the timeout has expired.
+             * This means we're allowed to try again.
+             */
+            if ( current_time( 'timestamp' ) > $failed_request_details ) {
+                delete_option( $this->failed_request_cache_key );
+
+                return false;
+            }
+
+            return true;
+        }
+
+        /**
+         * Logs a failed HTTP request for this API URL.
+         * We set a timestamp for 1 hour from now. This prevents future API requests from being
+         * made to this domain for 1 hour. Once the timestamp is in the past, API requests
+         * will be allowed again. This way if the site is down for some reason we don't bombard
+         * it with failed API requests.
+         *
+         * @see EDD_SL_Plugin_Updater::request_recently_failed
+         *
+         * @since 1.9.1
+         */
+        private function log_failed_request() {
+            update_option( $this->failed_request_cache_key, strtotime( '+1 hour' ) );
+        }
+
+        /**
+         * Gets the current version information from the remote site.
+         *
+         * @return array|false
+         */
+        private function get_version_from_remote() {
             $api_params = array(
-                'edd_action' => 'get_version',
-                'license' => !empty($data['license']) ? $data['license'] : '',
-                'item_name' => isset($data['item_name']) ? $data['item_name'] : false,
-                'item_id' => isset($data['item_id']) ? $data['item_id'] : false,
-                'version' => isset($data['version']) ? $data['version'] : false,
-                'slug' => $data['slug'],
-                'author' => $data['author'],
-                'url' => home_url(),
-                'beta' => !empty($data['beta']),
+                'edd_action'  => 'get_version',
+                'license'     => ! empty( $this->api_data['license'] ) ? $this->api_data['license'] : '',
+                'item_name'   => isset( $this->api_data['item_name'] ) ? $this->api_data['item_name'] : false,
+                'item_id'     => isset( $this->api_data['item_id'] ) ? $this->api_data['item_id'] : false,
+                'version'     => isset( $this->api_data['version'] ) ? $this->api_data['version'] : false,
+                'slug'        => $this->slug,
+                'author'      => $this->api_data['author'],
+                'url'         => home_url(),
+                'beta'        => $this->beta,
+                'php_version' => phpversion(),
+                'wp_version'  => get_bloginfo( 'version' ),
             );
 
-            $verify_ssl = $this->verify_ssl();
-            $request = wp_remote_post($this->api_url, array('timeout' => 15, 'sslverify' => $verify_ssl, 'body' => $api_params));
+            /**
+             * Filters the parameters sent in the API request.
+             *
+             * @param array  $api_params        The array of data sent in the request.
+             * @param array  $this->api_data    The array of data set up in the class constructor.
+             * @param string $this->plugin_file The full path and filename of the file.
+             */
+            $api_params = apply_filters( 'edd_sl_plugin_updater_api_params', $api_params, $this->api_data, $this->plugin_file );
 
-            if (!is_wp_error($request)) {
-                $request = json_decode(wp_remote_retrieve_body($request));
+            $request = wp_remote_post(
+                $this->api_url,
+                array(
+                    'timeout'   => 15,
+                    'sslverify' => $this->verify_ssl(),
+                    'body'      => $api_params,
+                )
+            );
+
+            if ( is_wp_error( $request ) || ( 200 !== wp_remote_retrieve_response_code( $request ) ) ) {
+                $this->log_failed_request();
+
+                return false;
             }
 
-            if ($request && isset($request->sections)) {
-                $request->sections = maybe_unserialize($request->sections);
+            $request = json_decode( wp_remote_retrieve_body( $request ) );
+
+            if ( $request && isset( $request->sections ) ) {
+                $request->sections = maybe_unserialize( $request->sections );
             } else {
                 $request = false;
             }
 
-            if ($request && isset($request->banners)) {
-                $request->banners = maybe_unserialize($request->banners);
+            if ( $request && isset( $request->banners ) ) {
+                $request->banners = maybe_unserialize( $request->banners );
             }
 
-            if (!empty($request->sections)) {
-                foreach ($request->sections as $key => $section) {
-                    $request->$key = (array)$section;
+            if ( $request && isset( $request->icons ) ) {
+                $request->icons = maybe_unserialize( $request->icons );
+            }
+
+            if ( ! empty( $request->sections ) ) {
+                foreach ( $request->sections as $key => $section ) {
+                    $request->$key = (array) $section;
                 }
             }
 
             return $request;
         }
 
-        public function show_changelog()
-        {
+        /**
+         * If available, show the changelog for sites in a multisite install.
+         */
+        public function show_changelog() {
 
-            global $edd_plugin_data;
-
-            if (empty($_REQUEST['edd_sl_action']) || 'view_plugin_changelog' != $_REQUEST['edd_sl_action']) {
+            if ( empty( $_REQUEST['edd_sl_action'] ) || 'view_plugin_changelog' !== $_REQUEST['edd_sl_action'] ) {
                 return;
             }
 
-            if (empty($_REQUEST['plugin'])) {
+            if ( empty( $_REQUEST['plugin'] ) ) {
                 return;
             }
 
-            if (empty($_REQUEST['slug'])) {
+            if ( empty( $_REQUEST['slug'] ) || $this->slug !== $_REQUEST['slug'] ) {
                 return;
             }
 
-            if (!current_user_can('update_plugins')) {
-                wp_die( esc_html__('You do not have permission to install plugin updates', 'profile-builder'), esc_html__('Error', 'profile-builder'), array('response' => 403));
+            if ( ! current_user_can( 'update_plugins' ) ) {
+                wp_die( esc_html__( 'You do not have permission to install plugin updates', 'profile-builder' ), esc_html__( 'Error', 'profile-builder' ), array( 'response' => 403 ) );
             }
 
-            $data = $edd_plugin_data[sanitize_text_field( $_REQUEST['slug'] )];
-            $beta = !empty($data['beta']) ? true : false;
-            $cache_key = md5('edd_plugin_' . sanitize_key($_REQUEST['plugin']) . '_' . $beta . '_version_info');
-            $version_info = $this->get_cached_version_info($cache_key);
-
-            if (false === $version_info) {
-
-                $api_params = array(
-                    'edd_action' => 'get_version',
-                    'item_name' => isset($data['item_name']) ? $data['item_name'] : false,
-                    'item_id' => isset($data['item_id']) ? $data['item_id'] : false,
-                    'slug' => sanitize_text_field( $_REQUEST['slug'] ),
-                    'author' => $data['author'],
-                    'url' => home_url(),
-                    'beta' => !empty($data['beta'])
-                );
-
-                $verify_ssl = $this->verify_ssl();
-                $request = wp_remote_post($this->api_url, array('timeout' => 15, 'sslverify' => $verify_ssl, 'body' => $api_params));
-
-                if (!is_wp_error($request)) {
-                    $version_info = json_decode(wp_remote_retrieve_body($request));
+            $version_info = $this->get_repo_api_data();
+            if ( isset( $version_info->sections ) ) {
+                $sections = $this->convert_object_to_array( $version_info->sections );
+                if ( ! empty( $sections['changelog'] ) ) {
+                    echo '<div style="background:#fff;padding:10px;">' . wp_kses_post( $sections['changelog'] ) . '</div>';
                 }
-
-
-                if (!empty($version_info) && isset($version_info->sections)) {
-                    $version_info->sections = maybe_unserialize($version_info->sections);
-                } else {
-                    $version_info = false;
-                }
-
-                if (!empty($version_info)) {
-                    foreach ($version_info->sections as $key => $section) {
-                        $version_info->$key = (array)$section;
-                    }
-                }
-
-                $this->set_version_info_cache($version_info, $cache_key);
-
-            }
-
-            if (!empty($version_info) && isset($version_info->sections['changelog'])) {
-                echo '<div style="background:#fff;padding:10px;">' . wp_kses_post( $version_info->sections['changelog'] ) . '</div>';
             }
 
             exit;
         }
 
-        public function get_cached_version_info($cache_key = '')
-        {
+        /**
+         * Get the version info from the cache, if it exists.
+         *
+         * @param string $cache_key
+         * @return object
+         */
+        public function get_cached_version_info( $cache_key = '' ) {
 
-            if (empty($cache_key)) {
-                $cache_key = $this->cache_key;
+            if ( empty( $cache_key ) ) {
+                $cache_key = $this->get_cache_key();
             }
 
-            $cache = get_option($cache_key);
+            $cache = get_option( $cache_key );
 
-            if (empty($cache['timeout']) || current_time('timestamp') > $cache['timeout']) {
-                return false; // Cache is expired
+            // Cache is expired
+            if ( empty( $cache['timeout'] ) || current_time('timestamp') > $cache['timeout'] ) {
+                return false;
             }
 
-            return json_decode($cache['value']);
+            // We need to turn the icons into an array, thanks to WP Core forcing these into an object at some point.
+            $cache['value'] = json_decode( $cache['value'] );
+            if ( ! empty( $cache['value']->icons ) ) {
+                $cache['value']->icons = (array) $cache['value']->icons;
+            }
 
+            return $cache['value'];
         }
 
-        public function set_version_info_cache($value = '', $cache_key = '')
-        {
+        /**
+         * Adds the plugin version information to the database.
+         *
+         * @param string $value
+         * @param string $cache_key
+         */
+        public function set_version_info_cache( $value = '', $cache_key = '' ) {
 
-            if (empty($cache_key)) {
-                $cache_key = $this->cache_key;
+            if ( empty( $cache_key ) ) {
+                $cache_key = $this->get_cache_key();
             }
 
             $data = array(
-                'timeout' => strtotime('+3 hours', current_time('timestamp')),
-                'value' => json_encode($value)
+                'timeout' => strtotime( '+3 hours', current_time('timestamp') ),
+                'value'   => wp_json_encode( $value ),
             );
 
-            update_option($cache_key, $data);
+            update_option( $cache_key, $data, 'no' );
 
+            // Delete the duplicate option
+            delete_option( 'edd_api_request_' . md5( serialize( $this->slug . $this->api_data['license'] . $this->beta ) ) );
         }
 
         /**
@@ -508,9 +713,20 @@ if( !class_exists('WPPB_EDD_SL_Plugin_Updater') ) {
          * @since  1.6.13
          * @return bool
          */
-        private function verify_ssl()
-        {
-            return (bool)apply_filters('edd_sl_api_request_verify_ssl', true, $this);
+        private function verify_ssl() {
+            return (bool) apply_filters( 'edd_sl_api_request_verify_ssl', true, $this );
+        }
+
+        /**
+         * Gets the unique key (option name) for a plugin.
+         *
+         * @since 1.9.0
+         * @return string
+         */
+        private function get_cache_key() {
+            $string = $this->slug . $this->api_data['license'] . $this->beta;
+
+            return 'edd_sl_' . md5( serialize( $string ) );
         }
 
     }
@@ -536,22 +752,41 @@ class WPPB_Plugin_Updater {
     }
 
     protected function get_option( $license_key_option ){
-        return get_option( $license_key_option );
+
+        if( is_multisite() ){
+
+            $license = get_site_option( $license_key_option );
+
+            // fall back to old settings option in case this is empty
+            if( empty( $license ) )
+                $license = get_option( $license_key_option );
+
+            return $license;
+
+        } else
+            return get_option( $license_key_option );
+
     }
 
     protected function delete_option( $license_key_option ){
-        delete_option( $license_key_option );
+        if( is_multisite() )
+            delete_site_option( $license_key_option );
+        else
+            delete_option( $license_key_option );
     }
 
     protected function update_option( $license_key_option, $value ){
-        update_option( $license_key_option, $value );
+        if( is_multisite() )
+            update_site_option( $license_key_option, $value );
+        else
+            update_option( $license_key_option, $value );
     }
 
     protected function license_page_url( ){
 
         if( !is_multisite() )
-            return admin_url( 'admin.php?page=profile-builder-register' );
-        else 
+            return admin_url( 'admin.php?page=profile-builder-general-settings' );
+        else
             return network_admin_url( 'admin.php?page=profile-builder-register' );
 
     }
@@ -613,14 +848,14 @@ class WPPB_Plugin_Updater {
 
 
             set_transient( 'wppb_checked_licence', 'yes', DAY_IN_SECONDS );
-            
+
         }
 
         return $transient_data;
     }
 
     public function admin_activation_notices() {
-        if ( isset( $_GET['wppb_sl_activation'] ) && ! empty( $_GET['message'] ) ) {
+        if ( isset( $_GET['wppb_sl_activation'] ) && ! empty( $_GET['message'] ) && isset( $_GET['wppb_license_nonce'] ) && wp_verify_nonce( sanitize_text_field( $_GET['wppb_license_nonce'] ), 'wppb_license_display_message' ) ) {
 
             switch( $_GET['wppb_sl_activation'] ) {
                 case 'false':
@@ -648,8 +883,10 @@ class WPPB_Plugin_Updater {
             if( ! check_admin_referer( 'wppb_license_nonce', 'wppb_license_nonce' ) )
                 return; // get out if we didn't click the Activate button
 
+            if( !current_user_can( 'manage_options' ) )
+                return;
 
-            if ( isset( $_POST['wppb_license_key'] ) && preg_match('/^[*]+$/', $_POST['wppb_license_key']) && strlen( $_POST['wppb_license_key'] ) > 5 ) { //phpcs:ignore
+            if ( isset( $_POST['wppb_license_key'] ) && preg_match('/[*]{3,}/', $_POST['wppb_license_key']) && strlen( $_POST['wppb_license_key'] ) > 5 ) { //phpcs:ignore
                 // pressed submit without altering the existing license key (containing only * as outputted by default)
                 // useful for Deactivating/Activating valid license back
                 $license = wppb_get_serial_number();
@@ -724,11 +961,10 @@ class WPPB_Plugin_Updater {
             //store the license reponse for each addon in the database
             $this->update_option( 'wppb_license_details', $license_details );
 
-
             // Check if anything passed on a message constituting a failure
             if ( ! empty( $message ) ) {
                 $message = implode( "<br/>", array_unique($message) );//if we got the same message for multiple addons show just one, and add a br in case we show multiple messages
-                $redirect = add_query_arg( array( 'wppb_sl_activation' => 'false', 'message' => urlencode( $message ) ), $this->license_page_url() );
+                $redirect = add_query_arg( array( 'wppb_sl_activation' => 'false', 'message' => urlencode( $message ), 'wppb_license_nonce' => wp_create_nonce( 'wppb_license_display_message' ) ), $this->license_page_url() );
 
                 $this->update_option( 'wppb_license_status', isset( $license_data->error ) ? $license_data->error : $license_data->license );
 
@@ -739,7 +975,9 @@ class WPPB_Plugin_Updater {
             // $license_data->license will be either "valid" or "invalid"
             $this->update_option( 'wppb_license_status', isset( $license_data->error ) ? $license_data->error : $license_data->license );
 
-            wp_redirect( add_query_arg( array( 'wppb_sl_activation' => 'true', 'message' => urlencode( __( 'You have successfully activated your license.', 'profile-builder' ) ) ), $this->license_page_url() ) );
+            $redirect = add_query_arg( array( 'wppb_sl_activation' => 'true', 'message' => urlencode( __( 'You have successfully activated your license.', 'profile-builder' ) ), 'wppb_license_nonce' => wp_create_nonce( 'wppb_license_display_message' ) ), $this->license_page_url() );
+            
+            wp_redirect( $redirect );
             exit();
         }
     }
@@ -800,6 +1038,9 @@ class WPPB_Plugin_Updater {
             if( ! check_admin_referer( 'wppb_license_nonce', 'wppb_license_nonce' ) )
                 return; // get out if we didn't click the Activate button
 
+            if( !current_user_can( 'manage_options' ) )
+                return;
+
             // retrieve the license from the database
             $license = trim( wppb_get_serial_number() );
 
@@ -822,7 +1063,7 @@ class WPPB_Plugin_Updater {
                 else
                     $message = __( 'An error occurred, please try again.', 'profile-builder' );
 
-                wp_redirect( add_query_arg( array( 'wppb_sl_activation' => 'false', 'message' => urlencode( $message ) ), $this->license_page_url() ) );
+                wp_redirect( add_query_arg( array( 'wppb_sl_activation' => 'false', 'message' => urlencode( $message ), 'wppb_license_nonce' => wp_create_nonce( 'wppb_license_display_message' ) ), $this->license_page_url() ) );
                 exit();
             }
 

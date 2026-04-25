@@ -23,6 +23,16 @@ final class Url_Validation {
      * @return bool Whether the URLs belong to the same host.
      */
     public static function is_url_host_allowed( $url_to_check, $current_url ) {
+        $add_protocol_if_missing = function ( $url ) {
+            if ( ! preg_match( '/^https?:\/\//', $url ) ) {
+                $url = 'https://' . $url;
+            }
+            return $url;
+        };
+
+        $url_to_check = $add_protocol_if_missing( $url_to_check );
+        $current_url  = $add_protocol_if_missing( $current_url );
+
         $url_to_check_host = wp_parse_url( $url_to_check, PHP_URL_HOST );
 
         if ( ! $url_to_check_host ) {
@@ -43,7 +53,7 @@ final class Url_Validation {
         /**
          * Prepares the URL.
          *
-         * Retrieves the host a strips "www." from the beginning of it.
+         * Retrieves the host and strips "www." from the beginning of it.
          *
          * @param string $url
          *

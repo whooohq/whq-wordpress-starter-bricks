@@ -19,9 +19,8 @@ class Loco_gettext_Extraction {
 
     /**
      * Extra strings to be pushed into domains
-     * @var array
      */
-    private $extras;
+    private array $extras = [];
 
     /**
      * List of files skipped due to memory limit
@@ -31,9 +30,8 @@ class Loco_gettext_Extraction {
 
     /**
      * Size in bytes of largest file encountered
-     * @var int
      */
-    private $maxbytes = 0;
+    private int $maxbytes = 0;
 
 
     /**
@@ -47,7 +45,6 @@ class Loco_gettext_Extraction {
         $this->bundle = $bundle;
         $this->extracted = new LocoExtracted;
         $this->extracted->setDomain('default');
-        $this->extras = [];
         $default = $bundle->getDefaultProject();
         if( $default instanceof Loco_package_Project ){
             $domain = $default->getDomain()->getName();
@@ -61,9 +58,9 @@ class Loco_gettext_Extraction {
             $extras = [];
             $header = $bundle->getHeaderInfo();
             foreach( $bundle->getMetaTranslatable() as $prop => $notes ){
-                $source = $header->__get($prop);
-                if( is_string($source) && '' !== $source ){
-                    $extras[] = [ $source, $notes ];
+                $text = $header->__get($prop);
+                if( is_string($text) && '' !== $text ){
+                    $extras[] = ['source'=>$text, 'notes'=>$notes ];
                 }
             }
             if( $extras ){
@@ -78,6 +75,7 @@ class Loco_gettext_Extraction {
      */
     public function addProject( Loco_package_Project $project ){
         $base = $this->bundle->getDirectoryPath();
+        $domain = (string) $project->getDomain();
         // skip files larger than configured maximum
         $opts = Loco_data_Settings::get();
         $max = wp_convert_hr_to_bytes( $opts->max_php_size );
@@ -88,26 +86,42 @@ class Loco_gettext_Extraction {
         /* @var Loco_fs_File $file */
         foreach( $project->findSourceFiles() as $file ){
             $type = $opts->ext2type( $file->extension() );
-            $extr = loco_wp_extractor($type);
-            if( 'js' !== $type ) {
-                // skip large files for PHP, because token_get_all is hungry
-                if( 0 !== $max ){
-                    $size = $file->size();
-                    $this->maxbytes = max( $this->maxbytes, $size );
-                    if( $size > $max ){
-                        $list = $this->skipped or $list = ( $this->skipped = new Loco_fs_FileList() );
-                        $list->add( $file );
-                        continue;
+            $fileref = $file->getRelativePath($base);
+            try {
+                $extr = loco_wp_extractor( $type, $file->fullExtension() );
+                if( 'php' === $type || 'twig' === $type) {
+                    // skip large files for PHP, because token_get_all is hungry
+                    if( 0 !== $max ){
+                        $size = $file->size();
+                        $this->maxbytes = max( $this->maxbytes, $size );
+                        if( $size > $max ){
+                            $list = $this->skipped or $list = ( $this->skipped = new Loco_fs_FileList() );
+                            $list->add( $file );
+                            continue;
+                        }
+                    }
+                    // extract headers from theme files (templates and patterns)
+                    if( $project->getBundle()->isTheme() ){
+                        $extr->headerize(  [
+                            'Template Name' => ['notes'=>'Name of the template'],
+                        ], $domain );
+                        if( preg_match('!^patterns/!', $fileref) ){
+                            $extr->headerize([
+                                'Title' => ['context'=>'Pattern title'],
+                                'Description' => ['context'=>'Pattern description'],
+                            ], $domain );
+                        }
                     }
                 }
-                // extract headers from theme PHP files in
-                if( $project->getBundle()->isTheme() ){
-                    $extr->headerize(  [
-                        'Template Name' => 'Name of the template',
-                    ], (string) $project->getDomain() );
+                // normally missing domains are treated as "default", but we'll make an exception for theme.json.
+                else if( 'json' === $type && $project->getBundle()->isTheme() ){
+                    $extr->setDomain($domain);
                 }
+                $this->extracted->extractSource( $extr, $file->getContents(), $fileref );
             }
-            $this->extracted->extractSource( $extr, $file->getContents(), $file->getRelativePath( $base ) );
+            catch( Exception $e ){
+                Loco_error_AdminNotices::debug('Error extracting '.$fileref.': '.$e->getMessage() );
+            }
         }
         return $this;
     }
@@ -119,8 +133,8 @@ class Loco_gettext_Extraction {
      */
     public function includeMeta(){
         foreach( $this->extras as $domain => $extras ){
-            foreach( $extras as $args ){
-                $this->extracted->pushMeta( $args[0], $args[1], $domain );
+            foreach( $extras as $entry ){
+                $this->extracted->pushEntry($entry,$domain);
             }
         }
         $this->extras = [];
@@ -132,7 +146,7 @@ class Loco_gettext_Extraction {
      * Add a custom source string constructed from `new Loco_gettext_String(msgid,[msgctxt])`
      * @param Loco_gettext_String $string
      * @param string $domain Optional text domain, if not current bundle's default
-     * @return self
+     * @return void
      */
     public function addString( Loco_gettext_String $string, $domain = '' ){
         if( ! $domain ) {
@@ -143,8 +157,6 @@ class Loco_gettext_Extraction {
         if( $string->hasPlural() ){
             $this->extracted->pushPlural( $string->exportPlural(), $index );
         }
-        
-        return $this;
     }
 
 

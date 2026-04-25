@@ -2,9 +2,9 @@
 Contributors: bestwebsoft
 Donate link: https://bestwebsoft.com/donate/
 Tags: add debug tool, error log, error log viewer, php error log, debug tool, clear log, display errors, error, eror, error reporting, save log, find log
-Requires at least: 5.6
-Tested up to: 6.2
-Stable tag: 1.1.2
+Requires at least: 6.2
+Tested up to: 6.9
+Stable tag: 1.1.8
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -68,6 +68,10 @@ Some of these translations are not complete. We are constantly adding new featur
 = Recommended Plugins =
 
 * [Updater](https://bestwebsoft.com/products/wordpress/plugins/updater/?k=e2d89a7eca0a903ab58d99e7ffa3b510) - Automatically check and update WordPress website core with all installed plugins and themes to the latest versions.
+
+= Credits =
+
+* This plugin incorporates a license verification mechanism to ensure the authenticity of your license key and provide access to premium features and updates. The verification process involves connecting securely to our external service hosted at BestWebSoft website <https://bestwebsoft.com>. Privacy Policy <https://bestwebsoft.com/privacy-policy/>. End user license agreement <https://bestwebsoft.com/end-user-license-agreement/>.
 
 == Installation ==
 
@@ -137,6 +141,34 @@ Please make sure that the problem hasn't been discussed yet on our forum (<https
 
 == Changelog ==
 
+= V1.1.8 - 18.11.2025 =
+* Update : Added info about send email notifications
+
+= V1.1.7 - 15.10.2025 =
+* Bugfix : Vulnerability bugs fixed.
+* Update : Plugin optimization compleated.
+* Update : All functionality has been updated for WordPress 6.8.3.
+
+= V1.1.6 - 26.03.2025 =
+* Bugfix : Small bugs fixed.
+* Update : Plugin optimization compleated.
+* Update : All functionality has been updated for WordPress 6.7.
+
+= V1.1.5 - 22.04.2024 =
+* Bugfix : Small bugs fixed.
+* Update : Plugin optimization compleated.
+* Update : All functionality has been updated for WordPress 6.5.2.
+
+= V1.1.4 - 01.01.2024 =
+* Bugfix : wp_nonce error fixed.
+* Update : Plugin optimization compleated.
+
+= V1.1.3 - 11.12.2023 =
+* Update : BWS panel section is updated.
+* Update : All functionality has been updated for WordPress 6.4.2.
+* Bugfix : Fixed Data Security Risk.
+* NEW : Functionality for mitigating the vulnerability effectively has been added.
+
 = V1.1.2 - 11.01.2022 =
 * Update : BWS panel section is updated.
 * Update : All functionality has been updated for WordPress 5.8.1.
@@ -184,6 +216,35 @@ Please make sure that the problem hasn't been discussed yet on our forum (<https
 * Release date of Error Log Viewer
 
 == Upgrade Notice ==
+
+= V1.1.8 =
+* Plugin optimization completed.
+* Bugs fixed
+
+= V1.1.7 =
+* The compatibility with new WordPress version updated.
+* Plugin optimization completed.
+* Bugs fixed
+
+= V1.1.6 =
+* The compatibility with new WordPress version updated.
+* Plugin optimization completed.
+* Bugs fixed
+
+= V1.1.5 =
+* The compatibility with new WordPress version updated.
+* Plugin optimization completed.
+* Bugs fixed
+
+= V1.1.4 =
+* Usability improved.
+* Bugs fixed.
+
+= V1.1.3 =
+* The compatibility with new WordPress version updated.
+* Plugin optimization completed.
+* Bugs fixed
+* New features added.
 
 = V1.1.2 =
 * The compatibility with new WordPress version updated.

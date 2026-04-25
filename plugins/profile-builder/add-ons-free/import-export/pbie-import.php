@@ -1,4 +1,6 @@
 <?php
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /* include import class */
 require_once 'inc/class-pbie-import.php';
@@ -30,17 +32,24 @@ function wppb_pbie_import() {
 		}
 	}
 	?>
-	
-	<p><?php esc_html_e( 'Import Profile Builder options from a .json file. This allows you to easily import the configuration from another site. ', 'profile-builder' ); ?></p>
-	<form name="cozmos-upload" method="post" action="" enctype= "multipart/form-data">
-		<input type="hidden" name="wppb_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wppb_import_setttings' ) ); ?>" />
+    <div class="cozmoslabs-form-subsection-wrapper">
+        <h4 class="cozmoslabs-subsection-title"><?php esc_html_e( 'Import Profile Builder Options', 'profile-builder' ); ?></h4>
+        <p class="cozmoslabs-description"><?php esc_html_e( 'This allows you to easily import the configuration from another site.', 'profile-builder' ); ?></p>
 
-		<div class="wrap">
-			<input type="file" name="cozmos-upload" value="cozmos-upload" id="cozmos-upload" />
-		</div>
-		<div class="wrap">
-			<input class="button-secondary" type="submit" name="cozmos-import" value=<?php esc_html_e( 'Import', 'profile-builder' ); ?> id="cozmos-import" onclick="return confirm( '<?php esc_html_e( 'This will overwrite your old PB settings! Are you sure you want to continue?', 'profile-builder' ); ?>' )" />
-		</div>
-	</form>
+        <form name="cozmos-upload" method="post" action="" enctype= "multipart/form-data">
+            <input type="hidden" name="wppb_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wppb_import_setttings' ) ); ?>" />
+
+            <div class="cozmoslabs-form-field-wrapper">
+                <label class="cozmoslabs-form-field-label"><?php esc_html_e('JSON File', 'profile-builder'); ?></label>
+                <input type="file" name="cozmos-upload" value="cozmos-upload" id="cozmos-upload" />
+            </div>
+
+            <div class="cozmoslabs-form-field-wrapper">
+                <label class="cozmoslabs-form-field-label"><?php esc_html_e('Import Options', 'profile-builder'); ?></label>
+                <input class="button-secondary" type="submit" name="cozmos-import" value=<?php esc_html_e( 'Import', 'profile-builder' ); ?> id="cozmos-import" onclick="return confirm( '<?php esc_html_e( 'This will overwrite your old PB settings! Are you sure you want to continue?', 'profile-builder' ); ?>' )" />
+                <p class="cozmoslabs-description cozmoslabs-description-space-left"><?php esc_html_e( 'Import Profile Builder options from the JSON file selected above.', 'profile-builder' ); ?></p>
+            </div>
+        </form>
+    </div>
 <?php
 }

@@ -3,9 +3,14 @@
  * WooCommerce Product CSV importer
  *
  * @package WooCommerce\Import
- * @version 3.1.0
+ * @version 10.0.0
  */
 
+use Automattic\WooCommerce\Enums\ProductStatus;
+use Automattic\WooCommerce\Enums\ProductStockStatus;
+use Automattic\WooCommerce\Enums\ProductTaxStatus;
+use Automattic\WooCommerce\Enums\ProductType;
+use Automattic\WooCommerce\Internal\CostOfGoodsSold\CostOfGoodsSoldController;
 use Automattic\WooCommerce\Utilities\ArrayUtil;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Include dependencies.
  */
 if ( ! class_exists( 'WC_Product_Importer', false ) ) {
-	include_once dirname( __FILE__ ) . '/abstract-wc-product-importer.php';
+	include_once __DIR__ . '/abstract-wc-product-importer.php';
 }
 
 if ( ! class_exists( 'WC_Product_CSV_Importer_Controller', false ) ) {
@@ -36,12 +41,21 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 	protected $parsing_raw_data_index = 0;
 
 	/**
+	 * Is the Cost of Goods Sold feature enabled?
+	 *
+	 * @var bool
+	 */
+	private $cogs_is_enabled = false;
+
+	/**
 	 * Initialize importer.
 	 *
 	 * @param string $file   File to read.
 	 * @param array  $params Arguments for the parser.
 	 */
 	public function __construct( $file, $params = array() ) {
+		$this->cogs_is_enabled = wc_get_container()->get( CostOfGoodsSoldController::class )->feature_is_enabled();
+
 		$default_args = array(
 			'start_pos'        => 0, // File pointer start.
 			'end_pos'          => -1, // File pointer end.
@@ -63,7 +77,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 		}
 
 		// Import mappings for CSV data.
-		include_once dirname( dirname( __FILE__ ) ) . '/admin/importers/mappings/mappings.php';
+		include_once dirname( __DIR__ ) . '/admin/importers/mappings/mappings.php';
 
 		$this->read_file();
 	}
@@ -198,7 +212,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 				return absint( $original_id );
 			}
 
-			// See if the given ID maps to a valid product allready.
+			// See if the given ID maps to a valid product already.
 			$existing_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type IN ( 'product', 'product_variation' ) AND ID = %d;", $id ) ); // WPCS: db call ok, cache ok.
 
 			if ( $existing_id ) {
@@ -207,7 +221,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 
 			// If we're not updating existing posts, we may need a placeholder product to map to.
 			if ( ! $this->params['update_existing'] ) {
-				$product = wc_get_product_object( 'simple' );
+				$product = wc_get_product_object( ProductType::SIMPLE );
 				$product->set_name( 'Import placeholder for ' . $id );
 				$product->set_status( 'importing' );
 				$product->add_meta_data( '_original_id', $id, true );
@@ -224,7 +238,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 		}
 
 		try {
-			$product = wc_get_product_object( 'simple' );
+			$product = wc_get_product_object( ProductType::SIMPLE );
 			$product->set_name( 'Import placeholder for ' . $value );
 			$product->set_status( 'importing' );
 			$product->set_sku( $value );
@@ -278,7 +292,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 				return $id_from_sku;
 			}
 
-			$product = wc_get_product_object( 'simple' );
+			$product = wc_get_product_object( ProductType::SIMPLE );
 			$product->set_name( 'Import placeholder for ' . $id );
 			$product->set_status( 'importing' );
 			$product->add_meta_data( '_original_id', $id, true );
@@ -396,7 +410,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 		$value = $this->unescape_data( $value );
 
 		if ( 'true' === strtolower( $value ) || 'false' === strtolower( $value ) ) {
-			$value = wc_string_to_bool( $value ) ? 'taxable' : 'none';
+			$value = wc_string_to_bool( $value ) ? ProductTaxStatus::TAXABLE : ProductTaxStatus::NONE;
 		}
 
 		return wc_clean( $value );
@@ -591,6 +605,35 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 	}
 
 	/**
+	 * Parse dates from a CSV.
+	 * Dates can be Unix timestamps or in any format supported by strtotime().
+	 *
+	 * @param string $value Field value.
+	 *
+	 * @return string|null
+	 */
+	public function parse_datetime_field( $value ) {
+		try {
+			// If value is a Unix timestamp, convert it to a datetime string.
+			if ( is_numeric( $value ) ) {
+				$datetime = new DateTime( "@{$value}" );
+				// Return datetime string in ISO8601 format (eg. 2018-01-01T00:00:00Z) to preserve UTC timezone since Unix timestamps are always UTC.
+				return $datetime->format( 'Y-m-d\TH:i:s\Z' );
+			}
+			// Check whether the value is a valid date string.
+			if ( false !== strtotime( $value ) ) {
+				// If the value is a valid date string, return as is.
+				return $value;
+			}
+		} catch ( Exception $e ) {
+			// DateTime constructor throws an exception if the value is not a valid Unix timestamp.
+			return null;
+		}
+		// If value is not valid Unix timestamp or date string, return null.
+		return null;
+	}
+
+	/**
 	 * Parse backorders from a CSV.
 	 *
 	 * @param string $value Field value.
@@ -650,9 +693,15 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 	 *
 	 * @param int $value field value.
 	 *
-	 * @return int
+	 * @return int|string
 	 */
 	public function parse_int_field( $value ) {
+		// Similar to WC_Meta_Box_Product_Data::save, do not cast the empty value to int.
+		// An empty value indicates that the field should be cleared.
+		if ( '' === $value ) {
+			return $value;
+		}
+
 		// Remove the ' prepended to fields that start with - if needed.
 		$value = $this->unescape_data( $value );
 
@@ -699,6 +748,17 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 	}
 
 	/**
+	 * Parse the Cost of Goods Sold field.
+	 *
+	 * @param string $value Field value.
+	 *
+	 * @return float|null
+	 */
+	public function parse_cogs_field( $value ) {
+		return '' === $value ? null : (float) wc_format_decimal( $value );
+	}
+
+	/**
 	 * Deprecated get formatting callback method.
 	 *
 	 * @deprecated 4.3.0
@@ -725,8 +785,8 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 			'type'              => array( $this, 'parse_comma_field' ),
 			'published'         => array( $this, 'parse_published_field' ),
 			'featured'          => array( $this, 'parse_bool_field' ),
-			'date_on_sale_from' => array( $this, 'parse_date_field' ),
-			'date_on_sale_to'   => array( $this, 'parse_date_field' ),
+			'date_on_sale_from' => array( $this, 'parse_datetime_field' ),
+			'date_on_sale_to'   => array( $this, 'parse_datetime_field' ),
 			'name'              => array( $this, 'parse_skip_field' ),
 			'short_description' => array( $this, 'parse_description_field' ),
 			'description'       => array( $this, 'parse_description_field' ),
@@ -758,6 +818,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 			'product_url'       => 'esc_url_raw',
 			'menu_order'        => 'intval',
 			'tax_status'        => array( $this, 'parse_tax_status_field' ),
+			'cogs_value'        => array( $this, 'parse_cogs_field' ),
 		);
 
 		/**
@@ -837,7 +898,7 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 			$data['type'] = current( array_diff( $data['type'], array( 'virtual', 'downloadable' ) ) );
 
 			if ( ! $data['type'] ) {
-				$data['type'] = 'simple';
+				$data['type'] = ProductType::SIMPLE;
 			}
 		}
 
@@ -849,15 +910,15 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 			}
 
 			$statuses       = array(
-				-1 => 'draft',
-				0  => 'private',
-				1  => 'publish',
+				-1 => ProductStatus::DRAFT,
+				0  => ProductStatus::PRIVATE,
+				1  => ProductStatus::PUBLISH,
 			);
-			$data['status'] = $statuses[ $published ] ?? 'draft';
+			$data['status'] = $statuses[ $published ] ?? ProductStatus::DRAFT;
 
 			// Fix draft status of variations.
-			if ( 'variation' === ( $data['type'] ?? null ) && -1 === $published ) {
-				$data['status'] = 'publish';
+			if ( ProductType::VARIATION === ( $data['type'] ?? null ) && -1 === $published ) {
+				$data['status'] = ProductStatus::PUBLISH;
 			}
 
 			unset( $data['published'] );
@@ -875,9 +936,9 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 		// Stock is bool or 'backorder'.
 		if ( isset( $data['stock_status'] ) ) {
 			if ( 'backorder' === $data['stock_status'] ) {
-				$data['stock_status'] = 'onbackorder';
+				$data['stock_status'] = ProductStockStatus::ON_BACKORDER;
 			} else {
-				$data['stock_status'] = $data['stock_status'] ? 'instock' : 'outofstock';
+				$data['stock_status'] = $data['stock_status'] ? ProductStockStatus::IN_STOCK : ProductStockStatus::OUT_OF_STOCK;
 			}
 		}
 
@@ -891,6 +952,10 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 		if ( isset( $data['tag_ids_spaces'] ) ) {
 			$data['tag_ids'] = $data['tag_ids_spaces'];
 			unset( $data['tag_ids_spaces'] );
+		}
+
+		if ( ! $this->cogs_is_enabled ) {
+			unset( $data['cogs_value'] );
 		}
 
 		// Handle special column names which span multiple columns.
@@ -1106,24 +1171,24 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 				$sku_exists  = $product && 'importing' !== $product->get_status();
 			}
 
-			if ( $id_exists && ! $update_existing ) {
-				$data['skipped'][] = new WP_Error(
-					'woocommerce_product_importer_error',
-					esc_html__( 'A product with this ID already exists.', 'woocommerce' ),
-					array(
-						'id'  => $id,
-						'row' => $this->get_row_id( $parsed_data ),
-					)
-				);
-				continue;
-			}
-
 			if ( $sku_exists && ! $update_existing ) {
 				$data['skipped'][] = new WP_Error(
 					'woocommerce_product_importer_error',
 					esc_html__( 'A product with this SKU already exists.', 'woocommerce' ),
 					array(
 						'sku' => esc_attr( $sku ),
+						'row' => $this->get_row_id( $parsed_data ),
+					)
+				);
+				continue;
+			}
+
+			if ( $id_exists && ! $update_existing ) {
+				$data['skipped'][] = new WP_Error(
+					'woocommerce_product_importer_error',
+					esc_html__( 'A product with this ID already exists.', 'woocommerce' ),
+					array(
+						'id'  => $id,
 						'row' => $this->get_row_id( $parsed_data ),
 					)
 				);
@@ -1150,15 +1215,13 @@ class WC_Product_CSV_Importer extends WC_Product_Importer {
 				$data['failed'][] = $result;
 			} elseif ( $result['updated'] ) {
 				$data['updated'][] = $result['id'];
-			} else {
-				if ( $result['is_variation'] ) {
+			} elseif ( $result['is_variation'] ) {
 					$data['imported_variations'][] = $result['id'];
-				} else {
-					$data['imported'][] = $result['id'];
-				}
+			} else {
+				$data['imported'][] = $result['id'];
 			}
 
-			$index ++;
+			++$index;
 
 			if ( $this->params['prevent_timeouts'] && ( $this->time_exceeded() || $this->memory_exceeded() ) ) {
 				$this->file_position = $this->file_positions[ $index ];

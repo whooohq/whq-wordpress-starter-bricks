@@ -9,10 +9,13 @@
 	<rule ref="WordPress-Docs" />
 	<rule ref="WordPress.PHP.NoSilencedErrors">
 		<properties>
-			<property name="custom_whitelist" type="array" value="exif_read_data"/>
+			<property name="customAllowedFunctionsList" type="array">
+				<element value="exif_read_data"/>
+			</property>
 		</properties>
 	</rule>
 
+	<config name="testVersion">7.4-</config>
 	<rule ref="PHPCompatibilityWP">
 		<severity>10</severity>
 	</rule>

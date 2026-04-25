@@ -38,8 +38,8 @@ class Tracking {
 	/**
 	 * Creates the Tracking object.
 	 *
-	 * @param String                                $product_name the slug of the product that we are tracking.
-	 * @param Automattic\Jetpack\Connection\Manager $connection   the connection manager object.
+	 * @param string                                 $product_name the slug of the product that we are tracking.
+	 * @param \Automattic\Jetpack\Connection\Manager $connection   the connection manager object.
 	 */
 	public function __construct( $product_name = 'jetpack', $connection = null ) {
 		$this->product_name = $product_name;
@@ -159,7 +159,7 @@ class Tracking {
 	 *
 	 * @param string $event_type         Type of the event.
 	 * @param array  $data               Data to send with the event.
-	 * @param mixed  $user               Username, user_id, or WP_user object.
+	 * @param mixed  $user               Username, user_id, or WP_User object.
 	 * @param bool   $use_product_prefix Whether to use the object's product name as a prefix to the event type. If
 	 *                                   set to false, the prefix will be 'jetpack_'.
 	 */
@@ -189,7 +189,7 @@ class Tracking {
 	/**
 	 * Record an event in Tracks - this is the preferred way to record events from PHP.
 	 *
-	 * @param mixed  $user                   username, user_id, or WP_user object.
+	 * @param mixed  $user                   username, user_id, or WP_User object.
 	 * @param string $event_name             The name of the event.
 	 * @param array  $properties             Custom properties to send with the event.
 	 * @param int    $event_timestamp_millis The time in millis since 1970-01-01 00:00:00 when the event occurred.
@@ -221,8 +221,8 @@ class Tracking {
 	/**
 	 * Determines whether tracking should be enabled.
 	 *
-	 * @param Automattic\Jetpack\Terms_Of_Service $terms_of_service A Terms_Of_Service object.
-	 * @param Automattic\Jetpack\Status           $status A Status object.
+	 * @param \Automattic\Jetpack\Terms_Of_Service $terms_of_service A Terms_Of_Service object.
+	 * @param \Automattic\Jetpack\Status           $status A Status object.
 	 *
 	 * @return boolean True if tracking should be enabled, else false.
 	 */
@@ -238,10 +238,10 @@ class Tracking {
 	 * Procedurally build a Tracks Event Object.
 	 * NOTE: Use this only when the simpler Automattic\Jetpack\Tracking->jetpack_tracks_record_event() function won't work for you.
 	 *
-	 * @param WP_user $user                   WP_user object.
-	 * @param string  $event_name             The name of the event.
-	 * @param array   $properties             Custom properties to send with the event.
-	 * @param int     $event_timestamp_millis The time in millis since 1970-01-01 00:00:00 when the event occurred.
+	 * @param \WP_User $user                   WP_User object.
+	 * @param string   $event_name             The name of the event.
+	 * @param array    $properties             Custom properties to send with the event.
+	 * @param int      $event_timestamp_millis The time in millis since 1970-01-01 00:00:00 when the event occurred.
 	 *
 	 * @return \Jetpack_Tracks_Event|\WP_Error
 	 */
@@ -252,6 +252,7 @@ class Tracking {
 
 		$blog_details = array(
 			'blog_lang' => isset( $properties['blog_lang'] ) ? $properties['blog_lang'] : get_bloginfo( 'language' ),
+			'blog_id'   => \Jetpack_Options::get_option( 'id' ),
 		);
 
 		$timestamp        = ( false !== $event_timestamp_millis ) ? $event_timestamp_millis : round( microtime( true ) * 1000 );
@@ -279,24 +280,28 @@ class Tracking {
 	 */
 	public function tracks_get_identity( $user_id ) {
 
-		// Meta is set, and user is still connected.  Use WPCOM ID.
+		// Meta is set, and user is still connected. Use WPCOM ID.
 		$wpcom_id = get_user_meta( $user_id, 'jetpack_tracks_wpcom_id', true );
-		if ( $wpcom_id && $this->connection->is_user_connected( $user_id ) ) {
+		if ( $wpcom_id && is_string( $wpcom_id ) && $this->connection->is_user_connected( $user_id ) ) {
 			return array(
 				'_ut' => 'wpcom:user_id',
 				'_ui' => $wpcom_id,
 			);
 		}
 
-		// User is connected, but no meta is set yet.  Use WPCOM ID and set meta.
+		// User is connected, but no meta is set yet. Use WPCOM ID and set meta.
 		if ( $this->connection->is_user_connected( $user_id ) ) {
 			$wpcom_user_data = $this->connection->get_connected_user_data( $user_id );
-			update_user_meta( $user_id, 'jetpack_tracks_wpcom_id', $wpcom_user_data['ID'] );
+			$wpcom_id        = $wpcom_user_data['ID'] ?? null;
 
-			return array(
-				'_ut' => 'wpcom:user_id',
-				'_ui' => $wpcom_user_data['ID'],
-			);
+			if ( is_string( $wpcom_id ) ) {
+				update_user_meta( $user_id, 'jetpack_tracks_wpcom_id', $wpcom_id );
+
+				return array(
+					'_ut' => 'wpcom:user_id',
+					'_ui' => $wpcom_id,
+				);
+			}
 		}
 
 		// User isn't linked at all.  Fall back to anonymous ID.

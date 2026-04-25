@@ -34,6 +34,9 @@ __( 'activated', 'aryo-activity-log' );
 __( 'deactivated', 'aryo-activity-log' );
 __( 'installed', 'aryo-activity-log' );
 __( 'File Updated', 'aryo-activity-log' );
+__( 'deleted', 'aryo-activity-log' );
+__( 'auto_update_disabled', 'aryo-activity-log' );
+__( 'auto_update_enabled', 'aryo-activity-log' );
 
 // Themes
 __( 'Themes', 'aryo-activity-log' );
@@ -55,6 +58,12 @@ __( 'Taxonomies', 'aryo-activity-log' );
 __( 'Core', 'aryo-activity-log' );
 __( 'WordPress Updated', 'aryo-activity-log' );
 __( 'WordPress Auto Updated', 'aryo-activity-log' );
+__( 'All New Versions', 'aryo-activity-log' );
+
+// Emails
+__( 'Emails', 'aryo-activity-log' );
+__( 'sent', 'aryo-activity-log' );
+__( 'failed', 'aryo-activity-log' );
 
 // Comments
 __( 'Comments', 'aryo-activity-log' );

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Cache Warmer
  * Description: Visits website pages to warm (create) the cache if you have any caching solutions configured.
- * Version:     1.2.2
+ * Version:     1.3.8
  * Text Domain: cache-warmer
  * Author:      TMM Technology
  * Author URI:  https://tmm.ventures/
@@ -84,10 +84,13 @@ final class Cache_Warmer {
         $this->define_constants();
         $this->import_plugin_files();
 
+        // Schedule intervals.
+        new Intervals_Scheduler();
+
         add_action(
             'plugins_loaded',
             function() {
-                new \WP_Plugins_Core\WP_Plugins_Core( $this );
+                new \WP_Plugins_Core\WP_Plugins_Core( $this, false );
 
                 // Load translations.
                 $this->load_plugin_textdomain();
@@ -154,11 +157,17 @@ final class Cache_Warmer {
                         // Posts enqueue.
                         new Posts_Enqueue();
 
+                        // External warmer.
+                        new External_Warmer();
+
                         // Menu.
                         new Admin_Menu();
 
                         // AJAX Handler.
                         self::$ajax = new AJAX();
+
+                        // Extend WP CLI.
+                        new Extend_WP_CLI();
                     }
                 );
             }
@@ -220,6 +229,9 @@ final class Cache_Warmer {
             'class-server-ip-detection',
             'class-migrations',
             'class-clear-old-actions',
+            'class-external-warmer',
+            'class-intervals-scheduler',
+            'class-extend-wp-cli',
             'posts-warming/class-posts-enqueue',
             'posts-warming/class-posts-warming-interval',
             'integrations/class-cache-plugins-integration',

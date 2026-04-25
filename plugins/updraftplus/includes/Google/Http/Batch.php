@@ -42,14 +42,14 @@ class Google_Http_Batch
     $this->client = $client;
     $this->base_path = $this->client->getBasePath();
     $this->expected_classes = array();
-    $boundary = (false == $boundary) ? mt_rand() : $boundary;
+    $boundary = (false == $boundary) ? wp_rand() : $boundary;
     $this->boundary = str_replace('"', '', $boundary);
   }
 
   public function add(UDP_Google_Http_Request $request, $key = false)
   {
     if (false == $key) {
-      $key = mt_rand();
+      $key = wp_rand();
     }
 
     $this->requests[$key] = $request;

@@ -6,7 +6,16 @@ use function WPML\Container\make;
 
 class WCML_Troubleshooting {
 
-	const ITEMS_PER_AJAX = 5;
+	const ITEMS_PER_AJAX_MIN = 3;
+	const ITEMS_PER_AJAX     = 5;
+
+	const OPTION_PRODUCTS_WITH_VARIATIONS                 = 'wcml_products_to_sync';
+	const OPTION_PRODUCTS_AND_VARIATIONS_FOR_STOCK_SYNC   = 'wcml_products_and_variations_for_stock_sync';
+	const OPTION_VARIATIONS_FOR_LANGUAGE_ASSIGNMENT       = 'wcml_trbl_translated_variations';
+	const OPTION_PRODUCTS_AND_VARIATIONS_FOR_META_CLEANUP = 'wcml_trbl_products_needs_fix_postmeta';
+	const META_GALLERY_SYNC                               = 'wcml_gallery_sync';
+	const META_GALLERY_SYNC_LEGACY                        = 'gallery_sync';
+	const META_CAT_META_SYNC                              = 'wcml_cat_meta_sync';
 
 	private $woocommerce_wpml;
 	private $sitepress;
@@ -31,150 +40,198 @@ class WCML_Troubleshooting {
 	public function init() {
 		add_action( 'wp_ajax_trbl_sync_variations', [ $this, 'trbl_sync_variations' ] );
 		add_action( 'wp_ajax_trbl_gallery_images', [ $this, 'trbl_gallery_images' ] );
-		add_action( 'wp_ajax_register_reviews_in_st', [ $this, 'register_reviews_in_st' ] );
-		add_action( 'wp_ajax_trbl_update_count', [ $this, 'trbl_update_count' ] );
 		add_action( 'wp_ajax_trbl_sync_categories', [ $this, 'trbl_sync_categories' ] );
-		add_action( 'wp_ajax_trbl_duplicate_terms', [ $this, 'trbl_duplicate_terms' ] );
-		add_action( 'wp_ajax_trbl_fix_product_type_terms', [ $this, 'trbl_fix_product_type_terms' ] );
 		add_action( 'wp_ajax_trbl_sync_stock', [ $this, 'trbl_sync_stock' ] );
 		add_action( 'wp_ajax_fix_translated_variations_relationships', [ $this, 'fix_translated_variations_relationships' ] );
+		add_action( 'wp_ajax_trbl_fix_product_type_terms', [ $this, 'trbl_fix_product_type_terms' ] );
+		add_action( 'wp_ajax_trbl_duplicate_terms', [ $this, 'trbl_duplicate_terms' ] );
+		add_action( 'wp_ajax_register_reviews_in_st', [ $this, 'register_reviews_in_st' ] );
 		add_action( 'wp_ajax_sync_deleted_meta', [ $this, 'sync_deleted_meta' ] );
 	}
 
-	public function wcml_count_products_with_variations() {
-		return count( get_option( 'wcml_products_to_sync' ) );
+	public function countProducts() {
+		return $this->wpdb->get_var(
+			"
+			SELECT COUNT( DISTINCT p.ID ) FROM {$this->wpdb->posts} AS p
+				LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr
+				ON tr.element_id = p.ID
+				WHERE p.post_status = 'publish' AND p.post_type = 'product' AND tr.source_language_code is NULL
+			"
+		);
 	}
 
-	public function trbl_update_count() {
-		self::checkNonce( 'trbl_update_count' );
-
-		$this->wcml_sync_variations_update_option();
-
-		$result = [
-			'count' => $this->wcml_count_products_with_variations(),
-		];
-
-		wp_send_json_success( $result );
+	public function countVariations() {
+		return $this->wpdb->get_var(
+			"
+			SELECT COUNT( DISTINCT p.ID ) FROM {$this->wpdb->posts} AS p
+				LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr
+				ON tr.element_id = p.ID
+				WHERE p.post_status = 'publish' AND p.post_type = 'product_variation' AND tr.source_language_code is NULL
+			"
+		);
 	}
 
-	public function wcml_sync_variations_update_option() {
-
+	public function getVariableProducts() {
 		$get_variation_term_taxonomy_ids = $this->wpdb->get_var( "SELECT tt.term_taxonomy_id FROM {$this->wpdb->terms} AS t LEFT JOIN {$this->wpdb->term_taxonomy} AS tt ON t.term_id = tt.term_id WHERE t.name = 'variable'" );
 		$get_variation_term_taxonomy_ids = apply_filters( 'wcml_variation_term_taxonomy_ids', (array) $get_variation_term_taxonomy_ids );
 
-		$get_variables_products = $this->wpdb->get_results(
-			"SELECT tr.element_id as id,tr.language_code as lang FROM {$this->wpdb->prefix}icl_translations AS tr LEFT JOIN {$this->wpdb->term_relationships} as t ON tr.element_id = t.object_id LEFT JOIN {$this->wpdb->posts} AS p ON tr.element_id = p.ID
-				WHERE p.post_status = 'publish' AND tr.source_language_code is NULL AND tr.element_type = 'post_product' AND t.term_taxonomy_id IN (" . DB::prepareIn( $get_variation_term_taxonomy_ids, '%d' ) . ") ORDER BY tr.element_id",
+		return $this->wpdb->get_results(
+			"
+			SELECT tr.element_id as id,tr.language_code as lang FROM {$this->wpdb->prefix}icl_translations AS tr LEFT JOIN {$this->wpdb->term_relationships} as t ON tr.element_id = t.object_id LEFT JOIN {$this->wpdb->posts} AS p ON tr.element_id = p.ID
+				WHERE p.post_status = 'publish' AND tr.source_language_code is NULL AND tr.element_type = 'post_product' AND t.term_taxonomy_id IN (" . DB::prepareIn( $get_variation_term_taxonomy_ids, '%d' ) . ") ORDER BY tr.element_id
+			",
 			ARRAY_A
 		);
-
-		update_option( 'wcml_products_to_sync', $get_variables_products );
 	}
 
-	public function wcml_count_products() {
-
-		$get_products_count = $this->wpdb->get_var( "SELECT count(ID) FROM {$this->wpdb->posts} AS p LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr ON tr.element_id = p.ID WHERE p.post_status = 'publish' AND p.post_type =  'product' AND tr.source_language_code is NULL" );
-		return $get_products_count;
+	public function countVariableProducts() {
+		$variableProducts = $this->getVariableProducts();
+		return count( $variableProducts );
 	}
 
-	public function wcml_count_products_for_gallery_sync() {
-		$all_products = $this->get_products_needs_gallery_sync( false );
-
-		return count( $all_products );
+	public function getRemainingVariableProducts() {
+		$variableProducts = get_option( self::OPTION_PRODUCTS_WITH_VARIATIONS );
+		if ( false === $variableProducts ) {
+			$variableProducts = $this->getVariableProducts();
+		}
+		return $variableProducts;
 	}
 
-	public function wcml_count_product_categories() {
-
-		$get_product_categories = $this->get_product_categories_needs_sync();
-
-		return count( $get_product_categories );
+	public function setRemainingVariableProducts( $variableProducts ) {
+		if ( empty( $variableProducts ) ) {
+			delete_option( 'wcml_products_to_sync' );
+		} else {
+			update_option( 'wcml_products_to_sync', $variableProducts );
+		}
 	}
-
 
 	public function trbl_sync_variations() {
 		self::checkNonce( 'trbl_sync_variations' );
 
-		$get_variables_products = get_option( 'wcml_products_to_sync' );
-		$all_active_lang        = $this->sitepress->get_active_languages();
-		$unset_keys             = [];
-		$products_for_one_ajax  = array_slice( $get_variables_products, 0, 3, true );
+		$response = [
+			'processed' => 0,
+			'complete'  => false,
+		];
 
-		foreach ( $products_for_one_ajax as $key => $product ) {
+		$all_active_lang          = $this->sitepress->get_active_languages();
+		$variableProducts         = $this->getRemainingVariableProducts();
+		$variableProductsForRound = array_slice( $variableProducts, 0, self::ITEMS_PER_AJAX_MIN, true );
+
+		foreach ( $variableProductsForRound as $key => $product ) {
+			$translationsLanguages = [];
 			foreach ( $all_active_lang as $language ) {
 				if ( $language['code'] != $product['lang'] ) {
-					$tr_product_id = apply_filters( 'translate_object_id', $product['id'], 'product', false, $language['code'] );
-
-					if ( ! is_null( $tr_product_id ) ) {
-						$this->woocommerce_wpml->sync_variations_data->sync_product_variations( $product['id'], $tr_product_id, $language['code'], [ 'is_troubleshooting' => true ] );
-					}
-					if ( ! in_array( $key, $unset_keys ) ) {
-						$unset_keys[] = $key;
+					$translationId = apply_filters( 'wpml_object_id', $product['id'], 'product', false, $language['code'] );
+					if ( ! is_null( $translationId ) ) {
+						$translationsLanguages[ $translationId ] = $language['code'];
 					}
 				}
+				unset( $variableProducts[ $key ] );
+			}
+			if ( ! empty( $translationsLanguages ) ) {
+				do_action(
+					\WCML\Synchronization\Hooks::HOOK_SYNCHRONIZE_PRODUCT_COMPONENT,
+					get_post( $product['id'] ),
+					array_keys( $translationsLanguages ),
+					$translationsLanguages,
+					\WCML\Synchronization\Store::COMPONENT_VARIATIONS
+				);
 			}
 		}
 
-		foreach ( $unset_keys as $unset_key ) {
-			unset( $get_variables_products[ $unset_key ] );
-		}
-
-		update_option( 'wcml_products_to_sync', $get_variables_products );
+		$this->setRemainingVariableProducts( $variableProducts );
 
 		$wcml_settings = get_option( '_wcml_settings' );
-		if ( isset( $wcml_settings['notifications'] ) && isset( $wcml_settings['notifications']['varimages'] ) ) {
+		if ( isset( $wcml_settings['notifications']['varimages'] ) ) {
 			$wcml_settings['notifications']['varimages']['show'] = 0;
 			update_option( '_wcml_settings', $wcml_settings );
 		}
 
-		wp_send_json_success();
+		$response['processed'] = count( $variableProductsForRound );
+		$response['complete']  = empty( $variableProducts );
+		wp_send_json_success( $response );
+	}
+
+	public function getProductsForGallerySync( $limit = false ) {
+		$queryLimit= '';
+		if ( $limit ) {
+			$queryLimit = ' ORDER BY p.ID LIMIT ' . self::ITEMS_PER_AJAX;
+		}
+		return $this->wpdb->get_results(
+			$this->wpdb->prepare(
+				"
+				SELECT DISTINCT p.ID FROM {$this->wpdb->posts} AS p
+					LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr
+					ON tr.element_id = p.ID
+					WHERE p.post_status = 'publish' AND p.post_type = 'product' AND tr.source_language_code is NULL
+					AND ( SELECT COUNT( pm.meta_key ) FROM {$this->wpdb->postmeta} AS pm WHERE pm.post_id = p.ID AND pm.meta_key = %s ) = 0
+					{$queryLimit}
+				",
+				self::META_GALLERY_SYNC
+			)
+		);
+	}
+
+	public function countProductsForGallerySync() {
+		$productsForGallerySync = $this->getProductsForGallerySync();
+		return count( $productsForGallerySync );
 	}
 
 	public function trbl_gallery_images() {
 		self::checkNonce( 'trbl_gallery_images' );
 
-		$all_products = $this->get_products_needs_gallery_sync( true );
+		$productsForGallerySync = $this->getProductsForGallerySync( true );
 
-		foreach ( $all_products as $product ) {
-			$this->woocommerce_wpml->media->sync_product_gallery( $product->ID );
-			add_post_meta( $product->ID, 'gallery_sync', true );
+		foreach ( $productsForGallerySync as $product ) {
+			$this->woocommerce_wpml->media->sync_product_gallery_to_all_languages( $product->ID );
+			add_post_meta( $product->ID, self::META_GALLERY_SYNC, true );
 		}
 
-		wp_send_json_success();
+		$response = [
+			'processed' => count( $productsForGallerySync ),
+			'complete'  => count( $productsForGallerySync ) < self::ITEMS_PER_AJAX,
+		];
 
+		if ( $response ['complete'] ) {
+			$this->wpdb->delete ( $this->wpdb->postmeta, [ 'meta_key' => self::META_GALLERY_SYNC ] );
+			$this->wpdb->delete ( $this->wpdb->postmeta, [ 'meta_key' => self::META_GALLERY_SYNC_LEGACY ] );
+		}
+
+		wp_send_json_success( $response );
 	}
-	
-	public function register_reviews_in_st() {
-		self::checkNonce( 'register_reviews_in_st' );
 
-		make( \WCML\Reviews\Translations\Mapper::class )->registerMissingReviewStrings();
-		
-		wp_send_json_success();
-	}
-
-	public function get_products_needs_gallery_sync( $limit = false ) {
-
-		$sql = "SELECT p.ID FROM {$this->wpdb->posts} AS p
-                 LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr
-                 ON tr.element_id = p.ID
-                 WHERE p.post_status = 'publish' AND p.post_type = 'product' AND tr.source_language_code is NULL
-                 AND ( SELECT COUNT( pm.meta_key ) FROM {$this->wpdb->postmeta} AS pm WHERE pm.post_id = p.ID AND pm.meta_key = 'gallery_sync' ) = 0 ";
-
+	public function getProductCategoriesForTermMetaSync( $limit = false ) {
+		$queryLimit = '';
 		if ( $limit ) {
-			$sql .= 'ORDER BY p.ID LIMIT ' . self::ITEMS_PER_AJAX;
+			$queryLimit = ' ORDER BY t.term_taxonomy_id LIMIT ' . self::ITEMS_PER_AJAX;
 		}
+		return $this->wpdb->get_results(
+			$this->wpdb->prepare(
+				"
+				SELECT t.term_taxonomy_id,t.term_id,tr.language_code FROM {$this->wpdb->term_taxonomy} AS t
+					LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr
+					ON tr.element_id = t.term_taxonomy_id
+					WHERE t.taxonomy = 'product_cat' AND tr.element_type = 'tax_product_cat' AND tr.source_language_code is NULL
+					AND ( SELECT COUNT( tm.meta_key ) FROM {$this->wpdb->termmeta} AS tm WHERE tm.term_id = t.term_id AND tm.meta_key = %s ) = 0
+					{$queryLimit}
+				",
+				self::META_CAT_META_SYNC
+			)
+		);
+	}
 
-		$all_products = $this->wpdb->get_results( $sql );
-
-		return $all_products;
+	public function countProductCategoriesForTermMetaSync() {
+		$productCategoriesForTermMetaSync = $this->getProductCategoriesForTermMetaSync();
+		return count( $productCategoriesForTermMetaSync );
 	}
 
 	public function trbl_sync_categories() {
 		self::checkNonce( 'trbl_sync_categories' );
 
-		$all_categories = $this->get_product_categories_needs_sync( true );
+		$productCategoriesForTermMetaSync = $this->getProductCategoriesForTermMetaSync( true );
 
-		foreach ( $all_categories as $category ) {
-			add_option( 'wcml_sync_category_' . $category->term_taxonomy_id, true );
+		foreach ( $productCategoriesForTermMetaSync as $category ) {
+			update_term_meta( $category->term_id, self::META_CAT_META_SYNC, true );
 			$trid         = $this->sitepress->get_element_trid( $category->term_taxonomy_id, 'tax_product_cat' );
 			$translations = $this->sitepress->get_element_translations( $trid, 'tax_product_cat' );
 			$type         = get_term_meta( $category->term_id, 'display_type', true );
@@ -182,139 +239,141 @@ class WCML_Troubleshooting {
 			foreach ( $translations as $translation ) {
 				if ( $translation->language_code != $category->language_code ) {
 					update_term_meta( $translation->term_id, 'display_type', $type );
-					update_term_meta( $translation->term_id, 'thumbnail_id', apply_filters( 'translate_object_id', $thumbnail_id, 'attachment', true, $translation->language_code ) );
+					update_term_meta( $translation->term_id, 'thumbnail_id', apply_filters( 'wpml_object_id', $thumbnail_id, 'attachment', true, $translation->language_code ) );
 				}
 			}
 		}
 
-		wp_send_json_success();
+		$response = [
+			'processed' => count( $productCategoriesForTermMetaSync ),
+			'complete'  => count( $productCategoriesForTermMetaSync ) < self::ITEMS_PER_AJAX,
+		];
 
+		if ( $response ['complete'] ) {
+			$this->wpdb->delete ( $this->wpdb->termmeta, [ 'meta_key' => self::META_CAT_META_SYNC ] );
+		}
+
+		wp_send_json_success( $response );
 	}
 
-
-	public function get_product_categories_needs_sync( $limit = false ) {
-
-		$sql = "SELECT t.term_taxonomy_id,t.term_id,tr.language_code FROM {$this->wpdb->term_taxonomy} AS t
-                 LEFT JOIN {$this->wpdb->prefix}icl_translations AS tr
-                 ON tr.element_id = t.term_taxonomy_id
-                 WHERE t.taxonomy = 'product_cat' AND tr.element_type = 'tax_product_cat' AND tr.source_language_code is NULL
-                 AND ( SELECT COUNT( option_id ) FROM {$this->wpdb->options} WHERE option_name = CONCAT( 'wcml_sync_category_',t.term_taxonomy_id ) ) = 0 ";
-
+	public function getProductsAndVariationsForStockSync( $limit = false ) {
+		$queryLimit = '';
 		if ( $limit ) {
-			$sql .= 'ORDER BY t.term_taxonomy_id LIMIT ' . self::ITEMS_PER_AJAX;
+			$queryLimit = ' ORDER BY p.ID LIMIT ' . self::ITEMS_PER_AJAX_MIN;
 		}
-
-		$all_categories = $this->wpdb->get_results( $sql );
-
-		return $all_categories;
+		return $this->wpdb->get_results(
+			"
+			SELECT p.ID, t.trid, t.element_type
+				FROM {$this->wpdb->posts} p
+				JOIN {$this->wpdb->prefix}icl_translations t ON t.element_id = p.ID AND t.element_type IN ('post_product', 'post_product_variation')
+				WHERE p.post_type in ('product', 'product_variation') AND t.source_language_code IS NULL
+				{$queryLimit}
+      "
+		);
 	}
 
-
-	public function trbl_duplicate_terms() {
-		self::checkNonce( 'trbl_duplicate_terms' );
-
-		$attr = isset( $_POST['attr'] ) ? $_POST['attr'] : false;
-
-		if ( $attr ) {
-			$terms     = get_terms( $attr, 'hide_empty=0' );
-			$i         = 0;
-			$languages = $this->sitepress->get_active_languages();
-			foreach ( $terms as $term ) {
-				foreach ( $languages as $language ) {
-					$tr_id = apply_filters( 'translate_object_id', $term->term_id, $attr, false, $language['code'] );
-
-					if ( is_null( $tr_id ) ) {
-						$term_args = [];
-						// hierarchy - parents.
-						if ( is_taxonomy_hierarchical( $attr ) ) {
-							// fix hierarchy.
-							if ( $term->parent ) {
-								$original_parent_translated = apply_filters( 'translate_object_id', $term->parent, $attr, false, $language['code'] );
-								if ( $original_parent_translated ) {
-									$term_args['parent'] = $original_parent_translated;
-								}
-							}
-						}
-
-						$term_name         = $term->name;
-						$slug              = $term->name . '-' . $language['code'];
-						$slug              = WPML_Terms_Translations::term_unique_slug( $slug, $attr, $language['code'] );
-						$term_args['slug'] = $slug;
-
-						$new_term = wp_insert_term( $term_name, $attr, $term_args );
-						if ( $new_term && ! is_wp_error( $new_term ) ) {
-							$tt_id = $this->sitepress->get_element_trid( $term->term_taxonomy_id, 'tax_' . $attr );
-							$this->sitepress->set_element_language_details( $new_term['term_taxonomy_id'], 'tax_' . $attr, $tt_id, $language['code'] );
-						}
-					}
-				}
-			}
+	public function getRemainingProductsAndVariationsForStockSync() {
+		$itemsForStockSync = get_option( self::OPTION_PRODUCTS_AND_VARIATIONS_FOR_STOCK_SYNC );
+		if ( false === $itemsForStockSync ) {
+			$itemsForStockSync = $this->getProductsAndVariationsForStockSync();
 		}
-
-		wp_send_json_success();
+		return $itemsForStockSync;
 	}
 
-	public function trbl_fix_product_type_terms() {
-		self::checkNonce( 'trbl_product_type_terms' );
-
-		WCML_Install::check_product_type_terms();
-
-		wp_send_json_success();
-	}
-
-	public function wcml_count_products_and_variations() {
-
-		$results = $this->get_original_products_and_variations();
-
-		return count( $results );
+	public function setRemainingProductsAndVariationsForStockSync( $itemsForStockSync ) {
+		if ( empty( $itemsForStockSync ) ) {
+			delete_option( self::OPTION_PRODUCTS_AND_VARIATIONS_FOR_STOCK_SYNC );
+		} else {
+			update_option( self::OPTION_PRODUCTS_AND_VARIATIONS_FOR_STOCK_SYNC, $itemsForStockSync );
+		}
 	}
 
 	public function trbl_sync_stock() {
 		self::checkNonce( 'trbl_sync_stock' );
 
-		$results = $this->get_original_products_and_variations();
+		$response = [
+			'processed' => 0,
+			'complete'  => false,
+		];
 
-		foreach ( $results as $product ) {
+		$itemsForStockSync        = $this->getRemainingProductsAndVariationsForStockSync();
+		$itemsForStockSyncInRound = array_slice( $itemsForStockSync, 0, self::ITEMS_PER_AJAX_MIN, true );
 
-			if ( get_post_meta( $product->ID, '_manage_stock', true ) === 'yes' ) {
-
-				$translations = $this->sitepress->get_element_translations( $product->trid, $product->element_type );
-
-				$min_stock    = false;
-				$stock_status = 'instock';
-
-				// collect min stock.
-				foreach ( $translations as $translation ) {
-					$stock = get_post_meta( $translation->element_id, '_stock', true );
-					if ( ! $min_stock || $stock < $min_stock ) {
-						$min_stock    = $stock;
-						$stock_status = get_post_meta( $translation->element_id, '_stock_status', true );
-					}
-				}
-
-				// update stock value.
-				foreach ( $translations as $translation ) {
-					update_post_meta( $translation->element_id, '_stock', $min_stock );
-					update_post_meta( $translation->element_id, '_stock_status', $stock_status );
+		foreach ( $itemsForStockSyncInRound as $key => $product ) {
+			$translations          = $this->sitepress->get_element_translations( $product->trid, $product->element_type );
+			$translationsIds       = [];
+			$translationsLanguages = [];
+			foreach ( $translations as $translation ) {
+				if ( (int) $product->ID !== (int) $translation->element_id ) {
+					$translationsIds[] = $translation->element_id;
+					$translationsLanguages[ $translation->element_id ] = $translation->language_code;
 				}
 			}
+			unset( $itemsForStockSync[ $key ] );
+			do_action(
+				\WCML\Synchronization\Hooks::HOOK_SYNCHRONIZE_PRODUCT_COMPONENT,
+				get_post( $product->ID ),
+				$translationsIds,
+				$translationsLanguages,
+				\WCML\Synchronization\Store::COMPONENT_STOCK
+			);
 		}
 
-		wp_send_json_success();
+		$this->setRemainingProductsAndVariationsForStockSync( $itemsForStockSync );
+
+		$response['processed'] = count( $itemsForStockSyncInRound );
+		$response['complete']  = empty( $itemsForStockSync );
+
+		wp_send_json_success( $response );
 	}
 
-	public function get_original_products_and_variations() {
-
-		$results = $this->wpdb->get_results(
+	public function getVariationsForLanguageAssignment( $limit = false ) {
+		$queryLimit = '';
+		if ( $limit ) {
+			$queryLimit = ' ORDER BY post_id LIMIT ' . self::ITEMS_PER_AJAX;
+		}
+		return $this->wpdb->get_results(
 			"
-                        SELECT p.ID, t.trid, t.element_type
-                        FROM {$this->wpdb->posts} p
-                        JOIN {$this->wpdb->prefix}icl_translations t ON t.element_id = p.ID AND t.element_type IN ('post_product', 'post_product_variation')
-                        WHERE p.post_type in ('product', 'product_variation') AND t.source_language_code IS NULL
-                    "
+			SELECT post_id, meta_value FROM {$this->wpdb->postmeta}
+				WHERE meta_key ='_wcml_duplicate_of_variation'
+				{$queryLimit}
+			"
 		);
+	}
 
-		return $results;
+	public function getRemainingVariationsForLanguageAssignment() {
+		$itemsForLanguageAssignment = get_option( self::OPTION_VARIATIONS_FOR_LANGUAGE_ASSIGNMENT );
+		if ( false === $itemsForLanguageAssignment ) {
+			$itemsForLanguageAssignment = $this->getVariationsForLanguageAssignment();
+		}
+		return $itemsForLanguageAssignment;
+	}
+
+	public function setRemainingVariationsForLanguageAssignment( $itemsForLanguageAssignment ) {
+		if ( empty( $itemsForLanguageAssignment ) ) {
+			delete_option( self::OPTION_VARIATIONS_FOR_LANGUAGE_ASSIGNMENT );
+		} else {
+			update_option( self::OPTION_VARIATIONS_FOR_LANGUAGE_ASSIGNMENT, $itemsForLanguageAssignment );
+		}
+	}
+
+	/**
+	 * @param int    $element_id
+	 * @param string $element_type
+	 *
+	 * @return object|null
+	 */
+	private function get_translation_info_for_element( $element_id, $element_type ) {
+		return $this->wpdb->get_row(
+			$this->wpdb->prepare(
+				"
+				SELECT trid, translation_id FROM {$this->wpdb->prefix}icl_translations
+					WHERE element_id = %d AND element_type = %s
+				",
+				$element_id,
+				$element_type
+			)
+		);
 	}
 
 	public function fix_translated_variations_relationships() {
@@ -324,19 +383,22 @@ class WCML_Troubleshooting {
 			wp_send_json_error( 'Access error' );
 		}
 
-		$translated_variations = get_option( 'wcml_trbl_translated_variations' );
+		$response = [
+			'processed' => 0,
+			'complete'  => false,
+		];
 
-		if ( ! $translated_variations ) {
-			$translated_variations = $this->get_products_variations_needs_fix_relationships();
-		}
+		$translatedVariations        = $this->getRemainingVariationsForLanguageAssignment();
+		$translatedVariationsInRound = array_slice( $translatedVariations, 0, self::ITEMS_PER_AJAX, true );
 
-		foreach ( array_slice( $translated_variations, 0, self::ITEMS_PER_AJAX, true ) as $key => $translated_variation ) {
+		foreach ( $translatedVariationsInRound as $key => $translated_variation ) {
 			// check relationships.
 			$tr_info_for_original_variation = $this->get_translation_info_for_element( $translated_variation->meta_value, 'post_product_variation' );
 
 			$language = $this->sitepress->get_language_for_element( wp_get_post_parent_id( $translated_variation->meta_value ), 'post_product' );
 
 			if ( ! $language ) {
+				unset( $translatedVariations[ $key ] );
 				continue;
 			}
 
@@ -385,39 +447,125 @@ class WCML_Troubleshooting {
 
 			}
 
-			unset( $translated_variations[ $key ] );
+			unset( $translatedVariations[ $key ] );
 		}
 
-		update_option( 'wcml_trbl_translated_variations', $translated_variations );
+		$this->setRemainingVariationsForLanguageAssignment( $translatedVariations );
 
-		wp_send_json_success();
-	}
+		$response['processed'] = count( $translatedVariationsInRound );
+		$response['complete']  = empty( $translatedVariations );
 
-	/**
-	 * @param int    $element_id
-	 * @param string $element_type
-	 *
-	 * @return object|null
-	 */
-	private function get_translation_info_for_element( $element_id, $element_type ) {
-		return $this->wpdb->get_row( $this->wpdb->prepare( "SELECT trid, translation_id FROM {$this->wpdb->prefix}icl_translations WHERE element_id = %d AND element_type = %s", $element_id, $element_type ) );
-	}
-
-	private function get_products_variations_needs_fix_relationships() {
-		return $this->wpdb->get_results( "SELECT post_id, meta_value FROM {$this->wpdb->postmeta} WHERE meta_key ='_wcml_duplicate_of_variation'" );
-	}
-
-	public function wcml_count_product_fix_relationships() {
-
-		$results = $this->get_products_variations_needs_fix_relationships();
-
-		return count( $results );
+		wp_send_json_success( $response );
 	}
 	
-	public function wcml_count_unregistered_reviews() {
-		return make( \WCML\Reviews\Translations\Mapper::class )->countMissingReviewStrings();
+	public function trbl_fix_product_type_terms() {
+		self::checkNonce( 'trbl_product_type_terms' );
+
+		// Delete product_type terms translations and fix relationships.
+		WCML_Install::check_product_type_terms();
+
+		// Mark the product_type taxonomy as non-translatable.
+		$sync_settings                 = $this->sitepress->get_setting( 'taxonomies_sync_option', [] );
+		$sync_settings['product_type'] = 0;
+		$this->sitepress->set_setting( 'taxonomies_sync_option', $sync_settings, true );
+
+		$response = [
+			'complete' => true,
+		];
+		wp_send_json_success( $response );
 	}
 
+	public function trbl_duplicate_terms() {
+		self::checkNonce( 'trbl_duplicate_terms' );
+
+		$attr  = $_POST['attr'] ?? false;
+		$terms = [];
+
+		if ( $attr ) {
+			$terms     = get_terms( $attr, 'hide_empty=0' );
+			$languages = $this->sitepress->get_active_languages();
+			foreach ( $terms as $term ) {
+				foreach ( $languages as $language ) {
+					$tr_id = apply_filters( 'wpml_object_id', $term->term_id, $attr, false, $language['code'] );
+
+					if ( is_null( $tr_id ) ) {
+						$term_args = [];
+						// hierarchy - parents.
+						if ( is_taxonomy_hierarchical( $attr ) ) {
+							// fix hierarchy.
+							if ( $term->parent ) {
+								$original_parent_translated = apply_filters( 'wpml_object_id', $term->parent, $attr, false, $language['code'] );
+								if ( $original_parent_translated ) {
+									$term_args['parent'] = $original_parent_translated;
+								}
+							}
+						}
+
+						// TODO It seems that WPML supports now using the same slug in multiple languages. Check, and adjust.
+						$term_name         = $term->name;
+						$slug              = $term->name . '-' . $language['code'];
+						$slug              = WPML_Terms_Translations::term_unique_slug( $slug, $attr, $language['code'] );
+						$term_args['slug'] = $slug;
+
+						$new_term = wp_insert_term( $term_name, $attr, $term_args );
+						if ( is_wp_error( $new_term ) ) {
+							$tt_id = $this->sitepress->get_element_trid( $term->term_taxonomy_id, 'tax_' . $attr );
+							$this->sitepress->set_element_language_details( $new_term['term_taxonomy_id'], 'tax_' . $attr, $tt_id, $language['code'] );
+						}
+					}
+				}
+			}
+		}
+
+		$response = [
+			'processed' => count( $terms ),
+			'complete'  => true,
+		];
+		wp_send_json_success( $response );
+	}
+
+	public function register_reviews_in_st() {
+		self::checkNonce( 'register_reviews_in_st' );
+
+		make( \WCML\Reviews\Translations\Mapper::class )->registerMissingReviewStrings();
+		
+		$response = [
+			'complete' => true,
+		];
+		wp_send_json_success( $response );
+	}
+
+	public function getItemsForMetaCleanup( $limit = false ) {
+		$queryLimit = '';
+		if ( $limit ) {
+			$queryLimit = ' ORDER BY p.ID LIMIT ' . self::ITEMS_PER_AJAX_MIN;
+		}
+		return $this->wpdb->get_results(
+			"
+			SELECT p.ID, t.trid, t.element_type
+				FROM {$this->wpdb->posts} p
+				JOIN {$this->wpdb->prefix}icl_translations t ON t.element_id = p.ID AND t.element_type IN ('post_product', 'post_product_variation')
+				WHERE p.post_type in ('product', 'product_variation') AND t.source_language_code IS NULL
+				{$queryLimit}
+      "
+		);
+	}
+
+	public function getRemainingItemsForMetaCleanup() {
+		$itemsForMetaCleanup = get_option( self::OPTION_PRODUCTS_AND_VARIATIONS_FOR_META_CLEANUP );
+		if ( false === $itemsForMetaCleanup ) {
+			$itemsForMetaCleanup = $this->getItemsForMetaCleanup();
+		}
+		return $itemsForMetaCleanup;
+	}
+
+	public function setRemainingItemsForMetaCleanup( $itemsForMetaCleanup ) {
+		if ( empty( $itemsForMetaCleanup ) ) {
+			delete_option( self::OPTION_PRODUCTS_AND_VARIATIONS_FOR_META_CLEANUP );
+		} else {
+			update_option( self::OPTION_PRODUCTS_AND_VARIATIONS_FOR_META_CLEANUP, $itemsForMetaCleanup );
+		}
+	}
 
 	public function sync_deleted_meta() {
 		self::checkNonce( 'sync_deleted_meta' );
@@ -426,16 +574,18 @@ class WCML_Troubleshooting {
 			wp_send_json_error( 'Access error' );
 		}
 
-		$products_needs_fix_postmeta = get_option( 'wcml_trbl_products_needs_fix_postmeta' );
+		$response = [
+			'processed' => 0,
+			'complete'  => false,
+		];
 
-		if ( ! $products_needs_fix_postmeta ) {
-			$products_needs_fix_postmeta = $this->get_original_products_and_variations();
-		}
+		$itemsForMetaCleanup           = $this->getRemainingItemsForMetaCleanup();
+		$getItemsForMetaCleanupInRound = array_slice( $itemsForMetaCleanup, 0, self::ITEMS_PER_AJAX, true );
 
 		$iclTranslationManagement = wpml_load_core_tm();
 		$settings_factory         = new WPML_Custom_Field_Setting_Factory( $iclTranslationManagement );
 
-		foreach ( array_slice( $products_needs_fix_postmeta, 0, self::ITEMS_PER_AJAX, true ) as $key => $product ) {
+		foreach ( $getItemsForMetaCleanupInRound as $key => $product ) {
 
 			$translations = $this->sitepress->get_element_translations( $product->trid, $product->element_type );
 
@@ -453,12 +603,15 @@ class WCML_Troubleshooting {
 				}
 			}
 
-			unset( $products_needs_fix_postmeta[ $key ] );
+			unset( $itemsForMetaCleanup[ $key ] );
 		}
 
-		update_option( 'wcml_trbl_products_needs_fix_postmeta', $products_needs_fix_postmeta );
+		$this->setRemainingItemsForMetaCleanup( $itemsForMetaCleanup );
 
-		wp_send_json_success();
+		$response['processed'] = count( $getItemsForMetaCleanupInRound );
+		$response['complete'] = empty( $itemsForMetaCleanup );
+
+		wp_send_json_success( $response );
 	}
 
 	/**

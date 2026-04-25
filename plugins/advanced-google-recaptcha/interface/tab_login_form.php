@@ -2,7 +2,7 @@
 /**
  * WP Captcha
  * https://getwpcaptcha.com/
- * (c) WebFactory Ltd, 2022 - 2023, www.webfactoryltd.com
+ * (c) WebFactory Ltd, 2022 - 2026, www.webfactoryltd.com
  */
 
 class WPCaptcha_Tab_Login_Form extends WPCaptcha
@@ -112,7 +112,13 @@ class WPCaptcha_Tab_Login_Form extends WPCaptcha
         echo '<div class="open-upsell open-upsell-block" data-feature="whitelist">';
         echo '<textarea class="regular-text" id="whitelist" rows="6"></textarea>';
         echo '</div>';
-        echo '<span>List of IP addresses that will never be blocked. Enter one IP per line.<br>Your current IP is: <code>' . esc_html($_SERVER['REMOTE_ADDR']) . '</code></span>';
+        if(isset($_SERVER['REMOTE_ADDR'])){
+            $remote_address = sanitize_url(wp_unslash($_SERVER['REMOTE_ADDR']));
+        } else {
+            $remote_address = 'unknown';
+        }
+
+        echo '<span>List of IP addresses that will never be blocked. Enter one IP per line.<br>Your current IP is: <code>' . esc_html($remote_address) . '</code></span>';
         echo '</td></tr>';
 
         echo '<tr valign="top">
@@ -181,7 +187,7 @@ class WPCaptcha_Tab_Login_Form extends WPCaptcha
         echo '<div class="open-upsell open-upsell-block" data-feature="log_passwords">';
         WPCaptcha_Utility::create_toggle_switch('log_passwords', array('saved_value' => 0, 'option_key' => ''));
         echo '</div>';
-        echo '<span>Enablign this option will log the passwords used in failed login attempts. This is not recommended on websites with multiple users as the passwords are logged as plain text and can be viewed by all users that have access to the WP Captcha logs or the database.</span>';
+        echo '<span>Enabling this option will log the passwords used in failed login attempts. This is not recommended on websites with multiple users as the passwords are logged as plain text and can be viewed by all users that have access to the WP Captcha logs or the database.</span>';
         echo '</td></tr>';
 
         echo '<tr valign="top">

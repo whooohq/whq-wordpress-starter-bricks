@@ -30,7 +30,7 @@ if ( ! class_exists( 'WC_Email_Customer_Completed_Order', false ) ) :
 			$this->id             = 'customer_completed_order';
 			$this->customer_email = true;
 			$this->title          = __( 'Completed order', 'woocommerce' );
-			$this->description    = __( 'Order complete emails are sent to customers when their orders are marked completed and usually indicate that their orders have been shipped.', 'woocommerce' );
+			$this->email_group    = 'order-updates';
 			$this->template_html  = 'emails/customer-completed-order.php';
 			$this->template_plain = 'emails/plain/customer-completed-order.php';
 			$this->placeholders   = array(
@@ -43,6 +43,16 @@ if ( ! class_exists( 'WC_Email_Customer_Completed_Order', false ) ) :
 
 			// Call parent constructor.
 			parent::__construct();
+
+			// Must be after parent's constructor which sets `email_improvements_enabled` property.
+			$this->description = $this->email_improvements_enabled
+				? __( 'Send an email to customers notifying them that their order is complete and has been shipped', 'woocommerce' )
+				: __( 'Order complete emails are sent to customers when their orders are marked completed and usually indicate that their orders have been shipped.', 'woocommerce' );
+
+			if ( $this->block_email_editor_enabled ) {
+				$this->title       = __( 'Order fulfilled', 'woocommerce' );
+				$this->description = __( 'Notifies customers when their order has been shipped.', 'woocommerce' );
+			}
 		}
 
 		/**
@@ -79,7 +89,9 @@ if ( ! class_exists( 'WC_Email_Customer_Completed_Order', false ) ) :
 		 * @return string
 		 */
 		public function get_default_subject() {
-			return __( 'Your {site_title} order is now complete', 'woocommerce' );
+			return $this->email_improvements_enabled
+				? __( 'Your order from {site_title} is on its way!', 'woocommerce' )
+				: __( 'Your {site_title} order is now complete', 'woocommerce' );
 		}
 
 		/**
@@ -89,7 +101,9 @@ if ( ! class_exists( 'WC_Email_Customer_Completed_Order', false ) ) :
 		 * @return string
 		 */
 		public function get_default_heading() {
-			return __( 'Thanks for shopping with us', 'woocommerce' );
+			return $this->email_improvements_enabled
+				? __( 'Good things are heading your way!', 'woocommerce' )
+				: __( 'Thanks for shopping with us', 'woocommerce' );
 		}
 
 		/**
@@ -137,7 +151,9 @@ if ( ! class_exists( 'WC_Email_Customer_Completed_Order', false ) ) :
 		 * @return string
 		 */
 		public function get_default_additional_content() {
-			return __( 'Thanks for shopping with us.', 'woocommerce' );
+			return $this->email_improvements_enabled
+				? __( 'Thanks again! If you need any help with your order, please contact us at {store_email}.', 'woocommerce' )
+				: __( 'Thanks for shopping with us.', 'woocommerce' );
 		}
 	}
 

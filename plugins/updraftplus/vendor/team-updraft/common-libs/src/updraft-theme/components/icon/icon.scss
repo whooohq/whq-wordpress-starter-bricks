@@ -1,0 +1,72 @@
+@use "../../helpers/responsive-variables-generator.scss" as *;
+
+$icon-variables: (
+	"extra-large": (
+		"mobile": "bu-48",
+		"desktop": "bu-48"
+	),
+	"large": (
+		"mobile": "bu-32",
+		"desktop": "bu-32"
+	),
+	"medium": (
+		"mobile": "bu-24",
+		"desktop": "bu-24"
+	),
+	"small": (
+		"mobile": "bu-18",
+		"desktop": "bu-18"
+	),
+	"extra-small": (
+		"mobile": "bu-16",
+		"desktop": "bu-16"
+	),
+);
+
+@include tu-generate-responsive-variables("tu-icon", $icon-variables);
+
+
+tu-icon {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+
+	&::before {
+		--tu-icon-size: var(--tu-icon-extra-large);
+		content: "";
+		display: block;
+		width: var(--tu-icon-size);
+		height: var(--tu-icon-size);
+		mask-image: url('./components/icon/svgs/right.svg');
+		mask-size: contain;
+		mask-repeat: no-repeat;
+		mask-position: center;
+		background: var(--color-secondary-500);
+	}
+
+	$icon-size-map: (
+		"l":  "large",
+		"m":  "medium",
+		"s":  "small",
+		"xs": "extra-small"
+	);
+
+	@each $abbr, $name in $icon-size-map {
+		&[size="#{$abbr}"]::before {
+			--tu-icon-size: var(--tu-icon-#{$name});
+		}
+	}
+
+	$icons: (
+		left,
+		right,
+		click,
+	);
+
+	@each $icon in $icons {
+		&[instance="#{$icon}"]::before {
+			mask-image: url('./components/icon/svgs/#{$icon}.svg');
+		}
+	}
+}

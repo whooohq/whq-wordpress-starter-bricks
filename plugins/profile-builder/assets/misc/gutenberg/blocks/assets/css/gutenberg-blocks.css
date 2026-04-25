@@ -1,0 +1,95 @@
+.wppb-block-container{
+    padding: 10px;
+}
+
+.pms-field-section.pms-price-breakdown__holder{
+    display: none;
+}
+
+.wppb-user-forms ul li #map {
+    height: auto !important;
+}
+
+.wppb-user-forms .wppb-form-field.wppb-mailchimp-subscribe label input[type="checkbox"] {
+    margin-right: 10px !important;
+}
+
+/* hide labels when Placeholder Labels option is active */
+/*#wppb-recover-password ul li.wppb-form-field label,*/
+/*.wppb-user-forms #wppb-loginform .login-username label,*/
+/*.wppb-user-forms #wppb-loginform .login-password label,*/
+/*.wppb-user-forms #wppb-loginform .wppb-recaptcha label,*/
+/*.wppb-form-field.pbpl-class label,*/
+/*.pms-field.pbpl-class:not(form[id^="pms"] .pms-field) label {*/
+/*    text-indent: -99999px;*/
+/*    position: absolute;*/
+/*    left: -99999px;*/
+/*}*/
+
+.wppb-form-field.pbpl-class .wppb-radios li label,
+.wppb-form-field.wppb-radio.pbpl-class label,
+.wppb-form-field.pbpl-class .wppb-checkboxes li label,
+.wppb-form-field.wppb-checkbox.pbpl-class label {
+    text-indent: 0;
+    position: relative;
+    left: 0;
+    width: auto;
+    display: inline-block;
+}
+
+.wppb-form-field.wppb-two-factor-authentication.pbpl-class label,
+.wppb-form-field.wppb-campaign-monitor-subscribe.pbpl-class label,
+.wppb-form-field.wppb-mailchimp-subscribe.pbpl-class label,
+.wppb-form-field.wppb-mailpoet-subscribe.pbpl-class label,
+.wppb-form-field.wppb-checkbox-terms-and-conditions.pbpl-class label,
+.wppb-form-field.wppb-gdpr-checkbox.pbpl-class label,
+.wppb-form-field.wppb-upload.pbpl-class label,
+.wppb-form-field.wppb-select-multiple.pbpl-class label,
+.wppb-form-field.wppb-timepicker.pbpl-class label,
+.wppb-form-field.wppb-avatar.pbpl-class label,
+.wppb-form-field.wppb-gdpr-communication-preferences.pbpl-class label {
+    text-indent: 0;
+    position: relative;
+    left: 0;
+    width: 100%;
+}
+
+/* hide repeater field extra info */
+#wppb_repeater_field_other-repeater-limit-reached-popup,
+.wppb-repeater ul.wppb-rpf-group .wppb-rpf-action-wrap,
+.wppb-repeater ul.wppb-rpf-group:not(#wppb-rpf-set-wppb_repeater_field_other-repeater_template){
+    display: none;
+}
+
+/* select fields */
+.wppb-select-multiple select.custom_field_multiple_select,
+.wppb-form-select-field select {
+    max-width: 100%;
+}
+
+/* checkbox and label spacing */
+input#woo_different_shipping_address,
+.wppb-user-forms .wppb-form-field.wppb-campaign-monitor-subscribe label input[type="checkbox"],
+.wppb-user-forms .wppb-form-field.wppb-mailpoet-subscribe label input[type="checkbox"] {
+    margin-right: 10px !important;
+}
+
+/*  user listing notice */
+.wp-block-wppb-user-listing .wppb-list-users-container {
+    align-items:center;
+    background-color:#fff;
+    border-radius:2px;
+    box-shadow:inset 0 0 0 1px #1e1e1e;
+    box-sizing:border-box;
+    display:flex;
+    justify-content:center;
+    outline:1px solid transparent;
+    padding:1em;
+    width:100%
+}
+.wp-block-wppb-user-listing .wppb-list-users-container .wppb-list-users-logo {
+    height: 24px;
+    margin-left: 0;
+    margin-right: 12px;
+    width: 24px;
+}
